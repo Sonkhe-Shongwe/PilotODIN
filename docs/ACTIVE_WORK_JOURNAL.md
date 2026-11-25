@@ -13,13 +13,13 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Product baseline | B8 strict transport 970a158; exact P1 and P4 failures reconciled below. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
 | Operation ID | C4-B8-WIRE-FIXTURES-20261125 |
-| Operation state | ISSUED; reconcile source commit from prepared parent 27490c1; do not replay |
+| Operation state | RECONCILED; test-only correction published at [536656a](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/536656a7c38bdeefe4259c39d08ea94f8f7359e7), prepared at 27490c1; exact CI outstanding. |
 | Intended files | tests/test_c4_cloud_intent.py, tests/test_p4_r03_verified_answers.py and canonical records only. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Exact 970a158 P1 failed 1/171 (literal backslash-r key); P4 synthetic failed 3/1086 (outdated response double); Windows and browser success, restricted collector skipped. No product defect established by these failures. |
-| Pending runs | None from 970a158; expect P1 and P4 on test-only correction. |
+| Verification | Original B8 failures retained. CR input and outdated P4 strict response doubles corrected; all privacy and prompt assertions preserved; response closure and full wire cap asserted. Product unchanged. No corrected CI pass claimed. |
+| Pending runs | [P1 Isolated Backend Source Recovery #45659655957](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45659655957) IN_PROGRESS; [P4 Target Review Queue and Transparent Ranking #45659655950](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45659655950) IN_PROGRESS |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Correct literal CR fixture via chr(13); adapt existing P4 fake HTTP response to actual strict contract (status, exact destination, JSON headers, bounded read1 with EOF). Preserve all privacy and prompt assertions; no production relaxation. Verify exact new CI, then review B8 hard deadline and caller compatibility before closure. |
+| Recovery action | Reconcile exact 536656a P1/P4 terminal jobs and logs. Correct only evidenced remaining defects. If green, review hard transport deadline and remaining caller compatibility before B8 closure; frontend consent/cache/disclosure still pending. No acceptance increment. |
 | Resume after closure | C5 then D with separately approved scope. |
 
 ## Prior operation
