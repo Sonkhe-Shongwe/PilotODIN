@@ -13,13 +13,13 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Product baseline | B8 strict wire 970a158; test-only correction 536656a exact P1/P4 SUCCESS. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
 | Operation ID | C4-B8-DEADLINE-LIFETIME-20261125 |
-| Operation state | ISSUED; reconcile source commit from prepared parent 82ca340; do not replay |
+| Operation state | RECONCILED; deadline source published at [5db2032](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/5db2032bdd7ffdf60c743534acf189c445024ada), prepared at 82ca340; exact CI outstanding. |
 | Intended files | backend/ai_provider.py, tests/test_c4_cloud_intent.py and canonical records only. No workflow/schema/activation change. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Exact 536656a P1 171 focused cases and downstream stages SUCCESS; P4 1086 backend/6 skipped/552 subtests, Windows 68/133 subtests, browser 13, Node 133, Vite SUCCESS. |
-| Pending runs | None from 536656a. Expect P1 backend and P4 routine source CI. |
+| Verification | Corrected strict wire P1/P4 SUCCESS; deadline worker and HTTPS late-write fences with nine new inert cases published, exact CI pending. Review worker BaseException handling: synthetic pytest.fail could be swallowed by the new thread boundary; preserve negative-test integrity before closure. |
+| Pending runs | [P1 Isolated Backend Source Recovery #45660697895](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45660697895) IN_PROGRESS; [P4 Target Review Queue and Transparent Ranking #45660698005](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45660698005) IN_PROGRESS |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | One tracked transport worker per shared admission; deadline bounds caller wait, marks expired, retains exact slot until worker I/O returns, no retry. Guard HTTPS connect/send/headers with remaining time and non-consuming current consent/project check; late DNS/TLS return cannot initiate HTTP payload after expiry. Preserve no proxies/redirects and wire caps. Synthetic barriers only; OS DNS/read cancellation and native shutdown not certified. Verify CI before historical compatibility and frontend. |
+| Recovery action | Reconcile both exact 5db2032 terminal runs/jobs/logs. Review worker exception semantics (propagate unexpected test/fatal BaseException on completed caller, keep ordinary provider errors sanitized), start-failure retention and historical callers; correct evidenced issues without weakening safety. Deadline bounds caller wait, not physical OS cancellation. Then frontend consent/cache/disclosure; no score increment. |
 | Resume after closure | C5 then D with separately approved scope. |
 
 ## Prior operation
