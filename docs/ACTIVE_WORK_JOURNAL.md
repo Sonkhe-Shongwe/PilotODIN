@@ -7,14 +7,14 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | READY |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | a931ff9775af8d32d391f2490cbaa15f2527aef6 |
 | Product baseline | Exact mounted correction c206063 and backend pin d16cfd6 verified at respective scopes. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
-| Operation ID | C4-C3-SERVER-DATASET-VERSION-PIN-20261125 |
-| Operation state | RECONCILED; all nine exact workflow outcomes successful; no real frontend cloud activation. |
-| Intended files | backend/main.py, tests/test_c4_cloud_intent.py, C specification and canonical records. |
+| Operation ID | C4-C3-FRONTEND-VERSION-DRAFT-20261125 |
+| Operation state | PREPARED; version-bound confirmed request and draft ownership; intercepted fixtures only. |
+| Intended files | frontend/src/cloudConsentSession.ts, AIWorkspace.tsx, AssistantWorkspace.tsx, existing frontend/e2e and Node consent/audit tests; canonical records. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | Exact mounted correction `c206063`: P1 #45670823357 SUCCESS (206 Node, TypeScript/Vite, 9/9 Chromium including both C4 mounted cases). Exact server pin `d16cfd6`: all eight workflows SUCCESS; P1 backend #45671101097 C4 selected group 252 passed; P4 #45671101346 1086 Python/6 skipped/552 subtests, 15 Rust, 143 Node/Vite, 13 disposable HTTP browser, 68 Windows/133 subtests; restricted collector skipped. |
 | Pending runs | None for c206063 or d16cfd6. |
