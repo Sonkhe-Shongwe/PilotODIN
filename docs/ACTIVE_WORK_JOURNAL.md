@@ -9,17 +9,17 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
 | State | BLOCKED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 3266eb8b2351c0259368cd2dffea625e0d9d43a5 |
+| Observed starting HEAD | 4dcd9b6baefad2f909a4ac2563bce9391f9f1708 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
-| Operation ID | C5-CLOSURE-GAP-REVIEW-20261125 |
-| Operation state | RECONCILED prior CI; source closure gap review complete. Mandatory independent provenance remains blocked; no new approval. |
+| Operation ID | C5-SELECTED-WHEEL-METADATA-PLAN-20261125 |
+| Operation state | RECONCILED read-only source/receipt comparison; bounded collection proposal published, awaiting distinct owner approval. No collection issued or armed. |
 | Intended files | Canonical journal, handoff and evidence ledger only. No product source, locks, workflows or approval changes. |
 | Approval | C5 metadata-only approval CONSUMED; no replay. Exact run 45686334903 attempt 1 only. All six native approvals still consumed/disarmed. No artifact bytes, native, model, installer, owner device, OS/network change or additional metadata dispatch authorized. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
 | Pending runs | None. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | C5 exit under C-D08 and spec sections 5–7/Package C section 10 requires complete selected-wheel graph and exact Windows production/Linux and Windows test hash locks, toolchain/asset/license provenance, actual verified bytes, safe entrypoint disposition and exact CI. Next prepare offline bounded selected-wheel METADATA plan and explicit approval proposal (62 candidate files only, no artifact or execution); then separately scoped real artifact evidence, production input contract and closure audit. Four profiles BLOCKED. G2/D/P8 remain separate. |
+| Recovery action | C5 exit under C-D08 and spec sections 5–7/Package C section 10 requires complete selected-wheel graph and exact Windows production/Linux and Windows test hash locks, toolchain/asset/license provenance, actual verified bytes, safe entrypoint disposition and exact CI. Selected-wheel METADATA proposal now ready: see [bounded plan](./PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md#25-november--c5-selected-wheel-metadata-collection-proposal-awaiting-approval). Await fresh explicit owner approval before preparing a new scope-pinned one-use collector; maximum 50 project Simple JSON responses and 62 exact hash-advertised metadata sidecars, no wheel bytes, no install or execution. Review exact source and trigger before activation; reconcile/disarm after attempt. Then separately scoped real artifact evidence, production input contract and closure audit. Four profiles BLOCKED. G2/D/P8 remain separate. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
