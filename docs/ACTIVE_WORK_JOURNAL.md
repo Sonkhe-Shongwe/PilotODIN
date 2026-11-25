@@ -10,14 +10,14 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | f7685620fdc27a73d3a59604f814365fae3f1dc0 |
-| Product baseline | 16f3cf1 mandatory inner auth, seven terminal SUCCESS; exact test-only 94c5d27 P1 terminal SUCCESS; identical product source. |
+| Product baseline | Last verified auth product 16f3cf1 with test-only 94c5d27 P1 SUCCESS; frontend transport product ebd01f45c5c2040835586628f23ab5702184d0b4 published, verification pending. |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
 | Operation ID | C3-FRONTEND-REDIRECT-CONFINEMENT-20261125 |
-| Operation state | ISSUED (source publication identifiable by prepared parent a6cd90c and operation marker; resolve SHA) |
+| Operation state | RECONCILED (frontend source publication verified at ebd01f45c5c2040835586628f23ab5702184d0b4; exact CI pending) |
 | Intended files | frontend/src/api.ts; frontend/e2e/p4-r03-hosted-desktop.mjs; frontend/tests/desktop-ai-boundaries.test.cjs; journal, handoff, evidence. No native build/approval/activation or workflow modifications. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | Exact P1 test correction terminal SUCCESS (200 import/recovery, 37 composition incl nine new C3 route matrix). Central localTarget validates admitted origin/path before HTTP or native post preflight, fetchLocal forces redirect:error and refuses unexpected 3xx/redirected responses without parsing; uploads use shared transport; no query/raw transport error leakage. Historical hosted R03 source validates desktop connection and fixed settings destinations and refuses redirects; approval unchanged, not executed. Four new inert Node tests added to existing P4 suite. Exact P1 frontend/P3 HTTP/P4 verification pending; C3 broader credential audit remains open. |
-| Pending runs | Expected three routine push workflows (P1 isolated frontend, P3 real HTTP, P4 target ranking) at source commit identifiable by prepared parent a6cd90c and operation marker. |
+| Pending runs | Exact `ebd01f4`: [45612039338](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45612039338) P1 Isolated Frontend Verification IN_PROGRESS; [45612039463](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45612039463) P3 Real HTTP Semantic Context Browser Acceptance IN_PROGRESS; [45612039246](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45612039246) P4 Target Review Queue and Transparent Ranking IN_PROGRESS. Reconcile all terminal jobs before subsequent source work. |
 | Unpublished work | Owner-local tree not inspected. |
 | Recovery action | Resolve exact source and CI, reconcile all terminal jobs; finish credential candidate dispositions and C-D05 exit matrix. No native approval/activation or closure implied. |
 | Resume after closure | C4, C5 in order; D separately approved. |
