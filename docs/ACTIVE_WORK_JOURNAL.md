@@ -13,11 +13,11 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Product baseline | 6b257546734f01808c9dee8c6ef840ea63200fb1 exact P1/P4 terminal SUCCESS. |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
 | Operation ID | C3-HISTORICAL-DIAGNOSTIC-20261125 |
-| Operation state | ISSUED (diagnostic publication identifiable by prepared parent d2f6760 and operation marker; resolve exact SHA) |
+| Operation state | RECONCILED (diagnostic source publication verified at 860678c398bb4ae75977ac86b7d5632889735f55; exact CI not yet reconciled) |
 | Intended files | diagnostics/Check_Local_API.ps1; diagnostics/check_local_api.py; tests/test_c3_local_verifier_trust.py; .github/workflows/p1-isolated-backend.yml (explicit paths only); canonical journal, handoff and evidence. Keep Diagnose_PilotODIN.bat interface, existing read-only routes and separate Ollama inventory. No product server, approval, native workflow or dependency change. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | Prior product 6b25754 exact P1/P4 SUCCESS; 25 new local inference cases passed. Historical diagnostics migrated to paired 5173 frontdoor, strict fixed GET destinations, no capability propagation, no proxy/redirect, bounded JSON, health refusal and separate local Ollama inventory. Existing PowerShell launcher calls isolated venv Python; no new dependencies, no actual local service execution. 25 mocked/source cases registered through existing P1 verifier group. Exact CI pending; remaining indirect caller matrix still open. |
-| Pending runs | Expected exact P1 routine push workflow; resolve ID by product/diagnostic commit identified by prepared parent d2f6760 and operation marker. |
+| Pending runs | Exact `860678c`: [P1 #45602844010](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45602844010) IN_PROGRESS; job 139165915851. Resolve terminal job and test logs before further source changes. |
 | Unpublished work | Owner-local tree not inspected. |
 | Recovery action | Reconcile exact P1 CI, continue remaining actual caller/credential classifications, then mandatory bare-main guard and complete 76-route matrix. |
 | Resume after closure | C4, C5 in order; D separately approved. |
