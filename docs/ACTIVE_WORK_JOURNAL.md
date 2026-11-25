@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | PREPARED |
+| State | READY |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 5ccf217105c548ee76b1211c7031e4a85eefc079 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
 | Operation ID | C5-TOOLCHAIN-PROVENANCE-MATRIX-20261125 |
-| Operation state | PREPARED: read-only provenance matrix from pinned workflow sources, exact historical CI logs and existing C5 policy; no distribution acquisition, tool invocation, production pin or executable lock. |
+| Operation state | RECONCILED: evidence-only toolchain matrix, 11 blocked rows, five invocation-version observations across rows, two pinned runner-image manifests, one older manifest unavailable (404). Zero verified distribution bytes, production version selections or installable profiles. Read-only source/log review; no new CI needed for evidence-only checkpoint. |
 | Intended files | Evidence-only qa/c5_wheel_metadata/toolchain_provenance_20261125.json and canonical journal/handoff/ledger; preserve product, policy, prior receipts and approvals. |
 | Approval | Eleven restricted approvals consumed/disarmed (six native, five metadata). No additional registry requests, artifacts, installs, native/model, owner device/data or installer authorized. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
 | Pending runs | None for this operation. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Review exact toolchain and distribution provenance gaps (Windows/Linux CPython patch distributions, pip, Node/npm, Rust/Cargo, MSVC/SDK/redist) using pinned source/CI evidence; build a non-installable expected-input matrix and identify exact read-only metadata research or bounded acquisition prerequisites. Preserve 43-node production candidate, 49/49 test candidates and unknown Requires-Python for altgraph/pytz; actual archive bytes, licence/notice clearance, installed graph/native inventory, offline bundler route and safe consumption remain blocked. No live registry/asset acquisition, installer, native/model or owner device authority. |
+| Recovery action | Read-only official release/checksum manifest research for exact candidate CPython Windows 3.11.9 and Linux 3.11.18, Node 22.23.5/npm 10.9.9, Rust/Cargo 1.100.0; do not equate upstream source tarball with hosted binary or select a new production toolchain. Resolve CP311 pip identity and exact Windows MSVC/SDK/redist candidates separately; preserve all null unknowns. Prepare bounded acquisition-only proposals only after independent immutable URL/hash/size/notice evidence. No live registry requests, artifact downloads, installation, native/model, owner device or installer authority. All four profiles BLOCKED. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation

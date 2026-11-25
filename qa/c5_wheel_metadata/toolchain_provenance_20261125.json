@@ -1,0 +1,373 @@
+{
+  "schema_version": 1,
+  "status": "EVIDENCE_ONLY_NOT_INSTALLABLE",
+  "product_source": "8da7f33cb418e453a7b5c250b960fb6370e9e9d0",
+  "review_start": "3d66bb2ce9db140908ba92eb460ef95718302a6b",
+  "policy_blob": "2b3a73865c85972df1cfcee8dce564b15add0d3f",
+  "sources": [
+    {
+      "id": "P4-LINUX",
+      "run_id": 45693703789,
+      "job_id": 139485487826,
+      "image": "ubuntu-24.04",
+      "image_version": "20261122.23.1",
+      "observations": [
+        "Successfully set up CPython (3.11.18)",
+        "node: v22.23.5",
+        "npm: 10.9.9"
+      ],
+      "workflow_blob": "5efb0a46d6a46f82c57a9c5eb2c4affebd701efb"
+    },
+    {
+      "id": "P4-WIN",
+      "run_id": 45693703789,
+      "job_id": 139485488293,
+      "image": "windows-2022",
+      "image_version": "20261116.370.1",
+      "observations": [
+        "Successfully set up CPython (3.11.9)"
+      ],
+      "workflow_blob": "5efb0a46d6a46f82c57a9c5eb2c4affebd701efb"
+    },
+    {
+      "id": "P1-LINUX",
+      "run_id": 45693704390,
+      "job_id": 139485488706,
+      "image": "ubuntu-24.04",
+      "image_version": "20261116.376.1",
+      "observations": [
+        "node: v22.23.5",
+        "npm: 10.9.9"
+      ],
+      "workflow_blob": "6b8548a2bed46f037afc9280afdf8b495305e673"
+    },
+    {
+      "id": "CARGO-PRIOR",
+      "run_id": 45682825147,
+      "job_id": 139447529632,
+      "image": "ubuntu-24.04",
+      "image_version": "20261116.133.1",
+      "observations": [
+        "cargo 1.100.0 (3acc79c0c 2026-11-05)"
+      ],
+      "workflow_blob": "763ef45c080fcca238b877d02646daa502653b48",
+      "image_manifest_status": "404 for logged tag ubuntu24/20261116.133"
+    },
+    {
+      "id": "LINUX-IMAGE",
+      "repository": "actions/runner-images",
+      "tag": "ubuntu24/20261122.23",
+      "commit": "710e8ff2142ab0ff47974681dba1ae59b2ac4982",
+      "path": "images/ubuntu/Ubuntu2404-Readme.md",
+      "blob": "695c232c4d7884d69b6d0c48fc56fffbba7d499a"
+    },
+    {
+      "id": "WIN-IMAGE",
+      "repository": "actions/runner-images",
+      "tag": "win22/20261116.370",
+      "commit": "b47f3f6dc25e42d39230fef67b53c60044baa7f3",
+      "path": "images/windows/Windows2022-Readme.md",
+      "blob": "0d921ef2664620982757dea8975ac61801d8ee38"
+    },
+    {
+      "id": "MSVC-SOURCE",
+      "source": "8da7f33cb418e453a7b5c250b960fb6370e9e9d0",
+      "path": ".github/workflows/p4-r025-g213-msvc-compile-only.yml",
+      "blob": "99ffe983266e0011b0c03872a2a39108a878882d",
+      "scope": "source inspection only; dynamic vswhere/vcvars selection, compile-only, not evidence of exact invocation version"
+    }
+  ],
+  "rows": [
+    {
+      "id": "cpython-windows",
+      "scope": "windows source-test and production candidate",
+      "observed_invocation_version": "3.11.9",
+      "image_declared_candidates": [
+        "3.11.9"
+      ],
+      "evidence": [
+        "P4-WIN",
+        "WIN-IMAGE"
+      ],
+      "production_selected_version": null,
+      "expected_distribution_url": null,
+      "expected_distribution_sha256": null,
+      "expected_distribution_bytes": null,
+      "actual_bytes_verified": false,
+      "license_reviewed": false,
+      "status": "BLOCKED",
+      "required_next_evidence": [
+        "Exact official distribution for target/ABI and patch; hosted cache is not distribution identity",
+        "Independent published SHA256 and size; signature/provenance and notices",
+        "Exact installed interpreter identity and compatible tag set in separately approved environment"
+      ]
+    },
+    {
+      "id": "cpython-linux",
+      "scope": "linux source-test",
+      "observed_invocation_version": "3.11.18",
+      "image_declared_candidates": [
+        "3.11.18"
+      ],
+      "evidence": [
+        "P4-LINUX",
+        "LINUX-IMAGE"
+      ],
+      "production_selected_version": null,
+      "expected_distribution_url": null,
+      "expected_distribution_sha256": null,
+      "expected_distribution_bytes": null,
+      "actual_bytes_verified": false,
+      "license_reviewed": false,
+      "status": "BLOCKED",
+      "required_next_evidence": [
+        "Exact official distribution for target/ABI and patch; hosted cache is not distribution identity",
+        "Independent published SHA256 and size; signature/provenance and notices",
+        "Exact installed interpreter identity and compatible tag set in separately approved environment"
+      ]
+    },
+    {
+      "id": "pip-windows",
+      "scope": "Windows CP311 source-test/production",
+      "observed_invocation_version": null,
+      "image_declared_candidates": [
+        "26.3 (Python 3.12 only, not CP311)"
+      ],
+      "evidence": [
+        "WIN-IMAGE",
+        "P4-WIN"
+      ],
+      "production_selected_version": null,
+      "expected_distribution_url": null,
+      "expected_distribution_sha256": null,
+      "expected_distribution_bytes": null,
+      "actual_bytes_verified": false,
+      "license_reviewed": false,
+      "status": "BLOCKED",
+      "required_next_evidence": [
+        "Exact pip in selected CPython 3.11 environment, not system Python pip",
+        "Pinned official wheel metadata and SHA256/size; bootstrap route and license",
+        "Actual bytes and installed identity"
+      ]
+    },
+    {
+      "id": "pip-linux",
+      "scope": "Linux CP311 source-test",
+      "observed_invocation_version": null,
+      "image_declared_candidates": [
+        "24.0 (image system pip; CP311 binding not established)"
+      ],
+      "evidence": [
+        "LINUX-IMAGE",
+        "P4-LINUX"
+      ],
+      "production_selected_version": null,
+      "expected_distribution_url": null,
+      "expected_distribution_sha256": null,
+      "expected_distribution_bytes": null,
+      "actual_bytes_verified": false,
+      "license_reviewed": false,
+      "status": "BLOCKED",
+      "required_next_evidence": [
+        "Exact pip in selected CPython 3.11 environment, not system Python pip",
+        "Pinned official wheel metadata and SHA256/size; bootstrap route and license",
+        "Actual bytes and installed identity"
+      ]
+    },
+    {
+      "id": "node",
+      "scope": "Linux source-test observed; Windows production/browser-dev unresolved",
+      "observed_invocation_version": "22.23.5",
+      "image_declared_candidates": [
+        "22.23.5 (Linux image)"
+      ],
+      "evidence": [
+        "P4-LINUX",
+        "P1-LINUX",
+        "LINUX-IMAGE"
+      ],
+      "production_selected_version": null,
+      "expected_distribution_url": null,
+      "expected_distribution_sha256": null,
+      "expected_distribution_bytes": null,
+      "actual_bytes_verified": false,
+      "license_reviewed": false,
+      "status": "BLOCKED",
+      "required_next_evidence": [
+        "Official version-specific per-platform Node distribution identity and independently sourced SHA256/size/signature",
+        "Explicit Windows x64 candidate selection and actual bytes; no assumption Linux test identity transfers"
+      ]
+    },
+    {
+      "id": "npm",
+      "scope": "Linux source-test observed; Windows production/browser-dev unresolved",
+      "observed_invocation_version": "10.9.9",
+      "image_declared_candidates": [
+        "10.9.9 (Linux and Windows images)"
+      ],
+      "evidence": [
+        "P4-LINUX",
+        "P1-LINUX",
+        "LINUX-IMAGE",
+        "WIN-IMAGE"
+      ],
+      "production_selected_version": null,
+      "expected_distribution_url": null,
+      "expected_distribution_sha256": null,
+      "expected_distribution_bytes": null,
+      "actual_bytes_verified": false,
+      "license_reviewed": false,
+      "status": "BLOCKED",
+      "required_next_evidence": [
+        "Exact npm distribution and relationship to selected Node bundle or separate npm package",
+        "Integrity, actual bytes and lifecycle/offline cache review"
+      ]
+    },
+    {
+      "id": "rustc",
+      "scope": "Linux source-test and Windows compile-only",
+      "observed_invocation_version": null,
+      "image_declared_candidates": [
+        "1.100.0 (both images)"
+      ],
+      "evidence": [
+        "P4-LINUX",
+        "P4-WIN",
+        "LINUX-IMAGE",
+        "WIN-IMAGE"
+      ],
+      "production_selected_version": null,
+      "expected_distribution_url": null,
+      "expected_distribution_sha256": null,
+      "expected_distribution_bytes": null,
+      "actual_bytes_verified": false,
+      "license_reviewed": false,
+      "status": "BLOCKED",
+      "required_next_evidence": [
+        "Exact rustc -Vv output for selected host/target, components and toolchain manifest checksums",
+        "Windows x86_64-pc-windows-msvc candidate, std, linker, flags and actual verified distribution"
+      ]
+    },
+    {
+      "id": "cargo",
+      "scope": "Linux prior locked metadata-only job",
+      "observed_invocation_version": "1.100.0 (3acc79c0c 2026-11-05)",
+      "image_declared_candidates": [
+        "1.100.0 (both images)"
+      ],
+      "evidence": [
+        "CARGO-PRIOR",
+        "LINUX-IMAGE",
+        "WIN-IMAGE"
+      ],
+      "production_selected_version": null,
+      "expected_distribution_url": null,
+      "expected_distribution_sha256": null,
+      "expected_distribution_bytes": null,
+      "actual_bytes_verified": false,
+      "license_reviewed": false,
+      "status": "BLOCKED",
+      "required_next_evidence": [
+        "Exact Cargo paired with selected rustc toolchain and host/target, distribution manifest/hash",
+        "Actual verified distribution and verified vendored cache"
+      ]
+    },
+    {
+      "id": "msvc",
+      "scope": "Windows production build",
+      "observed_invocation_version": null,
+      "image_declared_candidates": [
+        "VS Enterprise 2022 17.14.37906.3",
+        "Microsoft.VisualStudio.Component.VC.Tools.x86.x64 17.14.36510.44"
+      ],
+      "evidence": [
+        "WIN-IMAGE",
+        "MSVC-SOURCE"
+      ],
+      "production_selected_version": null,
+      "expected_distribution_url": null,
+      "expected_distribution_sha256": null,
+      "expected_distribution_bytes": null,
+      "actual_bytes_verified": false,
+      "license_reviewed": false,
+      "status": "BLOCKED",
+      "required_next_evidence": [
+        "Exact cl/link executable version, VC toolset and build tools component payload/manifest identities",
+        "Independent hashes, redistribution terms and actual bytes; no inference from component version"
+      ]
+    },
+    {
+      "id": "windows-sdk",
+      "scope": "Windows production build",
+      "observed_invocation_version": null,
+      "image_declared_candidates": [
+        "10.0.17763.0",
+        "10.0.19041.0",
+        "10.0.22621.0",
+        "10.0.26100.0"
+      ],
+      "evidence": [
+        "WIN-IMAGE",
+        "MSVC-SOURCE"
+      ],
+      "production_selected_version": null,
+      "expected_distribution_url": null,
+      "expected_distribution_sha256": null,
+      "expected_distribution_bytes": null,
+      "actual_bytes_verified": false,
+      "license_reviewed": false,
+      "status": "BLOCKED",
+      "required_next_evidence": [
+        "Select exact supported SDK; identify headers/libs/tools and host/target",
+        "Vendor distribution manifest/hash and actual bytes; no latest fallback"
+      ]
+    },
+    {
+      "id": "vc-redist",
+      "scope": "Windows production redistributable",
+      "observed_invocation_version": null,
+      "image_declared_candidates": [
+        "x64 14.52.37029 minimum/additional runtime",
+        "x64 14.44.35211 debug runtime (not proposed for distribution)"
+      ],
+      "evidence": [
+        "WIN-IMAGE"
+      ],
+      "production_selected_version": null,
+      "expected_distribution_url": null,
+      "expected_distribution_sha256": null,
+      "expected_distribution_bytes": null,
+      "actual_bytes_verified": false,
+      "license_reviewed": false,
+      "status": "BLOCKED",
+      "required_next_evidence": [
+        "Exact supported distributable runtime and required DLL closure, not debug runtime",
+        "Microsoft signed distribution, independent SHA256/size and redistribution terms; actual extracted files"
+      ]
+    }
+  ],
+  "source_pins": {
+    "npm_lock": "845bc92192a1b77432f4d472c7a056f47ca3a3a7",
+    "cargo_lock": "f635ba1f8257266c242429e2b44ae94b039329b9",
+    "cargo_manifest": "e18d6854da5d48022766103b4e2ada4b036dd0ba"
+  },
+  "constraints": {
+    "historical_devqa_python": "3.12.3, distinct from CP311 candidate; not migrated",
+    "tauri_cli": "2.12.4 locked npm dependency; not a verified toolchain distribution",
+    "nsis": "3.13 and nsis_tauri_utils 0.5.3 source candidates only",
+    "webview2": "offlineInstaller remote HEAD unresolved",
+    "production_graph": "43 candidate nodes; 87,904,549 expected wheel bytes",
+    "source_test_union": "62 distinct wheels; 222,779,129 expected bytes",
+    "unique_wheel_union": "68 distinct wheels; 225,699,980 expected bytes"
+  },
+  "next_evidence_sequence": [
+    "Read-only official version-specific distribution manifests/checksum research for CPython, Node and Rust; distinguish source tarball vs binary and hosted runner bundle",
+    "Resolve CP311 pip and supported Windows SDK/MSVC/redist identities without assuming image software was invoked",
+    "Prepare exact per-artifact proposal only after immutable identity/hash/size/notice prerequisites; separate fresh approval for bytes",
+    "Review actual wheel archives, license/notice inventory and safe consumption only under approved scope"
+  ],
+  "actual_distributions_verified": 0,
+  "live_registry_requests": 0,
+  "artifact_downloads": 0,
+  "installable_profiles": 0
+}
