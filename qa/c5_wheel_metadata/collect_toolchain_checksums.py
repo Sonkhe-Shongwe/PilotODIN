@@ -203,20 +203,39 @@ def collect(parser,docs,connection,record,capability=None):
     return result
 
 def verify_receipt(parser,docs,records):
-    # Independent reconstruction of completed bodies; request evidence retained
-    # for any partial operation. Query-bearing URLs are never serialized.
+    # Independently reconstruct all complete response bodies, including a
+    # refused parse. Validate ordered request/document identity and stop state.
     need(records and records[-1]["kind"]=="RESULT","RESULT")
     reqs={}; buffers={}; verified={}; known={d["id"]:d for d in docs}
+    order=list(known); current=0
+    terminal=records[-1]["record"]
+    need(terminal["fixture"] is True or terminal["fixture"] is False,"RECEIPT_FIXTURE")
     for w in records[:-1]:
         k,r=w["kind"],w["record"]; name=r["id"]
-        need(name in known,"RECEIPT_SCOPE")
+        need(name in known and current<len(order) and name==order[current],"RECEIPT_SCOPE")
         if k=="REQUEST":
-            key=(name,r["hop"])
-            need(key not in reqs and r["hop"] in (0,1),"RECEIPT_REQUEST")
+            key=(name,r["hop"]); d=known[name]
+            need(set(r)=={"id","hop","host","status","bytes","sha256","complete","fixture"}
+                 and key not in reqs and type(r["hop"]) is int and r["hop"] in (0,1)
+                 and type(r["bytes"]) is int and 0<=r["bytes"]<=d["max_bytes"]
+                 and HEX.fullmatch(r["sha256"]) and r["fixture"] is terminal["fixture"]
+                 and type(r["complete"]) is bool and name not in buffers,"RECEIPT_REQUEST")
+            if r["hop"]==0:
+                need(r["host"]==url_parts(d["url"]).netloc,"RECEIPT_ORIGIN")
+            else:
+                prev=reqs.get((name,0),{})
+                need(name in {"python-windows","python-linux"}
+                    and prev.get("status") in (301,302,303,307,308) and prev.get("complete") is True
+                    and r["host"] in {"release-assets.githubusercontent.com","objects.githubusercontent.com"},"RECEIPT_REDIRECT")
+            if r["status"]!=200:
+                need(r["bytes"]==0 and r["sha256"]==digest(b""),"RECEIPT_NONBODY")
             reqs[key]=r
         elif k=="BYTES":
             old=buffers.get(name,"")
-            need(name not in verified and r["offset"]==len(old) and 0<len(r["base64"])<=8192,"RECEIPT_CHUNK")
+            rr=reqs.get((name,1),reqs.get((name,0),{}))
+            need(rr.get("status")==200 and rr.get("complete") is True
+                 and name not in verified and r["offset"]==len(old)
+                 and type(r["base64"]) is str and 0<len(r["base64"])<=8192,"RECEIPT_CHUNK")
             buffers[name]=old+r["base64"]
             need(len(buffers[name])<=4*((known[name]["max_bytes"]+2)//3),"RECEIPT_CAP")
         elif k=="VERIFIED":
@@ -225,13 +244,24 @@ def verify_receipt(parser,docs,records):
             rr=reqs.get((name,1),reqs.get((name,0),{}))
             need(rr.get("complete") is True and rr.get("status")==200 and len(raw)==r["bytes"]==rr["bytes"]
                  and digest(raw)==r["sha256"]==rr["sha256"] and parser(known[name],raw)==r["published"],"RECEIPT_BODY")
-            verified[name]=r
+            verified[name]=r; current+=1
         else: raise Refused("RECEIPT_KIND")
-    result=records[-1]["record"]
+    # A complete response is always preserved, even if its parser refused.
+    complete_bodies={name for (name,_),r in reqs.items() if r["status"]==200 and r["complete"]}
+    need(set(buffers)==complete_bodies,"RECEIPT_BODY_COVERAGE")
+    for name,b64 in buffers.items():
+        raw=base64.b64decode(b64,validate=True)
+        rr=reqs.get((name,1),reqs.get((name,0),{}))
+        need(len(raw)==rr["bytes"] and digest(raw)==rr["sha256"],"RECEIPT_RAW_HASH")
+    result=terminal
     need(result["requests"]==len(reqs)<=6 and result["response_bytes"]==sum(r["bytes"] for r in reqs.values())<=TOTAL
-         and result["verified"]==list(verified) and result["artifact_requests"]==0,"RECEIPT_TOTAL")
+         and result["verified"]==list(verified) and result["missing"]==order[current:]
+         and result["artifact_requests"]==0,"RECEIPT_TOTAL")
     if result["status"]=="METADATA_ONLY_COMPLETE":
-        need(set(verified)==set(known) and not result["missing"] and result["failure"] is None,"RECEIPT_COMPLETE")
+        need(current==len(order) and result["failure"] is None,"RECEIPT_COMPLETE")
+    else:
+        need(result["status"]=="BLOCKED" and current<len(order) and type(result["failure"]) is str
+            and bool(result["failure"]),"RECEIPT_BLOCKED")
     return result
 
 def wire(body=b"",status="200 OK",headers=(),length=True):
@@ -284,6 +314,16 @@ def self_test():
     check("sig=fixture" not in str(rec) and "rscd=" not in str(rec),"REDACTION")
     bad=copy.deepcopy(rec);next(x for x in bad if x["kind"]=="BYTES")["record"]["offset"]=1
     refuse(lambda:verify_receipt(m.parse_document,ds,bad),"RECEIPT_CHUNK")
+    for key,value,reason in [("host","example.invalid","RECEIPT_ORIGIN"),
+                             ("fixture",False,"RECEIPT_REQUEST"),
+                             ("bytes",10000000,"RECEIPT_REQUEST")]:
+        bad=copy.deepcopy(rec)
+        next(x for x in bad if x["kind"]=="REQUEST")["record"][key]=value
+        refuse(lambda:verify_receipt(m.parse_document,ds,bad),reason)
+    bad=copy.deepcopy(rec)
+    bad[-1]["record"]["missing"]=["rust"]
+    refuse(lambda:verify_receipt(m.parse_document,ds,bad),"RECEIPT_TOTAL")
+
     for loc,reason in [(redirs[0].replace("https:","http:"),"URL_ORIGIN"),
           (redirs[0].replace("release-assets.githubusercontent.com","example.invalid"),"URL_ORIGIN"),
           (redirs[0].replace("250077933","123"),"REDIRECT_ASSET_PATH"),
@@ -304,8 +344,12 @@ def self_test():
         (wire(b"x",headers=(("Content-Type","text/plain"),("Content-Length",str(ds[0]["exact_bytes"]))),length=False),"INCOMPLETE_BODY")]:
         r,_,req=run({**responses,redirs[0]:reply})
         check(r["failure"]==reason and len(req)==2 and not r["verified"],"TRANSPORT_"+reason)
-    r,_,req=run({**responses,redirs[0]:wire(b"x"*ds[0]["exact_bytes"],headers=(("Content-Type","text/plain"),))})
+    r,partial,req=run({**responses,redirs[0]:wire(b"x"*ds[0]["exact_bytes"],headers=(("Content-Type","text/plain"),))})
     check(r["status"]=="BLOCKED" and len(req)==2 and r["failure"]=="DOCUMENT_OR_TRANSPORT_REFUSED","DIGEST")
+    check(verify_receipt(m.parse_document,ds,partial)==r,"REFUSED_BODY_RECEIPT")
+    bad=copy.deepcopy(partial)
+    next(x for x in bad if x["kind"]=="BYTES")["record"]["base64"]="AAAA"
+    refuse(lambda:verify_receipt(m.parse_document,ds,bad),"RECEIPT_RAW_HASH")
     if not LIVE_ENABLED: refuse(authorize,"FRESH_APPROVAL_REQUIRED")
     else:
         old=os.environ.pop("C5_APPROVED_ONCE",None)
