@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | ffe6e58b1a99c1e37971ef8a71ec380d652b02b3 |
-| Product baseline | B8 deadline 5db2032 exact P1/P4 SUCCESS; final worker/test compatibility review. |
+| Observed starting HEAD | d111c6030c922132b8b8a7e7666098a3ef44a7db |
+| Product baseline | B8 final review 1eb5e13 exact P1/P4 SUCCESS (222 focused cases); Batch C frontend begins. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
-| Operation ID | C4-B8-WORKER-REGRESSION-INTEGRITY-20261125 |
-| Operation state | RECONCILED; final B8 review source published at [1eb5e13](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/1eb5e1346632640479f3d5037329399bfafd9250), prepared at 182d9d5; exact CI outstanding. |
-| Intended files | backend/ai_provider.py, tests/test_c4_cloud_intent.py, five historical AI test modules (multi_ai, hybrid_local_ai, v05_release, v06_experience, v08_intelligence), existing P1 isolated backend test selection and canonical records. No schema, approval or activation change. |
+| Operation ID | C4-C1-FRONTEND-SETTINGS-STATUS-20261125 |
+| Operation state | PREPARED; frontend source not yet issued. |
+| Intended files | frontend/src/AIWorkspace.tsx, frontend/src/App.tsx, new cloudConsentSession.ts, frontend/tests/desktop-ai-boundaries.test.cjs and canonical records. No backend/schema/workflow changes. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Prior deadline exact P1/P4 SUCCESS. New worker-fault handling, seven inert cases and 34 historical selected nodes (35 parametrized cases) published; exact verification pending. All previous failures retained. |
-| Pending runs | [P1 Isolated Backend Source Recovery #45662038134](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45662038134) IN_PROGRESS; [P4 Target Review Queue and Transparent Ranking #45662038463](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45662038463) IN_PROGRESS |
+| Verification | Exact 1eb5e13 P1 222 focused cases and downstream SUCCESS; P4 1086 backend/6 skipped/552 subtests, Windows 68/133 subtests, browser 13, Node 133/Vite SUCCESS. |
+| Pending runs | None from 1eb5e13. Expected existing P1 frontend, P2 export draft safety and P4 routine source CI; inspect actual matched runs. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Reconcile exact 1eb5e13 P1/P4 terminal jobs and logs, specifically expanded historical C4 cases and fixed worker fault handling. Correct only evidenced defects; if green, complete B8 source review and proceed to C4 frontend disclosure/explicit intent/status/cache. Deadline is caller transport wait, not guaranteed physical socket/DNS cancellation. OpenRouter project sharing stays held. No score increment. |
+| Recovery action | Separate saved settings from draft; block stale/uncertain or in-progress edits and tests, remove automatic connection test after key save; explicit Test Connection sends fixed intent only after fresh saved permission check, disclose fixed handshake. Passive App badge from saved status; shared renderer generation invalidates status on mutations and tests. Project-data intent remains disabled until panel disclosure/cache/stale fences and cross-window review. Verify exact CI before next batch. |
 | Resume after closure | C5 then D with separately approved scope. |
 
 ## Prior operation
