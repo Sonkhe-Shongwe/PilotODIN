@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | ac01ce9ff5cb3f2c4f425feecc707051d2415532; write-ahead d4070f6fa2f04a091852ebbc922b3dd19f745565; confirmed published product/QA d5036773d7c3fea6f79280524ac25b2e0a8fc5ac. |
-| Product baseline | d5036773d7c3fea6f79280524ac25b2e0a8fc5ac (new source, P1 frontend/P3 HTTP PASS; P1 HTTP/P4 pending); last verified browser/product d8ea85a010c446f6426bfaaa0c5877d69f1f7372 and trigger-only 0d56daec7cf8c02e8f6bf11e7a3819a906968632. C1/C2 exact earlier scopes unchanged. |
+| Observed starting HEAD | 2e07cf0a748a426f2b861b0ac2fe8d337d35bca0 |
+| Product baseline | d5036773d7c3fea6f79280524ac25b2e0a8fc5ac; all four exact routine workflows SUCCESS. |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
-| Operation ID | C3-LOCAL-DEVQA-REPORT-CHAIN-AUTH-20261125-source |
-| Operation state | RECONCILED |
-| Intended files | First bounded local DevQA migration: backend/request_auth.py, backend/server_entry.py, frontend/scripts/live-dev-api-proxy.mjs, frontend/src/api.ts, frontend/src/p2NativeLiveReport.tsx, tools/Verify_P2_DevQA_Native_Chain_Local.ps1, tests/test_owned_server.py, frontend/tests/p1-playwright-pilot-contract.test.cjs; canonical journal transition. Source commit identified by prepared parent d4070f6 and operation ID. Preserve allocated dynamic port, seed/digest checks, isolated workspace, native Save As behavior; private launcher capability and same-origin Vite proxy, no client-visible token. Other local/hosted native callers and direct in-process adapter remain subsequent C3 work. |
+| Operation ID | C3-LOCAL-DEVQA-FIXED-PORT-AUTH-20261125-source |
+| Operation state | PREPARED |
+| Intended files | backend/request_auth.py, backend/server_entry.py, frontend/scripts/live-dev-api-proxy.mjs, frontend/src/api.ts, three native QA pages, four existing local DevQA PowerShell launchers, P3 W5 probe, scoped Python/Node source tests and canonical records. Bind four exact phase names to 5177/5178 and fixed backend 8000, use private capability and no proxy/redirect for readiness/probe, keep all QA mutation budgets and IPC restrictions. No new listener or native execution. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | New source publication and nine-file diff verified. Exact P1 frontend #45560998685 SUCCESS (source contracts, TypeScript/Vite, seven browser cases); P3 HTTP #45560998671 SUCCESS (compiled backend, synthetic real HTTP/browser). P4 Linux workspace lease and focused backend suites passed as steps, job not terminal. Managed P2 chain has private launcher capability, exact 5176 proxy/dynamic port, authenticated direct HTTP, no redirect/proxy, preserved report hash comparison and synthetic allocation. Added pure config and source/ASGI fixture tests; actual native QA not run. Prior exact d8ea85a P4 #45540644826, frontend #45540644808 and 0d56dae P1 real HTTP #45540715891 SUCCESS unchanged. |
-| Pending runs | Exact d503677: P1 real HTTP #45560998645 and P4 #45560999140 IN_PROGRESS. P1 frontend #45560998685 and P3 HTTP #45560998671 terminal SUCCESS. No restricted dispatch; six prior approvals consumed/disarmed; P4 ETW guard false. |
+| Verification | Prior exact d503677 P1 frontend #45560998685, P3 HTTP #45560998671, P1 HTTP #45560998645 job 139024433573 all four acceptance steps SUCCESS, P4 #45560999140 source 139024432962, browser 139024433248 and Windows synthetic 139024432539 SUCCESS; restricted 139024433877 SKIPPED. New batch not yet published. |
+| Pending runs | None for prior source; expected new routine P1/P3 HTTP, P1 frontend, P4 synthetic, P2 source preflight/export, P3 semantic source/parser. No restricted trigger files changed. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Reconcile the two remaining exact d503677 CI runs, including job scope and any failure, before publishing overlapping source changes that could cancel them. Continue remaining four local DevQA launchers (P2 consent/two-window 5177; P3 semantic/W5 5178, fixed backend 8000), P3 W5 direct probe and native page request restrictions; same-origin W5 static GET/HEAD must exclude /api/ before its existing restricted API checks; map A4/hosted P4/N12 startup/direct HTTP callers (including bare backend.main:app), explicit in-process adapter and bare no-secret removal; complete C3 route/direct-call matrix, disposable negatives and exact CI. No native launch, activation or new approval; C4 remains deferred. |
+| Recovery action | Inspect live branch and exact operation ID before repeating; publish non-force expected HEAD only after actual workflow scope review. Migrate the four fixed-port launchers and W5 probe, preserve P2 read-only, P3 two-save, W5 one-proposal/one-commit and stale POST rejection; reconcile exact CI. Hosted native/A4 and explicit in-process adapter plus fallback removal remain C3 work. C4 deferred. |
 | Resume after closure | C4, C5 in order; D separately approved. |
 
 ## Prior operation
