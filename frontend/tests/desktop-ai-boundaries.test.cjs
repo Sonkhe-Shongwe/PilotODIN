@@ -184,7 +184,7 @@ function loadInsightFence(){
  const source=fs.readFileSync(path.join(__dirname,'../src/insightRequestFence.ts'),'utf8');
  const output=ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2021,module:ts.ModuleKind.CommonJS}}).outputText;
  const mod={exports:{}};
- new Function('module','exports','window',output)(mod,mod.exports,browserWindow);
+ new Function('module','exports',output)(mod,mod.exports);
  return mod.exports.createInsightRequestFence;
 }
 test('C2 request fence refuses synchronous duplicate and keeps ownership until actual settlement',async()=>{
@@ -474,7 +474,7 @@ function loadCloudConsentSession(browserWindow){
  const source=fs.readFileSync(path.join(__dirname,'../src/cloudConsentSession.ts'),'utf8');
  const output=ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2021,module:ts.ModuleKind.CommonJS}}).outputText;
  const mod={exports:{}};
- new Function('module','exports',output)(mod,mod.exports);
+ new Function('module','exports','window',output)(mod,mod.exports,browserWindow);
  return mod.exports;
 }
 test('C4 settings operations synchronously invalidate stale status and keep exact ownership',()=>{
