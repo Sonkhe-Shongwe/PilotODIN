@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | VERIFYING |
+| State | READY |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 5404001d7571c5c2718ae3ecf35a4293cdb73b9e; prepared 69aa0b965e6761a6d370352bbdb8a245c275c9d9; published d53651b0923840d10af7e5189122bec52028d262 |
-| Product baseline | b74f0fa exact P1 SUCCESS; c901eb7 native smoke source; d53651b corrective source assertion only. |
+| Product baseline | b74f0fa exact P1 SUCCESS; c901eb7 native smoke exact P4 SUCCESS; d53651b corrective exact P1 SUCCESS. |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
 | Operation ID | C3-NATIVE-SMOKE-SOURCE-ASSERTION-20261125-fix |
 | Operation state | RECONCILED |
 | Intended files | frontend/tests/p1-playwright-pilot-contract.test.cjs: update stale A4-only error-text source assertion to exact new fail-closed smoke error and preserve all relay/header checks; no product edit. Journal. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Original c901eb7 P1 #45588860686 job 139117423330 FAILURE, stale source assertion #70 expecting old A4-only error string; no behavioral failure established. Exact corrective diff two files (one source assertion, journal) verified; all existing relay/header requirements retained, no product change. Corrective P1 [#45589119957](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45589119957) in_progress; job 139118322808: in_progress. Original product P4 [#45588860715](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45588860715) in_progress. No native app, inference or installer execution. |
-| Pending runs | Corrective P1 [#45589119957](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45589119957) in_progress; job 139118322808: in_progress. Original product P4 [#45588860715](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45588860715) in_progress. |
+| Verification | Corrective d53651b P1 #45589119957 job 139118322808 terminal SUCCESS (202 Node, seven Chromium, TypeScript/Vite); original c901eb7 P4 #45588860715 terminal SUCCESS (139117423358 Linux 1061 Python, six skipped, one warning, 552 subtests, 127 Node, 15 standalone Rust; 139117423774 13 Chromium; 139117423965 Windows 68 and 133 subtests, five model-free answers PASS; restricted collector 139117427002 SKIPPED). Original P1 #45588860686 stale assertion FAILURE retained. Status audit reconfirmed bare main authorization fallback, frontend default port, explicit intercepted fixture gap, direct bundled verifier redirect risk, C4 legacy settings/cloud and C5 range inputs. No product changes. |
+| Pending runs | None; both terminal SUCCESS. Restricted collector SKIPPED. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Reconcile exact corrective P1 and original P4 terminal results before new source. Next explicit 5187 synthetic browser fixture bootstrap and frontend default-port removal, backend fail-closed guard, remaining direct caller/credential matrix and direct inference verifier source review. No activation. |
+| Recovery action | Next explicit 5187 synthetic browser fixture bootstrap and frontend default-port removal; review direct inference verifier transport and classify remaining callers, then bare main fail-closed authorization and route/caller closure matrix. C4/C5 in order, G2 method resolution and D fresh approvals. No activation. |
 | Resume after closure | C4, C5 in order; D separately approved. |
 
 ## Prior operation
