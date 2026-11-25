@@ -18,7 +18,7 @@ from fastapi import BackgroundTasks, FastAPI, File, HTTPException, UploadFile, Q
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from fastapi.exception_handlers import request_validation_exception_handler
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, StrictBool
 
 try:
     from .request_auth import request_authorized
@@ -34,7 +34,7 @@ except ImportError:
 
 @asynccontextmanager
 async def _lifespan(_app:FastAPI):
-    """Start responsive: verify configured cloud providers in background only after consent."""
+    """Recover local durable records without automatic provider requests."""
     # FastAPI BackgroundTasks do not survive a backend restart. Explicitly
     # fail orphaned ML records before admitting new work; never auto-retrain.
     interrupted=dataset_publication.recover_pending()
@@ -49,21 +49,7 @@ async def _lifespan(_app:FastAPI):
     recovered=storage.recover_interrupted_experiments()
     if recovered:
         logging.warning("Marked %s unfinished ML experiment(s) failed after backend restart",recovered)
-    checks=[]
-    # The owned application explicitly disables background provider probes.
-    # The old app retains legacy behavior until its C4 migration.
-    try:
-        cfg={} if getattr(_app.state,"owned_resource_session",False) else ai_provider.config_status()
-        if cfg.get('cloud_enabled') and cfg.get('share_aggregates'):
-            for provider in cfg['providers']:
-                if provider['connected']:
-                    ai_provider._health[provider['id']]={'status':'checking'}
-                    checks.append(asyncio.create_task(asyncio.to_thread(ai_provider.test_connection,provider['id'])))
-    except (OSError,ValueError):
-        pass  # Local analysis must start even with corrupt optional AI configuration.
     yield
-    for job in checks:
-        if not job.done():job.cancel()
 
 app = FastAPI(title="PilotODIN", version="0.8.0",description="Local-first intelligent analytics workspace",lifespan=_lifespan)
 app.add_middleware(SettingsRequestGuard)
@@ -1112,8 +1098,14 @@ class AIInsightRequest(BaseModel):
     prediction: dict | None = None
     deep: bool = False
     selected_provider: str | None = None
+    cloud_intent: StrictBool = False
     continuation_text: str | None = Field(default=None, max_length=16000)
     local_follow_up: LocalAnalysisFollowUp | None = None
+
+
+class AIConnectionRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True)
+    cloud_intent: StrictBool = False
 
 
 def _local_request(request:Request):
@@ -1252,7 +1244,11 @@ def ai_insight(project_id:str,body:AIInsightRequest,request:Request):
             local=(f"Inspected {plan['local_report']['missing_rows']} missing values in {plan['column']}. "
                    f"Compared the available numeric and categorical groups; see the verified investigation below. "
                    "No treatment has been applied. Observed associations do not prove the missingness mechanism.")
-        result=ai_provider.respond(context,body.context,question,local,body.deep,body.selected_provider,body.continuation_text)
+        result=ai_provider.respond(context,body.context,question,local,body.deep,body.selected_provider,body.continuation_text,
+                                   cloud_intent=body.cloud_intent,
+                                   still_current=lambda:quality.current_version(project_id)==version)
+        if result.get('source')=='cloud_llm' and quality.current_version(project_id)!=version:
+            raise HTTPException(status_code=409,detail='Insight became stale; request a new result')
         if body.context == 'assistant' and result.get('fallback') and plan is None and not body.continuation_text:
             verified = verified_answers.answer(df, version, project_id, question)
             if verified['analysis'] is not None:
@@ -1279,21 +1275,19 @@ def local_ai_status(request:Request):
 
 @app.post('/api/ai/verify-connected')
 def verify_ai_providers(request:Request):
-    """Bounded health check for opt-in configured providers, never dataset rows."""
+    """Passive cached status, never an external request."""
     _local_request(request)
-    if request.scope.get('pilotodin.owned_session') is not None:
-        return ai_provider.owned_provider_status()
-    return ai_provider.verify_connected()
+    return ai_provider.owned_provider_status()
 
 
 @app.post('/api/ai/test/{provider}')
-def test_ai_provider(provider:str,request:Request):
+def test_ai_provider(provider:str,request:Request,body:AIConnectionRequest|None=None):
     _local_request(request)
-    try:
-        if request.scope.get('pilotodin.owned_session') is not None:
-            return ai_provider.owned_test_connection(provider)
-        return ai_provider.test_connection(provider)
-    except ValueError as exc:raise HTTPException(status_code=422,detail=str(exc)) from exc
+    if provider not in ai_provider.PROVIDERS:
+        raise HTTPException(status_code=422,detail='Unknown AI provider')
+    if body is None or body.cloud_intent is not True:
+        return {'provider':provider,'status':'explicit_intent_required'}
+    return ai_provider.owned_test_connection(provider)
 
 @app.get('/api/projects/{project_id}/live-profile')
 def live_profile(project_id:str):
@@ -1555,7 +1549,8 @@ def _owned_ai_insight(project_id, body, owned):
             payload = bounded_context_bytes({
                 "project_id":project_id,"dataset_version":version,"context":context,
                 "task":body.context,"question":question,"local":local,"deep":body.deep,
-                "selected_provider":body.selected_provider,"continuation_text":body.continuation_text})
+                "selected_provider":body.selected_provider,"cloud_intent":body.cloud_intent,
+                "continuation_text":body.continuation_text})
             # Roundtrip caps the retained evidence as well as the host context.
             tail = json.loads(bounded_context_bytes({
                 "fallback":fallback,"investigation":plan['local_report'] if plan else None,

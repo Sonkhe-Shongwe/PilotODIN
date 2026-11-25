@@ -385,14 +385,16 @@ class CloudEvaluationPrivacyTests(unittest.TestCase):
         self.enterContext(patch.object(ai_provider, '_get_key', return_value='generated-test-key'))
         self.enterContext(patch.object(ai_provider, '_cooldowns', {}))
         self.enterContext(patch.object(ai_provider, '_health', {}))
-        self.transport = self.enterContext(patch.object(ai_provider.urllib.request, 'urlopen'))
+        self.opener = self.enterContext(patch.object(ai_provider.urllib.request, 'build_opener'))
+        self.transport = self.opener.return_value.open
         self.transport.return_value.__enter__.return_value.read.return_value = (
             b'{"candidates":[{"content":{"parts":[{"text":"Generated explanation."}]},"finishReason":"STOP"}]}'
         )
 
     def insight(self, context='evaluate', provider='gemini', **kwargs):
         response = self.client.post(f'/api/projects/{self.project_id}/ai/insight', json={
-            'context': context, 'experiment_id': self.experiment_id, 'selected_provider': provider, **kwargs,
+            'context': context, 'experiment_id': self.experiment_id, 'selected_provider': provider,
+            'cloud_intent': True, **kwargs,
         })
         self.assertEqual(response.status_code, 200, response.text)
         return response.json()
@@ -407,7 +409,7 @@ class CloudEvaluationPrivacyTests(unittest.TestCase):
     def sent_context(self):
         return self.sent_prompt()['verified_context']
 
-    def test_wide_prompt_keeps_question_metrics_and_continuation_in_valid_json(self):
+    def test_wide_prompt_keeps_question_and_metrics_without_cloud_continuation(self):
         build = ai_context.build
         columns = [{'name': f'{index:02d} ' + 'é"\\' * 32, 'kind': 'numeric',
                     'missing_count': 0, 'missing_pct': 0.0, 'unique_count': 4,
@@ -421,8 +423,11 @@ class CloudEvaluationPrivacyTests(unittest.TestCase):
         continuation = '\u0001\\\n' * 1800 + 'Dernière phrase.'
         prediction = {'prediction': 'PRIVATE_PREDICTION'}
         with patch.object(ai_context, 'build', side_effect=wide_context):
-            result = self.insight('predict', question=question, continuation_text=continuation,
-                                  prediction=prediction)
+            refused = self.insight('predict', question=question, continuation_text=continuation,
+                                   prediction=prediction)
+            self.assertEqual(refused['source'], 'local_computed_rules')
+            self.transport.assert_not_called()
+            result = self.insight('predict', question=question, prediction=prediction)
         self.assertEqual(result['source'], 'cloud_llm')
         prompt = self.sent_prompt()
         self.assertEqual((prompt['task'], prompt['question']), ('predict', question))
@@ -433,9 +438,8 @@ class CloudEvaluationPrivacyTests(unittest.TestCase):
         self.assertTrue(context['columns'])
         self.assertEqual(context['columns'], columns[:len(context['columns'])])
         self.assertEqual(prompt['omitted_context_items']['columns'], 50 - len(context['columns']))
-        tail = prompt['continuation']['previous_answer_tail']
-        self.assertTrue(tail.endswith('Dernière phrase.') and continuation.endswith(tail))
-        self.assertEqual(prompt['continuation']['instruction'], 'Continue without repeating earlier text.')
+        self.assertNotIn('continuation', prompt)
+        self.assertNotIn('Dernière phrase.', json.dumps(prompt))
         self.assertNotIn('prediction', context)
         for private in ('PRIVATE_PREDICTION', 'HELDOUT_ACTUAL_SENTINEL', 'PRIVATE_CLASS_SENTINEL'):
             self.assertNotIn(private, json.dumps(prompt))
@@ -479,9 +483,11 @@ class CloudEvaluationPrivacyTests(unittest.TestCase):
 
     def test_saved_evaluation_only_sends_approved_aggregates(self):
         continuation = 'A short previous answer with "quotes" and an accent, é.'
-        self.assertEqual(self.insight(continuation_text=continuation)['source'], 'cloud_llm')
+        self.assertEqual(self.insight(continuation_text=continuation)['source'], 'local_computed_rules')
+        self.transport.assert_not_called()
+        self.assertEqual(self.insight()['source'], 'cloud_llm')
         prompt = self.sent_prompt()
-        self.assertEqual(prompt['continuation']['previous_answer_tail'], continuation)
+        self.assertNotIn('continuation', prompt)
         self.assertNotIn('omitted_context_items', prompt)
         experiment = prompt['verified_context']['experiment']
         self.assertNotIn('evaluation_rows', experiment['metrics'])
@@ -499,7 +505,7 @@ class CloudEvaluationPrivacyTests(unittest.TestCase):
                    'verified_investigation': {'column': '\\' * 6000, 'missing_rows': 1}}
         with patch.object(ai_provider, '_get_key') as provider_key:
             result = ai_provider.respond(context, 'assistant', 'Count missing values', 'One value is missing.',
-                                         selected_provider='gemini')
+                                         selected_provider='gemini', cloud_intent=True)
         self.assertEqual(result['source'], 'local_computed_rules')
         self.assertEqual(result['answer'], 'One value is missing.')
         self.assertIn('exceeds the provider prompt limit', result['reason'])
@@ -517,17 +523,14 @@ class CloudEvaluationPrivacyTests(unittest.TestCase):
         self.assertIn('PRIVATE_PREDICTION', result['answer'])
         self.transport.assert_not_called()
 
-    def test_hybrid_fallback_sends_the_same_aggregate_context(self):
-        self.insight()
-        explicit_context = self.sent_context()
-        self.transport.reset_mock()
+    def test_hybrid_local_failure_never_sends_cloud_context(self):
         self.settings.update(intelligence_mode='hybrid', local_model_enabled=True)
         with patch.object(resource_policy, 'admit_new_work', return_value={'decision': 'allow'}), \
                 patch.object(ai_provider, '_call_ollama', side_effect=TimeoutError) as local_model:
             result = self.insight(provider='auto')
         local_model.assert_called_once()
-        self.assertEqual((result['source'], result['local_status']), ('cloud_llm', 'timeout'))
-        self.assertEqual(self.sent_context(), explicit_context)
+        self.assertEqual((result['source'], result['local_status']), ('local_computed_rules', 'timeout'))
+        self.transport.assert_not_called()
 
     def test_consent_and_local_mode_still_gate_cloud_transport(self):
         for mode, consent, provider in (('cloud', False, 'gemini'), ('local', True, 'gemini'),

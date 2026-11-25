@@ -6,7 +6,6 @@ All transformations, statistics and model predictions remain local and verified.
 from __future__ import annotations
 
 import base64
-from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 import ctypes
 from itertools import zip_longest
@@ -400,9 +399,11 @@ SYSTEM = ("You are ODIN, an evidence-grounded data science adviser. Use ONLY the
 
 
 def _resolve_provider(cfg:dict, task:str, selected_provider:str|None)->str:
-    selected = (selected_provider or cfg.get('workspace_preferences', {}).get(task)
-                or cfg.get('preferred_provider', 'auto'))
-    return selected if selected in (*PROVIDERS, 'auto', 'local', 'ollama') else 'auto'
+    if selected_provider is not None:
+        return selected_provider if selected_provider in (*PROVIDERS, 'auto', 'local', 'ollama') else 'local'
+    # Remembered preferences are not a current request to send data.
+    saved = cfg.get('workspace_preferences', {}).get(task) or cfg.get('preferred_provider', 'auto')
+    return saved if saved in ('auto', 'local', 'ollama') else 'auto'
 
 
 def offline_inference_enabled()->bool:
@@ -412,7 +413,9 @@ def offline_inference_enabled()->bool:
 def insight_bundled_launch_skip(task:str, selected_provider:str|None)->str|None:
     """Return a reason when this insight cannot use the bundled worker."""
     cfg = _read_config()
-    if _resolve_provider(cfg, task, selected_provider) == 'local':
+    selected = _resolve_provider(cfg, task, selected_provider)
+    if selected == 'local' or selected in PROVIDERS or (
+            selected != 'ollama' and cfg.get('intelligence_mode') == 'cloud'):
         return 'rules_only'
     if not cfg.get('local_model_enabled', True):
         return 'local_model_disabled'
@@ -499,8 +502,9 @@ def _encode_insight_prompt(context: dict, task: str, question: str, continuation
 
 
 def respond(context:dict,task:str,question:str,local_answer:str,deep:bool=False,selected_provider:str|None=None,
-            continuation_text:str|None=None)->dict:
-    """Local-first hybrid. Cloud use is always gated by explicit saved consent."""
+            continuation_text:str|None=None, *, cloud_intent:bool=False,
+            still_current=lambda:True)->dict:
+    """One common cloud boundary; Auto is local and saved preferences cannot dispatch."""
     cfg=_read_config()
     mode=cfg.get('intelligence_mode','hybrid')
     selected=_resolve_provider(cfg,task,selected_provider)
@@ -508,9 +512,15 @@ def respond(context:dict,task:str,question:str,local_answer:str,deep:bool=False,
     if selected=='local':
         fallback['reason']='Deterministic local analysis selected'
         return fallback
-    cloud_allowed=bool(cfg['cloud_enabled'] and cfg['share_aggregates'])
-    explicit_cloud=selected in PROVIDERS
-    prefer_local=selected=='ollama' or mode=='local' or (selected=='auto' and mode=='hybrid')
+    if selected in PROVIDERS:
+        if cloud_intent is not True:
+            fallback['reason']='Explicit cloud request required; verified deterministic analysis used'
+            return fallback
+        return owned_cloud_insight(context,task,question,local_answer,deep,selected,
+                                   continuation_text,still_current=still_current)
+    if selected != 'ollama' and mode == 'cloud':
+        fallback['reason']='Select a cloud provider explicitly or choose local intelligence'
+        return fallback
     local_failed='not_requested'
 
     def local_failure_code(exc: Exception) -> str:
@@ -571,131 +581,28 @@ def respond(context:dict,task:str,question:str,local_answer:str,deep:bool=False,
             local_failed=local_failure_code(exc)
             return None
 
-    if prefer_local:
-        local_result=local_try()
-        if local_result:return local_result
+    local_result=local_try()
+    if local_result:
+        return local_result
     fallback['local_status']=local_failed
-    # An explicit local-only model choice must NEVER fall back to cloud.
-    if selected=='ollama' or mode=='local':
-        fallback['reason']=('Low-memory mode deferred local AI; verified deterministic analysis used'
-                            if local_failed=='resource_limited' else
-                            f'Local model did not generate an answer ({local_failed}); verified deterministic analysis used')
-        return fallback
-    if not cloud_allowed:
-        if not prefer_local and cfg.get('local_model_enabled',True):
-            local_result=local_try()
-            if local_result:return local_result
-            fallback['local_status']=local_failed
-        fallback['reason']=('Low-memory mode deferred local AI; verified deterministic analysis used'
-                            if local_failed=='resource_limited' else
-                            f'Local model did not generate an answer ({local_failed}); verified deterministic analysis used'
-                            if local_failed not in ('not_requested','disabled') else
-                            'Cloud disabled or consent not granted; verified deterministic analysis used')
-        return fallback
-
-    cloud_context = {key: value for key, value in context.items() if key != 'prediction'}
-    user = _encode_insight_prompt(cloud_context, task, question, continuation_text, limit=CLOUD_PROMPT_LIMIT)
-    if user is None:
-        fallback['reason'] = 'Verified context exceeds the provider prompt limit; deterministic analysis used'
-        return fallback
-    system=SYSTEM
-    if task == 'predict':
-        system += '\nExplain the model and limitations using aggregate evidence. The individual prediction is available locally.'
-    order=list(cfg['provider_order'])
-    if explicit_cloud:order=[selected]+[p for p in order if p!=selected]
-    attempted=[]
-    for provider in order:
-        key=_get_key(provider)
-        if not key:continue
-        if _cooldowns.get(provider,0)>time.monotonic():
-            attempted.append({'provider':provider,'status':'cooldown'});continue
-        model=MODELS[provider]['deep' if deep else 'routine']
-        try:
-            try:
-                answer=_call_provider(provider,model,system,user,key,cfg['timeout_seconds'])
-            except urllib.error.HTTPError as initial:
-                alternate='gemini-2.5-flash-lite' if not deep else 'gemini-3.1-flash-lite'
-                if provider=='gemini' and initial.code in (502,503,504) and model!=alternate:
-                    attempted.append({'provider':provider,'model':model,'status':f'http_{initial.code}_retry_alternate'})
-                    model=alternate
-                    answer=_call_provider(provider,model,system,user,key,cfg['timeout_seconds'])
-                else:raise
-            if not isinstance(answer,str) or not answer.strip():raise ValueError('Empty provider response')
-            _health[provider]={'status':'connected','model':model,
-                  'tested_at_utc':__import__('datetime').datetime.now(__import__('datetime').timezone.utc).isoformat()}
-            return {'answer':str(answer),'source':'cloud_llm','provider':provider,'model':model,
-                    'fallback':False,'reason':None,'attempts':attempted,'intelligence_mode':mode,
-                    'local_status':local_failed,'incomplete':bool(getattr(answer,'incomplete',False)),
-                    'finish_reason':getattr(answer,'finish_reason','unknown')}
-        except urllib.error.HTTPError as exc:
-            status=exc.code
-            _cooldowns[provider]=time.monotonic()+(600 if status in (401,403) else 60 if status in (429,500,502,503,504) else 20)
-            attempted.append({'provider':provider,'status':f'http_{status}'})
-            _health[provider]={'status':'rate_limited' if status==429 else 'authentication_failed' if status in (401,403) else 'unavailable','http_status':status}
-        except Exception:
-            _cooldowns[provider]=time.monotonic()+30
-            attempted.append({'provider':provider,'status':'unavailable'})
-            _health[provider]={'status':'unavailable'}
-    if not prefer_local and cfg.get('local_model_enabled',True):
-        local_result=local_try()
-        if local_result:
-            local_result['attempts']=attempted
-            return local_result
-    fallback['attempts']=attempted
-    fallback['local_status']=local_failed
-    fallback['reason']=f'Configured AI models unavailable; deterministic local analysis used (local model: {local_failed})'
+    fallback['reason']=('Low-memory mode deferred local AI; verified deterministic analysis used'
+                        if local_failed=='resource_limited' else
+                        f'Local model did not generate an answer ({local_failed}); verified deterministic analysis used')
     return fallback
 
 
 def test_connection(provider:str)->dict:
-    """Actual minimal provider handshake. No dataset metadata, never returns a key."""
-    if provider not in PROVIDERS:raise ValueError('Unknown AI provider')
-    key=_get_key(provider)
-    if not key:
-        result={'status':'not_configured','provider':provider}
-        _health[provider]=result
-        return result
-    started=time.monotonic()
-    model=MODELS[provider]['routine']
-    try:
-        answer=_call_provider(provider,model,'You are testing an API connection. Reply READY.','Say READY',key,30)
-        if not answer.strip():raise ValueError('No output')
-        result={'provider':provider,'status':'connected','model':model,'latency_ms':round((time.monotonic()-started)*1000),
-                'tested_at_utc':__import__('datetime').datetime.now(__import__('datetime').timezone.utc).isoformat()}
-    except urllib.error.HTTPError as exc:
-        code=exc.code
-        result={'provider':provider,'status':'authentication_failed' if code in (401,403) else 'rate_limited' if code==429 else 'unavailable',
-                'http_status':code,'message':('Model temporarily overloaded (HTTP 503)' if code==503 else 'Rate limited (HTTP 429)' if code==429 else 'Invalid or unauthorized API key' if code in (401,403) else f'Provider returned HTTP {code}')}
-    except Exception:
-        result={'provider':provider,'status':'unavailable','message':'Provider did not respond. Check model access, network and timeout.'}
-    _health[provider]=result
-    if result['status']=='connected':_cooldowns.pop(provider,None)
-    return result
+    """Compatibility entrypoint for an explicit test; same saved consent boundary."""
+    return owned_test_connection(provider)
 
 
 def verify_connected(background_cache_seconds:int=900)->dict:
-    """Opt-in background startup check, one bounded probe per connected provider.
-
-    Does not send project context, files, or rows. Existing success statuses are
-    reused for 15 minutes to avoid wasting free API quotas on navigation.
-    """
-    global _last_background_check
-    cfg=_read_config()
-    if not (cfg['cloud_enabled'] and cfg['share_aggregates']):
-        return {'status':'disabled','providers':[]}
-    with _lock:
-        if _last_background_check and time.monotonic()-_last_background_check<background_cache_seconds:
-            return {'status':'cached','providers':[{'provider':p,**_health.get(p,{'status':'unverified'})} for p in PROVIDERS if _get_key(p)]}
-        _last_background_check=time.monotonic()
-    connected=[p for p in PROVIDERS if _get_key(p)]
-    if not connected:return {'status':'no_providers','providers':[]}
-    with ThreadPoolExecutor(max_workers=min(3,len(connected))) as pool:
-        results=list(pool.map(test_connection,connected))
-    return {'status':'checked','providers':results}
+    """Compatibility entrypoint: passive only, never a background probe."""
+    return owned_provider_status()
 
 
-# The owned desktop path deliberately does not call the legacy respond()
-# router. Saved settings permit egress; only the explicit request chooses it.
+# Shared by the legacy and owned compositions. Saved consent is permission,
+# not a command to dispatch; HTTP admission separately requires current intent.
 def _owned_consent(provider):
     if provider not in PROVIDERS:
         return None
@@ -726,36 +633,48 @@ def owned_cloud_insight(context,task,question,local_answer,deep,selected_provide
     already submitted cannot be recalled by a later revocation.
     """
     fallback=local_rules_result(local_answer,reason="Explicit cloud consent or provider unavailable")
-    consent=_owned_consent(selected_provider)
-    if consent is None or not still_current():
+    if selected_provider not in PROVIDERS:
         return fallback
-    # Never send the individual prediction or previous generated text (which
-    # may contain copied rows, predictions or sensitive details).
+    # The router may select a downstream model/provider dynamically. Until
+    # that disclosure is implemented, only the explicit minimal test is allowed.
+    if selected_provider == "openrouter":
+        fallback["reason"]="OpenRouter project sharing requires downstream destination disclosure"
+        return fallback
+    if continuation_text:
+        fallback["reason"]="Cloud continuation requires a new explicit question; previous answer was not sent"
+        return fallback
+    def current():
+        try:
+            return still_current() is True
+        except Exception:
+            return False
+    if not current():
+        return fallback
+    # Positive nested payload projection follows in B; retain the existing
+    # bounded prompt and individual prediction exclusion at this step.
     cloud_context={k:v for k,v in context.items() if k!="prediction"}
     user=_encode_insight_prompt(cloud_context,task,question,None,limit=CLOUD_PROMPT_LIMIT)
     if user is None or len(user.encode("utf-8"))>CLOUD_PROMPT_LIMIT:
-        fallback["reason"]="Verified context exceeds cloud prompt limit"
+        fallback["reason"]="Verified context exceeds the provider prompt limit"
         return fallback
     provider=selected_provider
     model=MODELS[provider]["deep" if deep else "routine"]
     system=SYSTEM
     if task=="predict":
         system+="\nExplain aggregate model evidence only; individual prediction remains local."
-    if continuation_text:
-        fallback["reason"]="Cloud continuation requires a new explicit question; previous answer was not sent"
-        return fallback
-    if not still_current() or _owned_consent(provider)!=consent:
+    consent=_owned_consent(provider)
+    if consent is None or not current() or _owned_consent(provider)!=consent:
         return fallback
     try:
         answer=_call_provider(provider,model,system,user,consent[2],consent[1],strict=True,
-                              still_authorized=lambda:still_current() and _owned_consent(provider)==consent)
+                              still_authorized=lambda:current() and _owned_consent(provider)==consent)
         if not isinstance(answer,str) or not answer.strip():
             raise ValueError("Empty provider response")
     except Exception:
         fallback["reason"]="Selected cloud provider unavailable; verified deterministic analysis used"
         fallback["attempts"]=[{"provider":provider,"status":"unavailable"}]
         return fallback
-    if not still_current() or _owned_consent(provider)!=consent:
+    if not current() or _owned_consent(provider)!=consent:
         fallback["reason"]="Cloud consent or context changed; response discarded"
         return fallback
     return {"answer":str(answer),"source":"cloud_llm","provider":provider,"model":model,

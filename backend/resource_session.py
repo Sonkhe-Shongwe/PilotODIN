@@ -251,14 +251,19 @@ def compose_owned_desktop(bootstrap, build_server):
     def insight(payload):
         value = json.loads(payload)
         fallback = ai_provider.local_rules_result(value["local"])
-        if value["selected_provider"] in ai_provider.PROVIDERS:
+        cfg = ai_provider._read_config()
+        selected = ai_provider._resolve_provider(cfg,value["task"],value["selected_provider"])
+        if selected in ai_provider.PROVIDERS:
+            if value.get("cloud_intent") is not True:
+                fallback["reason"]="Explicit cloud request required; verified deterministic analysis used"
+                return fallback
             return ai_provider.owned_cloud_insight(
                 value["context"],value["task"],value["question"],value["local"],
                 value["deep"],value["selected_provider"],value["continuation_text"],
                 still_current=lambda: (
                     not session.coordinator.status()["stopping"]
                     and main.quality.current_version(value["project_id"])==value["dataset_version"]))
-        if value["selected_provider"] == "local":
+        if selected == "local":
             fallback["reason"] = "Deterministic local analysis selected"
             return fallback
         prompt = ai_provider._encode_insight_prompt(value["context"],value["task"],
@@ -267,12 +272,12 @@ def compose_owned_desktop(bootstrap, build_server):
         if prompt is None:
             fallback["reason"] = "Verified context exceeds local prompt limit"
             return fallback
-        cfg = ai_provider._read_config()
-        selected=value["selected_provider"]
-        # Saved provider preferences alone do not authorize egress. Auto is
-        # local-only; cloud-only mode without explicit destination defers.
-        if selected not in (None,"ollama","auto") or (
-                selected!="ollama" and cfg.get("intelligence_mode")=="cloud"):
+        # Auto is local-only. Cloud-only without an explicit destination defers.
+        if selected!="ollama" and cfg.get("intelligence_mode")=="cloud":
+            fallback["reason"]="Select a cloud provider explicitly or choose local intelligence"
+            return fallback
+        if not cfg.get("local_model_enabled", True):
+            fallback["local_status"]="disabled"
             return fallback
         try:
             text,incomplete,reason = generate(ai_provider.SYSTEM,prompt,cfg["local_timeout_seconds"])

@@ -243,7 +243,7 @@ def test_owned_cloud_requires_exact_consent(owned_cloud,field,value):
     assert ai.owned_cloud_insight({},"assistant","Question","Rules",False,"gemini")["fallback"]
     assert calls==[]
 
-@pytest.mark.parametrize("selected",["gemini","groq","openrouter"])
+@pytest.mark.parametrize("selected",["gemini","groq"])
 def test_owned_cloud_selected_destination_only_and_prediction_omitted(owned_cloud,selected):
     ai,cfg,calls=owned_cloud
     result=ai.owned_cloud_insight({"row_count":3,"prediction":{"outcome":"private"}},
@@ -251,6 +251,12 @@ def test_owned_cloud_selected_destination_only_and_prediction_omitted(owned_clou
     assert result["provider"]==selected and not result["fallback"]
     assert len(calls)==1 and calls[0][0]==selected
     assert calls[0][1]["verified_context"]=={"row_count":3}
+
+def test_owned_openrouter_project_context_waits_for_disclosure(owned_cloud):
+    ai,cfg,calls=owned_cloud
+    result=ai.owned_cloud_insight({"row_count":3},"assistant","Question","Rules",False,"openrouter")
+    assert result["fallback"] and "disclosure" in result["reason"] and calls==[]
+
 
 def test_owned_cloud_provider_failure_never_fans_out(owned_cloud,monkeypatch):
     ai,cfg,calls=owned_cloud
