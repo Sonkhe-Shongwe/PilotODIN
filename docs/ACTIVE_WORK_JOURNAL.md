@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | d629840949c3f907b0fe84377d94aa3bc395d90d |
-| Product baseline | Exact 898230f116266e064f6925c03d538c8e3b863f7e, matching P4 CI SUCCESS; C5 open. |
+| Observed starting HEAD | 57db2621433cd781b09b854d30d96028adb97822 |
+| Product baseline | Last fully verified 898230f; 40d0e13 guard batch published, P4 Linux/Windows failed on removed SHA256 compatibility helper. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
-| Operation ID | C5-SIDECAR-ASSET-GUARDS-20261125 |
-| Operation state | RECONCILED publication at 40d0e13aca6d89f1e958513ab177f9bd5d4e9dc7; exact CI observed IN_PROGRESS. No restricted dispatch. |
-| Intended files | desktop/Build_Python_Sidecar.ps1, Stage_Pinned_Offline_AI.ps1, Stage_Bundled_Inference.ps1, verify_inference_assets.py; tools/build_input_preflight.py; C5 tests and existing bundle preflight tests, P4 synthetic workflow, canonical documentation. No lock or native markers. |
+| Operation ID | C5-ASSET-HASH-COMPATIBILITY-20261125 |
+| Operation state | PREPARED; restore read-only sha256 import compatibility without weakening blocked production verifier; direct regression test. |
+| Intended files | desktop/verify_inference_assets.py, tests/test_c5_build_input_preflight.py, canonical documentation only. No lock, workflow, approval or native marker changes. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Exact 898230f: P4 #45683594044 SUCCESS, source 139450216568 (1139 Python/6 skipped/1 warning/552 subtests, 15 Rust, 160 Node/Vite), HTTP 139450217118 (13 passed), Windows 139450216876 (52 C5/1 skipped, parser, 68/133 subtests), collector 139450218819 skipped. |
-| Pending runs | P4 #45684550154 IN_PROGRESS; source 139453570467, Windows 139453569167, HTTP 139453569971, restricted collector 139453571653 skipped. Reconcile exact outcomes before further changes. |
+| Verification | Exact 40d0e13 P4 #45684550154: source job 139453570467 FAILURE (two collection errors); Windows 139453569167 FAILURE after 78 C5 passed/1 skipped and 3 bundle preflight passes; shared cause missing sha256 export imported by offline_analytics_cases.py. HTTP 139453569971 still running at observation; collector skipped. |
+| Pending runs | Prior exact HTTP job 139453569971 still in progress at observation. P4 concurrency may cancel it on correction; record outcome without rerun. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Reconcile exact CI at 40d0e13aca6d89f1e958513ab177f9bd5d4e9dc7. Three legacy mutation routes now refuse; candidate bundle read-only identity checks are not a production authorization or complete safe archive/staging pipeline. Continue exact metadata-only collection from observed 49+49 wheel selections; establish complete graph/marker/license/toolchain/patch provenance and independent runtime member inventory. Plan separate narrow approval only if acquisition essential. No downloads/build/native execution. |
+| Recovery action | Restore compatibility with read-only bounded-memory SHA256 function; ensure production verify continues unconditional BLOCKED. Review matching source workflow. Continue metadata research only, no artifact acquisition. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
