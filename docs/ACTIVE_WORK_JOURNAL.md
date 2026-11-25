@@ -7,22 +7,24 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | c07502ef7965152377ca3f1ac503b8c04400b302 |
-| Product baseline | Latest product ebd01f4 verified P1/P3/P4; hosted fixture correction c329e0d226384bb0046accaea0c2d89f88ee1322 published; product code unchanged; exact verification pending. |
+| Observed starting HEAD | dc64b687d178724306820c1cae0ff79383de102d |
+| Product baseline | ebd01f4 verified product; c329e0d hosted child confinement five exact routine workflows SUCCESS. |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
-| Operation ID | C3-HOSTED-CHILD-ENV-CONFINEMENT-20261125 |
-| Operation state | RECONCILED (hosted fixture source publication verified at c329e0d226384bb0046accaea0c2d89f88ee1322; exact CI pending) |
-| Intended files | frontend/e2e/hosted-http-config.ts; four playwright.p1/p2/p3/p4-real-http.config.ts; p1-real-http.spec.ts, p1-real-http-export.spec.ts, p2-real-http-guided-report-persistence.spec.ts, p4-real-http-review-queue.spec.ts; frontend/tests/p1-playwright-pilot-contract.test.cjs; canonical journal, handoff and ledger. No native/approval or production change. |
+| Operation ID | C3-HISTORICAL-QA-EARLY-REFUSAL-20261125 |
+| Operation state | PREPARED (early unconditional refusal for already unsupported native overlays; identify publication by parent and marker) |
+| Intended files | tools/Run_P2_Native_Deliver_Consent_Local.ps1; tools/Run_P2_Native_Two_Window_Local.ps1; tools/Run_P3_Native_Quality_W5_QA_Local.ps1; tools/Run_P3_Native_Semantic_QA_Local.ps1; tools/Verify_P2_DevQA_Native_Chain_Local.ps1; frontend/tests/p1-playwright-pilot-contract.test.cjs; journal, handoff, ledger. Preserve historical bodies; no workflow/native permission change. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Prior frontend exact P1/P3/P4 terminal SUCCESS including four new tests. Hosted fixture Chromium default launchOptions and persistent context now use explicit ordinary runtime environment; three auxiliary Python calls use ordinary runtime and exact CI allocation witness only. Trusted coordinator, Vite and owned Uvicorn retain private capability. Two inert Node contract tests registered in existing P1 isolated frontend suite. Exact five routine workflows pending. Historical five native QA launchers still require disposition, do not run or rearm. C3 open. |
-| Pending runs | Exact `c329e0d`: [45612959275](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45612959275) P2 Real HTTP Saved Revision Comparison IN_PROGRESS; [45612959316](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45612959316) P3 Real HTTP Semantic Context Browser Acceptance IN_PROGRESS; [45612959284](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45612959284) P1 Disposable Real HTTP Browser/Backend Acceptance IN_PROGRESS; [45612958254](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45612958254) P4 Target Review Queue and Transparent Ranking IN_PROGRESS; [45612958408](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45612958408) P1 Isolated Frontend Verification IN_PROGRESS. Reconcile all terminal jobs. |
+| Verification | Exact c329e0d five routine workflows terminal SUCCESS (205 Node + 7 isolated Chromium; P1 HTTP 6, P2 HTTP 7, P3 HTTP 3, P4 HTTP 13, P4 1086 Python/133 Node/68 Windows synthetic; collector skipped). Native plan rejects the five overlay arguments regardless of opt-in and rejects private serving inputs; their earlier setup/build inherited capabilities and could allocate/write before refusal. Add unconditional early throw immediately after ErrorActionPreference, before any filesystem/process/env side effects. Preserve old body, independent synthetic seed/probe and tests; future separate source-pinned design and approval required, do not rearm. Source-only tests assert exact refusal position. Exact workflow definitions unchanged from full 85 trigger review, matching P1 frontend, P2 native source/preflight and report export safety, P3 semantic source/parser reviewed. No native run. |
+| Pending runs | None; hosted correction terminal SUCCESS. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Resolve exact source/run identities, reconcile terminal CI; finish remaining credential candidate dispositions, historical QA confinement and C-D05 closure matrix. No native permission or score credit. |
+| Recovery action | Publish narrow early refusal and verify exact four routine workflow results; final credential candidate matrix and C-D05 review remain open. Do not claim native compatibility for unavailable historical overlays. |
 | Resume after closure | C4, C5 in order; D separately approved. |
 
 ## Prior operation
+
+C3-HOSTED-CHILD-ENV-CONFINEMENT-20261125: [c329e0d](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/c329e0d226384bb0046accaea0c2d89f88ee1322), exact P1 frontend #45612958408, P1 HTTP #45612959284, P2 HTTP #45612959275, P3 HTTP #45612959316, P4 #45612958254 SUCCESS; restricted collector SKIPPED. Prior journal [dc64b68](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/dc64b687d178724306820c1cae0ff79383de102d).
 
 C3-FRONTEND-REDIRECT-CONFINEMENT-20261125: [ebd01f4](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/ebd01f45c5c2040835586628f23ab5702184d0b4), exact P1 #45612039338, P3 #45612039463, P4 #45612039246 SUCCESS; prior journal [c07502e](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/c07502ef7965152377ca3f1ac503b8c04400b302).
 
