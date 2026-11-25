@@ -7,14 +7,14 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | PAUSED at verified checkpoint (owner requested stop) |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | c6ffd7939c12aeedc093cb4565506b6a2e260701 |
-| Product baseline | C4 C2 panel controls fb97119 exact P1/P4 SUCCESS. |
+| Observed starting HEAD | 59eebb1b788628392069c53f0c3b2e9232b9b1f6 |
+| Product baseline | C4 C3 server witness 77de1c5 exact eight routine CI SUCCESS; independently reconciled live Actions API. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
-| Operation ID | C4-C3-SERVER-CONSENT-WITNESS-20261125 |
-| Operation state | RECONCILED; C3 server witness source 77de1c5, prepared a9d83b6, all eight exact routine CI workflows SUCCESS. No next implementation issued. |
-| Intended files | backend/ai_provider.py, backend/main.py, tests/test_c4_cloud_intent.py and canonical records only. No new route, persistent schema, workflow or activation. |
+| Operation ID | C4-C3-FRONTEND-WITNESS-FENCE-20261125 |
+| Operation state | PREPARED; frontend witness and cross-window invalidation source not issued. Project cloud send remains held. |
+| Intended files | frontend/src/cloudConsentSession.ts, frontend/src/AIWorkspace.tsx, frontend/tests/desktop-ai-boundaries.test.cjs and canonical records only; settings handshake freshness and cross-renderer invalidation first. No project cloud dispatch, route, schema, workflow or activation. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | Exact 77de1c5: P1 236 focused cases and downstream SUCCESS; P4 1086 Python passed/6 skipped/552 subtests, 15 Rust storage, 139 Node/Vite, Windows 68/133 subtests, browser 13 SUCCESS. All eight workflows passed, restricted collector skipped. |
 | Pending runs | None from 77de1c5. |
