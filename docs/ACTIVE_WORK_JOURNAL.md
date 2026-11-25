@@ -7,14 +7,14 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | READY |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | ce5e3bd2ffd3376b5eae25df43cb868af481ea54 |
+| Observed starting HEAD | cded2e0f346a643b9ff9c6b5b6f755787f8a3975 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
-| Operation ID | C5-INPUT-VERIFICATION-PROPOSALS-20261125 |
-| Operation state | RECONCILED: exact fcc1902, run 45708074853 job 139535067907 SUCCESS, 26 offline checks and explicit --collect refusal. Two pinned disabled plans: 4 checksum documents (6-request maximum incl. 2 permitted redirects, 5 MiB body cap) and 68 exact wheel identities/225699980 bytes. No transport/archive inspector implemented, no live requests, no artifacts. |
-| Intended files | Isolated qa/c5_wheel_metadata input verification plans/reviewer, dedicated offline workflow, canonical records; preserve product, policy, collectors, locks and receipts. |
+| Operation ID | C5-CHECKSUM-TRANSPORT-REVIEW-20261125 |
+| Operation state | PREPARED: disabled checksum-only HTTPS transport, exact document pins, scoped redirect, bounded raw receipts, offline wire fixtures. No live approval or request. |
+| Intended files | Isolated qa/c5_wheel_metadata/collect_toolchain_checksums.py and dedicated offline workflow; no product or prior receipt changes. Archive inspector remains independent. |
 | Approval | Eleven restricted approvals consumed/disarmed (six native, five metadata). No additional registry requests, artifacts, installs, native/model, owner device/data or installer authorized. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
 | Pending runs | None for this operation. |
