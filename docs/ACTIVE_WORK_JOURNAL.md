@@ -7,14 +7,14 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | READY |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 5ccf217105c548ee76b1211c7031e4a85eefc079 |
+| Observed starting HEAD | 9f75ee9436ff7d49fc74fb9fc6bc2815d6a1ba5e |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
-| Operation ID | C5-TOOLCHAIN-PROVENANCE-MATRIX-20261125 |
-| Operation state | RECONCILED: evidence-only toolchain matrix, 11 blocked rows, five invocation-version observations across rows, two pinned runner-image manifests, one older manifest unavailable (404). Zero verified distribution bytes, production version selections or installable profiles. Read-only source/log review; no new CI needed for evidence-only checkpoint. |
-| Intended files | Evidence-only qa/c5_wheel_metadata/toolchain_provenance_20261125.json and canonical journal/handoff/ledger; preserve product, policy, prior receipts and approvals. |
+| Operation ID | C5-TOOLCHAIN-RELEASE-METADATA-20261125 |
+| Operation state | PREPARED: read-only official release/source/checksum metadata review; record immutable published candidates and preserve unavailable hashes, signature and actual byte gaps. No artifact acquisition or tool invocation. |
+| Intended files | Evidence-only qa/c5_wheel_metadata/toolchain_release_metadata_20261125.json and canonical journal/handoff/ledger; no product, policy, lock or workflow changes. |
 | Approval | Eleven restricted approvals consumed/disarmed (six native, five metadata). No additional registry requests, artifacts, installs, native/model, owner device/data or installer authorized. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
 | Pending runs | None for this operation. |
