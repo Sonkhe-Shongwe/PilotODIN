@@ -98,3 +98,49 @@ test('A4 Vite HMR never watches Cargo DLLs while native Rust compiles',()=>{
  const ignoreSection=vite.slice(vite.indexOf('ignored:'));
  assert.doesNotMatch(ignoreSection,/\*\*\/src\/\*\*/);
 });
+
+// Execute the actual bootstrap with injected Vite environment and inert API/IPC.
+test('C3 native smoke refuses unpaired or foreign origins before any API or IPC', async()=>{
+  const ts=require('typescript');
+  const source=read('src/desktopBootstrap.ts').replaceAll('import.meta.env','testEnv');
+  const output=ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2021,module:ts.ModuleKind.CommonJS}}).outputText;
+  function load(origin,env,desktop=true){
+    const events=[];
+    const mod={exports:{}};
+    const api={
+      configureDevelopmentAPI:value=>events.push(['development',value]),
+      configureDesktopAPI:value=>events.push(['desktop',value]),
+      get:async path=>{events.push(['health',path]);return {status:'ok'};}
+    };
+    const connection={port:18042,token:'a'.repeat(64)};
+    const invoke=async command=>{events.push(['ipc',command]);return connection;};
+    const win={location:{origin},...(desktop?{__TAURI_INTERNALS__:{}}:{})};
+    new Function('require','module','exports','window','testEnv',output)(
+      name=>name==='./api'?api:{invoke},mod,mod.exports,win,env);
+    return {start:mod.exports.startDesktopBackend,events,connection};
+  }
+  const smoke={DEV:true,VITE_PILOTODIN_NATIVE_SMOKE:'1'};
+  for(const [origin,env] of [
+    ['http://127.0.0.1:5173',smoke],
+    ['http://127.0.0.1:5174',smoke],
+    ['http://127.0.0.1:5174',{...smoke,VITE_PILOTODIN_AUTH_DEV:'0'}],
+    ['http://127.0.0.1:5178',{...smoke,VITE_PILOTODIN_AUTH_DEV:'1'}],
+    ['http://localhost:5173',{...smoke,VITE_PILOTODIN_AUTH_DEV:'1'}],
+    ['https://foreign.invalid',{...smoke,VITE_PILOTODIN_AUTH_DEV:'1'}],
+  ]){
+    const {start,events}=load(origin,env);
+    await assert.rejects(start(),/authenticated isolated Live Dev frontdoor/);
+    assert.deepEqual(events,[]);
+  }
+  for(const origin of ['http://127.0.0.1:5173','http://127.0.0.1:5174']){
+    const {start,events}=load(origin,{...smoke,VITE_PILOTODIN_AUTH_DEV:'1'});
+    await start();
+    assert.deepEqual(events,[['development',origin],['health','/health']]);
+  }
+  const normal=load('http://tauri.localhost',{...smoke,DEV:false});
+  await normal.start();
+  assert.deepEqual(normal.events,[['ipc','launch_backend'],['desktop',normal.connection],['health','/health']]);
+  const browser=load('http://127.0.0.1:5173',smoke,false);
+  await browser.start();
+  assert.deepEqual(browser.events,[]);
+});

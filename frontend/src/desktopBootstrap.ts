@@ -19,16 +19,11 @@ export async function startDesktopBackend(): Promise<void> {
     // A4 uses the existing paired Live Dev frontdoor through its isolated
     // Vite relay. Other explicitly migrated native QA uses the paired proxy.
     // Never spawn a bundled sidecar for a native smoke page.
-    if (window.location.origin === 'http://127.0.0.1:5174' ||
-        import.meta.env.VITE_PILOTODIN_AUTH_DEV === '1') {
-      if (import.meta.env.VITE_PILOTODIN_AUTH_DEV !== '1') {
-        throw new Error('A4 requires the authenticated Live Dev relay.');
-      }
-      configureDevelopmentAPI(window.location.origin);
-    } else {
-      // Remaining hosted native smoke callers are migrated separately in C3.
-      return;
+    if (import.meta.env.VITE_PILOTODIN_AUTH_DEV !== '1' ||
+        !['http://127.0.0.1:5174', 'http://127.0.0.1:5173'].includes(window.location.origin)) {
+      throw new Error('Native smoke requires its authenticated isolated Live Dev frontdoor.');
     }
+    configureDevelopmentAPI(window.location.origin);
   } else {
     const connection = await invoke<DesktopConnection>('launch_backend');
     configureDesktopAPI(connection);

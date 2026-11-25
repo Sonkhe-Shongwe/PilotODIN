@@ -62,6 +62,9 @@ export function nativeDevPlan(args, env, read) {
       throw new Error("A4 requires its separate authenticated relay without inherited serving credentials.");
   } else if (env.PILOTODIN_A4_RELAY !== undefined) {
     throw new Error("A4 relay cannot use the P4 overlay.");
+  } else if (!hosted && (env.VITE_PILOTODIN_NATIVE_SMOKE !== undefined ||
+                         env.VITE_PILOTODIN_AUTH_DEV !== undefined)) {
+    throw new Error("Native smoke requires the authenticated A4 or hosted frontdoor.");
   }
   const production = read("src-tauri/tauri.conf.json");
   const qa = read("src-tauri/tauri.p4-native-qa.conf.json");

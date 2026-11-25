@@ -85,6 +85,11 @@ test("fixed native launch plan selects A4 only with exact relay and existing sep
     {PILOTODIN_HOME:"foreign"},{PILOTODIN_DEV_CAPABILITY:"private"},{PILOTODIN_HOSTED_NATIVE_AUTH:"1"}])
     assert.throws(() => nativeDevPlan(["--config",a4], {...relay,...change}, read), /separate authenticated relay|private serving configuration|fixed P4 launch/);
   assert.throws(() => nativeDevPlan([], relay, read), /A4 relay cannot use the P4 overlay/);
+  for(const markers of [{VITE_PILOTODIN_NATIVE_SMOKE:"1"},{VITE_PILOTODIN_AUTH_DEV:"1"},
+    {VITE_PILOTODIN_NATIVE_SMOKE:"1",VITE_PILOTODIN_AUTH_DEV:"1"}]){
+    assert.throws(()=>nativeDevPlan([], {...consent,...markers},()=>{throw Error("unexpected config read");}),
+      /Native smoke requires the authenticated A4 or hosted frontdoor/);
+  }
   assert.throws(() => nativeDevPlan([], {...consent,TAURI_CONFIG:"{}"},read), /Inherited Tauri configuration/);
   for (const mutate of [
     config => {config.identifier = prod.identifier;},
