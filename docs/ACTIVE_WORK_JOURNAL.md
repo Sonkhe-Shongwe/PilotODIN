@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 8dd2528ec12dca047c602e30bba14f3f201a1cca |
-| Product baseline | C4 source closed at verified product 76e9d0f; C5 not implemented. |
+| Observed starting HEAD | 06f0772883b7ed5db6f78c8de2800c211660f273 |
+| Product baseline | First C5 guard batch 0d91a071fcf07c564ed493a940015146f654b73e, all three matched CI completed SUCCESS; C5 remains open. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
-| Operation ID | C5-GUARD-BATCH-20261125 |
-| Operation state | RECONCILED publication at 0d91a071fcf07c564ed493a940015146f654b73e; exact CI outstanding. No restricted dispatch. |
-| Intended files | Installer/frontend PS1, Self_Test.bat, tools/live_dev.py, stdlib frontend lock guard, dedicated C5 synthetic tests, legacy frontend and Cargo metadata workflows, P4 synthetic workflow and Live Dev guide. Preserve both lock files and native markers. |
+| Operation ID | C5-PROFILE-CONTRACT-20261125 |
+| Operation state | PREPARED; Cargo guard correction and blocked exact profile contract, read-only wheel identity validation and direct synthetic tests. No source publication yet. |
+| Intended files | Cargo metadata workflow, contracts/build_inputs_v1.schema.json, contracts/build_input_policy_v1.json, tools/build_input_preflight.py, existing C5 Python tests, P4 synthetic workflow; canonical documentation. No locks, approvals or native markers changed. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Exact desktop gate `76e9d0fb5f7a060ca0a89a937b8a21eb64e4b062`: P1 #45673926641 SUCCESS (206 Node, TypeScript/Vite, 11/11 Chromium; job 139416287673); P3 #45673926651 SUCCESS (3 real HTTP browser; job 139416288188); P4 #45673926563 SUCCESS (1086 Python, 6 skipped, 552 subtests, 15 Rust, 146 Node/Vite including all three new confirmed POST regressions; job 139416288324; 13 HTTP browser job 139416288348; 68 Windows/133 subtests and five simulated scenarios job 139416287756; restricted collector 139416289955 skipped). C-D06/07 matrix in C ledger. |
-| Pending runs | P1 #45681663586 SUCCESS, P4 #45681663537 IN_PROGRESS (source 139443496808; HTTP 139443497477; Windows 139443497531; restricted collector 139443499656 skipped); Cargo metadata #45681663542 SUCCESS, job 139443496671. Reconcile exact outcomes before further source changes. |
+| Verification | Exact 0d91a07: P1 #45681663586 success (206 Node, TS/Vite, 11 browser); Cargo #45681663542 success (457 packages, no lock drift); P4 #45681663537 success (1100 Python/6 skipped/552 subtests, 15 Rust, 160 Node/Vite, 13 HTTP browser, Windows 14 C5 tests, PowerShell parser, 68/133 subtests and 5 simulated scenarios; restricted collector skipped). |
+| Pending runs | None at exact 0d91a07, three completed successes. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Reconcile exact guard-batch CI at 0d91a071fcf07c564ed493a940015146f654b73e, inspect test logs, preserve failures. Next narrow correction: separate Cargo shell file/link tests (avoid bash AND-list errexit exception) and explicit manifest path; then complete lock/profile provenance design and asset/sidecar guards. No acquisition or build. |
+| Recovery action | Publish narrow Cargo guard correction plus strict blocked profile policy and wheel inventory identity primitive. No executable fake locks, no downloads; future graph/marker and toolchain/license review required. Verify expected HEAD and matching workflow scope. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
