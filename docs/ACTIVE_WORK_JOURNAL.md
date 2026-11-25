@@ -13,13 +13,13 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Product baseline | B6 support refinement 0aafb61, test correction 7e3df06; exact P1 45655159516 SUCCESS; prior exact P4 45636512838 SUCCESS. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
 | Operation ID | C4-B7-COMMON-BOUNDARY-20261125 |
-| Operation state | ISSUED; reconcile source by parent 1462025 and operation ID, do not replay |
+| Operation state | RECONCILED; source published at [350d764](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/350d76460fc9b846d2f78f00db27c0c1e0745b21), prepared at 1462025; exact CI not yet verified. |
 | Intended files | backend/ai_provider.py, tests/test_c4_cloud_intent.py and canonical records only. No workflow or persistent schema change. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Exact B6 P1 119 focused tests passed and downstream stages passed. B7 pending synthetic admission/revocation tests and exact CI. |
-| Pending runs | Expected P1 isolated backend and P4 routine source CI; discover exact runs after publication. |
+| Verification | B6 exact corrected P1 119 focused cases and all downstream stages PASS. B7 shared admission/revision fence and six inert test cases published, no pass yet. |
+| Pending runs | Expected P1 isolated backend and P4 routine source CI for 350d764; run IDs/outcomes not yet visible in connected Actions tab. Discover exact SHA using [Actions](https://github.com/Sonkhe-Shongwe/PilotODIN/actions). |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Implement process-wide single-flight cloud slot, capture revision before projection (no key on malformed payload), one-use dispatch fence, retain slot until transport returns, generation/current recheck on publication and health. Tests use inert barriers only. Route-level pre-context generation and frontend stale-response fences remain separate follow-up; do not claim full B7 closure. |
+| Recovery action | Reconcile exact 350d764 P1/P4 run IDs and terminal jobs/logs. Preserve failures; correct only evidenced defects. If green, complete route-entry generation fence before context staging and verify route-level freshness, then B8. No acceptance increment. |
 | Resume after closure | C5 then D with separately approved scope. |
 
 ## Prior operation
