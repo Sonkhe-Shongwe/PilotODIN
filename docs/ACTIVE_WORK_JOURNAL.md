@@ -7,14 +7,14 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | READY |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | dfe66528f70932f26d00edcf2d5668726948bedc |
+| Observed starting HEAD | 7a581a892b87ec5782fd176b51ff6d84c4d102f4 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
-| Operation ID | C5-SELECTED-WHEEL-METADATA-MISSING-ONCE-20261125 |
-| Operation state | RECONCILED: run 45701493997 attempt 1 on cb71f2b3ac937eaa88677489e74dce6bfe775bb8, job 139512458639 SUCCESS, 22 indexes + 29 sidecar GETs (51), 21,089,670 response bytes, 29 new verified, 62/62 combined, zero artifact requests. Disarmed at 118037d; independently verified receipt at f5cd93d. No replay. |
-| Intended files | Missing-only live gate, dedicated missing-only workflow, fresh marker, journal/handoff/ledger and terminal receipt. Preserve prior collectors and receipts. |
+| Operation ID | C5-COMBINED-WHEEL-GRAPH-20261125 |
+| Operation state | PREPARED: offline combined receipt and selected-wheel dependency graph review; verify persisted 33+29 sidecars, both source-test targets and separate runtime-root subset. No lock issuance, resolver, install or registry request. |
+| Intended files | Isolated qa/c5_wheel_metadata/combined_graph.py and dedicated offline workflow, journal/handoff/ledger. Preserve prior collectors, receipts, product and locks. |
 | Approval | Ten restricted approvals consumed/disarmed (six native, four metadata). No additional registry requests, artifacts, installs, native/model, owner device/data or installer authorized. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
 | Pending runs | None for this operation. |
