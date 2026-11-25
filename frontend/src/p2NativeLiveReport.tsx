@@ -2,9 +2,9 @@ import React from 'react';
 import {createRoot} from 'react-dom/client';
 import {ReportWorkspace} from './ReportWorkspace';
 import {isDesktop} from './desktopBootstrap';
+import {configureDevelopmentAPI} from './api';
 
 /** Dev-only UI: real ReportWorkspace, real HTTP, real Rust Save As, no mocks. */
-const port=Number(import.meta.env.VITE_P2_CHAIN_API_PORT);
 const projectId=String(import.meta.env.VITE_P2_CHAIN_PROJECT_ID??'');
 const reportId=String(import.meta.env.VITE_P2_CHAIN_REPORT_ID??'');
 const expectedHtml=String(import.meta.env.VITE_P2_CHAIN_HTML_NAME??'');
@@ -17,7 +17,9 @@ const pdfResult=document.getElementById('qa-pdf');
 const ready=document.getElementById('qa-ready');
 const mount=document.getElementById('report-mount');
 const valid=import.meta.env.DEV&&
-  Number.isInteger(port)&&port>=1024&&port<=65535&&
+  import.meta.env.VITE_PILOTODIN_AUTH_DEV==='1'&&
+  import.meta.env.VITE_PILOTODIN_NATIVE_SMOKE==='1'&&
+  location.origin==='http://127.0.0.1:5176'&&
   /^[a-f0-9]{32}$/.test(projectId)&&/^[a-f0-9]{32}$/.test(reportId)&&
   expectedHtml===`pilotodin_report_${reportId.slice(0,12)}_rev2.html`&&
   expectedPdf===`pilotodin_report_${reportId.slice(0,12)}_rev2.pdf`&&
@@ -25,14 +27,15 @@ const valid=import.meta.env.DEV&&
   (!qaSaveFolder || !!saveFolderLabel);
 if(!valid)throw new Error('Test-only Tauri environment or synthetic fixture identity is invalid.');
 
+// The browser never receives the backend port or private capability.
+configureDevelopmentAPI(location.origin);
 const original=window.fetch.bind(window);
 window.fetch=((resource:RequestInfo|URL,init?:RequestInit)=>{
-  const url=new URL(String(resource),location.href);
-  if(url.hostname!=='127.0.0.1'||url.port!=='8000'||!url.pathname.startsWith('/api/')){
+  const url=new URL(resource instanceof Request?resource.url:String(resource),location.href);
+  if(url.origin!==location.origin||!url.pathname.startsWith('/api/')){
     return Promise.reject(new Error('P2 synthetic native chain blocked unexpected fetch destination.'));
   }
-  url.port=String(port);
-  return original(url.toString(),init);
+  return original(resource,init);
 }) as typeof fetch;
 
 if(qaSaveFolder&&saveFolderLabel)saveFolderLabel.textContent=qaSaveFolder;

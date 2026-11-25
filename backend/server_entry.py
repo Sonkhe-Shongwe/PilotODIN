@@ -181,10 +181,11 @@ def admitted_home(env):
 
 
 def owned_app():
-    # Browser serving paths require explicit capabilities. Native QA and
-    # in-process fixture compatibility remains pending C3 migration.
+    # Browser and migrated managed report-chain paths require capabilities.
+    # Other native QA and in-process compatibility remains pending C3.
     from backend.request_auth import (RequestGuard, live_dev_trust_from_environ,
-                                      hosted_browser_trust_from_environ)
+                                      hosted_browser_trust_from_environ,
+                                      local_report_chain_trust_from_environ)
     mode = os.environ.get("PILOTODIN_SERVER_MODE")
     trust = None
     if mode == "dev":
@@ -193,6 +194,10 @@ def owned_app():
             os.environ.get("P1_REAL_HTTP_E2E") == "1" or
             Path(os.environ.get("PILOTODIN_HOME", "")).name.startswith("pilotodin-p1-real-http-")):
         trust = hosted_browser_trust_from_environ(os.environ)
+    elif mode == "local-devqa" and re.fullmatch(
+            r"P2-NATIVE-CHAIN-[0-9]{8}T[0-9]{6}Z-[a-f0-9]{10}",
+            Path(os.environ.get("PILOTODIN_HOME", "")).parent.name):
+        trust = local_report_chain_trust_from_environ(os.environ)
     if trust is None and any(os.environ.get(key) for key in (
             "PILOTODIN_DEV_CAPABILITY", "PILOTODIN_DEV_ORIGIN", "PILOTODIN_DEV_PORT")):
         raise WorkspaceBoundaryError("Mixed non-desktop serving configuration")

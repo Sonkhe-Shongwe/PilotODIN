@@ -189,6 +189,26 @@ def hosted_browser_trust_from_environ(environ):
                         "http://127.0.0.1:5178")
 
 
+def local_report_chain_trust_from_environ(environ):
+    """Exact managed P2 report-chain launcher; the factory admits its workspace."""
+    port = environ.get("PILOTODIN_DEV_PORT", "")
+    if (environ.get("PILOTODIN_SERVER_MODE") != "local-devqa"
+            or environ.get("RL_invariant") != "1"
+            or environ.get("PILOTODIN_DEV_ORIGIN") != "http://127.0.0.1:5176"
+            or not isinstance(port, str)
+            or re.fullmatch(r"[1-9][0-9]{3,4}", port) is None
+            or int(port) == 5176
+            or environ.get("PILOTODIN_DESKTOP_ALLOW_DEV", "0") != "0"
+            or any(environ.get(key) for key in (
+                "PILOTODIN_DESKTOP_SESSION", "PILOTODIN_DESKTOP_PORT",
+                "PILOTODIN_DESKTOP_WATCH_STDIN", "PILOTODIN_CONTROL_MODE",
+                "PILOTODIN_CONTROL_GENERATION", "PILOTODIN_CONTROL_CAPABILITY"))):
+        raise ValueError("Invalid managed report-chain serving configuration")
+    return RequestTrust("local-devqa", int(port),
+                        environ.get("PILOTODIN_DEV_CAPABILITY", ""),
+                        "http://127.0.0.1:5176")
+
+
 # In-process identity witness, never a request header or serialized token.
 # The outer guard overwrites any incoming value on the admitted HTTP scope.
 _AUTHORIZED = object()

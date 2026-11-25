@@ -133,10 +133,18 @@ class OwnedServerTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             self.assertEqual(admitted_home(env), home)
             record = json.loads(manifest.read_text(encoding="utf-8"))
+            env.update(PILOTODIN_DEV_CAPABILITY="a"*64, PILOTODIN_DEV_PORT="18042",
+                       PILOTODIN_DEV_ORIGIN="http://127.0.0.1:5176")
             code = ("from backend.server_entry import owned_app; "
                     "from fastapi.testclient import TestClient; "
-                    "import sys; client=TestClient(owned_app()); "
-                    "assert client.get('/api/reports/'+sys.argv[1]+'?revision=2').status_code == 200")
+                    "import sys; client=TestClient(owned_app(), "
+                    "base_url='http://127.0.0.1:18042', client=('127.0.0.1', 50000)); "
+                    "url='/api/reports/'+sys.argv[1]+'?revision=2'; "
+                    "assert client.get(url).status_code == 401; "
+                    "assert client.get(url,headers={'X-PilotODIN-Dev-Capability':'a'*64,"
+                    "'Origin':'http://127.0.0.1:5177'}).status_code == 403; "
+                    "assert client.get(url,headers={'X-PilotODIN-Dev-Capability':'a'*64,"
+                    "'Origin':'http://127.0.0.1:5176'}).status_code == 200")
             result = subprocess.run([sys.executable, "-B", "-c", code, record["report_id"]],
                 cwd=ROOT, env=env, capture_output=True, text=True, timeout=30)
             self.assertEqual(result.returncode, 0, result.stderr)
@@ -448,6 +456,36 @@ class C3RequestTrustTests(unittest.TestCase):
             with self.subTest(change=tuple(change)):
                 with self.assertRaises(ValueError):
                     hosted_browser_trust_from_environ({**env,**change})
+
+    def test_c3_managed_report_chain_contract(self):
+        from backend.request_auth import local_report_chain_trust_from_environ, authorize
+        env = {"PILOTODIN_SERVER_MODE":"local-devqa", "RL_invariant":"1",
+               "PILOTODIN_DEV_PORT":"18042", "PILOTODIN_DEV_ORIGIN":"http://127.0.0.1:5176",
+               "PILOTODIN_DEV_CAPABILITY":self.secret}
+        trust = local_report_chain_trust_from_environ(env)
+        self.assertEqual(trust.port, 18042)
+        scope = self.scope(trust, origin=trust.dev_origin)
+        self.assertTrue(authorize(scope, trust).allowed)
+        self.assertEqual(authorize({**scope,"headers":scope["headers"][:1]}, trust).status, 401)
+        for changes in ({"RL_invariant":""},{"PILOTODIN_DEV_PORT":"5176"},
+                        {"PILOTODIN_DEV_PORT":"08000"},{"PILOTODIN_DEV_PORT":"65536"},
+                        {"PILOTODIN_DEV_ORIGIN":"http://127.0.0.1:5177"},
+                        {"PILOTODIN_DEV_CAPABILITY":""},{"PILOTODIN_SERVER_MODE":"dev"},
+                        {"PILOTODIN_DESKTOP_SESSION":self.secret},
+                        {"PILOTODIN_CONTROL_MODE":"pod1"}):
+            with self.subTest(changes=tuple(changes)):
+                with self.assertRaises(ValueError):
+                    local_report_chain_trust_from_environ({**env, **changes})
+
+    def test_c3_managed_report_chain_missing_capability_refuses_before_workspace(self):
+        from backend import server_entry
+        from unittest.mock import patch
+        env = {"PILOTODIN_SERVER_MODE":"local-devqa", "RL_invariant":"1",
+               "PILOTODIN_HOME":str(ROOT/"P2-NATIVE-CHAIN-20261125T000000Z-1234567890"/"workspace")}
+        with patch.dict(os.environ,env,clear=True), \
+             patch.object(server_entry,"admitted_home",side_effect=AssertionError("Workspace inspected")):
+            with self.assertRaises(ValueError):
+                server_entry.owned_app()
 
     def test_c3_live_dev_missing_capability_refuses_before_workspace(self):
         from backend import server_entry

@@ -9,7 +9,7 @@ let desktopEndpoint: DesktopConnection|null = null;
 let developmentOrigin:string|null = null;
 // Called only by the explicit Vite development bootstrap; never receives a secret.
 export function configureDevelopmentAPI(origin:string) {
-  if(!['http://127.0.0.1:5173','http://127.0.0.1:5178'].includes(origin) || desktopEndpoint) {
+  if(!['http://127.0.0.1:5173','http://127.0.0.1:5176','http://127.0.0.1:5178'].includes(origin) || desktopEndpoint) {
     throw new Error('Invalid Live Dev API configuration');
   }
   developmentOrigin=origin;

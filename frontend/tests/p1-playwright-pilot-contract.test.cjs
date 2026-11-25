@@ -425,3 +425,35 @@ test('import-to-Quality failure recovery scenario requires an opt-in bounded in-
   assert.match(scenario,/expect\(audit\.blockedOrigins\)\.toEqual\(\[\]\)/);
   assert.doesNotMatch(scenario,/https:\/\/|window\.confirm|localStorage\.clear\(/);
 });
+
+
+test('managed P2 native report chain uses exact server-side origin and allocated port',async()=>{
+ const {liveDevProxyTrust,liveDevProxyPlan}=await import('../scripts/live-dev-api-proxy.mjs');
+ const localAppData=path.resolve(__dirname,'synthetic-local-appdata');
+ const env={PILOTODIN_SERVER_MODE:'local-devqa',RL_invariant:'1',LOCALAPPDATA:localAppData,
+   PILOTODIN_HOME:path.join(localAppData,'PilotODIN','DevQA','runs','P2-NATIVE-CHAIN-20261125T000000Z-1234567890','workspace'),
+   PILOTODIN_DEV_ORIGIN:'http://127.0.0.1:5176',PILOTODIN_DEV_PORT:'18042',
+   PILOTODIN_DEV_CAPABILITY:'a'.repeat(64),VITE_PILOTODIN_AUTH_DEV:'1'};
+ const trust=liveDevProxyTrust(env);
+ assert.equal(trust.port,5176);
+ assert.equal(trust.backendPort,18042);
+ const req={url:'/api/reports/example?revision=2',method:'GET',socket:{remoteAddress:'127.0.0.1'},
+   rawHeaders:['Host','127.0.0.1:5176','Sec-Fetch-Site','same-origin','X-PilotODIN-Dev-Request','1']};
+ const plan=liveDevProxyPlan(req,trust);
+ assert.equal(plan.status,200);
+ assert.equal(plan.options.port,18042);
+ assert.equal(plan.options.headers.host,'127.0.0.1:18042');
+ assert.equal(plan.options.headers['x-pilotodin-dev-capability'],env.PILOTODIN_DEV_CAPABILITY);
+ assert.equal(liveDevProxyPlan({...req,rawHeaders:req.rawHeaders.slice(0,-2)},trust).status,403);
+ assert.equal(liveDevProxyPlan({...req,rawHeaders:[...req.rawHeaders,'Origin','http://127.0.0.1:5177']},trust).status,403);
+ assert.equal(liveDevProxyPlan({...req,rawHeaders:[...req.rawHeaders,'X-PilotODIN-Dev-Capability','a'.repeat(64)]},trust).status,403);
+ for(const change of [{RL_invariant:''},{PILOTODIN_DEV_PORT:'5176'},{PILOTODIN_DEV_PORT:'018042'},
+   {PILOTODIN_DEV_ORIGIN:'http://127.0.0.1:5177'},{PILOTODIN_HOME:path.join(localAppData,'foreign','workspace')},
+   {PILOTODIN_DEV_CAPABILITY:''},{PILOTODIN_DESKTOP_SESSION:'b'.repeat(64)}]){
+   assert.throws(()=>liveDevProxyTrust({...env,...change}),/Invalid isolated Live Dev proxy configuration/);
+ }
+ const chain=fs.readFileSync(path.resolve(__dirname,'../src/p2NativeLiveReport.tsx'),'utf8');
+ assert.match(chain,/configureDevelopmentAPI\(location\.origin\)/);
+ assert.match(chain,/url\.origin!==location\.origin/);
+ assert.doesNotMatch(chain,/PILOTODIN_DEV_CAPABILITY|VITE_P2_CHAIN_API_PORT/);
+});

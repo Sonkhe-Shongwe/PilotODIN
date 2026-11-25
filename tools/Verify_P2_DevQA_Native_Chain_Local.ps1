@@ -61,7 +61,8 @@ $nativeCompleted=$false
 $manifest=$null
 $oldEnv=@{}
 foreach($name in @('RL_invariant','PILOTODIN_HOME','PILOTODIN_SERVER_MODE','PILOTODIN_DESKTOP_SESSION','CARGO_NET_OFFLINE','VITE_PILOTODIN_NATIVE_SMOKE',
- 'VITE_P2_CHAIN_API_PORT','VITE_P2_CHAIN_PROJECT_ID','VITE_P2_CHAIN_REPORT_ID',
+ 'PILOTODIN_DEV_CAPABILITY','PILOTODIN_DEV_PORT','PILOTODIN_DEV_ORIGIN','VITE_PILOTODIN_AUTH_DEV',
+ 'VITE_P2_CHAIN_PROJECT_ID','VITE_P2_CHAIN_REPORT_ID',
  'VITE_P2_CHAIN_HTML_NAME','VITE_P2_CHAIN_PDF_NAME','VITE_P2_CHAIN_SAVE_FOLDER')){
     $oldEnv[$name]=[Environment]::GetEnvironmentVariable($name,'Process')
 }
@@ -97,13 +98,37 @@ function File-Match([string]$path,[string]$hash,[string]$label){
     Write-Host ($label+': '+$(if($ok){'SHA-256 MATCH'}else{'SHA-256 MISMATCH'})) -ForegroundColor $(if($ok){'Green'}else{'Red'})
     return $ok
 }
+# Private capability is restricted to the exact owned loopback report service.
+# No proxy, redirects, or credential-bearing request logs.
+function Open-ChainResponse([string]$uri,[int]$port){
+    $target=[Uri]$uri
+    if($target.Scheme -ne 'http' -or $target.Host -ne '127.0.0.1' -or
+       $target.Port -ne $port -or $target.UserInfo -or
+       -not $target.AbsolutePath.StartsWith('/api/reports/') -or
+       $env:PILOTODIN_DEV_CAPABILITY -cnotmatch '^[a-f0-9]{64}$'){
+        throw 'Unexpected managed report-chain request.'
+    }
+    $request=[Net.HttpWebRequest]::Create($target)
+    $request.Proxy=$null
+    $request.AllowAutoRedirect=$false
+    $request.Timeout=2000
+    $request.ReadWriteTimeout=10000
+    $request.Headers.Add('X-PilotODIN-Dev-Capability',$env:PILOTODIN_DEV_CAPABILITY)
+    $request.Headers.Add('Origin','http://127.0.0.1:5176')
+    $response=$request.GetResponse()
+    if([int]$response.StatusCode -ne 200){
+        $response.Dispose()
+        throw 'Unexpected managed report-chain response.'
+    }
+    return $response
+}
 function Check-Live-Report([int]$port,[string]$reportId){
     $uri="http://127.0.0.1:$port/api/reports/$reportId"+'?revision=2'
     $last=''
     for($i=0;$i -lt 120;$i++){
         try{
-            $response=Invoke-WebRequest -Uri $uri -UseBasicParsing -TimeoutSec 2
-            if($response.StatusCode -eq 200){return $true}
+            $response=Open-ChainResponse $uri $port
+            try{return $true}finally{$response.Dispose()}
         }catch{$last=$_.Exception.Message}
         Start-Sleep -Milliseconds 250
     }
@@ -153,28 +178,42 @@ try{
     if($manifest.revision -ne 2 -or $manifest.report_id -notmatch '^[a-f0-9]{32}$' -or
        $manifest.project_id -notmatch '^[a-f0-9]{32}$'){throw 'Synthetic report manifest invalid.'}
     $backendPort=Free-Port
+    if($backendPort -eq 5176){throw 'Managed report-chain backend port conflicts with its frontend.'}
+    $random=[Security.Cryptography.RandomNumberGenerator]::Create()
+    try{
+        $capabilityBytes=New-Object byte[] 32
+        $random.GetBytes($capabilityBytes)
+        $env:PILOTODIN_DEV_CAPABILITY=([BitConverter]::ToString($capabilityBytes)).Replace('-','').ToLowerInvariant()
+    }finally{$random.Dispose()}
+    $env:PILOTODIN_DEV_PORT="$backendPort"
+    $env:PILOTODIN_DEV_ORIGIN='http://127.0.0.1:5176'
+    $env:VITE_PILOTODIN_AUTH_DEV='1'
     $backend=Start-Process -FilePath $pythonExe -WorkingDirectory $root -ArgumentList @(
         '-m','uvicorn','backend.server_entry:owned_app','--factory','--host','127.0.0.1','--port',"$backendPort",
-        '--lifespan','off') -NoNewWindow -PassThru -RedirectStandardOutput $backendOut -RedirectStandardError $backendErr
+        '--lifespan','off','--no-proxy-headers') -NoNewWindow -PassThru -RedirectStandardOutput $backendOut -RedirectStandardError $backendErr
     $up=Check-Live-Report $backendPort $manifest.report_id
     Mark 'p2-isolated-real-fastapi' $up
     if(-not $up){throw 'Real temporary FastAPI backend did not start.'}
     # Verify that the live isolated HTTP service is returning the exact same
     # revision-2 bytes used as the expected reference by the synthetic seeder.
-    $web=New-Object System.Net.WebClient
-    $web.Headers.Add('Origin','http://127.0.0.1:5176')
     Write-Host 'Comparing live exports with synthetic fixture under test-only invariant PDF metadata.'
     foreach($kind in @('html','pdf')){
         $reference=Join-Path $session ('reference-'+$kind+'.bin')
         $url="http://127.0.0.1:$backendPort/api/reports/$($manifest.report_id)/export/$kind"+'?revision=2'
-        $web.DownloadFile($url,$reference)
+        $response=Open-ChainResponse $url $backendPort
+        try{
+            $stream=$response.GetResponseStream()
+            try{
+                $file=[IO.File]::Open($reference,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None)
+                try{$stream.CopyTo($file)}finally{$file.Dispose()}
+            }finally{$stream.Dispose()}
+        }finally{$response.Dispose()}
         $referenceHash=(Get-FileHash -LiteralPath $reference -Algorithm SHA256).Hash
         $expected=($manifest.exports.$kind.sha256).ToUpperInvariant()
         if($referenceHash -ne $expected){throw ('Live HTTP '+$kind+' content differs from frozen synthetic fixture.')}
         Remove-Item -LiteralPath $reference -Force
     }
     Mark 'p2-live-export-reference-digests' $true
-    $env:VITE_P2_CHAIN_API_PORT="$backendPort"
     $env:VITE_P2_CHAIN_PROJECT_ID=[string]$manifest.project_id
     $env:VITE_P2_CHAIN_REPORT_ID=[string]$manifest.report_id
     $env:VITE_P2_CHAIN_HTML_NAME=[string]$manifest.exports.html.filename
