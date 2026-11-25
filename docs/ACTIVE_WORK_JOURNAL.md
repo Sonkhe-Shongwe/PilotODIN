@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 6bb35badb979ecdaf4fdd1276ddc45867a0c2c66 |
-| Product baseline | C4 C1 frontend e576ccd; P1/P2 SUCCESS, P4 one obsolete assertion FAILURE. |
+| Observed starting HEAD | 877dfe873f0eeabe294ce474bcdac120aa7225ff |
+| Product baseline | C4 C1 frontend e576ccd plus assertion 3b2c5f3; exact P1/P4 SUCCESS; P2 previous source SUCCESS. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
-| Operation ID | C4-C1-PANE-GUARD-CONTRACT-20261125 |
-| Operation state | RECONCILED; test-only correction published at [3b2c5f3](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/3b2c5f30e72596684ae72bcf8bde9645d07828ba), prepared at 2ef1736; exact CI outstanding. |
-| Intended files | frontend/tests/desktop-ai-boundaries.test.cjs and canonical records only. No product or workflow change. |
+| Operation ID | C4-C2-PANEL-DISCLOSURE-LOCAL-ROUTING-20261125 |
+| Operation state | PREPARED; panel source not yet issued. |
+| Intended files | frontend/src/AIWorkspace.tsx, frontend/src/AssistantWorkspace.tsx, frontend/src/cloudConsentSession.ts, frontend/tests/desktop-ai-boundaries.test.cjs and canonical records. No backend/schema/workflow changes. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Original C1 P1/P2 passed, P4 one obsolete assertion failed. Corrected assertion verifies actual stronger embedded/pending guard, passive GET, generation and cleanup. Other assertions retained; production unchanged. Corrected CI not yet verified. |
-| Pending runs | [P4 Target Review Queue and Transparent Ranking #45664365693](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45664365693) QUEUED; [P1 Isolated Frontend Verification #45664365697](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45664365697) IN_PROGRESS |
+| Verification | Exact 3b2c5f3 P1 206 Node/7 browser/Vite; P4 1086 backend/6 skipped/552 subtests, 136 Node/Vite, Windows 68/133 subtests, browser 13 SUCCESS. |
+| Pending runs | None from 3b2c5f3. Expected P1 frontend and P4 routine CI. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Reconcile exact 3b2c5f3 P1 frontend/P4 terminal jobs and logs. If green, continue C2 manual workspace intent/disclosure and C3 generation-aware cache and cross-renderer review. No project cloud enablement until panel safeguards; OpenRouter project sharing held. No score increment. |
+| Recovery action | Stage provider-specific disclosure and explicit action controls, preserve saved local routes only, automatic requests explicitly local-only, deny cloud project dispatch until C3 cross-renderer/response safeguards, never continue a cloud answer. Remove shared response/promise cache or restrict local-only; preserve existing request ownership. Verify exact CI; then implement fresh server consent-generation binding, cross-renderer invalidation, per-click confirmation and mounted browser witnesses before enabling project cloud intent. OpenRouter remains held. |
 | Resume after closure | C5 then D with separately approved scope. |
 
 ## Prior operation
