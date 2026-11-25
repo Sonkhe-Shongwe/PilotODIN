@@ -13,13 +13,13 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Product baseline | B7 route fence 821c50a; all eight exact CI workflows SUCCESS. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
 | Operation ID | C4-B8-STRICT-WIRE-20261125 |
-| Operation state | ISSUED; reconcile exact source commit from prepared parent 2c47d8f; do not replay |
+| Operation state | RECONCILED; source published at [970a158](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/970a15828d2beff20df0975614063c875fe32b9e), prepared at 2c47d8f; exact CI outstanding. |
 | Intended files | backend/ai_provider.py, tests/test_c4_cloud_intent.py, tests/test_c4_ai_settings.py, tests/test_multi_ai.py and canonical records. No workflow/schema/activation change. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | B7 134 focused cases, all eight exact workflows passed. B8 pending. |
-| Pending runs | None from 821c50a. Expected P1 isolated backend and P4 routine source CI for this batch. |
+| Verification | B7 all eight exact workflows SUCCESS. B8 strict wire and mutation failure witnesses published; new CI not yet terminal. Read-back found the invalid-key test uses a double-backslash r escape (literal backslash plus r) instead of a carriage return; likely fixture failure, not demonstrated product failure. Preserve first exact run. |
+| Pending runs | [P1 Isolated Backend Source Recovery #45658872565](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45658872565) IN_PROGRESS; [P4 Target Review Queue and Transparent Ranking #45658872507](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45658872507) IN_PROGRESS |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Implement fixed destination/model registry, mandatory strict authorization, bounded wire bytes and strict response parsing, close on errors, monotonic deadline checks and bounded reads; explicitly retain limitation of blocking DNS/header/read operations. Verify inert fake transport and actual mutation failure races; reconcile exact CI before further deadline/compatibility review or frontend. |
+| Recovery action | Reconcile both exact 970a158 runs and relevant job logs before another source push. Correct the evidenced invalid-key fixture escape with a real carriage return (use chr(13) to avoid repeat), preserve validation, correct other evidenced failures only. Review remaining total transport deadline (blocking DNS/header/individual reads), response compatibility and historical caller tests before B8 closure; frontend consent/cache/disclosure still pending. No score increment. |
 | Resume after closure | C5 then D with separately approved scope. |
 
 ## Prior operation
