@@ -144,7 +144,7 @@ class Tests(unittest.TestCase):
         self.deny('ARTIFACT_ZIP_REFUSED',lambda:self.replay(b'not zip',record,rows))
     def test_workflow_disarmed(self):
         s=(n.ROOT/'.github/workflows/c5-wheel-hosted-one-use.yml').read_text()
-        self.assertIn('    if: \${{ false }}',s)
+        self.assertIn('    if: ${{ false }}',s)
         self.assertIn('actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02',s)
         self.assertNotIn('workflow_dispatch:',s)
         self.assertNotIn('APPROVAL_WHEEL_HOSTED_20261126.txt',s.split('permissions:')[0])
