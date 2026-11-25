@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 5070c53b933232c103d4c4889d237276c3cc4528 |
-| Product baseline | B7 common boundary 350d76460fc9b846d2f78f00db27c0c1e0745b21; exact P1 #45657212625 and P4 #45657212615 SUCCESS. |
+| Observed starting HEAD | e5710cf0a7a880d1afbf6149b6499ba7467dd276 |
+| Product baseline | B7 route fence 821c50a; all eight exact CI workflows SUCCESS. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
-| Operation ID | C4-B7-ROUTE-FENCE-20261125 |
-| Operation state | RECONCILED; source published at [821c50a](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/821c50a79571ef441526390e9d039e2e1d0a2eba), prepared at 873f84c; exact CI outstanding. |
-| Intended files | backend/ai_provider.py, backend/main.py, backend/resource_session.py, tests/test_c4_cloud_intent.py and canonical records. No workflow, native or persistent schema change. |
+| Operation ID | C4-B8-STRICT-WIRE-20261125 |
+| Operation state | PREPARED; strict transport source not yet issued |
+| Intended files | backend/ai_provider.py, tests/test_c4_cloud_intent.py, tests/test_c4_ai_settings.py, tests/test_multi_ai.py and canonical records. No workflow/schema/activation change. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | B7 common boundary exact P1/P4 SUCCESS. Route-level source and nine new inert cases published. No new test pass or B7 closure claimed. |
-| Pending runs | [P3 Real HTTP Semantic Context Browser Acceptance #45658055276](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45658055276) IN_PROGRESS; [P1 Isolated Backend Source Recovery #45658055531](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45658055531) IN_PROGRESS; [P1 Project Lifecycle Disposable Backend Acceptance #45658055206](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45658055206) IN_PROGRESS; [P1 Disposable Real HTTP Browser/Backend Acceptance #45658055745](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45658055745) IN_PROGRESS; [P2 Real HTTP Saved Revision Comparison #45658055472](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45658055472) IN_PROGRESS; [P2 Immutable Report Revision Idempotency #45658055270](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45658055270) IN_PROGRESS; [P3 User-Described Semantic Business Context #45658055746](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45658055746) IN_PROGRESS; [P4 Target Review Queue and Transparent Ranking #45658055487](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45658055487) IN_PROGRESS |
+| Verification | B7 134 focused cases, all eight exact workflows passed. B8 pending. |
+| Pending runs | None from 821c50a. Expected P1 isolated backend and P4 routine source CI for this batch. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Reconcile all eight exact 821c50a terminal runs, job scopes and relevant logs using GitHub REST head_sha-filtered listing. Preserve failures; correct evidenced defects. If green, review route/publication and actual settings mutation failure coverage, then B8 strict transport. Frontend cache/disclosure remains Batch C. No acceptance increment. |
+| Recovery action | Implement fixed destination/model registry, mandatory strict authorization, bounded wire bytes and strict response parsing, close on errors, monotonic deadline checks and bounded reads; explicitly retain limitation of blocking DNS/header/read operations. Verify inert fake transport and actual mutation failure races; reconcile exact CI before further deadline/compatibility review or frontend. |
 | Resume after closure | C5 then D with separately approved scope. |
 
 ## Prior operation
