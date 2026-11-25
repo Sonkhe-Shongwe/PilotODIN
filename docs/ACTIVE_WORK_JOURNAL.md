@@ -7,14 +7,14 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | READY |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 7a581a892b87ec5782fd176b51ff6d84c4d102f4 |
+| Observed starting HEAD | 5a49917bde5ae253aa303069d33ffe83fb8aed3f |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
-| Operation ID | C5-COMBINED-WHEEL-GRAPH-20261125 |
-| Operation state | RECONCILED: exact ac437f0, run 45702239980 job 139515042483 SUCCESS, 62 persisted sidecars revalidated, 8 controls, Windows/Linux source-test 49/49 reachable each, 59 active edges each, zero declared graph issues. Runtime-root subsets 36 Windows / 37 Linux, 41/42 edges, not production/freezer. pytz Requires-Python absent. packaging 24.0 preinstalled reviewer; no install or live registry request. |
-| Intended files | Isolated qa/c5_wheel_metadata/combined_graph.py and dedicated offline workflow, journal/handoff/ledger. Preserve prior collectors, receipts, product and locks. |
+| Operation ID | C5-PLATFORM-LOCK-CANDIDATES-20261125 |
+| Operation state | PREPARED: derive non-installable platform candidates from exact receipts and graph, independently review historical production roots/freezer upstream source declarations and gaps. No registry requests, resolver, executable lock or installation. |
+| Intended files | Isolated qa/c5_wheel_metadata/lock_candidates.py, dedicated offline workflow, generated evidence-only JSON, canonical records; preserve previous source, receipts, policy, locks, markers and product. |
 | Approval | Ten restricted approvals consumed/disarmed (six native, four metadata). No additional registry requests, artifacts, installs, native/model, owner device/data or installer authorized. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
 | Pending runs | None for this operation. |
