@@ -7,22 +7,24 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 5f96b28234f168a33aa182e833b0dce8988441f1 |
-| Product baseline | Last terminal product a949684360d99ea052ace639afa11aa2222e4d83; new product 6b257546734f01808c9dee8c6ef840ea63200fb1 published, pending exact P1/P4. |
+| Observed starting HEAD | 1fe8531bd913be555aae5bdffff0ac3240930cb2 |
+| Product baseline | 6b257546734f01808c9dee8c6ef840ea63200fb1 exact P1/P4 terminal SUCCESS. |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
-| Operation ID | C3-LEGACY-LOCAL-TRANSPORT-20261125 |
-| Operation state | RECONCILED (product source publication verified at 6b257546734f01808c9dee8c6ef840ea63200fb1; exact CI pending) |
-| Intended files | backend/ai_provider.py; backend/autonomy.py; tests/test_build_e_autonomous_investigations.py; tests/test_hybrid_local_ai.py; .github/workflows/p1-isolated-backend.yml (add existing fixed-loopback regression to historical case selection); journal, handoff and C ledger. No cloud policy, activation, native workflow, dependencies or installer changes. |
+| Operation ID | C3-HISTORICAL-DIAGNOSTIC-20261125 |
+| Operation state | PREPARED (historical diagnostic correction; publication identified by prepared parent and operation marker) |
+| Intended files | diagnostics/Check_Local_API.ps1; diagnostics/check_local_api.py; tests/test_c3_local_verifier_trust.py; .github/workflows/p1-isolated-backend.yml (explicit paths only); canonical journal, handoff and evidence. Keep Diagnose_PilotODIN.bat interface, existing read-only routes and separate Ollama inventory. No product server, approval, native workflow or dependency change. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Prior expanded scanner P1 terminal SUCCESS; 878 decoded, 433 candidates, 76 routes, no AST/decode gaps. Implemented shared local-only response helper for existing Ollama tags/chat and autonomous planner generate with fixed destination, empty proxy handler, redirect refusal, sanitized/closed HTTP errors. Added 25 mocked cases; existing fixed-loopback test retained and registered in P1. Expected P1/P4 routine CI; no native, cloud or real inference. Historical diagnostic and wider caller matrix remain open. New product verification pending. |
-| Pending runs | Exact `6b25754`: [P1 #45600104262](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45600104262) job 139156476752 IN_PROGRESS; [P4 #45600104253](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45600104253) jobs 139156477490, 139156477753, 139156477875 IN_PROGRESS; restricted collector 139156479988 SKIPPED. No additional run observed. |
+| Verification | Exact 6b25754 P1 #45600104262 and P4 #45600104253 terminal SUCCESS; 25 additional local transport tests passed, collector skipped. Reviewed old diagnostic, actual BAT, retired legacy launcher, paired Vite proxy plan, Live Dev launchers and existing verifier. Use fixed existing paired Vite frontdoor (5173, Origin and dev-request marker; no private capability), direct HTTPConnection no proxy or redirect; separate existing Ollama inventory on 11434 with no app header. Strict route allowlist, bounded response, fail closed on unavailable frontdoor, no raw body/error print, no fallback to port 8000. Reuse existing Live Dev venv and P1 pure/mock test group. Previously inspected 85 trigger definitions; only P1 expected for diagnostic/test/workflow path changes. No actual owner diagnostic execution. |
+| Pending runs | None; previous exact P1/P4 terminal SUCCESS. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Reconcile exact P1/P4 CI, inspect failures or scanner candidate paths, resolve historical diagnostic and remaining indirect callers, then mandatory bare-main guard and complete 76-route matrix. |
+| Recovery action | Publish diagnostic/test batch after expected HEAD check, verify exact P1, then continue remaining caller classification; bare main guard still unchanged. |
 | Resume after closure | C4, C5 in order; D separately approved. |
 
 ## Prior operation
+
+C3-LEGACY-LOCAL-TRANSPORT-20261125: [6b25754](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/6b257546734f01808c9dee8c6ef840ea63200fb1), exact [P1 #45600104262](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45600104262) and [P4 #45600104253](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45600104253) terminal SUCCESS; collector skipped. Previous journal at [1fe8531](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/1fe8531bd913be555aae5bdffff0ac3240930cb2).
 
 C3-INDIRECT-CALLER-SCANNER-20261125: [64a33d3](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/64a33d378dc8791d9e62469bcab442b28a574753), exact [P1 #45599143546](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45599143546) terminal SUCCESS; previous journal at [5f96b28](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/5f96b28234f168a33aa182e833b0dce8988441f1).
 
