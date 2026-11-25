@@ -3,6 +3,11 @@
 # run hosted Actions, or copy user datasets into diagnostics.
 [CmdletBinding()]
 param([switch]$PreflightOnly)
+# C5: preflight remains available; historical environment opt-in is not authority.
+if (-not $PreflightOnly) {
+    Write-Error 'STOP: C5_A4_NATIVE_BUILD_BLOCKED; fresh reviewed native approval required.' -ErrorAction Continue
+    exit 2
+}
 $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $frontend = Join-Path $root 'frontend'

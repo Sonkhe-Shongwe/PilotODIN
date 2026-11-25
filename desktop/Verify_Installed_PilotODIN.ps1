@@ -3,6 +3,9 @@
 param(
     [Parameter(Mandatory=$true)][string]$InstallerPath
 )
+# C5: no actual installer verification before separate P8 authority.
+Write-Error 'STOP: C5_INSTALLER_VERIFICATION_BLOCKED; installer freeze remains in force.' -ErrorAction Continue
+exit 2
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path

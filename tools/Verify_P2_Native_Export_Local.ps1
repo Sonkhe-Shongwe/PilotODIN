@@ -2,6 +2,9 @@
 # No user project import, existing backend, Qwen, installer, CI or prior suite.
 [CmdletBinding()]
 param()
+# C5: retired native overlay; historical implementation retained below for source review.
+Write-Error 'STOP: C5_P2_NATIVE_EXPORT_BLOCKED; historical overlay is not authorised.' -ErrorAction Continue
+exit 2
 $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $frontend = Join-Path $root 'frontend'

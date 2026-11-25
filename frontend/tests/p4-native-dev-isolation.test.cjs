@@ -170,3 +170,13 @@ test("hosted runner clears private serving inputs before native, probe, relaunch
   assert.match(hook,/redirect:"error"/);
   assert.match(hook,/assertHostedFrontdoorContext\(process\.env\)/);
 });
+
+
+test("historical environment opt-in cannot reactivate native compilation", () => {
+  const p = spawnSync(process.execPath, ["scripts/p4-isolated-native-dev.mjs"], {
+    cwd: root, encoding: "utf8",
+    env: { ...process.env, PILOTODIN_P4_UNPACKAGED_NATIVE_DEV_CONSENT: "I_APPROVE_UNPACKAGED_P4_NATIVE_DEV" }
+  });
+  assert.equal(p.status, 2);
+  assert.match(p.stderr, /STOP: Native compilation is frozen/);
+});

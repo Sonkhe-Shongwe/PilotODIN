@@ -960,3 +960,43 @@ def test_c5_historical_batch_has_only_refusal(bat, module, flag, reason):
         "echo STOP: " + reason + ". Separate reviewed exact-input approval required.",
         "exit /b 2",
     ]
+
+
+@pytest.mark.parametrize("path,marker", [
+    ("tools/Verify_P2_Native_Export_Local.ps1", "C5_P2_NATIVE_EXPORT_BLOCKED"),
+    ("desktop/Verify_Installed_PilotODIN.ps1", "C5_INSTALLER_VERIFICATION_BLOCKED"),
+])
+def test_c5_native_and_install_entrypoints_refuse_before_setup(path, marker):
+    source = (ROOT / path).read_text(encoding="utf-8")
+    guard = source.index("Write-Error 'STOP: " + marker)
+    exit_pos = source.index("\nexit 2\n", guard)
+    assert exit_pos < source.index("$ErrorActionPreference = 'Stop'")
+    assert "-ErrorAction Continue" in source[guard:exit_pos]
+    before = source[:guard]
+    assert not any(command in before for command in ("New-Item", "Start-Process", "Resolve-Path", "Invoke-WebRequest"))
+
+
+def test_c5_a4_preflight_only_before_diagnostics():
+    source = (ROOT / "tools/Verify_A4_Native_Windows.ps1").read_text(encoding="utf-8")
+    guard = source.index("if (-not $PreflightOnly) {")
+    assert "C5_A4_NATIVE_BUILD_BLOCKED" in source[guard:source.index("$ErrorActionPreference", guard)]
+    assert source.index("exit 2", guard) < source.index("New-Item")
+    assert guard < source.index("Resolve-Path")
+
+
+def test_c5_legacy_native_export_batch_refuses():
+    commands = [line.strip() for line in
+                (ROOT / "Run_PilotODIN_P2_Native_Export.bat").read_text(encoding="utf-8").splitlines()
+                if line.strip() and not line.lstrip().lower().startswith("rem ")]
+    assert commands == ["@echo off",
+                        "echo STOP: C5_P2_NATIVE_EXPORT_BLOCKED. Separate reviewed native approval required.",
+                        "exit /b 2"]
+
+
+def test_c5_native_executable_frontdoor_has_no_spawn():
+    source = (ROOT / "frontend/scripts/p4-isolated-native-dev.mjs").read_text(encoding="utf-8")
+    commands = [line.strip() for line in source.splitlines()
+                if line.strip() and not line.lstrip().startswith("//")]
+    assert len(commands) == 2
+    assert commands[0].startswith('console.error("STOP: Native compilation is frozen')
+    assert commands[1] == "process.exit(2);"

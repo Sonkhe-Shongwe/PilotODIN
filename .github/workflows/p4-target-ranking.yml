@@ -30,6 +30,9 @@ on:
       - frontend/scripts/verify-npm-lock.mjs
       - frontend/tests/c5-npm-lock.test.cjs
       - tests/test_c5_build_input_preflight.py
+      - tools/Verify_P2_Native_Export_Local.ps1
+      - Run_PilotODIN_P2_Native_Export.bat
+      - desktop/Verify_Installed_PilotODIN.ps1
       - Run_PilotODIN_P2_Prepare_Freezer_Tooling_DevQA.bat
       - tools/p2_pdf_pyinstaller_tooling_devqa.py
       - Run_PilotODIN_P2_Prepare_Full_Sidecar_Builder_DevQA.bat
@@ -411,7 +414,7 @@ jobs:
         shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'
-          foreach ($file in @('desktop/Build_Windows_Installer.ps1','desktop/Verify_Frontend_Windows.ps1','desktop/Build_Python_Sidecar.ps1','desktop/Stage_Pinned_Offline_AI.ps1','desktop/Stage_Bundled_Inference.ps1')) {
+          foreach ($file in @('desktop/Build_Windows_Installer.ps1','desktop/Verify_Frontend_Windows.ps1', 'tools/Verify_A4_Native_Windows.ps1', 'tools/Verify_P2_Native_Export_Local.ps1', 'desktop/Verify_Installed_PilotODIN.ps1','desktop/Build_Python_Sidecar.ps1','desktop/Stage_Pinned_Offline_AI.ps1','desktop/Stage_Bundled_Inference.ps1')) {
             $tokens = $null
             $parseErrors = $null
             [void][System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $file).Path, [ref]$tokens, [ref]$parseErrors)
