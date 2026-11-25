@@ -3,12 +3,12 @@ on:
   push:
     branches: [feature/live-dev-workspace-20261023]
     paths:
-      - .github/workflows/c5-wheel-missing-review.yml
-      - qa/c5_wheel_metadata/collect_missing.py
+      - qa/c5_wheel_metadata/APPROVAL_MISSING_20261125.txt
 permissions:
   contents: read
 jobs:
   offline-integration:
+    if: ${{ false }} # Exact prior offline verification preserved.
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -25,7 +25,7 @@ jobs:
           set -e
           test "$code" = 2
   collect-once:
-    if: ${{ false }} # No new owner approval, proposed scope only.
+    if: ${{ github.run_attempt == 1 && github.event.head_commit.message == 'C5-SELECTED-WHEEL-METADATA-MISSING-ONCE-20261125 activate' }} # Owner-approved one use.
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -34,9 +34,9 @@ jobs:
           ref: ${{ github.sha }}
           persist-credentials: false
       - run: python3 -I -B qa/c5_wheel_metadata/collect_missing.py --self-test
-      # Future exact activation must bind the reviewed blob, marker, exact
-      # commit message and attempt 1; no replay or implicit cap expansion.
-      - name: Missing metadata only (currently unreachable)
+      - name: Verify exact activated collector blob
+        run: test "$(git hash-object qa/c5_wheel_metadata/collect_missing.py)" = 5367655eaebad4ff2792ce096354b401792d5497
+      - name: Missing metadata only, approved one use
         env:
           C5_APPROVED_ONCE: C5-SELECTED-WHEEL-METADATA-MISSING-ONCE-20261125
           C5_EXPECTED_SOURCE_SHA: ${{ github.sha }}

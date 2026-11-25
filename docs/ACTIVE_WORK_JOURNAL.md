@@ -7,17 +7,17 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | PREPARED |
+| State | PUBLISHED |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | dfe66528f70932f26d00edcf2d5668726948bedc |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
 | Operation ID | C5-SELECTED-WHEEL-METADATA-MISSING-ONCE-20261125 |
-| Operation state | PREPARED: owner explicitly approved one missing-only collection. Exact offline baseline 786c980, run 45700864424 SUCCESS (57 checks, live skipped). No activation issued yet. |
+| Operation state | ISSUED on successful publication of exact activation commit; query exact run. Activated blob 5367655eaebad4ff2792ce096354b401792d5497; only source gate changed from verified baseline. New marker-only trigger, attempt 1 exact message, blob check, approved caps. Treat approval as consumed, no replay. |
 | Intended files | Missing-only live gate, dedicated missing-only workflow, fresh marker, journal/handoff/ledger and terminal receipt. Preserve prior collectors and receipts. |
 | Approval | Nine prior restricted approvals consumed/disarmed. Fresh owner approval for one missing-only attempt, 22 index + 29 exact sidecar GETs (51 total), revised 32 MiB/index, unchanged 1 MiB/sidecar, 128 MiB aggregate, 15s/request, 15min/job. No artifacts, install, native/model, owner device/data, retry or expanded scope. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | None. |
+| Pending runs | Activation run ID not yet known; query exact activation SHA. |
 | Unpublished work | Owner-local tree not inspected. |
 | Recovery action | Fresh explicit approval received for one missing-only attempt: at most 22 project-index GETs and 29 exact hash-advertised metadata GETs (51 total); proposed revised 32 MiB/index cap only for those 22, unchanged 1 MiB/sidecar, 128 MiB aggregate, 15 s/request and 15 min/job. No fallback, redirects, artifact bytes, installations, native/model, owner device or automatic retry. After approval, bind exact activated blob/new marker/marker-only trigger/exact message/attempt 1, journal before issuance, reconcile and disarm. No re-fetch of the 33 verified sidecars. Real index size remains unknown and 32 MiB is not guaranteed sufficient. Then complete graph, platform/production locks, toolchain, artifact/licence provenance, actual-byte verification and safe consumption. Four profiles BLOCKED. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
