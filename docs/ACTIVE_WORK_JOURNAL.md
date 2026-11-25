@@ -7,17 +7,17 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 244ddc9e49c0a9c8c524b6dc51518c0febc42217 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
 | Operation ID | C5-WHEEL-NOTICE-BINDING-20261126 |
-| Operation state | PREPARED: implement immutable notice capture from the existing verified stream, canonical bounded evidence encoding/replay, and exact independently pinned 68-row plan binding; no real wheel bytes or network. Prior archive CI 45722093735 SUCCESS. |
+| Operation state | PUBLISHED/VERIFYING if live HEAD confirmed: notice capture/codec and pinned-plan binding source; exact Ubuntu/Windows synthetic CI pending. No actual wheel bytes, collection or production readiness. |
 | Intended files | Existing qa/c5_wheel_metadata/wheel_archive_inspector.py; new wheel_notice_evidence.py and test_wheel_notice_evidence.py in same directory; existing .github/workflows/c5-wheel-archive-review.yml extends only offline test/refusal scope; journal/handoff/ledger. Prior reviewed 97 trigger declarations unchanged; newly added archive workflow is sole matching trigger, subject to exact diff review. |
 | Approval | Twelve restricted approvals consumed/disarmed (six native, six metadata). No additional registry/metadata requests, artifacts, installs, native/model, owner device/data or installer authorized. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | None issued. After conditional source publish expect dedicated Ubuntu/Windows synthetic matrix only. |
+| Pending runs | Inspect exact source push (parent 9c24a31fff8c2060d4eb43447b32879c0c7d19d2), dedicated synthetic archive workflow. Reconcile both jobs and refusal checks. |
 | Unpublished work | Owner-local tree not inspected; all three tested QA blobs published and exact CI reconciled. |
 | Recovery action | Reconcile actual HEAD, intended source and exact CI before closing; prior checksum review 17df008 run 45718196315 SUCCESS, fresh approval still needed for remaining three documents/four GETs maximum, 4260661 body bytes, no Windows replay. No wheel acquisition approved. Notice evidence encoding is not transport, production consumption, legal clearance or physical publication proof. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |

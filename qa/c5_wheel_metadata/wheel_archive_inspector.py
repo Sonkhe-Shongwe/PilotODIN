@@ -220,13 +220,14 @@ class InspectionBudget:
         self.notices = 0
         self.seen = set()
 
-    def inspect(self, raw, expected):
+    def inspect(self, raw, expected, *, capture_notices=False):
+        require(type(capture_notices) is bool, 'NOTICE_CAPTURE_FLAG')
         try:
-            return self._inspect(raw, expected)
+            return self._inspect(raw, expected, capture_notices)
         except (UnicodeError, csv.Error, struct.error, zlib.error, RecursionError):
             raise Blocked('MALFORMED_WHEEL') from None
 
-    def _inspect(self, raw, expected):
+    def _inspect(self, raw, expected, capture_notices):
         fn, distinfo, tagset = identities(raw, expected)
         require(fn not in self.seen, 'BATCH_DUPLICATE')
         self.seen.add(fn)
@@ -256,7 +257,7 @@ class InspectionBudget:
                 'BATCH_EXPANSION_LIMIT')
         self.expanded += total
         self.notices += notice_size
-        observed = {}; contents = {}; next_offset = 0
+        observed = {}; contents = {}; notice_contents = {}; next_offset = 0
         for path, needed, flags, method, tm, date, crc, packed, expanded, local in sorted(rows, key=lambda r:r[-1]):
             require(local == next_offset, 'ZIP_LOCAL_LAYOUT')
             sig,n,f,m,t,d,c,p,e,nl,el = header(LOCAL, raw, local, cd)
@@ -266,10 +267,12 @@ class InspectionBudget:
             data_start = start + nl
             next_offset = data_start + packed
             require(next_offset <= cd and name(raw[start:data_start]) == path, 'ZIP_LOCAL_NAME')
-            ident, hashes, payload = member(raw, data_start, packed, method, expanded, crc, path in controls)
+            ident, hashes, payload = member(raw, data_start, packed, method, expanded, crc, path in controls or (capture_notices and path in notices))
             observed[path] = (ident, hashes)
-            if payload is not None:
+            if path in controls:
                 contents[path] = payload
+            if capture_notices and path in notices:
+                notice_contents[path] = payload
         require(next_offset == cd, 'ZIP_LOCAL_LAYOUT')
         meta = contents[distinfo+'/METADATA']
         require(sha(meta) == expected['metadata_sha256'], 'METADATA_DIGEST')
@@ -283,12 +286,13 @@ class InspectionBudget:
         actual_tags = [str(v) for v in wh.get_all('Tag', [])]
         require(len(actual_tags) == len(set(actual_tags)) and set(actual_tags) == tagset, 'WHEEL_TAG_MISMATCH')
         verify_record(contents[distinfo+'/RECORD'], distinfo+'/RECORD', observed)
-        return {'filename':fn, 'bytes':len(raw), 'sha256':sha(raw), 'metadata_sha256':sha(meta),
+        receipt = {'filename':fn, 'bytes':len(raw), 'sha256':sha(raw), 'metadata_sha256':sha(meta),
                 'tags':sorted(tagset), 'members':len(observed), 'expanded_bytes':total,
                 'notice_bytes':notice_size, 'notices':[{'path':p,**observed[p][0]} for p in sorted(notices)],
                 'native_candidates':[{'path':p,**observed[p][0]} for p in sorted(paths) if NATIVE.search(p)],
                 'declared_license_files':declared.copy(), 'license_expression':expected.get('license_expression'),
                 'license_reviewed':False, 'status':'CANDIDATE_INTEGRITY_ONLY'}
+        return (receipt, notice_contents) if capture_notices else receipt
 
 
 if __name__ == '__main__':

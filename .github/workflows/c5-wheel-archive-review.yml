@@ -6,6 +6,8 @@ on:
       - .github/workflows/c5-wheel-archive-review.yml
       - qa/c5_wheel_metadata/wheel_archive_inspector.py
       - qa/c5_wheel_metadata/test_wheel_archive_inspector.py
+      - qa/c5_wheel_metadata/wheel_notice_evidence.py
+      - qa/c5_wheel_metadata/test_wheel_notice_evidence.py
 permissions:
   contents: read
 jobs:
@@ -26,6 +28,7 @@ jobs:
         run: |
           python --version
           python -I -B qa/c5_wheel_metadata/test_wheel_archive_inspector.py
+          python -I -B qa/c5_wheel_metadata/test_wheel_notice_evidence.py
       - name: Require direct acquisition refusal
         shell: bash
         run: |
@@ -36,3 +39,13 @@ jobs:
           printf '%s\n' "$result"
           test "$code" = 1
           test "$result" = 'OFFLINE_LIBRARY_ONLY: no acquisition or arbitrary wheel CLI'
+      - name: Require direct evidence publication refusal
+        shell: bash
+        run: |
+          set +e
+          result=$(python -I -B qa/c5_wheel_metadata/wheel_notice_evidence.py --collect 2>&1)
+          code=$?
+          set -e
+          printf '%s\n' "$result"
+          test "$code" = 1
+          test "$result" = 'OFFLINE_LIBRARY_ONLY: no acquisition or evidence publication CLI'
