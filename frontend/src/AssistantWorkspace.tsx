@@ -49,12 +49,15 @@ export function AssistantWorkspace({projectId,version,onSettings}:{projectId:str
   const [question,setQuestion]=useState('');const [busy,setBusy]=useState(false);const [elapsed,setElapsed]=useState(0);
   const [template,setTemplate]=useState<(typeof localTemplates)[number]|null>(null);
   const questionInput=useRef<HTMLInputElement>(null);
+  // A delayed response owns only the exact draft revision submitted.
+  const draftRevision=useRef(0);
   const localFollowUp=useRef<LocalFollowUp|null>(null);
   const fence=useRef(createInsightRequestFence()).current;
   const session=useSyncExternalStore(subscribeCloudConsent,cloudConsentSnapshot);
   useLayoutEffect(()=>{localFollowUp.current=null;setMessages(a=>a.filter(m=>!m.cloudRequest));},[session.generation]);
   const templateIncomplete=template?.fields.some(field=>question.includes(`"${field}"`))??false;
   function fillTemplate(next:(typeof localTemplates)[number]){
+    draftRevision.current++;
     setTemplate(next);
     setQuestion(next.question);
     const first=next.fields[0];
@@ -71,7 +74,7 @@ export function AssistantWorkspace({projectId,version,onSettings}:{projectId:str
   const [savedCloud,setSavedCloud]=useState<SavedCloudPermission|null>(null);
   const [savedCloudAt,setSavedCloudAt]=useState(-1);
   const cloudFixture=usesInterceptedFixtureAPI();
-  const cloudAvailable=cloudFixture&&cloudConsentCrossWindowAvailable()&&savedCloudAt===session.generation&&!session.pending&&Boolean(projectCloudRoute(savedCloud,savedCloud,provider));
+  const cloudAvailable=cloudFixture&&cloudConsentCrossWindowAvailable()&&savedCloudAt===session.generation&&!session.pending&&Boolean(projectCloudRoute(savedCloud,savedCloud,provider,version));
   useLayoutEffect(()=>fence.enter(),[fence,projectId,version,provider,session.generation]);
   useEffect(()=>{
     let live=true;setSavedCloud(null);setSavedCloudAt(-1);
@@ -87,6 +90,7 @@ export function AssistantWorkspace({projectId,version,onSettings}:{projectId:str
     if(busy||(!route&&(!cloudAvailable||Boolean(continuation)))||!cloudConsentIsCurrent(session.generation)||(!q.trim()&&!continuation))return;
     const ticket=fence.begin();if(!ticket)return;
     const current=()=>fence.isCurrent(ticket)&&cloudConsentIsCurrent(session.generation);
+    const submittedDraftRevision=draftRevision.current;
     setBusy(true);if(route&&!continuation){setQuestion('');setTemplate(null);setMessages(a=>[...a,{role:'user',content:q}])}
     try{
       type Response={answer:string;source?:string;provider:string;model:string;fallback:boolean;reason:string;local_status?:string;local_startup_issue?:string;incomplete?:boolean;finish_reason?:string;investigation?:MissingReport;facts?:LocalFacts;dataset_version?:number;follow_up?:LocalFollowUp|null;scope?:string};
@@ -97,16 +101,16 @@ export function AssistantWorkspace({projectId,version,onSettings}:{projectId:str
             ...(route.selected_provider==='local'&&localFollowUp.current?{local_follow_up:localFollowUp.current}:{})});
         if(!current()||r.source==='cloud_llm')return;
       }else{
-        const outcome=await confirmedProjectCloud<Response>(savedCloud,provider,
+        const outcome=await confirmedProjectCloud<Response>(savedCloud,provider,version,
           ()=>window.confirm(projectCloudConfirmationText(provider,'assistant',version,q,false)),
           ()=>get<SavedCloudPermission>('/ai/settings'),
           cloudRoute=>post<Response>(`/projects/${projectId}/ai/insight`,{context:'assistant',question:q,...cloudRoute}),current);
         if(!current())return;
         if(outcome.status==='cancelled')return;
         if(outcome.status!=='result'||!cloudResponseMatches(outcome.response,provider,'assistant',version)){
-          setSavedCloud(null);setSavedCloudAt(-1);setMessages(a=>[...a,{role:'assistant',content:'Cloud permission or context changed. Result not shown; review saved settings before a new request.',source:'ERROR'}]);return;
+          setSavedCloud(null);setSavedCloudAt(-1);setMessages(a=>[...a.filter(m=>!m.cloudRequest),{role:'assistant',content:'Cloud permission or context changed. Result not shown; review saved settings before a new request.',source:'ERROR'}]);return;
         }
-        r=outcome.response;setQuestion('');setTemplate(null);setMessages(a=>[...a,{role:'user',content:q}]);
+        r=outcome.response;if(draftRevision.current===submittedDraftRevision){setQuestion('');setTemplate(null)}setMessages(a=>[...a,{role:'user',content:q}]);
       }
       localFollowUp.current=route?.selected_provider==='local'?r.follow_up??null:null;
       const diagnostic=r.fallback&&provider!=='local'
@@ -120,7 +124,7 @@ export function AssistantWorkspace({projectId,version,onSettings}:{projectId:str
         return [...a,{role:'assistant',content:r.answer,source:r.fallback?'VERIFIED RULES · NO LLM':`${r.provider.toUpperCase()} · ${r.model}`,
           incomplete:r.incomplete,answerSource:r.source,investigation:r.investigation,diagnostic,facts:r.facts,version:r.dataset_version,cloudRequest:!route}];
       });
-    }catch(e){if(fence.isCurrent(ticket)&&cloudConsentIsCurrent(session.generation)){localFollowUp.current=null;setMessages(a=>[...a,{role:'assistant',content:(e as Error).message,source:'ERROR'}])}}
+    }catch(e){if(fence.isCurrent(ticket)&&cloudConsentIsCurrent(session.generation)){localFollowUp.current=null;if(!route){setSavedCloud(null);setSavedCloudAt(-1)}setMessages(a=>[...(route?a:a.filter(m=>!m.cloudRequest)),{role:'assistant',content:(e as Error).message,source:'ERROR'}])}}
     finally{if(fence.finish(ticket))setBusy(false)}
   }
   return <div className="assistant-page"><section className="quality-banner"><div><div className="eyebrow">DATA SCIENCE COPILOT · HYBRID AI</div><h2>Ask your dataset</h2><p>Choose a local route for verified analysis. Smart Auto never sends data to cloud providers.</p></div><BrainCircuit size={43}/></section>
@@ -137,6 +141,6 @@ export function AssistantWorkspace({projectId,version,onSettings}:{projectId:str
       <div className="chat-starters">{(provider==='local'?localQuestions:starters).map(s=><button key={s} onClick={()=>void ask(s)} disabled={busy||!routeAvailable||session.pending}>{s}</button>)}
         {provider==='local'&&localTemplates.map(next=><button key={next.label} onClick={()=>fillTemplate(next)} disabled={busy}>{next.label}</button>)}</div>
       {templateIncomplete&&template&&<p id="assistant-template-hint" className="muted-caption" role="status">{template.hint}</p>}
-      <form className="chat-form" onSubmit={e=>{e.preventDefault();if(!templateIncomplete)void ask(question)}}><input ref={questionInput} className="input" value={question} maxLength={900} onChange={e=>{setQuestion(e.target.value);if(!e.target.value)setTemplate(null)}} placeholder="Ask about your data, cleaning decisions, insights or modelling…" aria-label="Dataset question" aria-describedby={templateIncomplete?'assistant-template-hint':undefined}/><button className="btn primary" disabled={busy||(!routeAvailable&&!cloudAvailable)||session.pending||!question.trim()||templateIncomplete} type="submit"><Send size={16}/> {busy?'Thinking…':cloudName?'Send to '+cloudName:'Ask'}</button></form><p className="muted-caption"><ShieldCheck size={13}/> Local analysis does not send data to cloud providers. Project-data cloud requests require separate explicit permission. <button className="text-action" onClick={onSettings}>Configure AI providers</button></p></div>
+      <form className="chat-form" onSubmit={e=>{e.preventDefault();if(!templateIncomplete)void ask(question)}}><input ref={questionInput} className="input" value={question} maxLength={900} onChange={e=>{draftRevision.current++;setQuestion(e.target.value);if(!e.target.value)setTemplate(null)}} placeholder="Ask about your data, cleaning decisions, insights or modelling…" aria-label="Dataset question" aria-describedby={templateIncomplete?'assistant-template-hint':undefined}/><button className="btn primary" disabled={busy||(!routeAvailable&&!cloudAvailable)||session.pending||!question.trim()||templateIncomplete} type="submit"><Send size={16}/> {busy?'Thinking…':cloudName?'Send to '+cloudName:'Ask'}</button></form><p className="muted-caption"><ShieldCheck size={13}/> Local analysis does not send data to cloud providers. Project-data cloud requests require separate explicit permission. <button className="text-action" onClick={onSettings}>Configure AI providers</button></p></div>
   </div>;
 }

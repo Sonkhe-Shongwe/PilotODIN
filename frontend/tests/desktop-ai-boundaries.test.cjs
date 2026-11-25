@@ -627,9 +627,10 @@ test('C4 C3 two simulated renderers invalidate saved state at begin and finish w
 test('C4 held project routes restrict reviewed consent to Gemini/Groq and require exact version/provider responses',()=>{
  const session=loadCloudConsentSession();
  const saved={cloud_enabled:true,share_aggregates:true,intelligence_mode:'hybrid',providers:[{id:'gemini',connected:true},{id:'groq',connected:true},{id:'openrouter',connected:true}],cloud_consent_witness:'a'.repeat(32)+':1'};
- assert.deepEqual(session.projectCloudRoute(saved,saved,'gemini'),{selected_provider:'gemini',cloud_intent:true,cloud_consent_witness:saved.cloud_consent_witness});
- assert.equal(session.projectCloudRoute(saved,saved,'openrouter'),null);
- assert.equal(session.projectCloudRoute(saved,{...saved,cloud_consent_witness:'a'.repeat(32)+':2'},'groq'),null);
+ assert.deepEqual(session.projectCloudRoute(saved,saved,'gemini',3),{selected_provider:'gemini',cloud_intent:true,cloud_consent_witness:saved.cloud_consent_witness,expected_dataset_version:3});
+ assert.equal(session.projectCloudRoute(saved,saved,'openrouter',3),null);
+ assert.equal(session.projectCloudRoute(saved,{...saved,cloud_consent_witness:'a'.repeat(32)+':2'},'groq',3),null);
+ for(const invalid of [undefined,null,true,'3',-1,3.5,NaN,Infinity,Number.MAX_SAFE_INTEGER+1])assert.equal(session.projectCloudRoute(saved,saved,'gemini',invalid),null);
  const r={source:'cloud_llm',provider:'gemini',fallback:false,scope:'assistant',dataset_version:3};
  assert.equal(session.cloudResponseMatches(r,'gemini','assistant',3),true);
  for(const value of [{...r,provider:'groq'},{...r,dataset_version:4},{...r,scope:'overview'},{...r,source:'unknown'}])
@@ -644,7 +645,7 @@ test('C4 mounted project send is held outside the explicitly intercepted API fix
  for(const panel of [ui.slice(ui.indexOf('export function AIInsight')),assistant]){
    assert.match(panel,/const cloudFixture=usesInterceptedFixtureAPI\(\)/);
    assert.match(panel,/const cloudAvailable=cloudFixture&&cloudConsentCrossWindowAvailable\(\)/);
-   assert.match(panel,/confirmedProjectCloud</);
+   assert.match(panel,/confirmedProjectCloud<[^>]+>\(savedCloud,(?:selectedProvider|provider),version,/);
    assert.match(panel,/window.confirm\(projectCloudConfirmationText/);
    assert.match(panel,/cloudResponseMatches/);
  }

@@ -139,7 +139,7 @@ export function AIInsight({projectId,scope,version,target,experimentId,predictio
   // Product sends remain held. Only the existing intercepted fixture can
   // exercise the mounted path; no actual backend/provider is reachable there.
   const cloudFixture=usesInterceptedFixtureAPI();
-  const cloudAvailable=cloudFixture&&cloudConsentCrossWindowAvailable()&&savedCloudAt===session.generation&&!session.pending&&Boolean(projectCloudRoute(savedCloud,savedCloud,selectedProvider));
+  const cloudAvailable=cloudFixture&&cloudConsentCrossWindowAvailable()&&savedCloudAt===session.generation&&!session.pending&&Boolean(projectCloudRoute(savedCloud,savedCloud,selectedProvider,version));
   const fingerprint=JSON.stringify([projectId,scope,version,target,experimentId,prediction??null,selectedProvider,session.generation]);
   useLayoutEffect(()=>fence.enter(),[fence,fingerprint]);
   useEffect(()=>{
@@ -167,15 +167,15 @@ export function AIInsight({projectId,scope,version,target,experimentId,predictio
         const r=await post<Analysis>(`/projects/${projectId}/ai/insight`,{...body,prediction:prediction||null,...route});
         if(current()&&r.source!=='cloud_llm')setResult(r);
       }else{
-        const outcome=await confirmedProjectCloud<Analysis>(savedCloud,selectedProvider,
+        const outcome=await confirmedProjectCloud<Analysis>(savedCloud,selectedProvider,version,
           ()=>window.confirm(projectCloudConfirmationText(selectedProvider,scope,version,question,deep)),
           ()=>get<Settings>('/ai/settings'),
           cloudRoute=>post<Analysis>(`/projects/${projectId}/ai/insight`,{...body,prediction:null,...cloudRoute}),current);
         if(!current())return;
         if(outcome.status==='result'&&cloudResponseMatches(outcome.response,selectedProvider,scope,version))setResult(outcome.response);
-        else if(outcome.status!=='cancelled'){setSavedCloud(null);setSavedCloudAt(-1);setError('Cloud permission or context changed. Result not shown; review saved settings before a new request.')}
+        else if(outcome.status!=='cancelled'){setResult(null);setSavedCloud(null);setSavedCloudAt(-1);setError('Cloud permission or context changed. Result not shown; review saved settings before a new request.')}
       }
-    }catch(e){if(current())setError((e as Error).message)}finally{if(fence.finish(ticket))setBusy(false)}
+    }catch(e){if(current()){if(!route){setResult(null);setSavedCloud(null);setSavedCloudAt(-1)}setError((e as Error).message)}}finally{if(fence.finish(ticket))setBusy(false)}
   }
   useEffect(()=>{if(auto&&routeAvailable&&!session.pending)void run(false)},[auto,fingerprint]);
   async function continueInsight(){

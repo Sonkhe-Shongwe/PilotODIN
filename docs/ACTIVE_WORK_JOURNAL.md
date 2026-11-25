@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | a931ff9775af8d32d391f2490cbaa15f2527aef6 |
 | Product baseline | Exact mounted correction c206063 and backend pin d16cfd6 verified at respective scopes. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
 | Operation ID | C4-C3-FRONTEND-VERSION-DRAFT-20261125 |
-| Operation state | PREPARED; version-bound confirmed request and draft ownership; intercepted fixtures only. |
+| Operation state | ISSUED from prepared parent 3455b3acc21529b7379189616f7a33ea1f8102ce; version-bound confirmed request, draft revision and expanded intercepted tests. Real sends held. |
 | Intended files | frontend/src/cloudConsentSession.ts, AIWorkspace.tsx, AssistantWorkspace.tsx, existing frontend/e2e and Node consent/audit tests; canonical records. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | Exact mounted correction `c206063`: P1 #45670823357 SUCCESS (206 Node, TypeScript/Vite, 9/9 Chromium including both C4 mounted cases). Exact server pin `d16cfd6`: all eight workflows SUCCESS; P1 backend #45671101097 C4 selected group 252 passed; P4 #45671101346 1086 Python/6 skipped/552 subtests, 15 Rust, 143 Node/Vite, 13 disposable HTTP browser, 68 Windows/133 subtests; restricted collector skipped. |
-| Pending runs | None for c206063 or d16cfd6. |
+| Pending runs | Exact P1 frontend and P4 expected; discover IDs and reconcile. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Wire expected_dataset_version into both frontend confirmed send paths; preserve Assistant draft while busy; add mounted regression cases for stale version, witness/provider/scope, missed renderer notifications and changed draft. Keep real send held until exact verification and narrow enablement; OpenRouter held. C4 closure then C5. |
+| Recovery action | Reconcile exact frontend integration CI, including version pin, draft preservation, stale witness/provider/scope and missed renderer notifications. Keep real send held until exact verification and narrow enablement; OpenRouter held. C4 closure then C5. |
 | Resume after closure | C5 then D with separately approved scope. |
 
 ## Prior operation

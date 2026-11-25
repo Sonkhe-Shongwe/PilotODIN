@@ -1479,6 +1479,7 @@ async function installC4ConsentAPI(context:BrowserContext){
   const posted:Record<string,unknown>[]=[];
   let nextResponse:Promise<void>|null=null;
   let nextAnswer='Synthetic cloud explanation only.';
+  let nextResponseMismatch:'provider'|'version'|'scope'|null=null;
   const valid=(route:Route)=>route.request().headers()['x-pilotodin-dev-request']==='1';
   await context.route(UI_ORIGIN+'/api/ai/settings',async route=>{
     if(!valid(route)){await route.fallback();return}
@@ -1507,21 +1508,21 @@ async function installC4ConsentAPI(context:BrowserContext){
   await context.route(UI_ORIGIN+'/api/projects/'+TEST_PROJECT+'/ai/insight',async route=>{
     if(!valid(route)||route.request().method()!=='POST'){await route.fallback();return}
     const body=route.request().postDataJSON() as Record<string,unknown>;
-    const base=['context','question','selected_provider','cloud_intent','cloud_consent_witness'];
+    const base=['context','question','selected_provider','cloud_intent','cloud_consent_witness','expected_dataset_version'];
     const keys=body.context==='overview'?[...base,'target','experiment_id','deep','prediction']:base;
     if(Object.keys(body).length!==keys.length||!keys.every(key=>Object.hasOwn(body,key))||
        !['assistant','overview'].includes(String(body.context))||typeof body.question!=='string'||
        !['Synthetic project question','Synthetic late question','What should I investigate first in this dataset and why?'].includes(body.question)||
        (body.selected_provider!=='gemini'&&body.selected_provider!=='groq')||body.cloud_intent!==true||
-       body.cloud_consent_witness!==saved.cloud_consent_witness||!saved.cloud_enabled||
+       body.cloud_consent_witness!==saved.cloud_consent_witness||body.expected_dataset_version!==0||!saved.cloud_enabled||
        (body.context==='overview'&&(body.target!==null||body.experiment_id!==null||body.prediction!==null||body.deep!==false))){
       await route.fallback();return;
     }
     posted.push(body);
-    const delay=nextResponse;const answer=nextAnswer;nextResponse=null;
+    const delay=nextResponse;const answer=nextAnswer;const mismatch=nextResponseMismatch;nextResponse=null;nextResponseMismatch=null;
     if(delay)await delay;
-    await route.fulfill({status:200,json:{source:'cloud_llm',provider:body.selected_provider,model:'synthetic-routine',
-      answer,fallback:false,reason:'Synthetic',attempts:[],dataset_version:0,scope:body.context,incomplete:true}});
+    await route.fulfill({status:200,json:{source:'cloud_llm',provider:mismatch==='provider'?(body.selected_provider==='gemini'?'groq':'gemini'):body.selected_provider,model:'synthetic-routine',
+      answer,fallback:false,reason:'Synthetic',attempts:[],dataset_version:mismatch==='version'?1:0,scope:mismatch==='scope'?(body.context==='assistant'?'overview':'assistant'):body.context,incomplete:true}});
   });
   await context.addInitScript(id=>{
     localStorage.setItem('pilotodin-current',id);
@@ -1529,7 +1530,7 @@ async function installC4ConsentAPI(context:BrowserContext){
     localStorage.setItem('pilotodin-workspace-active-v1-'+id,'assistant');
     localStorage.setItem('pilotodin-ai-provider-assistant','groq');
   },TEST_PROJECT);
-  return {audit,posted,saved,hold(response:Promise<void>,answer:string){nextResponse=response;nextAnswer=answer}};
+  return {audit,posted,saved,hold(response:Promise<void>,answer:string){nextResponse=response;nextAnswer=answer},mismatch(field:'provider'|'version'|'scope'){nextResponseMismatch=field}};
 }
 test('C4 mounted consent requires explicit confirmation and a reviewed witness in both panels',async({page,context})=>{
   const {audit,posted,saved}=await installC4ConsentAPI(context);
@@ -1548,7 +1549,7 @@ test('C4 mounted consent requires explicit confirmation and a reviewed witness i
   page.once('dialog',async dialog=>{expect(dialog.message()).toContain('Confirm only this request');await dialog.accept()});
   await send.click();
   await expect(page.getByText('Synthetic cloud explanation only.',{exact:true})).toBeVisible();
-  expect(posted).toHaveLength(1);expect(posted[0].cloud_consent_witness).toBe(saved.cloud_consent_witness);
+  expect(posted).toHaveLength(1);expect(posted[0].cloud_consent_witness).toBe(saved.cloud_consent_witness);expect(posted[0].expected_dataset_version).toBe(0);
   await expect(page.getByRole('button',{name:'Continue answer →'})).toHaveCount(0);
   await select.selectOption('openrouter');await question.fill('Synthetic project question');
   await expect(page.getByRole('button',{name:'Send to OpenRouter',exact:true})).toBeDisabled();
@@ -1562,7 +1563,7 @@ test('C4 mounted consent requires explicit confirmation and a reviewed witness i
   await deepSend.click();
   await expect(drawer.getByText('Synthetic cloud explanation only.',{exact:true})).toBeVisible();
   expect(posted).toHaveLength(2);expect(posted[1].selected_provider).toBe('groq');
-  expect(posted[1].prediction).toBeNull();
+  expect(posted[1].prediction).toBeNull();expect(posted[1].expected_dataset_version).toBe(0);
   expect(audit.writes).toEqual([]);
   expect(audit.blockedOrigins).toEqual([]);
 });
@@ -1597,4 +1598,79 @@ test('C4 mounted consent revocation in a second renderer suppresses an in-flight
     expect(audit.writes).toEqual([]);
   expect(audit.blockedOrigins).toEqual([]);
   }finally{release()}
+});
+
+test('C4 mounted consent keeps a newer assistant draft after a delayed successful response',async({page,context})=>{
+  const {audit,posted,hold}=await installC4ConsentAPI(context);
+  let release!:()=>void;
+  hold(new Promise<void>(resolve=>{release=resolve}),'Synthetic delayed successful answer.');
+  try{
+    await page.goto('/#/studio/assistant');
+    await page.getByLabel('Choose intelligence').selectOption('gemini');
+    const question=page.getByRole('textbox',{name:'Dataset question'});
+    await question.fill('Synthetic project question');
+    const send=page.getByRole('button',{name:'Send to Google Gemini',exact:true});
+    await expect(send).toBeEnabled();
+    page.once('dialog',async dialog=>{expect(dialog.message()).toContain('Working dataset v0');expect(dialog.message()).toContain('Synthetic project question');await dialog.accept()});
+    await send.click();await expect.poll(()=>posted.length).toBe(1);
+    await question.fill('A different unsent draft');
+    release();
+    await expect(page.getByText('Synthetic delayed successful answer.',{exact:true})).toBeVisible();
+    await expect(question).toHaveValue('A different unsent draft');
+    expect(posted[0].question).toBe('Synthetic project question');
+    expect(posted[0].expected_dataset_version).toBe(0);
+    expect(posted).toHaveLength(1);
+  }finally{release()}
+  expect(audit.writes).toEqual([]);
+  expect(audit.blockedOrigins).toEqual([]);
+});
+test('C4 mounted consent catches missed witness changes and mismatched cloud responses',async({page,context})=>{
+  const {audit,posted,saved,hold,mismatch}=await installC4ConsentAPI(context);
+  await page.goto('/#/studio/assistant');
+  const select=page.getByLabel('Choose intelligence');
+  const question=page.getByRole('textbox',{name:'Dataset question'});
+  const send=page.getByRole('button',{name:'Send to Google Gemini',exact:true});
+  async function review(){
+    await select.selectOption('local');
+    await select.selectOption('gemini');
+    await question.fill('Synthetic project question');
+    await expect(send).toBeEnabled();
+  }
+  await review();
+  page.once('dialog',async dialog=>{
+    expect(dialog.message()).toContain('Working dataset v0');
+    // Backend state changes without any renderer notification.
+    saved.cloud_consent_witness='b'.repeat(32)+':1';
+    await dialog.accept();
+  });
+  await send.click();
+  await expect(page.getByText('Cloud permission or context changed. Result not shown; review saved settings before a new request.',{exact:true})).toBeVisible();
+  await expect(send).toBeDisabled();
+  expect(posted).toEqual([]);
+  await review();
+  let release!:()=>void;
+  hold(new Promise<void>(resolve=>{release=resolve}),'Synthetic missed-notification answer must never render.');
+  try{
+    page.once('dialog',async dialog=>{expect(dialog.message()).toContain('Confirm only this request');await dialog.accept()});
+    await send.click();await expect.poll(()=>posted.length).toBe(1);
+    saved.cloud_consent_witness='b'.repeat(32)+':2';release();
+    await expect(page.getByText('Waiting for the selected cloud request…',{exact:true})).toHaveCount(0);
+    await expect(send).toBeDisabled();
+    await expect(page.getByText('Synthetic missed-notification answer must never render.',{exact:true})).toHaveCount(0);
+    await expect(question).toHaveValue('Synthetic project question');
+  }finally{release()}
+  for(const field of ['provider','version','scope'] as const){
+    await review();
+    mismatch(field);
+    const count=posted.length;
+    page.once('dialog',async dialog=>{expect(dialog.message()).toContain('Working dataset v0');await dialog.accept()});
+    await send.click();await expect.poll(()=>posted.length).toBe(count+1);
+    await expect(page.getByText('Waiting for the selected cloud request…',{exact:true})).toHaveCount(0);
+    await expect(send).toBeDisabled();
+    await expect(page.getByText('Synthetic missed-notification answer must never render.',{exact:true})).toHaveCount(0);
+    await expect(question).toHaveValue('Synthetic project question');
+  }
+  expect(posted).toHaveLength(4);
+  expect(audit.writes).toEqual([]);
+  expect(audit.blockedOrigins).toEqual([]);
 });

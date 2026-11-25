@@ -81,6 +81,8 @@ test('isolated browser does not reuse server or approve import',()=>{
     'isolated import Quality and failed project switch preserve the synthetic unsaved draft',
     'C4 mounted consent requires explicit confirmation and a reviewed witness in both panels',
     'C4 mounted consent revocation in a second renderer suppresses an in-flight response',
+    'C4 mounted consent keeps a newer assistant draft after a delayed successful response',
+    'C4 mounted consent catches missed witness changes and mismatched cloud responses',
   ]);
   const approvedScenarios=spec.split(/^test\('/m).slice(1)
     .filter(section=>section.includes('await dialog.accept()'));
