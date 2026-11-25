@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | a931ff9775af8d32d391f2490cbaa15f2527aef6 |
 | Product baseline | C4 C3 frontend witness/fence 35d2bd2 + test-only a931ff9 exact P1/P4 SUCCESS. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
-| Operation ID | C4-C3-MOUNTED-NAVIGATION-CORRECTION-20261125 |
-| Operation state | ISSUED from prepared parent 37332481571c947cf7485da274dd6878e46f7f51; exact navigation fixture correction. Reconcile mounted CI before enabling real cloud. |
-| Intended files | frontend/e2e/isolated-workspace.spec.ts and canonical records only. |
+| Operation ID | C4-C3-SERVER-DATASET-VERSION-PIN-20261125 |
+| Operation state | PREPARED; independent backend pin while exact mounted navigation correction c206063 P1 runs; no frontend send activation. |
+| Intended files | backend/main.py, tests/test_c4_cloud_intent.py, C specification and canonical records. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | Exact 222084c: P4 #45670110565 SUCCESS (1086 Python/6 skipped/552 subtests, 15 Rust, 143 Node/Vite, 13 browser, 68 Windows/133 subtests; collector skipped); P1 #45670110570 FAILURE (206 Node and Vite passed, seven existing browser cases passed, both new C4 cases timed out at UI navigation). 97817ee P1 cancelled by supersession. |
-| Pending runs | None from 222084c or 97817ee; next exact P1 expected. |
+| Pending runs | c206063 P1 #45670823357 job 139405285723 IN_PROGRESS; retain exact run, no overlapping P1 frontend trigger. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | First reconcile exact test-only corrections and actual mounted consent cases. Fix any concrete failures without weakening audit. Before real sends, bind reviewed dataset version at request entry in both HTTP compositions and check Assistant draft preservation during busy cloud request; verify stale witness/version/provider/scope, revocation and missed renderer notifications. Keep real cloud send held and OpenRouter disabled until evidence permits narrow source enablement. Then exact CI, formal C4 closure and C5. |
+| Recovery action | Reconcile navigation P1 and server pin CI separately; bind witnessed explicit cloud requests to reviewed dataset version in legacy and owned paths before snapshot/context; reject missing/stale/mismatched pins, retain legacy no-witness compatibility. Then wire frontend pin and busy draft preservation; verify mounted tests and missed notification handling, only then consider actual source enablement. OpenRouter held. C4 source closure then C5. |
 | Resume after closure | C5 then D with separately approved scope. |
 
 ## Prior operation
