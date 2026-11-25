@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | READY |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 765ee1a5676c790f57bd77c496bb043747b7f7dc |
+| Observed starting HEAD | ac01ce9ff5cb3f2c4f425feecc707051d2415532 |
 | Product baseline | d8ea85a010c446f6426bfaaa0c5877d69f1f7372 (latest product/QA); 0d56daec7cf8c02e8f6bf11e7a3819a906968632 (P1 trigger-only, same product/QA); C1/C2 prior native source 388b357 and fixture 1d23ea1 retained at original scope. |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
-| Operation ID | C3-HOSTED-HTTP-RECOVERY-COMPAT-20261125-source |
-| Operation state | RECONCILED |
-| Intended files | Continuity records only for terminal verification and owner-requested stop/tab migration. Next implementation not started. |
+| Operation ID | C3-LOCAL-DEVQA-REPORT-CHAIN-AUTH-20261125-source |
+| Operation state | PREPARED |
+| Intended files | First bounded local DevQA migration: backend/request_auth.py, backend/server_entry.py, frontend/scripts/live-dev-api-proxy.mjs, frontend/src/p2NativeLiveReport.tsx, tools/Verify_P2_DevQA_Native_Chain_Local.ps1, tests/test_owned_server.py; corresponding source regressions and canonical continuity records. Preserve allocated dynamic port, seed/digest checks, isolated workspace, native Save As behavior; private launcher capability and same-origin Vite proxy, no client-visible token. Other local/hosted native callers and direct in-process adapter remain subsequent C3 work. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | All outstanding routine CI terminal SUCCESS. Exact d8ea85a P4 #45540644826 source 138958024247: 55 unittest, 1059 pytest + 552 subtests (6 skips), 116 Node, 15 standalone Rust, Vite; browser 138958024562 13/13 including P4-79 and N11; Windows 138958024571 60 + 85 subtests; restricted 138958026303 SKIPPED. P1 frontend #45540644808 job 138958024435 197 Node, Vite, 7 browser. Exact trigger-only 0d56dae P1 real HTTP #45540715891 job 138958266033 all four steps SUCCESS, 6 browser cases incl original recovery, Quality, management and export. Prior P2/P3 hosted f0c8be3 PASS. |
 | Pending runs | None. Branch run list checked: no nonterminal runs. All six native approvals consumed/disarmed, relevant C1/C2 one-use guards confirmed false. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | OWNER REQUESTED STOP after verification for tab migration. Resume only on next user instruction: read C-D05/section 10, map remaining local-devqa and hosted native QA startup/direct HTTP callers and explicit in-process adapter; migrate at source scope without native execution, then remove bare no-secret runtime fallback and complete exact route/direct-call matrix, disposable real HTTP negatives and CI. No new approval or C3 closure. |
+| Recovery action | Owner continuation received. Live HEAD equals migration checkpoint; exact hosted browser CI reconciled without replay. Inspect branch history for operation ID before repeating. Expected evidence: existing P1 disposable HTTP/frontend and P4 source/disposable CI only; native/installer/one-use trigger files untouched, native ETW job false. Verify exact publication and pending runs, then continue remaining C3 callers. No native execution; no closure credit until full C3 section 10 exit. |
 | Resume after closure | C4, C5 in order; D separately approved. |
 
 ## Prior operation
