@@ -34,6 +34,18 @@ MAX_DIRECTORY_FILES = 512  # structural refusal bound, not an asset capacity cla
 PE_PREFIX = 65536
 
 
+def sha256(path: Path) -> str:
+    """Read-only legacy QA digest API; not an input trust or execution gate.
+
+    Retains the import contract used by offline_analytics_cases. Use the
+    guarded exact-byte reader, with no asset loading or mutation. The caller
+    must independently establish expected identity and path ownership.
+    """
+    path = Path(path)
+    digest, _ = read_exact(path, size=path.lstat().st_size)
+    return digest
+
+
 def verify(root: Path) -> None:
     """Production preflight deliberately refuses before reading staged paths."""
     raise Blocked("C5_INFERENCE_PROVENANCE_BLOCKED")

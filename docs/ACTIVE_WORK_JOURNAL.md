@@ -7,17 +7,17 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | PREPARED |
+| State | PUBLISHED |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 57db2621433cd781b09b854d30d96028adb97822 |
 | Product baseline | Last fully verified 898230f; 40d0e13 guard batch published, P4 Linux/Windows failed on removed SHA256 compatibility helper. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
 | Operation ID | C5-ASSET-HASH-COMPATIBILITY-20261125 |
-| Operation state | PREPARED; restore read-only sha256 import compatibility without weakening blocked production verifier; direct regression test. |
+| Operation state | ISSUED; recover exact correction from prepared parent 70f7221df20c5fd4bdeac4d3eeecc2a7c3f91c74. Production remains blocked. |
 | Intended files | desktop/verify_inference_assets.py, tests/test_c5_build_input_preflight.py, canonical documentation only. No lock, workflow, approval or native marker changes. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | Exact 40d0e13 P4 #45684550154: source job 139453570467 FAILURE (two collection errors); Windows 139453569167 FAILURE after 78 C5 passed/1 skipped and 3 bundle preflight passes; shared cause missing sha256 export imported by offline_analytics_cases.py. HTTP 139453569971 still running at observation; collector skipped. |
-| Pending runs | Prior exact HTTP job 139453569971 still in progress at observation. P4 concurrency may cancel it on correction; record outcome without rerun. |
+| Pending runs | Prior HTTP 139453569971 outcome to reconcile; new exact P4 source/browser/synthetic Windows only expected. |
 | Unpublished work | Owner-local tree not inspected. |
 | Recovery action | Restore compatibility with read-only bounded-memory SHA256 function; ensure production verify continues unconditional BLOCKED. Review matching source workflow. Continue metadata research only, no artifact acquisition. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |

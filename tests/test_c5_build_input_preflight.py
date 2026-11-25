@@ -536,3 +536,22 @@ def test_read_exact_prefix_is_bounded_and_from_hashed_bytes(tmp_path):
         hashlib.sha256(content).hexdigest(), b"header")
     with pytest.raises(preflight.Blocked):
         preflight.read_exact(path, size=len(content), prefix_bytes=65537)
+
+
+def test_legacy_analytics_digest_import_remains_read_only(tmp_path, monkeypatch):
+    # Existing analytics QA modules import the top-level desktop module.
+    # Reproduce that import route as well as the package import.
+    import importlib
+    monkeypatch.syspath_prepend(str(ROOT / "desktop"))
+    legacy = importlib.import_module("verify_inference_assets")
+    cases = importlib.import_module("offline_analytics_cases")
+    assert cases.sha256 is legacy.sha256
+    path = tmp_path / "inert.bin"
+    data = b"synthetic read-only digest fixture"
+    path.write_bytes(data)
+    before = snapshot(tmp_path)
+    assert legacy.sha256(path) == hashlib.sha256(data).hexdigest()
+    assert assets.sha256(path) == hashlib.sha256(data).hexdigest()
+    with pytest.raises(preflight.Blocked, match="C5_INFERENCE_PROVENANCE_BLOCKED"):
+        legacy.verify(tmp_path)
+    assert snapshot(tmp_path) == before
