@@ -162,3 +162,111 @@ def test_legacy_visual_owner_and_font_gates_are_preserved():
     assert '"be_030_owner_visual": "PENDING"' in source
     assert 'os.startfile(pdf_path)' in source
     assert "TestClient(app)" not in source
+
+
+# Only import definitions. Never run the real model diagnostic or asset verifier.
+with patch.object(sys, "path", [str(ROOT / "desktop"), *sys.path]):
+    import verify_live_bundled_inference as inference_verifier
+
+
+@pytest.mark.parametrize("url,token,body", (
+    ("http://example.invalid:18042/health", "a"*64, None),
+    ("http://localhost:18042/health", "a"*64, None),
+    ("http://127.0.0.1:08000/health", "a"*64, None),
+    ("http://127.0.0.1:65536/health", "a"*64, None),
+    ("http://127.0.0.1:80/health", "a"*64, None),
+    ("http://127.0.0.1:18042/health?key=x", "a"*64, None),
+    ("http://127.0.0.1:18042/execute", "a"*64, None),
+    ("http://127.0.0.1:18042/health", None, None),
+    ("http://127.0.0.1:18042/health", "a"*64, {}),
+    ("http://127.0.0.1:18042/v1/chat/completions", "a"*64, None),
+    ("http://127.0.0.1:18042/v1/chat/completions", "invalid", {}),
+    ("http://127.0.0.1:18042/v1/chat/completions", "A"*64, {}),
+))
+def test_inference_diagnostic_refuses_invalid_configuration_before_connection(url, token, body):
+    with patch.object(inference_verifier.http.client, "HTTPConnection") as connect:
+        with pytest.raises(ValueError):
+            inference_verifier.send(url, token, body)
+    connect.assert_not_called()
+
+
+@pytest.mark.parametrize("status", (301, 302, 303, 307, 308))
+def test_inference_diagnostic_refuses_redirect_without_reading_response(status):
+    response = Mock(status=status)
+    conn = Mock()
+    conn.getresponse.return_value = response
+    with patch.object(inference_verifier.http.client, "HTTPConnection", return_value=conn) as connect:
+        with pytest.raises(RuntimeError, match="redirect"):
+            inference_verifier.send("http://127.0.0.1:18042/health", "a"*64)
+    connect.assert_called_once_with("127.0.0.1", 18042, timeout=5)
+    conn.request.assert_called_once_with("GET", "/health", body=None,
+        headers={"Content-Type": "application/json", "Authorization": "Bearer " + "a"*64})
+    response.read.assert_not_called()
+    conn.close.assert_called_once()
+
+
+@pytest.mark.parametrize("status,limit", ((200, 4*1024*1024), (401, 256*1024)))
+def test_inference_diagnostic_bounded_response_and_negative_auth(status, limit, monkeypatch):
+    monkeypatch.setenv("HTTP_PROXY", "http://invalid.example:3128")
+    response = Mock(status=status)
+    response.read.return_value = b'{"status":"synthetic"}'
+    conn = Mock()
+    conn.getresponse.return_value = response
+    with patch.object(inference_verifier.http.client, "HTTPConnection", return_value=conn) as connect:
+        assert inference_verifier.send("http://127.0.0.1:18042/v1/chat/completions", body={}) == (status, {"status": "synthetic"})
+    connect.assert_called_once_with("127.0.0.1", 18042, timeout=5)
+    conn.request.assert_called_once_with("POST", "/v1/chat/completions", body=b"{}",
+        headers={"Content-Type": "application/json"})
+    response.read.assert_called_once_with(limit+1)
+    conn.close.assert_called_once()
+    for raw, message in [(b"x"*(limit+1), "safety limit"), (b"not JSON", "Invalid local inference diagnostic JSON")]:
+        response.read.return_value = raw
+        with patch.object(inference_verifier.http.client, "HTTPConnection", return_value=conn):
+            with pytest.raises(RuntimeError, match=message):
+                inference_verifier.send("http://127.0.0.1:18042/v1/chat/completions", body={})
+
+
+@pytest.mark.parametrize("status", (301, 302, 303, 307, 308, 401, 503))
+def test_production_bundled_client_never_follows_worker_redirect_or_leaks_response(status, monkeypatch):
+    # This is an inert, runner-owned loopback HTTP stub, not an inference worker.
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+    from threading import Thread
+    import urllib.error
+    from backend import bundled_inference
+
+    hits = []
+    class Stub(BaseHTTPRequestHandler):
+        def log_message(self, *args):
+            pass
+
+        def do_GET(self):
+            hits.append((self.path, self.headers.get("Authorization")))
+            if self.path != "/health":
+                self.send_response(200)
+                self.end_headers()
+                self.wfile.write(b'{"unexpected":true}')
+                return
+            self.send_response(status)
+            self.send_header("Location", "/redirect-trap")
+            self.end_headers()
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Stub)
+    thread = Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        monkeypatch.setenv("PILOTODIN_DESKTOP_SESSION", "a"*64)
+        monkeypatch.setenv("PILOTODIN_BUNDLED_LLM_PORT", str(server.server_port))
+        monkeypatch.setenv("PILOTODIN_BUNDLED_LLM_TOKEN", "b"*64)
+        monkeypatch.setenv("HTTP_PROXY", "http://invalid.example:3128")
+        monkeypatch.setenv("ALL_PROXY", "http://invalid.example:3128")
+        monkeypatch.setenv("NO_PROXY", "")
+        with pytest.raises(urllib.error.HTTPError) as refused:
+            bundled_inference._request("/health")
+        assert refused.value.code == status
+        assert refused.value.headers is None
+        assert "redirect-trap" not in str(refused.value)
+        assert hits == [("/health", "Bearer " + "b"*64)]
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=3)

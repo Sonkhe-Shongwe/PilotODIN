@@ -38,6 +38,11 @@ def _configuration() -> tuple[str, str]:
     return f"http://127.0.0.1:{port}", secret
 
 
+class _NoRedirects(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
 def _request(path: str, payload: dict[str, Any] | None = None, timeout: float = 3) -> dict[str, Any]:
     if path not in ("/health", "/v1/models", "/v1/chat/completions"):
         raise ValueError("Unsupported bundled inference API path")
@@ -49,10 +54,19 @@ def _request(path: str, payload: dict[str, Any] | None = None, timeout: float = 
                  "User-Agent": "PilotODIN/bundled-inference"},
         method="POST" if payload is not None else "GET",
     )
-    # Never obey HTTP(S)_PROXY for local AI requests.
-    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
-    with opener.open(request, timeout=timeout) as response:
-        raw = response.read(256_001)
+    # Neither proxy settings nor a worker redirect may change the destination.
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), _NoRedirects())
+    try:
+        with opener.open(request, timeout=timeout) as response:
+            if 300 <= response.status < 400:
+                raise urllib.error.HTTPError(base + path, response.status, "Local inference request refused", None, None)
+            raw = response.read(256_001)
+    except urllib.error.HTTPError as exc:
+        code = exc.code
+        exc.close()
+        # Existing callers classify by HTTP status only; never expose Location,
+        # response content or an untrusted server reason.
+        raise urllib.error.HTTPError(base + path, code, "Local inference request refused", None, None) from None
     if len(raw) > 256_000:
         raise ValueError("Bundled inference response exceeds safety limit")
     result = json.loads(raw)

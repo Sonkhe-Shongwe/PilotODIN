@@ -42,6 +42,8 @@ on:
       - tools/c3_source_caller_inventory.py
       - tools/Run_P2_Legacy_PDF_Visual_Local.py
       - desktop/verify_packaged_engine.py
+      - desktop/verify_live_bundled_inference.py
+      - backend/bundled_inference.py
       - tests/test_c3_local_verifier_trust.py
       - tests/test_p2_legacy_pdf_visual_source.py
       - tests/test_build_d_unified_journey.py

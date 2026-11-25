@@ -18,8 +18,8 @@ import socket
 import subprocess
 import sys
 import time
-import urllib.error
-import urllib.request
+import http.client
+import re
 
 from offline_analytics_cases import (
     CANDIDATES, CASES, SYSTEM, WORDING_SCENARIOS, WORDING_SYSTEM, score_answer,
@@ -41,18 +41,44 @@ def port() -> int:
 
 
 def send(url: str, token: str | None = None, body: dict | None = None, timeout: float = 5):
+    # This diagnostic may address only its own fixed loopback worker routes.
+    match = re.fullmatch(r'http://127\.0\.0\.1:([1-9][0-9]{3,4})(/health|/props|/v1/chat/completions)', url) if isinstance(url, str) else None
+    if match is None or not 1024 <= int(match[1]) <= 65535:
+        raise ValueError('Invalid local inference diagnostic destination')
+    port_number, path = int(match[1]), match[2]
+    if (path == '/v1/chat/completions') != isinstance(body, dict) or (body is not None and not isinstance(body, dict)):
+        raise ValueError('Invalid local inference diagnostic method')
+    # Preserve the deliberate unauthenticated generation refusal probe.
+    if token is None:
+        if path != '/v1/chat/completions':
+            raise ValueError('Inference diagnostic session required')
+    elif not isinstance(token, str) or re.fullmatch(r'[0-9a-f]{64}', token) is None:
+        raise ValueError('Invalid inference diagnostic session')
     headers = {'Content-Type': 'application/json'}
-    if token:
+    if token is not None:
         headers['Authorization'] = f'Bearer {token}'
     payload = json.dumps(body).encode('utf-8') if body is not None else None
-    request = urllib.request.Request(url, data=payload, headers=headers,
-                                     method='POST' if body is not None else 'GET')
+    conn = http.client.HTTPConnection('127.0.0.1', port_number, timeout=timeout)
     try:
-        opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
-        with opener.open(request, timeout=timeout) as response:
-            return response.status, json.loads(response.read(4 * 1024 * 1024))
-    except urllib.error.HTTPError as err:
-        return err.code, json.loads(err.read(256 * 1024))
+        conn.request('POST' if body is not None else 'GET', path, body=payload, headers=headers)
+        response = conn.getresponse()
+        if 300 <= response.status < 400:
+            raise RuntimeError('Local inference diagnostic returned a redirect')
+        limit = 4 * 1024 * 1024 if response.status < 400 else 256 * 1024
+        raw = response.read(limit + 1)
+        if len(raw) > limit:
+            raise RuntimeError('Local inference diagnostic response exceeds safety limit')
+        try:
+            result = json.loads(raw)
+        except (ValueError, UnicodeError):
+            raise RuntimeError('Invalid local inference diagnostic JSON') from None
+        return response.status, result
+    except http.client.RemoteDisconnected:
+        raise
+    except http.client.HTTPException:
+        raise RuntimeError('Invalid local inference diagnostic HTTP') from None
+    finally:
+        conn.close()
 
 
 def worker_memory(pid: int) -> dict[str, float | int]:
