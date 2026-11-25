@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | VERIFYING |
+| State | BLOCKED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | eb216a634ec1442579a89651c39f809ccf997cce |
-| Product baseline | a573c254b53f0a9af6738d652a92dca1636aefbe; exact historical P2 CLI P4 #45691933928 SUCCESS. |
+| Observed starting HEAD | 3266eb8b2351c0259368cd2dffea625e0d9d43a5 |
+| Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
-| Operation ID | C5-NATIVE-ENTRYPOINT-FREEZE-20261125 |
-| Operation state | RECONCILED publication at 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P4 IN_PROGRESS, P1 IN_PROGRESS. No restricted action. |
-| Intended files | tools/Verify_A4_Native_Windows.ps1, tools/Verify_P2_Native_Export_Local.ps1, Run_PilotODIN_P2_Native_Export.bat, desktop/Verify_Installed_PilotODIN.ps1, frontend/scripts/p4-isolated-native-dev.mjs, frontend/tests/p4-native-dev-isolation.test.cjs, tests/test_c5_build_input_preflight.py, .github/workflows/p4-target-ranking.yml, canonical docs. Owner QA kit verification scripts unchanged. |
+| Operation ID | C5-CLOSURE-GAP-REVIEW-20261125 |
+| Operation state | RECONCILED prior CI; source closure gap review complete. Mandatory independent provenance remains blocked; no new approval. |
+| Intended files | Canonical journal, handoff and evidence ledger only. No product source, locks, workflows or approval changes. |
 | Approval | C5 metadata-only approval CONSUMED; no replay. Exact run 45686334903 attempt 1 only. All six native approvals still consumed/disarmed. No artifact bytes, native, model, installer, owner device, OS/network change or additional metadata dispatch authorized. |
-| Verification | Exact a573c25 P4 SUCCESS: 1237 Python/6 skipped/552 subtests, 15 Rust, 160 Node/Vite, 3 refusal; Windows 150 C5/1 skipped, parser, 3 refusal, 68/133 subtests; HTTP 13; restricted collector skipped. |
-| Pending runs | #45693703789 IN_PROGRESS: 139485487826 in_progress; 139485488293 in_progress; 139485488459 in_progress; 139485490641 skipped. #45693704390 IN_PROGRESS: 139485488706 in_progress. |
+| Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
+| Pending runs | None. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Reconcile exact P4 and P1 CI. Native npm executable frontdoor unconditionally refuses, A4 preflight-only preserved, P2 export and installer verification deny before setup; owner RAM/R03 QA kit launchers retained for separate explicitly approved use only. Remaining direct historical helper/owner paths are not a security boundary or fully audited. Next focus on a bounded selected-wheel metadata provenance plan and explicit artifact acquisition prerequisites; no replay or new network/native operation authorised. |
+| Recovery action | C5 exit under C-D08 and spec sections 5–7/Package C section 10 requires complete selected-wheel graph and exact Windows production/Linux and Windows test hash locks, toolchain/asset/license provenance, actual verified bytes, safe entrypoint disposition and exact CI. Next prepare offline bounded selected-wheel METADATA plan and explicit approval proposal (62 candidate files only, no artifact or execution); then separately scoped real artifact evidence, production input contract and closure audit. Four profiles BLOCKED. G2/D/P8 remain separate. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
