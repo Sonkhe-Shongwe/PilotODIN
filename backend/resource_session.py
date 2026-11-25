@@ -257,12 +257,17 @@ def compose_owned_desktop(bootstrap, build_server):
             if value.get("cloud_intent") is not True:
                 fallback["reason"]="Explicit cloud request required; verified deterministic analysis used"
                 return fallback
+            revision=value.get("consent_revision")
+            if not ai_provider.cloud_consent_current(revision):
+                fallback["reason"]="Cloud consent changed; verified deterministic analysis used"
+                return fallback
             return ai_provider.owned_cloud_insight(
                 value["context"],value["task"],value["question"],value["local"],
                 value["deep"],value["selected_provider"],value["continuation_text"],
                 still_current=lambda: (
                     not session.coordinator.status()["stopping"]
-                    and main.quality.current_version(value["project_id"])==value["dataset_version"]))
+                    and main._insight_context_current(value["project_id"],value["dataset_version"])),
+                expected_revision=revision)
         if selected == "local":
             fallback["reason"] = "Deterministic local analysis selected"
             return fallback

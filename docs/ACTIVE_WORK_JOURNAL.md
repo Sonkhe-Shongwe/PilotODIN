@@ -7,17 +7,17 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 5070c53b933232c103d4c4889d237276c3cc4528 |
 | Product baseline | B7 common boundary 350d76460fc9b846d2f78f00db27c0c1e0745b21; exact P1 #45657212625 and P4 #45657212615 SUCCESS. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
 | Operation ID | C4-B7-ROUTE-FENCE-20261125 |
-| Operation state | PREPARED; route-level source not yet issued |
+| Operation state | ISSUED; reconcile exact source commit by parent 873f84c and operation ID; do not replay |
 | Intended files | backend/ai_provider.py, backend/main.py, backend/resource_session.py, tests/test_c4_cloud_intent.py and canonical records. No workflow, native or persistent schema change. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | B7 common boundary 125 focused cases and all downstream P1 stages PASS; exact P4 all three routine jobs SUCCESS, restricted collector skipped. |
-| Pending runs | None from 350d764. Expect eight routine source/synthetic workflows after main.py change; no restricted dispatch. |
+| Pending runs | Expected eight routine P1/P2/P3/P4 workflows; discover exact SHA and run IDs after publication. |
 | Unpublished work | Owner-local tree not inspected. |
 | Recovery action | Capture server-internal cloud revision at authenticated route entry; reject mismatches atomically at common admission before projection/key, propagate through bounded owned adapter, fail closed on missing/invalid revision, recheck project/version and revision before HTTP cloud publication. Actual route tests for both compositions using inert adapter/model seams. Reconcile exact CI before B8; no score increment. |
 | Resume after closure | C5 then D with separately approved scope. |

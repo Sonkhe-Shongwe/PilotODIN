@@ -1212,12 +1212,25 @@ def save_ai_key(body:AIKeyRequest,request:Request):
     except OSError as exc:raise _settings_mutation_error(exc) from None
 
 
+def _insight_context_current(project_id, version):
+    # current_version rejects archived/deleted projects; uncertain reads fail closed.
+    try:
+        return quality.current_version(project_id)==version
+    except Exception:
+        return False
+
+
 @app.post('/api/projects/{project_id}/ai/insight')
 def ai_insight(project_id:str,body:AIInsightRequest,request:Request):
     _local_request(request)
+    # Capture before either composition prepares project data. Never trust a
+    # revision supplied by the browser or a provider response.
+    consent_revision=(ai_provider.cloud_consent_revision()
+                      if body.cloud_intent is True and body.selected_provider in ai_provider.PROVIDERS
+                      else None)
     owned = request.scope.get('pilotodin.owned_session')
     if owned is not None:
-        return _owned_ai_insight(project_id, body, owned)
+        return _owned_ai_insight(project_id, body, owned, consent_revision)
     project_or_404(project_id)
     if body.context not in ai_context.TASKS:
         raise HTTPException(status_code=422,detail='Unsupported workspace context')
@@ -1246,9 +1259,8 @@ def ai_insight(project_id:str,body:AIInsightRequest,request:Request):
                    "No treatment has been applied. Observed associations do not prove the missingness mechanism.")
         result=ai_provider.respond(context,body.context,question,local,body.deep,body.selected_provider,body.continuation_text,
                                    cloud_intent=body.cloud_intent,
-                                   still_current=lambda:quality.current_version(project_id)==version)
-        if result.get('source')=='cloud_llm' and quality.current_version(project_id)!=version:
-            raise HTTPException(status_code=409,detail='Insight became stale; request a new result')
+                                   still_current=lambda:_insight_context_current(project_id,version),
+                                   expected_revision=consent_revision)
         if body.context == 'assistant' and result.get('fallback') and plan is None and not body.continuation_text:
             verified = verified_answers.answer(df, version, project_id, question)
             if verified['analysis'] is not None:
@@ -1259,6 +1271,10 @@ def ai_insight(project_id:str,body:AIInsightRequest,request:Request):
                 'insight_result', source=result.get('source'), provider=result.get('provider'),
                 fallback=result.get('fallback'), local_status=result.get('local_status'),
             )
+        if result.get('source')=='cloud_llm' and (
+                not _insight_context_current(project_id,version)
+                or not ai_provider.cloud_consent_current(consent_revision)):
+            raise HTTPException(status_code=409,detail='Insight became stale; request a new result')
         return {**result,'dataset_version':version,'privacy':'summary_only_no_rows',
                 'scope':body.context,'investigation':plan['local_report'] if plan else None,
                 'investigation_steps':plan['steps'] if plan else [],
@@ -1504,7 +1520,7 @@ def export_saved_report(report_id: str,format: str,revision: int | None = Query(
     })
 
 
-def _owned_ai_insight(project_id, body, owned):
+def _owned_ai_insight(project_id, body, owned, consent_revision):
     """Actual direct insight path: DATA preparation, bounded host stage,
     then version validation. No dataframe retained across inference."""
     try:
@@ -1550,6 +1566,7 @@ def _owned_ai_insight(project_id, body, owned):
                 "project_id":project_id,"dataset_version":version,"context":context,
                 "task":body.context,"question":question,"local":local,"deep":body.deep,
                 "selected_provider":body.selected_provider,"cloud_intent":body.cloud_intent,
+                "consent_revision":consent_revision,
                 "continuation_text":body.continuation_text})
             # Roundtrip caps the retained evidence as well as the host context.
             tail = json.loads(bounded_context_bytes({
@@ -1568,20 +1585,26 @@ def _owned_ai_insight(project_id, body, owned):
         if "direct" in prepared:
             return prepared["direct"]
         version = prepared["version"]
-        if quality.current_version(project_id) != version:
+        if not _insight_context_current(project_id,version):
             raise HTTPException(status_code=409,detail='Dataset version changed before inference')
         if owned.coordinator.status()["stopping"]:
             raise ResourceDeferred("shutting_down")
         # Trusted, required adapter; never invoke legacy respond as fallback.
-        result = owned.insight(prepared["payload"])
+        if consent_revision is not None and not ai_provider.cloud_consent_current(consent_revision):
+            result = ai_provider.local_rules_result(json.loads(prepared["payload"])["local"],
+                reason="Cloud consent changed; verified deterministic analysis used")
+        else:
+            result = owned.insight(prepared["payload"])
         if type(result) is not dict:
             raise RuntimeError("Owned insight returned an invalid result")
         result = json.loads(bounded_context_bytes(result))
-        if owned.coordinator.status()["stopping"] or quality.current_version(project_id) != version:
+        if owned.coordinator.status()["stopping"] or not _insight_context_current(project_id,version):
             raise HTTPException(status_code=409,detail='Insight became stale; request a new result')
         tail=prepared["tail"]
         if result.get("fallback") and tail["fallback"] is not None:
             result={**result,**tail["fallback"]}
+        if result.get("source")=="cloud_llm" and not ai_provider.cloud_consent_current(consent_revision):
+            raise HTTPException(status_code=409,detail='Insight became stale; request a new result')
         return {**result,'dataset_version':version,'privacy':'summary_only_no_rows',
                 'scope':body.context,'investigation':tail["investigation"],
                 'investigation_steps':tail["investigation_steps"],

@@ -3,6 +3,7 @@ import asyncio
 import json
 from concurrent.futures import ThreadPoolExecutor
 from threading import Event
+from types import SimpleNamespace
 
 import pytest
 import pandas as pd
@@ -453,3 +454,66 @@ def test_cloud_transport_exception_releases_shared_slot(dispatch,monkeypatch):
     assert ai._cloud_slot is None
     monkeypatch.setattr(ai,"_call_provider",original)
     assert ai.respond({},"assistant","Question","Rules",selected_provider="groq",cloud_intent=True)["provider"]=="groq"
+
+
+# B7 route-entry fences. Actual ASGI routes and owned adapter; no native
+# session startup, host calls, live provider or local model execution.
+@pytest.mark.parametrize("composition",["legacy","owned"])
+@pytest.mark.parametrize("phase",["positive","preparation","late_publication"])
+def test_cloud_http_route_generation_fence(product_composition,dispatch,monkeypatch,composition,phase):
+    cfg,calls=dispatch
+    _,coordinator,autonomy,_=product_composition
+    monkeypatch.setattr(ai,"_consent_revision",ai.cloud_consent_revision())
+    def revoke_reenable():
+        with ai._lock:
+            ai._consent_revision+=2
+
+    if composition=="owned":
+        from backend import resource_session
+        def inert_session(bootstrap,read_mode,read_available_bytes,*,build_autonomy,build_app,build_server,demand):
+            return SimpleNamespace(coordinator=coordinator,app=build_app(coordinator,autonomy))
+        monkeypatch.setattr(resource_session,"DesktopResourceSession",inert_session)
+        app=resource_session.compose_owned_desktop(None,lambda *_:pytest.fail("Native server construction")).app
+    else:
+        app=main.app
+    original_build=main.ai_context.build
+    original_insight=ai.owned_cloud_insight
+    if phase=="preparation":
+        def build(*args,**kwargs):
+            result=original_build(*args,**kwargs)
+            revoke_reenable()
+            return result
+        monkeypatch.setattr(main.ai_context,"build",build)
+    elif phase=="late_publication":
+        def insight(*args,**kwargs):
+            result=original_insight(*args,**kwargs)
+            assert result["source"]=="cloud_llm"
+            revoke_reenable()
+            return result
+        monkeypatch.setattr(ai,"owned_cloud_insight",insight)
+    with fixture_client(app) as client:
+        seed=client.post("/api/projects",files={"file":("fixture.csv",b"amount,group\n1,A\n2,B\n3,A\n","text/csv")})
+        assert seed.status_code==201,seed.text
+        path="/api/projects/"+seed.json()["id"]+"/ai/insight"
+        response=client.post(path,json={"context":"overview","selected_provider":"gemini",
+                                        "cloud_intent":True,"consent_revision":-1})
+        if phase=="preparation":
+            assert response.status_code==200,response.text
+            assert response.json()["fallback"] and not calls
+        elif phase=="late_publication":
+            assert response.status_code==409,response.text
+            assert "Fixture answer" not in response.text and len(calls)==1
+        else:
+            assert response.status_code==200,response.text
+            assert response.json()["provider"]=="gemini" and len(calls)==1
+            assert "consent_revision" not in calls[0][2]
+            assert "consent_revision" not in response.json()
+        assert ai._cloud_slot is None
+
+
+@pytest.mark.parametrize("witness",[False,"0",-1])
+def test_cloud_expected_revision_refuses_invalid_witness_before_projection(dispatch,monkeypatch,witness):
+    monkeypatch.setattr(ai,"_cloud_project",lambda *_:pytest.fail("Invalid witness reached projection"))
+    monkeypatch.setattr(ai,"_get_key",lambda *_:pytest.fail("Invalid witness reached credentials"))
+    result=ai.owned_cloud_insight({},"assistant","Question","Rules",False,"gemini",expected_revision=witness)
+    assert result["fallback"] and not dispatch[1] and ai._cloud_slot is None

@@ -728,8 +728,10 @@ def _encode_insight_prompt(context: dict, task: str, question: str, continuation
 
 def respond(context:dict,task:str,question:str,local_answer:str,deep:bool=False,selected_provider:str|None=None,
             continuation_text:str|None=None, *, cloud_intent:bool=False,
-            still_current=lambda:True)->dict:
+            still_current=lambda:True, expected_revision=None)->dict:
     """One common cloud boundary; Auto is local and saved preferences cannot dispatch."""
+    if cloud_intent is True and selected_provider in PROVIDERS and expected_revision is None:
+        expected_revision=cloud_consent_revision()
     cfg=_read_config()
     mode=cfg.get('intelligence_mode','hybrid')
     selected=_resolve_provider(cfg,task,selected_provider)
@@ -742,7 +744,8 @@ def respond(context:dict,task:str,question:str,local_answer:str,deep:bool=False,
             fallback['reason']='Explicit cloud request required; verified deterministic analysis used'
             return fallback
         return owned_cloud_insight(context,task,question,local_answer,deep,selected,
-                                   continuation_text,still_current=still_current)
+                                   continuation_text,still_current=still_current,
+                                   expected_revision=expected_revision)
     if selected != 'ollama' and mode == 'cloud':
         fallback['reason']='Select a cloud provider explicitly or choose local intelligence'
         return fallback
@@ -849,13 +852,26 @@ def _owned_consent(provider):
         return None
 
 
+def cloud_consent_revision():
+    """Server-only generation witness; no credential read or persistent change."""
+    with _lock:
+        return _consent_revision
+
+
+def cloud_consent_current(revision):
+    """Reject missing, malformed or superseded internal request witnesses."""
+    with _lock:
+        return type(revision) is int and revision == _consent_revision
+
+
 @contextmanager
-def _cloud_admission():
+def _cloud_admission(expected_revision=None):
     """Reserve one operation before preparing data; never queue or release on revoke."""
     global _cloud_slot
     with _lock:
         ticket = None
-        if _cloud_slot is None:
+        if (_cloud_slot is None and
+                (expected_revision is None or cloud_consent_current(expected_revision))):
             ticket = {"revision": _consent_revision, "dispatched": False}
             _cloud_slot = ticket
     try:
@@ -893,7 +909,7 @@ def _cloud_ticket_valid(ticket, provider, consent, *, dispatch=False):
 
 
 def owned_cloud_insight(context,task,question,local_answer,deep,selected_provider,
-                        continuation_text=None,*,still_current=lambda:True):
+                        continuation_text=None,*,still_current=lambda:True,expected_revision=None):
     """One explicit destination and one bounded shared cloud operation."""
     fallback=local_rules_result(local_answer,reason="Explicit cloud consent or provider unavailable")
     if selected_provider not in PROVIDERS:
@@ -912,9 +928,11 @@ def owned_cloud_insight(context,task,question,local_answer,deep,selected_provide
         except Exception:
             return False
 
-    with _cloud_admission() as ticket:
+    with _cloud_admission(expected_revision) as ticket:
         if ticket is None:
-            fallback["reason"]="Another cloud request is in progress; verified deterministic analysis used"
+            fallback["reason"]=("Cloud consent changed; verified deterministic analysis used"
+                if expected_revision is not None and not cloud_consent_current(expected_revision)
+                else "Another cloud request is in progress; verified deterministic analysis used")
             return fallback
         if not current():
             return fallback
