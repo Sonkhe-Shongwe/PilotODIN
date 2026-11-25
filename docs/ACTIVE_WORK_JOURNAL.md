@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | PREPARED |
+| State | READY |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 0da173e658365ece6aebd3cc9e40e08495f8068a |
-| Product baseline | a949684360d99ea052ace639afa11aa2222e4d83 exact P1 and P4 terminal SUCCESS. |
+| Observed starting HEAD | 0da173e658365ece6aebd3cc9e40e08495f8068a; audit prepared d71d34d60e71a4fe7c8313fa6789a729d4b34273; final documentation commit identifiable by parent and operation marker. |
+| Product baseline | a949684360d99ea052ace639afa11aa2222e4d83 exact P1/P4 terminal SUCCESS; no product change in audit. |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
 | Operation ID | C3-DOCUMENTATION-MIGRATION-AUDIT-20261125 |
-| Operation state | PREPARED |
+| Operation state | RECONCILED |
 | Intended files | Compact migration handoff; journal; append one terminal evidence receipt; new dated documentation migration audit; current navigation audit links in README, Continue Here, Documentation Index, Session Handoff, Project Status and directive; correct stale C1/C2 references in directive and phase policy. No product/test/workflow/approval/acceptance changes. Preserve complete prior handoff via immutable link and all existing numbered headings/anchors. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Exact a949684 P1 #45593798283 job 139134484903 SUCCESS (52 verifier/pagination/source cases including 26 new transport cases; scanner 877/877, 349 candidates, seven construction paths, 76 routes, zero AST/decode gaps). P4 #45593798260 terminal SUCCESS; Linux 139134485916 1061 Python, six skipped, one warning, 552 subtests, 129 Node, 15 standalone Rust; browser 139134485443 13; Windows 139134485930 68 and 133 subtests, five model-free scenarios; restricted collector 139134488177 SKIPPED. Three C1/C2 workflows explicitly false and production OWNED_RESOURCE_ENABLED false at observed HEAD. Handoff grown to 2539 whitespace-delimited words and repeats chronology; directive and phase policy stale integration blocker. Historical 736a0fe row contradictory P4 success vs failing source contract; preserve original and label failure with corrective 78ca6e1 evidence. No restricted operation. |
-| Pending runs | None; exact P1/P4 terminal SUCCESS. |
+| Verification | Exact `a949684`: P1 [#45593798283](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45593798283) job 139134484903 SUCCESS, 52 verifier/pagination/source cases including 26 new transport cases; scanner 877/877 eligible decoded, 349 candidate paths, seven classified lexical transport-construction paths, 76 registered routes, zero AST/decode gaps (not semantic closure). P4 [#45593798260](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45593798260) SUCCESS: Linux 139134485916 1061 Python, six skipped, one warning, 552 subtests, 129 Node, 15 standalone Rust; disposable Chromium 139134485443 13/13; Windows 139134485930 68 and 133 subtests, five model-free scenarios, no modelling imports; restricted collector 139134488177 SKIPPED. No real inference, native application, model assets, installer or owner data accessed. Documentation audit compacted live handoff; previous chronology preserved via immutable Git link; stale C1/C2 references corrected, navigation updated. Three C1/C2 native workflow guards and production activation false at audited HEAD. No scope or score change. |
+| Pending runs | None; exact P1/P4 terminal SUCCESS; restricted collector SKIPPED. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Publish documentation-only audit under expected HEAD, preserve previous records, verify live links and actual diff. Then resume C3 semantic direct caller inventory, bare main fail-closed guard and full route matrix. Do not close C3 or activate anything. |
+| Recovery action | Resume C3 semantic direct caller/credential audit including scanner blind spots (opener.open/build_opener, direct route references and launchers), then bare main fail-closed authorization and final 76-route/caller matrix. Exact scoped negative and regression CI before C3 closure. C4/C5 next in order; no activation. |
 | Resume after closure | C4, C5 in order; D separately approved. |
 
 ## Prior operation
