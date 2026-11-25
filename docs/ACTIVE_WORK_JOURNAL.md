@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 5588dc7e80f939771fa432c2da35d48ecd3d6de5 |
-| Product baseline | B8 strict transport 970a158; exact P1 and P4 failures reconciled below. |
+| Observed starting HEAD | 6987abf83fd3ea0da9dd3996ab3128928a841736 |
+| Product baseline | B8 strict wire 970a158; test-only correction 536656a exact P1/P4 SUCCESS. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
-| Operation ID | C4-B8-WIRE-FIXTURES-20261125 |
-| Operation state | RECONCILED; test-only correction published at [536656a](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/536656a7c38bdeefe4259c39d08ea94f8f7359e7), prepared at 27490c1; exact CI outstanding. |
-| Intended files | tests/test_c4_cloud_intent.py, tests/test_p4_r03_verified_answers.py and canonical records only. |
+| Operation ID | C4-B8-DEADLINE-LIFETIME-20261125 |
+| Operation state | PREPARED; deadline source not yet issued. |
+| Intended files | backend/ai_provider.py, tests/test_c4_cloud_intent.py and canonical records only. No workflow/schema/activation change. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Original B8 failures retained. CR input and outdated P4 strict response doubles corrected; all privacy and prompt assertions preserved; response closure and full wire cap asserted. Product unchanged. No corrected CI pass claimed. |
-| Pending runs | [P1 Isolated Backend Source Recovery #45659655957](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45659655957) IN_PROGRESS; [P4 Target Review Queue and Transparent Ranking #45659655950](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45659655950) IN_PROGRESS |
+| Verification | Exact 536656a P1 171 focused cases and downstream stages SUCCESS; P4 1086 backend/6 skipped/552 subtests, Windows 68/133 subtests, browser 13, Node 133, Vite SUCCESS. |
+| Pending runs | None from 536656a. Expect P1 backend and P4 routine source CI. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Reconcile exact 536656a P1/P4 terminal jobs and logs. Correct only evidenced remaining defects. If green, review hard transport deadline and remaining caller compatibility before B8 closure; frontend consent/cache/disclosure still pending. No acceptance increment. |
+| Recovery action | One tracked transport worker per shared admission; deadline bounds caller wait, marks expired, retains exact slot until worker I/O returns, no retry. Guard HTTPS connect/send/headers with remaining time and non-consuming current consent/project check; late DNS/TLS return cannot initiate HTTP payload after expiry. Preserve no proxies/redirects and wire caps. Synthetic barriers only; OS DNS/read cancellation and native shutdown not certified. Verify CI before historical compatibility and frontend. |
 | Resume after closure | C5 then D with separately approved scope. |
 
 ## Prior operation
