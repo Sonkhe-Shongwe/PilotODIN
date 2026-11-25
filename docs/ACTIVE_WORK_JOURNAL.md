@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 0a98b851f2c26e9a1f8730597286afd188e93afa |
-| Product baseline | e7ffc07d6801628eb5319f3be7484cad81c09e40; exact archive CI #45687966996 SUCCESS. |
+| Observed starting HEAD | 5bfed68efae2c57b18da47f0a18ec1dc80a8e86b |
+| Product baseline | d860b8781fce6dea4be6067ae120df527ad88a7c; exact synthetic staging CI #45689007611 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
-| Operation ID | C5-SYNTHETIC-ATOMIC-STAGING-20261125 |
-| Operation state | RECONCILED publication at d860b8781fce6dea4be6067ae120df527ad88a7c; exact synthetic staging CI IN_PROGRESS. No restricted action. |
-| Intended files | tools/c5_archive_preflight.py (reuse immutable verified snapshot and bounded decoder), qa/c5_metadata/synthetic_staging.py, tests/test_c5_build_input_preflight.py, .github/workflows/p4-target-ranking.yml, canonical docs. No lock, approval marker, production staging or asset changes. |
+| Operation ID | C5-CANDIDATE-INPUT-INVENTORY-20261125 |
+| Operation state | PREPARED; offline non-executable input catalog derived from pinned receipt and lock graphs, independent source-tree identity, toolchain and asset metadata; no real acquisition. |
+| Intended files | qa/c5_metadata/input_inventory.py, qa/c5_metadata/input_provenance_20261125.json, tests/test_c5_build_input_preflight.py, .github/workflows/p4-target-ranking.yml, canonical docs. No changes to locks, policy, approved markers or production callers. |
 | Approval | C5 metadata-only approval CONSUMED; no replay. Exact run 45686334903 attempt 1 only. All six native approvals still consumed/disarmed. No artifact bytes, native, model, installer, owner device, OS/network change or additional metadata dispatch authorized. |
-| Verification | Exact e7ffc07 P4 SUCCESS: Linux 1206 Python/6 skipped/552 subtests, 15 Rust, 160 Node/Vite, 3 bundle refusal; Windows 119 C5/1 skipped, parser, 3 refusal, 68/133 subtests; HTTP 13; restricted collector skipped. |
-| Pending runs | P4 #45689007611 IN_PROGRESS; 139469160404 in_progress; 139469160821 in_progress; 139469160981 in_progress; 139469163999 skipped. |
+| Verification | Exact d860b87 P4 SUCCESS: 1219 Python/6 skipped/552 subtests, 15 Rust, 160 Node/Vite, 3 refusal; Windows 132 C5/1 skipped, parser, 3 refusal, 68/133 subtests; HTTP 13; restricted collector skipped. Git tree matches vendor pin, 33 original blobs, three recorded modifications, UPSTREAM.json. |
+| Pending runs | None. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Reconcile exact staging CI before further source edits. Synthetic fixture transaction only: bounded archive snapshot, exclusive new generation, verification, receipt last, cooperative writer lock and expected pointer CAS, atomic same-directory replace. Previous/failed generations preserved; post-replace errors uncertain. Windows directory fsync and physical ownership unproven; no production caller. Next build non-executable candidate input inventory and review remaining exact wheel metadata, interpreter/pip, PyInstaller, Node/Rust/SDK, vendored patch, assets and licence provenance; prepare narrow approval only if essential. No acquisition or native operation authorized. |
+| Recovery action | Produce blocked inventory from exact Python release/selected-wheel candidates, npm v3 lock entries and Cargo v4 registry/local graph; verify vendored source tree and notice Git identities, preserve explicit unknown toolchain/license/byte provenance and no installation interface. Exact CI tests counts, edge identities, refusal and scope. No acquisition or new metadata permission. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
