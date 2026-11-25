@@ -2,20 +2,29 @@ import {invoke} from '@tauri-apps/api/core';
 import {verifyDatasetDownload} from './datasetExportDownload';
 import type {DatasetExportRequest,VerifiedDatasetDownload} from './datasetExportDownload';
 
-// Development remains on :8000; production uses an authenticated, per-launch
-// local port provided privately by the Rust desktop process supervisor.
+// Every API client must first select an explicit connection. Desktop uses a
+// per-launch session; paired development uses its same-origin frontdoor.
 export type DesktopConnection = {port:number;token:string;backend_driven_inference?:boolean};
 let desktopEndpoint: DesktopConnection|null = null;
 let developmentOrigin:string|null = null;
 // Called only by the explicit Vite development bootstrap; never receives a secret.
 export function configureDevelopmentAPI(origin:string) {
-  if(!['http://127.0.0.1:5173','http://127.0.0.1:5174','http://127.0.0.1:5176','http://127.0.0.1:5177','http://127.0.0.1:5178'].includes(origin) || desktopEndpoint) {
+  if(!['http://127.0.0.1:5173','http://127.0.0.1:5174','http://127.0.0.1:5176','http://127.0.0.1:5177','http://127.0.0.1:5178'].includes(origin) || desktopEndpoint || (developmentOrigin!==null&&developmentOrigin!==origin)) {
     throw new Error('Invalid Live Dev API configuration');
   }
   developmentOrigin=origin;
 }
+// Only the explicit DEV-only intercepted Playwright bootstrap calls this.
+// It has no backend destination or private capability.
+export function configureInterceptedFixtureAPI(origin:string) {
+  if(origin!=='http://127.0.0.1:5187'||desktopEndpoint||(developmentOrigin!==null&&developmentOrigin!==origin)){
+    throw new Error('Invalid intercepted browser fixture configuration');
+  }
+  developmentOrigin=origin;
+}
 export function configureDesktopAPI(connection:DesktopConnection) {
-  if (!Number.isInteger(connection.port) || connection.port < 1024 || connection.port > 65535 || !connection.token) {
+  if (!connection || !Number.isInteger(connection.port) || connection.port < 1024 || connection.port > 65535 ||
+      typeof connection.token!=='string' || !/^[0-9a-f]{64}$/.test(connection.token)) {
     throw new Error('Invalid desktop API connection details');
   }
   if (connection.backend_driven_inference !== undefined && typeof connection.backend_driven_inference !== "boolean") {
@@ -25,10 +34,15 @@ export function configureDesktopAPI(connection:DesktopConnection) {
   desktopEndpoint = {...connection};
 }
 export function usesOwnedInference():boolean {return desktopEndpoint?.backend_driven_inference===true;}
-export function apiBase():string {return developmentOrigin ? `${developmentOrigin}/api` : `http://127.0.0.1:${desktopEndpoint?.port ?? 8000}/api`;}
+export function apiBase():string {
+  if(developmentOrigin)return `${developmentOrigin}/api`;
+  if(desktopEndpoint)return `http://127.0.0.1:${desktopEndpoint.port}/api`;
+  throw new Error('PilotODIN API connection has not been configured.');
+}
 function authHeaders(): Record<string,string> {
-  return desktopEndpoint ? {'X-PilotODIN-Session': desktopEndpoint.token} :
-    developmentOrigin ? {'X-PilotODIN-Dev-Request':'1'} : {};
+  if(desktopEndpoint)return {'X-PilotODIN-Session':desktopEndpoint.token};
+  if(developmentOrigin)return {'X-PilotODIN-Dev-Request':'1'};
+  throw new Error('PilotODIN API connection has not been configured.');
 }
 export type Col = {name:string;kind:'numeric'|'categorical';missing:number;missing_pct:number;unique:number;identifier_risk:boolean;leakage_risk:boolean;sample_values:(string|number|null)[]};
 export type Profile = {filename:string;rows:number;columns_count:number;missing_cells:number;duplicate_rows:number;columns:Col[];preview:Record<string,unknown>[];target_candidates:string[];warnings:string[];summary:string;summary_source:string;guidance:string[]};

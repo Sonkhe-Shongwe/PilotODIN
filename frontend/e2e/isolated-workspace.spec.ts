@@ -3,7 +3,7 @@ import type {BrowserContext,Route} from '@playwright/test';
 import {dragWorkspaceTab,prepareWorkspaceTabDrag} from './p4-drag-workspace-tab.mjs';
 
 const UI_ORIGIN='http://127.0.0.1:5187';
-const API_ORIGIN='http://127.0.0.1:8000';
+const API_ORIGIN=UI_ORIGIN;
 const TEST_PROJECT='playwright-synthetic-project';
 const TEST_PROJECT_B='playwright-synthetic-second-project';
 
@@ -54,7 +54,7 @@ const syntheticSecondProject={
 type NetworkAudit={writes:string[]; unexpectedReads:string[]; blockedOrigins:string[]; stubbedFontStylesheets:string[]; readOnlyCalculations:string[]; syntheticImports:string[]};
 
 /** Fail closed: only the dedicated Vite origin is allowed onto the network.
- * Every API response comes from this handler, never the actual :8000 backend.
+ * Every API response comes from this handler, never a real backend.
  * Unrecognised requests return a synthetic 404 and are recorded.
  */
 async function installIsolatedAPI(context:BrowserContext,withProject:boolean,withSecondProject=false,withImport=false,withColumnInvestigation=false):Promise<NetworkAudit>{
@@ -65,7 +65,7 @@ async function installIsolatedAPI(context:BrowserContext,withProject:boolean,wit
   await context.route('**/*',async(route:Route)=>{
     const req=route.request();
     const url=new URL(req.url());
-    if(url.origin===UI_ORIGIN){
+    if(url.origin===UI_ORIGIN&&url.pathname!=='/api'&&!url.pathname.startsWith('/api/')){
       // Vite only serves assets: refuse and audit accidental UI-origin writes.
       if(req.method()!=='GET'&&req.method()!=='HEAD'){
         audit.writes.push(req.method()+' '+url.pathname+' [frontend-origin]');
@@ -100,8 +100,13 @@ async function installIsolatedAPI(context:BrowserContext,withProject:boolean,wit
       return;
     }
     const pathname=url.pathname.slice('/api'.length);
+    if(req.method()!=='OPTIONS'&&req.headers()['x-pilotodin-dev-request']!=='1'){
+      audit.blockedOrigins.push(req.method()+' '+url.origin+url.pathname+' [fixture marker]');
+      await route.fulfill({status:403,json:{detail:'Explicit synthetic API marker required'}});
+      return;
+    }
     // This opt-in route simulates the frontend's actual multipart upload to a
-    // SECOND fake project. No request is ever forwarded to :8000. No local
+    // SECOND fake project. No request is ever forwarded to a real backend. No local
     // CSV is created, and even the test's synthetic import bytes are bounded.
     if(req.method()==='POST'&&pathname==='/projects'&&withProject&&withImport){
       const contentType=req.headers()['content-type']??'';
@@ -120,9 +125,9 @@ async function installIsolatedAPI(context:BrowserContext,withProject:boolean,wit
       // Unexpected extra fields, repeated uploads and changed bytes fail
       // closed through the existing POST rejection/audit below.
     }
-    // A cross-origin JSON POST can cause a browser CORS preflight.
-    // Approve ONLY the synthetic read-only workbench's content-type preflight.
-    // Never forward OPTIONS (or the subsequent POST) to a real backend.
+    // Retain the historical narrow synthetic preflight contract as a direct
+    // negative/positive handler check. Same-origin browser requests need no
+    // CORS preflight and neither OPTIONS nor POST reaches a real backend.
     if(req.method()==='OPTIONS'&&withProject
       &&pathname===`/projects/${TEST_PROJECT}/explore/workbench`
       &&url.search===''){
@@ -1118,6 +1123,11 @@ test('genuine cross-tab reload Stay keeps A draft and Leave adopts shared B sele
 
 test('keyboard Tab Shift-Tab sidebar toggle and arrow navigation retain synthetic project',async({page,context})=>{
   const audit=await installIsolatedAPI(context,true);
+  // APIRequestContext is not subject to the browser's page.route interceptor.
+  // The dedicated Vite fixture must reject rather than forward this request.
+  const escaped=await context.request.get(UI_ORIGIN+'/api/health');
+  expect(escaped.status()).toBe(403);
+  expect(await escaped.json()).toEqual({detail:'Unintercepted synthetic API request refused'});
   await page.addInitScript((id:string)=>{
     localStorage.setItem('pilotodin-current',id);
     localStorage.setItem('pilotodin-workspace-tabs-v1-'+id,JSON.stringify(['quality','explore']));

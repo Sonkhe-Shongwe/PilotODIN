@@ -1,8 +1,8 @@
 import {defineConfig} from '@playwright/test';
 
 // Dedicated Vite port: never attach Playwright to the owner's live :5173 UI.
-// Browser requests to the backend :8000 are intercepted in each test; this
-// web server launches no Python backend, model, installer or data migration.
+// All API requests use the intercepted fixture origin, never the real backend.
+// Vite refuses escaped API requests; no Python backend or model is launched.
 const browserOrigin='http://127.0.0.1:5187';
 
 export default defineConfig({
@@ -26,7 +26,7 @@ export default defineConfig({
     screenshot:'only-on-failure',
   },
   webServer:{
-    command:'npx vite --host 127.0.0.1 --port 5187 --strictPort',
+    command:'npx vite --mode intercepted-fixture --host 127.0.0.1 --port 5187 --strictPort',
     url:browserOrigin,
     reuseExistingServer:false,
     timeout:30_000,

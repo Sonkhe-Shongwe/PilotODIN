@@ -17,7 +17,7 @@ const install=new Function('exports',compiled.outputText+'\nreturn exports.insta
 async function setup(withSecondProject=false){
   let intercept;
   const audit=await install({route:async(pattern,fn)=>{assert.equal(pattern,'**/*');intercept=fn;}},true,withSecondProject);
-  async function call(url,method='GET',body=null,headers={}){
+  async function call(url,method='GET',body=null,headers={'x-pilotodin-dev-request':'1'}){
     const calls=[];
     await intercept({request:()=>({url:()=>url,method:()=>method,postDataJSON:()=>body,headers:()=>headers}),
       continue:async()=>calls.push({kind:'continue'}),
@@ -34,22 +34,30 @@ test('target label associated and pilot uses accessible combobox',()=>{
 });
 test('synthetic GET and test Vite assets do not reach backend',async()=>{
   const {call,audit}=await setup();
-  const r=await call('http://127.0.0.1:8000/api/projects');
+  const r=await call('http://127.0.0.1:5187/api/projects');
   assert.equal(r.kind,'fulfill');assert.equal(r.response.status,200);
   assert.equal(r.response.json[0].id,'playwright-synthetic-project');
   assert.equal((await call('http://127.0.0.1:5187/src/main.tsx')).kind,'continue');
   assert.deepEqual(audit.writes,[]);
 });
+test('explicit intercepted fixture refuses legacy port and missing request marker',async()=>{
+  const {call,audit}=await setup();
+  assert.equal((await call('http://127.0.0.1:8000/api/projects')).kind,'abort');
+  assert.equal((await call('http://127.0.0.1:5187/api/projects','GET',null,{})).response.status,403);
+  assert.deepEqual(audit.blockedOrigins,['GET http://127.0.0.1:8000/api/projects',
+    'GET http://127.0.0.1:5187/api/projects [fixture marker]']);
+  assert.match(config,/--mode intercepted-fixture/);
+});
 test('API writes and unexpected Vite writes are rejected and audited',async()=>{
   const {call,audit}=await setup();
-  for(const url of ['http://127.0.0.1:8000/api/projects','http://127.0.0.1:5187/projects']){
+  for(const url of ['http://127.0.0.1:5187/api/projects','http://127.0.0.1:5187/projects']){
     const r=await call(url,'POST');assert.equal(r.kind,'fulfill');assert.equal(r.response.status,403);
   }
   assert.deepEqual(audit.writes,['POST /projects','POST /projects [frontend-origin]']);
 });
 test('unexpected API GETs and cloud requests are recorded, never passed through',async()=>{
   const {call,audit}=await setup();
-  assert.equal((await call('http://127.0.0.1:8000/api/unknown')).response.status,404);
+  assert.equal((await call('http://127.0.0.1:5187/api/unknown')).response.status,404);
   assert.equal((await call('https://example.com/ai?prompt=never')).kind,'abort');
   assert.deepEqual(audit.unexpectedReads,['/unknown']);
   assert.deepEqual(audit.blockedOrigins,['GET https://example.com/ai']);
@@ -114,7 +122,7 @@ test('font exception rejects changed families, wrong paths, methods and font bin
 });
 test('Explore synthetic GET endpoints match the read-only backend response shapes',async()=>{
   const {call,audit}=await setup();
-  const root='http://127.0.0.1:8000/api/projects/playwright-synthetic-project/explore/';
+  const root='http://127.0.0.1:5187/api/projects/playwright-synthetic-project/explore/';
   const expected={
     overview:response=>response.version===0&&response.rows===2&&response.columns.length===2,
     insights:response=>response.version===0&&Array.isArray(response.findings),
@@ -133,7 +141,7 @@ test('Explore synthetic GET endpoints match the read-only backend response shape
 });
 test('Explore workbench POST is read-only, exact synthetic input, and never continued',async()=>{
   const {call,audit}=await setup();
-  const url='http://127.0.0.1:8000/api/projects/playwright-synthetic-project/explore/workbench';
+  const url='http://127.0.0.1:5187/api/projects/playwright-synthetic-project/explore/workbench';
   const input={expected_version:0,filters:[],x:'fraud_reported',y:'amount',
     kind:'auto',aggregation:'mean',bins:16,correlation_method:'pearson',color_by:null};
   const response=await call(url,'POST',input);
@@ -147,7 +155,7 @@ test('Explore workbench POST is read-only, exact synthetic input, and never cont
 });
 test('malformed, wrong-version or unapproved Explore POST still blocks and audits',async()=>{
   const {call,audit}=await setup();
-  const url='http://127.0.0.1:8000/api/projects/playwright-synthetic-project/explore/workbench';
+  const url='http://127.0.0.1:5187/api/projects/playwright-synthetic-project/explore/workbench';
   const valid={expected_version:0,filters:[],x:'fraud_reported',y:'amount',
     kind:'auto',aggregation:'mean',bins:16,correlation_method:'pearson',color_by:null};
   for(const body of [{...valid,expected_version:1},{...valid,filters:[{column:'amount',op:'range'}]},
@@ -156,14 +164,14 @@ test('malformed, wrong-version or unapproved Explore POST still blocks and audit
     assert.equal(response.kind,'fulfill');
     assert.equal(response.response.status,403);
   }
-  const save=await call('http://127.0.0.1:8000/api/projects/playwright-synthetic-project/explore/saved','POST',valid);
+  const save=await call('http://127.0.0.1:5187/api/projects/playwright-synthetic-project/explore/saved','POST',valid);
   assert.equal(save.response.status,403);
   assert.equal(audit.writes.length,5);
   assert.deepEqual(audit.readOnlyCalculations,[]);
 });
 test('only the synthetic Explore calculation receives a CORS preflight',async()=>{
   const {call,audit}=await setup();
-  const path='http://127.0.0.1:8000/api/projects/playwright-synthetic-project/explore/workbench';
+  const path='http://127.0.0.1:5187/api/projects/playwright-synthetic-project/explore/workbench';
   const validHeaders={
     origin:'http://127.0.0.1:5187',
     'access-control-request-method':'POST',
@@ -189,7 +197,7 @@ test('only the synthetic Explore calculation receives a CORS preflight',async()=
 });
 test('second synthetic project is opt-in and never exposes an unmocked real project',async()=>{
   const mainOnly=await setup();
-  const url='http://127.0.0.1:8000/api/projects';
+  const url='http://127.0.0.1:5187/api/projects';
   assert.equal((await mainOnly.call(url)).response.json.length,1);
   const second=await setup(true);
   const result=await second.call(url);
@@ -197,8 +205,8 @@ test('second synthetic project is opt-in and never exposes an unmocked real proj
   assert.deepEqual(result.response.json.map(project=>project.id),[
     'playwright-synthetic-project','playwright-synthetic-second-project']);
   const id='playwright-synthetic-second-project';
-  const detail=await second.call('http://127.0.0.1:8000/api/projects/'+id);
-  const prof=await second.call('http://127.0.0.1:8000/api/projects/'+id+'/live-profile');
+  const detail=await second.call('http://127.0.0.1:5187/api/projects/'+id);
+  const prof=await second.call('http://127.0.0.1:5187/api/projects/'+id+'/live-profile');
   assert.equal(detail.response.json.id,id);
   assert.equal(prof.response.json.version,0);
   assert.equal(prof.response.json.profile.filename,'synthetic_second_fixture.csv');
@@ -209,7 +217,7 @@ test('second synthetic project is opt-in and never exposes an unmocked real proj
 
 test('approved A-to-B Prepare fixture serves the complete bounded read-only request set',async()=>{
   const {call,audit}=await setup(true);
-  const base='http://127.0.0.1:8000/api';
+  const base='http://127.0.0.1:5187/api';
   const requests=[
     {path:'/projects',check:value=>value.length===2},
     {path:'/ai/settings',check:value=>value.cloud_enabled===false},
@@ -242,7 +250,7 @@ test('approved A-to-B Prepare fixture serves the complete bounded read-only requ
 });
 
 test('second-project target opportunities require explicit opt-in and version; all other B API reads remain blocked',async()=>{
-  const base='http://127.0.0.1:8000/api/projects/playwright-synthetic-second-project';
+  const base='http://127.0.0.1:5187/api/projects/playwright-synthetic-second-project';
   const allowed=base+'/target-opportunities?expected_version=0';
   const aOnly=await setup();
   const deniedWithoutOptIn=await aOnly.call(allowed);
@@ -283,7 +291,7 @@ test('second-project target opportunities require explicit opt-in and version; a
 
 test('unversioned and stale Quality-version synthetic Prepare reads are blocked',async()=>{
  const {call,audit}=await setup(true);
- const base='http://127.0.0.1:8000/api/projects/playwright-synthetic-project';
+ const base='http://127.0.0.1:5187/api/projects/playwright-synthetic-project';
  const paths=[
   '/preparation?target=fraud_reported',
   '/features?target=fraud_reported',

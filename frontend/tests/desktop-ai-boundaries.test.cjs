@@ -41,7 +41,7 @@ test('desktop insights consult routing and memory before launch and still post a
  ]){
   const events=[];
   const api=loadAPI(async command=>events.push(command),async (url,options)=>{
-   assert.equal(options.headers['X-PilotODIN-Session'],'test-session');
+   assert.equal(options.headers['X-PilotODIN-Session'],'a'.repeat(64));
    const requested=new URL(url);
    if(requested.pathname==='/api/resource/preflight'){
     events.push('preflight');
@@ -57,7 +57,7 @@ test('desktop insights consult routing and memory before launch and still post a
    assert.deepEqual(JSON.parse(options.body),body);
    return Response.json(reply);
   });
-  api.configureDesktopAPI({port:12345,token:'test-session'});
+  api.configureDesktopAPI({port:12345,token:'a'.repeat(64)});
   const answer=await api.post(path,body);
   assert.equal(answer.answer,reply.answer);
   assert.equal(answer.local_startup_issue,expectedIssue);
@@ -82,7 +82,7 @@ test('automatic investigation skips worker launch and reports the API reason whe
    assert.equal(options.method,'POST');
    return Response.json({detail:message},{status:409});
   });
-  api.configureDesktopAPI({port:12345,token:'test-session'});
+  api.configureDesktopAPI({port:12345,token:'a'.repeat(64)});
   await assert.rejects(api.post(`${route}/${action}`,{}),{message});
   assert.deepEqual(events,['preflight','post']);
  }
@@ -121,11 +121,11 @@ test('owned desktop posts demand directly without preflight or launch IPC',async
   const api=loadAPI(async()=>assert.fail('Owned mode must never invoke legacy launch'),async(url,options)=>{
    events.push(new URL(url).pathname);
    assert.equal(options.method,'POST');
-   assert.equal(options.headers['X-PilotODIN-Session'],'test-session');
+   assert.equal(options.headers['X-PilotODIN-Session'],'a'.repeat(64));
    assert.deepEqual(JSON.parse(options.body),body);
    return Response.json({answer:'Verified rules',fallback:true,local_status:'resource_busy'});
   });
-  api.configureDesktopAPI({port:12345,token:'test-session',backend_driven_inference:true});
+  api.configureDesktopAPI({port:12345,token:'a'.repeat(64),backend_driven_inference:true});
   const result=await api.post(path,body);
   assert.deepEqual(events,['/api'+path]);
   assert.equal(result.local_status,'resource_busy');
@@ -138,19 +138,19 @@ test('owned mode does not retry a refused demand or trust request-body routing f
   events.push(new URL(url).pathname);
   return Response.json({detail:'resource_busy'},{status:503});
  });
- api.configureDesktopAPI({port:12345,token:'test-session',backend_driven_inference:true});
+ api.configureDesktopAPI({port:12345,token:'a'.repeat(64),backend_driven_inference:true});
  await assert.rejects(api.post('/investigations/id/autonomy/start',{backend_driven_inference:false}),{message:'resource_busy'});
  assert.deepEqual(events,['/api/investigations/id/autonomy/start']);
- assert.throws(()=>api.configureDesktopAPI({port:12345,token:'test-session',backend_driven_inference:'true'}));
+ assert.throws(()=>api.configureDesktopAPI({port:12345,token:'a'.repeat(64),backend_driven_inference:'true'}));
 });
 
 
 test('owned routing mode is explicit metadata and not inferred from request',()=>{
  const api=loadAPI(async()=>assert.fail('Unexpected IPC'),async()=>assert.fail('Unexpected fetch'));
  assert.equal(api.usesOwnedInference(),false);
- api.configureDesktopAPI({port:12345,token:'test-session',backend_driven_inference:true});
+ api.configureDesktopAPI({port:12345,token:'a'.repeat(64),backend_driven_inference:true});
  assert.equal(api.usesOwnedInference(),true);
- api.configureDesktopAPI({port:12345,token:'test-session',backend_driven_inference:false});
+ api.configureDesktopAPI({port:12345,token:'a'.repeat(64),backend_driven_inference:false});
  assert.equal(api.usesOwnedInference(),false);
 });
 
@@ -244,10 +244,10 @@ test('C3 explicit development API accepts only approved origins and sends only a
    assert.equal(api.apiBase(),origin+'/api');
    await api.get('/health');
    assert.deepEqual(seen,[{url:origin+'/api/health',headers:{'X-PilotODIN-Dev-Request':'1'}}]);
-   assert.throws(()=>api.configureDesktopAPI({port:12345,token:'fixture'}));
+   assert.throws(()=>api.configureDesktopAPI({port:12345,token:'b'.repeat(64)}));
  }
  const desktop=loadAPI();
- desktop.configureDesktopAPI({port:12345,token:'fixture'});
+ desktop.configureDesktopAPI({port:12345,token:'b'.repeat(64)});
  for(const port of [5173,5174,5176,5177,5178])
    assert.throws(()=>desktop.configureDevelopmentAPI('http://127.0.0.1:'+port));
 });
@@ -342,4 +342,39 @@ test('C3 proxy distinguishes denied requests from unavailable upstream without e
  assert.equal(unavailable.status,502);assert.equal(calls,1);
  assert.match(JSON.parse(unavailable.body).detail,/Could not connect to PilotODIN/);
  assert.ok(!unavailable.body.includes(trust.capability));
+});
+
+test('C3 unconfigured API cannot perform HTTP or IPC and rejects invalid desktop sessions',async()=>{
+  const api=loadAPI(async()=>assert.fail('Unexpected IPC'),async()=>assert.fail('Unexpected fetch'));
+  assert.throws(()=>api.apiBase(),/has not been configured/);
+  await assert.rejects(api.get('/health'),/has not been configured/);
+  await assert.rejects(api.post('/projects/id/ai/insight',{}),/has not been configured/);
+  await assert.rejects(api.put('/ai/settings',{}),/has not been configured/);
+  await assert.rejects(api.upload(new Blob(['synthetic'])),/has not been configured/);
+  for(const token of [undefined,null,0,'','test-session','a'.repeat(63),'A'.repeat(64),'a'.repeat(65),'a'.repeat(63)+'\n']){
+    assert.throws(()=>api.configureDesktopAPI({port:18042,token}),/Invalid desktop API/);
+  }
+  for(const port of [undefined,0,1023,65536,18042.5,'18042']){
+    assert.throws(()=>api.configureDesktopAPI({port,token:'a'.repeat(64)}),/Invalid desktop API/);
+  }
+  assert.throws(()=>api.apiBase(),/has not been configured/);
+});
+test('C3 intercepted fixture is distinct from paired Live Dev and never has a desktop credential',async()=>{
+  const seen=[];
+  const api=loadAPI(async()=>assert.fail('Unexpected IPC'),async(url,options)=>{
+    seen.push({url,headers:options.headers});return Response.json({status:'ok'});
+  });
+  const origin='http://127.0.0.1:5187';
+  assert.throws(()=>api.configureDevelopmentAPI(origin));
+  for(const invalid of ['http://localhost:5187','http://127.0.0.1:8000','http://127.0.0.1:5173',origin+'/']) {
+    assert.throws(()=>api.configureInterceptedFixtureAPI(invalid));
+  }
+  api.configureInterceptedFixtureAPI(origin);
+  await api.get('/health');
+  assert.deepEqual(seen,[{url:origin+'/api/health',headers:{'X-PilotODIN-Dev-Request':'1'}}]);
+  assert.throws(()=>api.configureDevelopmentAPI('http://127.0.0.1:5173'));
+  assert.throws(()=>api.configureDesktopAPI({port:18042,token:'a'.repeat(64)}));
+  const dev=loadAPI();
+  dev.configureDevelopmentAPI('http://127.0.0.1:5173');
+  assert.throws(()=>dev.configureInterceptedFixtureAPI(origin));
 });
