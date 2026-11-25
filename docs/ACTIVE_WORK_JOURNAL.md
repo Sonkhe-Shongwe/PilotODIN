@@ -7,17 +7,17 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | e87daff22bf17e9d3541392eda7d5ba9c5681df3 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
 | Operation ID | C5-WHEEL-ONE-USE-WORKFLOW-20261126 |
-| Operation state | PREPARED: disarmed hosted one-use workflow, source pins and direct-child marker event review, bounded receipt artifact ZIP replay with independent digest; generated fixtures only. No upload, activation, real wheel or live request. Prior 45724319018 SUCCESS. |
+| Operation state | PUBLISHED/VERIFYING if live HEAD confirmed: disarmed one-use template, pinned source review, synthetic activation contract and bounded artifact ZIP replay. No real driver activation, external upload or downloads. Exact offline CI pending. |
 | Intended files | New .github/workflows/c5-wheel-hosted-one-use.yml, qa/c5_wheel_metadata/wheel_one_use_review.py and test_wheel_one_use_review.py, journal/handoff/ledger. Existing 98 trigger declarations unchanged, new scoped offline workflow only expected match; restricted job literal false. |
 | Approval | Twelve restricted approvals consumed/disarmed (six native, six metadata). No additional registry/metadata requests, artifacts, installs, native/model, owner device/data or installer authorized. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | None issued; expect new Ubuntu offline-review job only; collect-once job skipped. |
+| Pending runs | Inspect exact source push (parent 0202998f78d8cabcffe4d3205b9afac71ac0aeb6), new dedicated offline workflow only; collect-once must be skipped. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
 | Recovery action | Reconcile exact source/CI, no restricted job or upload. Independent connector artifact bytes access not established; review mechanism offline and require fresh approval for one synthetic hosted evidence transfer or actual collection separately. Remaining checksum proposal separately gated. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |

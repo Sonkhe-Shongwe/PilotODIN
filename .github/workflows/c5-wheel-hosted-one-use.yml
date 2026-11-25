@@ -1,0 +1,61 @@
+name: C5 wheel hosted one-use acquisition
+# Disarmed: only the offline review can run. Future owner-approved activation
+# requires exact marker-only trigger, attempt 1, exact message, armed-tree pins,
+# actual Git/event review, and independently reconciled receipt transfer.
+on:
+  push:
+    branches: [feature/live-dev-workspace-20261023]
+    paths:
+      - .github/workflows/c5-wheel-hosted-one-use.yml
+      - qa/c5_wheel_metadata/wheel_one_use_review.py
+      - qa/c5_wheel_metadata/test_wheel_one_use_review.py
+permissions:
+  contents: read
+jobs:
+  offline-review:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Source pins, synthetic event and artifact replay
+        run: python3 -I -B qa/c5_wheel_metadata/test_wheel_one_use_review.py
+      - name: Assert collection refusal
+        run: |
+          set +e
+          result=$(python3 -I -B qa/c5_wheel_metadata/wheel_one_use_review.py --collect 2>&1)
+          code=$?
+          set -e
+          printf '%s\n' "$result"
+          test "$code" = 1
+          test "$result" = 'FRESH_APPROVAL_REQUIRED: one-use workflow is disabled'
+  collect-once:
+    if: ${{ false }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Disabled collection placeholder (no output produced)
+        id: collect
+        run: python3 -I -B qa/c5_wheel_metadata/wheel_one_use_review.py --collect
+        env:
+          C5_APPROVED_ONCE: C5-WHEEL-HOSTED-ONCE-20261126
+          C5_EXPECTED_SOURCE_SHA: ${{ github.sha }}
+      # No wheel archive may be uploaded. Future reviewed driver must output
+      # only one exact receipts.odin path and independently logged digest.
+      - name: Disabled receipt-only artifact upload
+        if: ${{ false }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: c5-wheel-receipts-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ steps.collect.outputs.receipt_bundle }}
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
+          overwrite: false
