@@ -51,3 +51,32 @@ export function savedCloudStatus(saved:SavedCloudPermission):'local'|'unverified
   return Array.isArray(saved.providers)&&saved.providers.some(p=>
     typeof p.id==='string'&&canTestCloud(saved,p.id)&&p.verified===true)?'connected':'unverified';
 }
+
+
+// Saved cloud preferences are not user intent. Preserve only local routes.
+export type LocalPanelProvider='auto'|'local'|'ollama';
+export function isLocalPanelProvider(value:unknown):value is LocalPanelProvider{
+  return value==='auto'||value==='local'||value==='ollama';
+}
+export function localPanelProvider(value:unknown):LocalPanelProvider{
+  return isLocalPanelProvider(value)?value:'auto';
+}
+export function projectCloudProviderName(value:unknown):string|null{
+  switch(value){
+    case 'gemini':return 'Google Gemini';
+    case 'groq':return 'GroqCloud';
+    case 'openrouter':return 'OpenRouter';
+    default:return null;
+  }
+}
+// Intermediate C4 batch: the project-data path remains closed pending
+// server-generation binding and cross-renderer result invalidation.
+export function projectCloudHold(value:unknown):string{
+  return value==='openrouter'?'OpenRouter project-data sharing is disabled because downstream destinations are not established.':
+    'Project-data cloud requests are not available until consent and response safeguards are verified.';
+}
+export const projectCloudDisclosure='A cloud request may include bounded column names, row counts, supported aggregate statistics, quality issue categories, aggregate model metrics and your question. Summaries are not guaranteed anonymous. Do not include private information in the question. Uploaded rows, local paths, individual prediction inputs and previous answers are excluded. Only the selected provider is intended; no automatic fallback to another provider. Already sent data cannot be recalled.';
+export function localPanelRequest(value:unknown):{selected_provider:LocalPanelProvider;cloud_intent:false}|null{
+  return isLocalPanelProvider(value)?{selected_provider:value,cloud_intent:false}:null;
+}
+export function localPanelMayContinue(source:unknown):boolean{return source==='local_llm'}

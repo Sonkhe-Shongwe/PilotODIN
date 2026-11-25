@@ -7,13 +7,13 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 877dfe873f0eeabe294ce474bcdac120aa7225ff |
 | Product baseline | C4 C1 frontend e576ccd plus assertion 3b2c5f3; exact P1/P4 SUCCESS; P2 previous source SUCCESS. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
 | Operation ID | C4-C2-PANEL-DISCLOSURE-LOCAL-ROUTING-20261125 |
-| Operation state | PREPARED; panel source not yet issued. |
+| Operation state | ISSUED; reconcile source commit from prepared parent 1bb12b3; do not replay |
 | Intended files | frontend/src/AIWorkspace.tsx, frontend/src/AssistantWorkspace.tsx, frontend/src/cloudConsentSession.ts, frontend/tests/desktop-ai-boundaries.test.cjs and canonical records. No backend/schema/workflow changes. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | Exact 3b2c5f3 P1 206 Node/7 browser/Vite; P4 1086 backend/6 skipped/552 subtests, 136 Node/Vite, Windows 68/133 subtests, browser 13 SUCCESS. |

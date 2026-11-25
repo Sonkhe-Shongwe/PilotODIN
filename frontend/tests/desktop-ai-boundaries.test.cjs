@@ -109,8 +109,9 @@ test('Ask ODIN labels deterministic fallback and exposes the explicit offline mo
 
 test('continuing an offline workspace explanation pins the request to the local model',()=>{
  const workspace=fs.readFileSync(path.join(__dirname,'../src/AIWorkspace.tsx'),'utf8');
- assert.match(workspace,/const continuationProvider = result\.source === 'local_llm' \? 'ollama' : selectedProvider/);
- assert.match(workspace,/selected_provider:continuationProvider,continuation_text:result\.answer/);
+ assert.match(workspace,/!localPanelMayContinue\(result\.source\)/);
+ assert.match(workspace,/const continuationProvider = 'ollama'/);
+ assert.match(workspace,/selected_provider:continuationProvider,cloud_intent:false,continuation_text:result\.answer/);
 });
 
 
@@ -216,18 +217,18 @@ test('C2 unmount invalidates late error and old cleanup cannot clear newer scope
 test('C2 both actual panels bind request ownership, late results and truthful owned waiting',()=>{
  const assistant=fs.readFileSync(path.join(__dirname,'../src/AssistantWorkspace.tsx'),'utf8');
  const insight=fs.readFileSync(path.join(__dirname,'../src/AIWorkspace.tsx'),'utf8');
- assert.match(assistant,/useLayoutEffect\(\(\)=>fence.enter\(\),\[fence,projectId\]\)/);
+ assert.match(assistant,/useLayoutEffect\(\(\)=>fence.enter\(\),\[fence,projectId,session\.generation\]\)/);
  assert.match(assistant,/const ticket=fence.begin\(\);if\(!ticket\)return/);
  assert.match(assistant,/if\(!fence.isCurrent\(ticket\)\)return/);
  assert.match(assistant,/finally\{if\(fence.finish\(ticket\)\)setBusy\(false\)\}/);
  assert.match(insight,/useLayoutEffect\(\(\)=>fence.enter\(\),\[fence,fingerprint\]\)/);
  assert.equal((insight.match(/const ticket=fence.begin\(\);if\(!ticket\)return/g)||[]).length,3);
  assert.equal((insight.match(/finally\{if\(fence.finish\(ticket\)\)setBusy\(false\)\}/g)||[]).length,3);
- assert.match(insight,/if\(fence.isCurrent\(ticket\)\)\{insightCache.set/);
- assert.match(insight,/if\(fence.isCurrent\(ticket\)\)setResult\(/);
+ assert.match(insight,/if\(fence.isCurrent\(ticket\)&&cloudConsentIsCurrent\(session\.generation\)&&r.source!=='cloud_llm'\)setResult\(/);
+ assert.doesNotMatch(insight,/insightCache|pendingInsights/);
  assert.match(insight,/if\(fence.isCurrent\(ticket\)\)setInvestigationResult\(/);
  assert.match(insight,/usesOwnedInference\(\)\?'waiting for the selected route/);
- assert.match(insight,/usesOwnedInference\(\)\?"Smart Auto \(local only\)"/);
+ assert.match(insight,/value="auto">Smart Auto \(local only\)/);
 });
 
 
@@ -534,4 +535,50 @@ test('C4 settings and startup only use manual handshake, never key-save or start
  assert.match(shell,/cloudConsentIsCurrent\(generation\)/);
  assert.match(settings,/OpenRouter may route this handshake downstream; project-data sharing through OpenRouter is disabled/);
  assert.doesNotMatch(source.slice(source.indexOf('export function AIInsight')), /cloud_intent:true/);
+});
+
+
+test('C4 C2 saved cloud preference cannot become a local panel route or request',()=>{
+ const session=loadCloudConsentSession();
+ for(const value of ['gemini','groq','openrouter','unknown',null,undefined,true,{}]){
+   assert.equal(session.localPanelProvider(value),'auto');
+   assert.equal(session.localPanelRequest(value),null);
+ }
+ for(const value of ['auto','local','ollama']){
+   assert.equal(session.localPanelProvider(value),value);
+   assert.deepEqual(session.localPanelRequest(value),{selected_provider:value,cloud_intent:false});
+ }
+ assert.equal(session.localPanelMayContinue('local_llm'),true);
+ for(const value of ['cloud_llm','local_rules',null,undefined])assert.equal(session.localPanelMayContinue(value),false);
+});
+test('C4 C2 named destinations and disclosure remain held before project cloud enablement',()=>{
+ const session=loadCloudConsentSession();
+ assert.equal(session.projectCloudProviderName('gemini'),'Google Gemini');
+ assert.equal(session.projectCloudProviderName('groq'),'GroqCloud');
+ assert.equal(session.projectCloudProviderName('openrouter'),'OpenRouter');
+ assert.equal(session.projectCloudProviderName('auto'),null);
+ assert.match(session.projectCloudHold('gemini'),/not available/);
+ assert.match(session.projectCloudHold('openrouter'),/downstream destinations/);
+ for(const word of ['column names','your question','not guaranteed anonymous','Uploaded rows','previous answers','cannot be recalled']){
+   assert.ok(session.projectCloudDisclosure.includes(word));
+ }
+});
+test('C4 C2 actual panels keep auto local and never persist a cloud choice or continue cloud answers',()=>{
+ const assistant=fs.readFileSync(path.join(__dirname,'../src/AssistantWorkspace.tsx'),'utf8');
+ const workspace=fs.readFileSync(path.join(__dirname,'../src/AIWorkspace.tsx'),'utf8');
+ const insight=workspace.slice(workspace.indexOf('export function AIInsight'));
+ for(const panel of [assistant,insight]){
+   assert.match(panel,/localPanelProvider\(localStorage.getItem/);
+   assert.match(panel,/if\(isLocalPanelProvider\(e.target.value\)\)localStorage.setItem/);
+   assert.match(panel,/projectCloudDisclosure/);
+   assert.match(panel,/projectCloudHold/);
+   assert.match(panel,/localPanelRequest/);
+   assert.match(panel,/!routeAvailable\|\|session.pending/);
+   assert.doesNotMatch(panel,/cloud_intent:true/);
+ }
+ assert.match(insight,/auto_insights===true&&r.local_model_enabled===true/);
+ assert.match(insight,/if\(auto&&routeAvailable&&!session.pending\)void run\(false\)/);
+ assert.match(assistant,/!localPanelMayContinue\(last.answerSource\)/);
+ assert.match(assistant,/r.source==='cloud_llm'\)return/);
+ assert.doesNotMatch(insight,/insightCache|pendingInsights/);
 });
