@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 877dfe873f0eeabe294ce474bcdac120aa7225ff |
-| Product baseline | C4 C1 frontend e576ccd plus assertion 3b2c5f3; exact P1/P4 SUCCESS; P2 previous source SUCCESS. |
+| Observed starting HEAD | c6ffd7939c12aeedc093cb4565506b6a2e260701 |
+| Product baseline | C4 C2 panel controls fb97119 exact P1/P4 SUCCESS. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
-| Operation ID | C4-C2-PANEL-DISCLOSURE-LOCAL-ROUTING-20261125 |
-| Operation state | RECONCILED; C2 staged disclosure/local-routing source published at [fb97119](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/fb9711993ac2fbfb240a300897d9d4085dc2d840), prepared at 1bb12b3; exact CI outstanding. |
-| Intended files | frontend/src/AIWorkspace.tsx, frontend/src/AssistantWorkspace.tsx, frontend/src/cloudConsentSession.ts, frontend/tests/desktop-ai-boundaries.test.cjs and canonical records. No backend/schema/workflow changes. |
+| Operation ID | C4-C3-SERVER-CONSENT-WITNESS-20261125 |
+| Operation state | PREPARED; server witness source not issued. |
+| Intended files | backend/ai_provider.py, backend/main.py, tests/test_c4_cloud_intent.py and canonical records only. No new route, persistent schema, workflow or activation. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | C1 exact correction P1/P4 SUCCESS. C2 local-only routing, no shared answer/promise cache, provider disclosure and disabled project send, local continuation guard, renderer generation checks and three new Node tests published. Exact new CI pending. |
-| Pending runs | [P1 Isolated Frontend Verification #45665454223](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45665454223) IN_PROGRESS; [P4 Target Review Queue and Transparent Ranking #45665454214](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45665454214) IN_PROGRESS |
+| Verification | Exact fb97119 P1 206 Node/7 browser/Vite; P4 1086 backend/6 skipped/552 subtests, 139 Node/Vite, Windows 68/133 subtests, browser 13 SUCCESS. |
+| Pending runs | None from fb97119. Expected eight routine P1/P2/P3/P4 CI workflows for main.py path. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Reconcile exact fb97119 P1 frontend/P4 terminal jobs and logs. Correct evidenced issues. Then C3 fresh server-issued consent witness and cross-renderer invalidation/per-click confirmation with mounted browser witnesses; only enable Gemini/Groq project intent after safeguards. OpenRouter project sharing stays held. No score increment. |
+| Recovery action | Expose nonpersistent process-epoch and generation witness atomically in saved status; optionally supplied strict bounded witness checked under lock before context or handshake, stale refused, captured revision retained at existing dispatch/publication guards. Preserve legacy explicit callers (missing witness), new UI must require witness, not an authentication credential or consent by itself. No-store GET status. Inert route witnesses for stale, restart, valid and malformed cases. Verify exact CI before cross-window frontend work, no project cloud enablement yet. |
 | Resume after closure | C5 then D with separately approved scope. |
 
 ## Prior operation
