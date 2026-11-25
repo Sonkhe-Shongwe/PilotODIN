@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | VERIFYING |
+| State | READY |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 60b3fa07d1f4d265092c7ce5fad6073b25953c25 |
-| Product baseline | e0f944d2a9c14c4ae470c38c929bae249f35373c (frontend delta); native/backend runtime 388b35750316b9c5a060d603c35c7d728d5c0890; test-only native fixture 1d23ea139762d94d25e689c4c3489b72fb34acc9 |
+| Observed starting HEAD | 765ee1a5676c790f57bd77c496bb043747b7f7dc |
+| Product baseline | d8ea85a010c446f6426bfaaa0c5877d69f1f7372 (latest product/QA); 0d56daec7cf8c02e8f6bf11e7a3819a906968632 (P1 trigger-only, same product/QA); C1/C2 prior native source 388b357 and fixture 1d23ea1 retained at original scope. |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
 | Operation ID | C3-HOSTED-HTTP-RECOVERY-COMPAT-20261125-source |
-| Operation state | ISSUED |
-| Intended files | Proxy and hosted test correction published d8ea85a; P1 real-HTTP path filters only, continuity. No job/permission change. |
+| Operation state | RECONCILED |
+| Intended files | Continuity records only for terminal verification and owner-requested stop/tab migration. Next implementation not started. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | C1/C2 SOURCE CLOSED, unchanged. C3 kernel exact 5fc531e source job 138854868629 SUCCESS: all five named C3 cases passed, workspace/owned-server 48 tests, 1058 Python + 544 subtests (6 skipped), 112 Node, Vite; disposable browser job 138854868635 SUCCESS. Windows job SUCCESS 53 passed, 66 subtests; restricted 138854871137 SKIPPED. No live auth integration. |
-| Pending runs | Exact correction d8ea85a: P4 #45540644826 and P1 frontend #45540644808 IN_PROGRESS; restricted P4 SKIPPED. P1 real HTTP trigger-only checkpoint 0d56dae (product and tests byte-identical): #45540715891 P1 Disposable Real HTTP Browser/Backend Acceptance IN_PROGRESS; reconcile all terminal results before overlapping source push. |
+| Verification | All outstanding routine CI terminal SUCCESS. Exact d8ea85a P4 #45540644826 source 138958024247: 55 unittest, 1059 pytest + 552 subtests (6 skips), 116 Node, 15 standalone Rust, Vite; browser 138958024562 13/13 including P4-79 and N11; Windows 138958024571 60 + 85 subtests; restricted 138958026303 SKIPPED. P1 frontend #45540644808 job 138958024435 197 Node, Vite, 7 browser. Exact trigger-only 0d56dae P1 real HTTP #45540715891 job 138958266033 all four steps SUCCESS, 6 browser cases incl original recovery, Quality, management and export. Prior P2/P3 hosted f0c8be3 PASS. |
+| Pending runs | None. Branch run list checked: no nonterminal runs. All six native approvals consumed/disarmed, relevant C1/C2 one-use guards confirmed false. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Reconcile P1 full real HTTP (including recovery and previously unexecuted export/quality/management), P4 13 browser cases and frontend/source jobs, then migrate remaining native QA callers at source scope, explicit in-process adapter and bare fallback removal. No restricted execution. |
+| Recovery action | OWNER REQUESTED STOP after verification for tab migration. Resume only on next user instruction: read C-D05/section 10, map remaining local-devqa and hosted native QA startup/direct HTTP callers and explicit in-process adapter; migrate at source scope without native execution, then remove bare no-secret runtime fallback and complete exact route/direct-call matrix, disposable real HTTP negatives and CI. No new approval or C3 closure. |
 | Resume after closure | C4, C5 in order; D separately approved. |
 
 ## Prior operation
