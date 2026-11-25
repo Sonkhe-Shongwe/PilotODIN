@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | PREPARED |
+| State | READY |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 7a581a892b87ec5782fd176b51ff6d84c4d102f4 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
 | Operation ID | C5-COMBINED-WHEEL-GRAPH-20261125 |
-| Operation state | PREPARED: offline combined receipt and selected-wheel dependency graph review; verify persisted 33+29 sidecars, both source-test targets and separate runtime-root subset. No lock issuance, resolver, install or registry request. |
+| Operation state | RECONCILED: exact ac437f0, run 45702239980 job 139515042483 SUCCESS, 62 persisted sidecars revalidated, 8 controls, Windows/Linux source-test 49/49 reachable each, 59 active edges each, zero declared graph issues. Runtime-root subsets 36 Windows / 37 Linux, 41/42 edges, not production/freezer. pytz Requires-Python absent. packaging 24.0 preinstalled reviewer; no install or live registry request. |
 | Intended files | Isolated qa/c5_wheel_metadata/combined_graph.py and dedicated offline workflow, journal/handoff/ledger. Preserve prior collectors, receipts, product and locks. |
 | Approval | Ten restricted approvals consumed/disarmed (six native, four metadata). No additional registry requests, artifacts, installs, native/model, owner device/data or installer authorized. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
 | Pending runs | None for this operation. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Revalidate both persisted receipts and original pins in a separate offline combined evidence reader, derive selected-wheel dependency graphs for each exact Windows/Linux profile (markers/extras/requires-python, version constraints, compatibility tags) and identify missing nodes or mismatches before proposing any lock. Then derive production/freezer locks, toolchain/asset/licence provenance, actual-byte verification and safe consumption. No new registry requests, artifacts, installs, native/model, owner device or installer authorized. Four profiles BLOCKED; no acceptance credit until C5 exit. |
+| Recovery action | Review and materialize non-executable platform-specific expected wheel candidate inventories from exact validated graph and original metadata hashes/URLs/sizes; preserve unknown pytz Requires-Python as absent declaration, verify explicit policy disposition and platform/toolchain evidence before any installable lock. Independently derive production/freezer roots and graph (runtime-root subset is not production lock). Review licence and artifact provenance, safe consumption. No acquisition, install, native/model, owner data or installer authority. Four profiles BLOCKED. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation

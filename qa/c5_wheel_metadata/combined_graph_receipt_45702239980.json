@@ -1,0 +1,1999 @@
+{
+  "status": "DECLARED_GRAPH_COMPATIBLE_NOT_INSTALLABLE",
+  "source_sha": "ac437f09df5cb91e15b87bcda9eb629af36790d9",
+  "run_id": 45702239980,
+  "job_id": 139515042483,
+  "packaging": "24.0",
+  "live_requests": 0,
+  "verified_sidecars": 62,
+  "controls": 8,
+  "reports": [
+    {
+      "active_edges": 59,
+      "edges": [
+        {
+          "from": "anyio",
+          "requirement": "idna>=2.8",
+          "to": "idna"
+        },
+        {
+          "from": "anyio",
+          "requirement": "typing_extensions>=4.16.0; python_version < \"3.15\"",
+          "to": "typing-extensions"
+        },
+        {
+          "from": "fastapi",
+          "requirement": "starlette>=1.6.0",
+          "to": "starlette"
+        },
+        {
+          "from": "fastapi",
+          "requirement": "anyio>=4.1.0",
+          "to": "anyio"
+        },
+        {
+          "from": "fastapi",
+          "requirement": "pydantic>=2.9.0",
+          "to": "pydantic"
+        },
+        {
+          "from": "fastapi",
+          "requirement": "typing-extensions>=4.8.0",
+          "to": "typing-extensions"
+        },
+        {
+          "from": "fastapi",
+          "requirement": "typing-inspection>=0.4.2",
+          "to": "typing-inspection"
+        },
+        {
+          "from": "fastapi",
+          "requirement": "annotated-doc>=0.0.2",
+          "to": "annotated-doc"
+        },
+        {
+          "from": "fastapi",
+          "requirement": "opentelemetry-api>=1.44.0",
+          "to": "opentelemetry-api"
+        },
+        {
+          "from": "httpcore",
+          "requirement": "certifi",
+          "to": "certifi"
+        },
+        {
+          "from": "httpcore",
+          "requirement": "h11>=0.16",
+          "to": "h11"
+        },
+        {
+          "from": "httpcore2",
+          "requirement": "h11>=0.16",
+          "to": "h11"
+        },
+        {
+          "from": "httpcore2",
+          "requirement": "truststore>=0.10",
+          "to": "truststore"
+        },
+        {
+          "from": "httpx",
+          "requirement": "anyio",
+          "to": "anyio"
+        },
+        {
+          "from": "httpx",
+          "requirement": "certifi",
+          "to": "certifi"
+        },
+        {
+          "from": "httpx",
+          "requirement": "httpcore==1.*",
+          "to": "httpcore"
+        },
+        {
+          "from": "httpx",
+          "requirement": "idna",
+          "to": "idna"
+        },
+        {
+          "from": "httpx2",
+          "requirement": "anyio>=4.10; sys_platform != 'emscripten'",
+          "to": "anyio"
+        },
+        {
+          "from": "httpx2",
+          "requirement": "httpcore2==2.16.2; sys_platform != 'emscripten'",
+          "to": "httpcore2"
+        },
+        {
+          "from": "httpx2",
+          "requirement": "idna>=3.18",
+          "to": "idna"
+        },
+        {
+          "from": "httpx2",
+          "requirement": "truststore>=0.10; sys_platform != 'emscripten'",
+          "to": "truststore"
+        },
+        {
+          "from": "httpx2",
+          "requirement": "typing-extensions>=4.5.0; python_version < '3.13'",
+          "to": "typing-extensions"
+        },
+        {
+          "from": "joblib",
+          "requirement": "cloudpickle>=3.0",
+          "to": "cloudpickle"
+        },
+        {
+          "from": "openpyxl",
+          "requirement": "et-xmlfile",
+          "to": "et-xmlfile"
+        },
+        {
+          "from": "opentelemetry-api",
+          "requirement": "typing-extensions>=4.5.0",
+          "to": "typing-extensions"
+        },
+        {
+          "from": "pandas",
+          "requirement": "numpy>=1.23.2; python_version == \"3.11\"",
+          "to": "numpy"
+        },
+        {
+          "from": "pandas",
+          "requirement": "python-dateutil>=2.8.2",
+          "to": "python-dateutil"
+        },
+        {
+          "from": "pandas",
+          "requirement": "pytz>=2020.1",
+          "to": "pytz"
+        },
+        {
+          "from": "pandas",
+          "requirement": "tzdata>=2022.7",
+          "to": "tzdata"
+        },
+        {
+          "from": "pydantic",
+          "requirement": "annotated-types>=0.6.0",
+          "to": "annotated-types"
+        },
+        {
+          "from": "pydantic",
+          "requirement": "pydantic-core==2.50.5",
+          "to": "pydantic-core"
+        },
+        {
+          "from": "pydantic",
+          "requirement": "typing-extensions>=4.16.0",
+          "to": "typing-extensions"
+        },
+        {
+          "from": "pydantic",
+          "requirement": "typing-inspection>=0.4.4",
+          "to": "typing-inspection"
+        },
+        {
+          "from": "pydantic-core",
+          "requirement": "typing-extensions>=4.16.0",
+          "to": "typing-extensions"
+        },
+        {
+          "from": "pytest",
+          "requirement": "colorama>=0.4; sys_platform == \"win32\"",
+          "to": "colorama"
+        },
+        {
+          "from": "pytest",
+          "requirement": "iniconfig>=2",
+          "to": "iniconfig"
+        },
+        {
+          "from": "pytest",
+          "requirement": "packaging>=24",
+          "to": "packaging"
+        },
+        {
+          "from": "pytest",
+          "requirement": "pluggy<2,>=1.6",
+          "to": "pluggy"
+        },
+        {
+          "from": "pytest",
+          "requirement": "pygments>=2.15",
+          "to": "pygments"
+        },
+        {
+          "from": "python-dateutil",
+          "requirement": "tzdata",
+          "to": "tzdata"
+        },
+        {
+          "from": "reportlab",
+          "requirement": "pillow>=9.0.0",
+          "to": "pillow"
+        },
+        {
+          "from": "reportlab",
+          "requirement": "charset-normalizer",
+          "to": "charset-normalizer"
+        },
+        {
+          "from": "scikit-learn",
+          "requirement": "numpy>=1.24.1",
+          "to": "numpy"
+        },
+        {
+          "from": "scikit-learn",
+          "requirement": "scipy>=1.10.0",
+          "to": "scipy"
+        },
+        {
+          "from": "scikit-learn",
+          "requirement": "joblib>=1.4.0",
+          "to": "joblib"
+        },
+        {
+          "from": "scikit-learn",
+          "requirement": "narwhals>=2.0.1",
+          "to": "narwhals"
+        },
+        {
+          "from": "scikit-learn",
+          "requirement": "threadpoolctl>=3.5.0",
+          "to": "threadpoolctl"
+        },
+        {
+          "from": "scipy",
+          "requirement": "numpy<2.7,>=1.26.4",
+          "to": "numpy"
+        },
+        {
+          "from": "starlette",
+          "requirement": "anyio<5,>=4.0.0",
+          "to": "anyio"
+        },
+        {
+          "from": "starlette",
+          "requirement": "typing-extensions>=4.10.0; python_version < '3.13'",
+          "to": "typing-extensions"
+        },
+        {
+          "from": "typing-inspection",
+          "requirement": "typing-extensions>=4.15.0",
+          "to": "typing-extensions"
+        },
+        {
+          "from": "uvicorn",
+          "requirement": "click>=7.0",
+          "to": "click"
+        },
+        {
+          "from": "uvicorn",
+          "requirement": "h11>=0.8",
+          "to": "h11"
+        },
+        {
+          "from": "uvicorn",
+          "requirement": "httptools>=0.8.0; extra == 'standard'",
+          "to": "httptools"
+        },
+        {
+          "from": "uvicorn",
+          "requirement": "python-dotenv>=0.13; extra == 'standard'",
+          "to": "python-dotenv"
+        },
+        {
+          "from": "uvicorn",
+          "requirement": "pyyaml>=5.1; extra == 'standard'",
+          "to": "pyyaml"
+        },
+        {
+          "from": "uvicorn",
+          "requirement": "watchfiles>=0.20; extra == 'standard'",
+          "to": "watchfiles"
+        },
+        {
+          "from": "uvicorn",
+          "requirement": "websockets>=13.0; extra == 'standard'",
+          "to": "websockets"
+        },
+        {
+          "from": "watchfiles",
+          "requirement": "anyio>=3.0.0",
+          "to": "anyio"
+        }
+      ],
+      "extras": {
+        "uvicorn": [
+          "standard"
+        ]
+      },
+      "graph_status": "DECLARED_GRAPH_COMPATIBLE",
+      "inactive": 288,
+      "issues": [],
+      "nodes": [
+        {
+          "filename": "annotated_doc-0.0.7-py3-none-any.whl",
+          "name": "annotated-doc",
+          "version": "0.0.7"
+        },
+        {
+          "filename": "annotated_types-0.8.0-py3-none-any.whl",
+          "name": "annotated-types",
+          "version": "0.8.0"
+        },
+        {
+          "filename": "anyio-4.16.0-py3-none-any.whl",
+          "name": "anyio",
+          "version": "4.16.0"
+        },
+        {
+          "filename": "certifi-2026.11.20-py3-none-any.whl",
+          "name": "certifi",
+          "version": "2026.11.20"
+        },
+        {
+          "filename": "charset_normalizer-3.5.3-cp311-cp311-win_amd64.whl",
+          "name": "charset-normalizer",
+          "version": "3.5.3"
+        },
+        {
+          "filename": "click-8.5.1-py3-none-any.whl",
+          "name": "click",
+          "version": "8.5.1"
+        },
+        {
+          "filename": "cloudpickle-3.1.3-py3-none-any.whl",
+          "name": "cloudpickle",
+          "version": "3.1.3"
+        },
+        {
+          "filename": "colorama-0.4.6-py2.py3-none-any.whl",
+          "name": "colorama",
+          "version": "0.4.6"
+        },
+        {
+          "filename": "et_xmlfile-2.0.0-py3-none-any.whl",
+          "name": "et-xmlfile",
+          "version": "2.0.0"
+        },
+        {
+          "filename": "fastapi-0.165.0-py3-none-any.whl",
+          "name": "fastapi",
+          "version": "0.165.0"
+        },
+        {
+          "filename": "h11-0.16.0-py3-none-any.whl",
+          "name": "h11",
+          "version": "0.16.0"
+        },
+        {
+          "filename": "httpcore-1.0.9-py3-none-any.whl",
+          "name": "httpcore",
+          "version": "1.0.9"
+        },
+        {
+          "filename": "httpcore2-2.16.2-py3-none-any.whl",
+          "name": "httpcore2",
+          "version": "2.16.2"
+        },
+        {
+          "filename": "httptools-0.9.0-cp311-cp311-win_amd64.whl",
+          "name": "httptools",
+          "version": "0.9.0"
+        },
+        {
+          "filename": "httpx-0.28.1-py3-none-any.whl",
+          "name": "httpx",
+          "version": "0.28.1"
+        },
+        {
+          "filename": "httpx2-2.16.2-py3-none-any.whl",
+          "name": "httpx2",
+          "version": "2.16.2"
+        },
+        {
+          "filename": "idna-3.20-py3-none-any.whl",
+          "name": "idna",
+          "version": "3.20"
+        },
+        {
+          "filename": "iniconfig-2.3.1-py3-none-any.whl",
+          "name": "iniconfig",
+          "version": "2.3.1"
+        },
+        {
+          "filename": "joblib-1.6.0-py3-none-any.whl",
+          "name": "joblib",
+          "version": "1.6.0"
+        },
+        {
+          "filename": "narwhals-2.29.0-py3-none-any.whl",
+          "name": "narwhals",
+          "version": "2.29.0"
+        },
+        {
+          "filename": "numpy-2.4.6-cp311-cp311-win_amd64.whl",
+          "name": "numpy",
+          "version": "2.4.6"
+        },
+        {
+          "filename": "openpyxl-3.1.5-py2.py3-none-any.whl",
+          "name": "openpyxl",
+          "version": "3.1.5"
+        },
+        {
+          "filename": "opentelemetry_api-1.45.2-py3-none-any.whl",
+          "name": "opentelemetry-api",
+          "version": "1.45.2"
+        },
+        {
+          "filename": "packaging-26.4-py3-none-any.whl",
+          "name": "packaging",
+          "version": "26.4"
+        },
+        {
+          "filename": "pandas-2.3.3-cp311-cp311-win_amd64.whl",
+          "name": "pandas",
+          "version": "2.3.3"
+        },
+        {
+          "filename": "pillow-13.0.0-cp311-cp311-win_amd64.whl",
+          "name": "pillow",
+          "version": "13.0.0"
+        },
+        {
+          "filename": "pluggy-1.7.0-py3-none-any.whl",
+          "name": "pluggy",
+          "version": "1.7.0"
+        },
+        {
+          "filename": "pydantic-2.14.4-py3-none-any.whl",
+          "name": "pydantic",
+          "version": "2.14.4"
+        },
+        {
+          "filename": "pydantic_core-2.50.5-cp311-cp311-win_amd64.whl",
+          "name": "pydantic-core",
+          "version": "2.50.5"
+        },
+        {
+          "filename": "pygments-2.21.0-py3-none-any.whl",
+          "name": "pygments",
+          "version": "2.21.0"
+        },
+        {
+          "filename": "pymupdf-1.28.2-cp310-abi3-win_amd64.whl",
+          "name": "pymupdf",
+          "version": "1.28.2"
+        },
+        {
+          "filename": "pytest-9.2.0-py3-none-any.whl",
+          "name": "pytest",
+          "version": "9.2.0"
+        },
+        {
+          "filename": "python_dateutil-4.0.0-py3-none-any.whl",
+          "name": "python-dateutil",
+          "version": "4.0.0"
+        },
+        {
+          "filename": "python_dotenv-1.2.4-py3-none-any.whl",
+          "name": "python-dotenv",
+          "version": "1.2.4"
+        },
+        {
+          "filename": "python_multipart-0.0.34-py3-none-any.whl",
+          "name": "python-multipart",
+          "version": "0.0.34"
+        },
+        {
+          "filename": "pytz-2026.6-py2.py3-none-any.whl",
+          "name": "pytz",
+          "version": "2026.6"
+        },
+        {
+          "filename": "pyyaml-6.0.4-cp311-cp311-win_amd64.whl",
+          "name": "pyyaml",
+          "version": "6.0.4"
+        },
+        {
+          "filename": "reportlab-4.5.1-py3-none-any.whl",
+          "name": "reportlab",
+          "version": "4.5.1"
+        },
+        {
+          "filename": "scikit_learn-1.9.1-cp311-cp311-win_amd64.whl",
+          "name": "scikit-learn",
+          "version": "1.9.1"
+        },
+        {
+          "filename": "scipy-1.17.1-cp311-cp311-win_amd64.whl",
+          "name": "scipy",
+          "version": "1.17.1"
+        },
+        {
+          "filename": "starlette-1.10.0-py3-none-any.whl",
+          "name": "starlette",
+          "version": "1.10.0"
+        },
+        {
+          "filename": "threadpoolctl-3.8.0-py3-none-any.whl",
+          "name": "threadpoolctl",
+          "version": "3.8.0"
+        },
+        {
+          "filename": "truststore-0.10.5-py3-none-any.whl",
+          "name": "truststore",
+          "version": "0.10.5"
+        },
+        {
+          "filename": "typing_extensions-4.16.0-py3-none-any.whl",
+          "name": "typing-extensions",
+          "version": "4.16.0"
+        },
+        {
+          "filename": "typing_inspection-0.4.5-py3-none-any.whl",
+          "name": "typing-inspection",
+          "version": "0.4.5"
+        },
+        {
+          "filename": "tzdata-2026.6-py2.py3-none-any.whl",
+          "name": "tzdata",
+          "version": "2026.6"
+        },
+        {
+          "filename": "uvicorn-0.54.0-py3-none-any.whl",
+          "name": "uvicorn",
+          "version": "0.54.0"
+        },
+        {
+          "filename": "watchfiles-1.3.0-cp310-abi3-win_amd64.whl",
+          "name": "watchfiles",
+          "version": "1.3.0"
+        },
+        {
+          "filename": "websockets-17.4-cp311-cp311-win_amd64.whl",
+          "name": "websockets",
+          "version": "17.4"
+        }
+      ],
+      "profile": "windows-x64-cp311-source-test",
+      "profile_status": "BLOCKED",
+      "python": "3.11.9",
+      "reachable": 49,
+      "roots": 14,
+      "scope": "source-test",
+      "unknown_python": [
+        "pytz"
+      ],
+      "unused_selected": []
+    },
+    {
+      "active_edges": 41,
+      "edges": [
+        {
+          "from": "anyio",
+          "requirement": "idna>=2.8",
+          "to": "idna"
+        },
+        {
+          "from": "anyio",
+          "requirement": "typing_extensions>=4.16.0; python_version < \"3.15\"",
+          "to": "typing-extensions"
+        },
+        {
+          "from": "fastapi",
+          "requirement": "starlette>=1.6.0",
+          "to": "starlette"
+        },
+        {
+          "from": "fastapi",
+          "requirement": "anyio>=4.1.0",
+          "to": "anyio"
+        },
+        {
+          "from": "fastapi",
+          "requirement": "pydantic>=2.9.0",
+          "to": "pydantic"
+        },
+        {
+          "from": "fastapi",
+          "requirement": "typing-extensions>=4.8.0",
+          "to": "typing-extensions"
+        },
+        {
+          "from": "fastapi",
+          "requirement": "typing-inspection>=0.4.2",
+          "to": "typing-inspection"
+        },
+        {
+          "from": "fastapi",
+          "requirement": "annotated-doc>=0.0.2",
+          "to": "annotated-doc"
+        },
+        {
+          "from": "fastapi",
+          "requirement": "opentelemetry-api>=1.44.0",
+          "to": "opentelemetry-api"
+        },
+        {
+          "from": "joblib",
+          "requirement": "cloudpickle>=3.0",
+          "to": "cloudpickle"
+        },
+        {
+          "from": "openpyxl",
+          "requirement": "et-xmlfile",
+          "to": "et-xmlfile"
+        },
+        {
+          "from": "opentelemetry-api",
+          "requirement": "typing-extensions>=4.5.0",
+          "to": "typing-extensions"
+        },
+        {
+          "from": "pandas",
+          "requirement": "numpy>=1.23.2; python_version == \"3.11\"",
+          "to": "numpy"
+        },
+        {
+          "from": "pandas",
+          "requirement": "python-dateutil>=2.8.2",
+          "to": "python-dateutil"
+        },
+        {
+          "from": "pandas",
+          "requirement": "pytz>=2020.1",
+          "to": "pytz"
+        },
+        {
+          "from": "pandas",
+          "requirement": "tzdata>=2022.7",
+          "to": "tzdata"
+        },
+        {
+          "from": "pydantic",
+          "requirement": "annotated-types>=0.6.0",
+          "to": "annotated-types"
+        },
+        {
+          "from": "pydantic",
+          "requirement": "pydantic-core==2.50.5",
+          "to": "pydantic-core"
+        },
+        {
+          "from": "pydantic",
+          "requirement": "typing-extensions>=4.16.0",
+          "to": "typing-extensions"
+        },
+        {
+          "from": "pydantic",
+          "requirement": "typing-inspection>=0.4.4",
+          "to": "typing-inspection"
+        },
+        {
+          "from": "pydantic-core",
+          "requirement": "typing-extensions>=4.16.0",
+          "to": "typing-extensions"
+        },
+        {
+          "from": "python-dateutil",
+          "requirement": "tzdata",
+          "to": "tzdata"
+        },
+        {
+          "from": "reportlab",
+          "requirement": "pillow>=9.0.0",
+          "to": "pillow"
+        },
+        {
+          "from": "reportlab",
+          "requirement": "charset-normalizer",
+          "to": "charset-normalizer"
+        },
+        {
+          "from": "scikit-learn",
+          "requirement": "numpy>=1.24.1",
+          "to": "numpy"
+        },
+        {
+          "from": "scikit-learn",
+          "requirement": "scipy>=1.10.0",
+          "to": "scipy"
+        },
+        {
+          "from": "scikit-learn",
+          "requirement": "joblib>=1.4.0",
+          "to": "joblib"
+        },
+        {
+          "from": "scikit-learn",
+          "requirement": "narwhals>=2.0.1",
+          "to": "narwhals"
+        },
+        {
+          "from": "scikit-learn",
+          "requirement": "threadpoolctl>=3.5.0",
+          "to": "threadpoolctl"
+        },
+        {
+          "from": "scipy",
+          "requirement": "numpy<2.7,>=1.26.4",
+          "to": "numpy"
+        },
+        {
+          "from": "starlette",
+          "requirement": "anyio<5,>=4.0.0",
+          "to": "anyio"
+        },
+        {
+          "from": "starlette",
+          "requirement": "typing-extensions>=4.10.0; python_version < '3.13'",
+          "to": "typing-extensions"
+        },
+        {
+          "from": "typing-inspection",
+          "requirement": "typing-extensions>=4.15.0",
+          "to": "typing-extensions"
+        },
+        {
+          "from": "uvicorn",
+          "requirement": "click>=7.0",
+          "to": "click"
+        },
+        {
+          "from": "uvicorn",
+          "requirement": "h11>=0.8",
+          "to": "h11"
+        },
+        {
+          "from": "uvicorn",
+          "requirement": "httptools>=0.8.0; extra == 'standard'",
+          "to": "httptools"
+        },
+        {
+          "from": "uvicorn",
+          "requirement": "python-dotenv>=0.13; extra == 'standard'",
+          "to": "python-dotenv"
+        },
+        {
+          "from": "uvicorn",
+          "requirement": "pyyaml>=5.1; extra == 'standard'",
+          "to": "pyyaml"
+        },
+        {
+          "from": "uvicorn",
+          "requirement": "watchfiles>=0.20; extra == 'standard'",
+          "to": "watchfiles"
+        },
+        {
+          "from": "uvicorn",
+          "requirement": "websockets>=13.0; extra == 'standard'",
+          "to": "websockets"
+        },
+        {
+          "from": "watchfiles",
+          "requirement": "anyio>=3.0.0",
+          "to": "anyio"
+        }
+      ],
+      "extras": {
+        "uvicorn": [
+          "standard"
+        ]
+      },
+      "graph_status": "DECLARED_GRAPH_COMPATIBLE",
+      "inactive": 246,
+      "issues": [],
+      "nodes": [
+        {
+          "filename": "annotated_doc-0.0.7-py3-none-any.whl",
+          "name": "annotated-doc",
+          "version": "0.0.7"
+        },
+        {
+          "filename": "annotated_types-0.8.0-py3-none-any.whl",
+          "name": "annotated-types",
+          "version": "0.8.0"
+        },
+        {
+          "filename": "anyio-4.16.0-py3-none-any.whl",
+          "name": "anyio",
+          "version": "4.16.0"
+        },
+        {
+          "filename": "charset_normalizer-3.5.3-cp311-cp311-win_amd64.whl",
+          "name": "charset-normalizer",
+          "version": "3.5.3"
+        },
+        {
+          "filename": "click-8.5.1-py3-none-any.whl",
+          "name": "click",
+          "version": "8.5.1"
+        },
+        {
+          "filename": "cloudpickle-3.1.3-py3-none-any.whl",
+          "name": "cloudpickle",
+          "version": "3.1.3"
+        },
+        {
+          "filename": "et_xmlfile-2.0.0-py3-none-any.whl",
+          "name": "et-xmlfile",
+          "version": "2.0.0"
+        },
+        {
+          "filename": "fastapi-0.165.0-py3-none-any.whl",
+          "name": "fastapi",
+          "version": "0.165.0"
+        },
+        {
+          "filename": "h11-0.16.0-py3-none-any.whl",
+          "name": "h11",
+          "version": "0.16.0"
+        },
+        {
+          "filename": "httptools-0.9.0-cp311-cp311-win_amd64.whl",
+          "name": "httptools",
+          "version": "0.9.0"
+        },
+        {
+          "filename": "idna-3.20-py3-none-any.whl",
+          "name": "idna",
+          "version": "3.20"
+        },
+        {
+          "filename": "joblib-1.6.0-py3-none-any.whl",
+          "name": "joblib",
+          "version": "1.6.0"
+        },
+        {
+          "filename": "narwhals-2.29.0-py3-none-any.whl",
+          "name": "narwhals",
+          "version": "2.29.0"
+        },
+        {
+          "filename": "numpy-2.4.6-cp311-cp311-win_amd64.whl",
+          "name": "numpy",
+          "version": "2.4.6"
+        },
+        {
+          "filename": "openpyxl-3.1.5-py2.py3-none-any.whl",
+          "name": "openpyxl",
+          "version": "3.1.5"
+        },
+        {
+          "filename": "opentelemetry_api-1.45.2-py3-none-any.whl",
+          "name": "opentelemetry-api",
+          "version": "1.45.2"
+        },
+        {
+          "filename": "pandas-2.3.3-cp311-cp311-win_amd64.whl",
+          "name": "pandas",
+          "version": "2.3.3"
+        },
+        {
+          "filename": "pillow-13.0.0-cp311-cp311-win_amd64.whl",
+          "name": "pillow",
+          "version": "13.0.0"
+        },
+        {
+          "filename": "pydantic-2.14.4-py3-none-any.whl",
+          "name": "pydantic",
+          "version": "2.14.4"
+        },
+        {
+          "filename": "pydantic_core-2.50.5-cp311-cp311-win_amd64.whl",
+          "name": "pydantic-core",
+          "version": "2.50.5"
+        },
+        {
+          "filename": "python_dateutil-4.0.0-py3-none-any.whl",
+          "name": "python-dateutil",
+          "version": "4.0.0"
+        },
+        {
+          "filename": "python_dotenv-1.2.4-py3-none-any.whl",
+          "name": "python-dotenv",
+          "version": "1.2.4"
+        },
+        {
+          "filename": "python_multipart-0.0.34-py3-none-any.whl",
+          "name": "python-multipart",
+          "version": "0.0.34"
+        },
+        {
+          "filename": "pytz-2026.6-py2.py3-none-any.whl",
+          "name": "pytz",
+          "version": "2026.6"
+        },
+        {
+          "filename": "pyyaml-6.0.4-cp311-cp311-win_amd64.whl",
+          "name": "pyyaml",
+          "version": "6.0.4"
+        },
+        {
+          "filename": "reportlab-4.5.1-py3-none-any.whl",
+          "name": "reportlab",
+          "version": "4.5.1"
+        },
+        {
+          "filename": "scikit_learn-1.9.1-cp311-cp311-win_amd64.whl",
+          "name": "scikit-learn",
+          "version": "1.9.1"
+        },
+        {
+          "filename": "scipy-1.17.1-cp311-cp311-win_amd64.whl",
+          "name": "scipy",
+          "version": "1.17.1"
+        },
+        {
+          "filename": "starlette-1.10.0-py3-none-any.whl",
+          "name": "starlette",
+          "version": "1.10.0"
+        },
+        {
+          "filename": "threadpoolctl-3.8.0-py3-none-any.whl",
+          "name": "threadpoolctl",
+          "version": "3.8.0"
+        },
+        {
+          "filename": "typing_extensions-4.16.0-py3-none-any.whl",
+          "name": "typing-extensions",
+          "version": "4.16.0"
+        },
+        {
+          "filename": "typing_inspection-0.4.5-py3-none-any.whl",
+          "name": "typing-inspection",
+          "version": "0.4.5"
+        },
+        {
+          "filename": "tzdata-2026.6-py2.py3-none-any.whl",
+          "name": "tzdata",
+          "version": "2026.6"
+        },
+        {
+          "filename": "uvicorn-0.54.0-py3-none-any.whl",
+          "name": "uvicorn",
+          "version": "0.54.0"
+        },
+        {
+          "filename": "watchfiles-1.3.0-cp310-abi3-win_amd64.whl",
+          "name": "watchfiles",
+          "version": "1.3.0"
+        },
+        {
+          "filename": "websockets-17.4-cp311-cp311-win_amd64.whl",
+          "name": "websockets",
+          "version": "17.4"
+        }
+      ],
+      "profile": "windows-x64-cp311-source-test",
+      "profile_status": "BLOCKED",
+      "python": "3.11.9",
+      "reachable": 36,
+      "roots": 10,
+      "scope": "runtime-root-subset",
+      "unknown_python": [
+        "pytz"
+      ],
+      "unused_selected": [
+        "certifi",
+        "colorama",
+        "httpcore",
+        "httpcore2",
+        "httpx",
+        "httpx2",
+        "iniconfig",
+        "packaging",
+        "pluggy",
+        "pygments",
+        "pymupdf",
+        "pytest",
+        "truststore"
+      ]
+    },
+    {
+      "active_edges": 59,
+      "edges": [
+        {
+          "from": "anyio",
+          "requirement": "idna>=2.8",
+          "to": "idna"
+        },
+        {
+          "from": "anyio",
+          "requirement": "typing_extensions>=4.16.0; python_version < \"3.15\"",
+          "to": "typing-extensions"
+        },
+        {
+          "from": "fastapi",
+          "requirement": "starlette>=1.6.0",
+          "to": "starlette"
+        },
+        {
+          "from": "fastapi",
+          "requirement": "anyio>=4.1.0",
+          "to": "anyio"
+        },
+        {
+          "from": "fastapi",
+          "requirement": "pydantic>=2.9.0",
+          "to": "pydantic"
+        },
+        {
+          "from": "fastapi",
+          "requirement": "typing-extensions>=4.8.0",
+          "to": "typing-extensions"
+        },
+        {
+          "from": "fastapi",
+          "requirement": "typing-inspection>=0.4.2",
+          "to": "typing-inspection"
+        },
+        {
+          "from": "fastapi",
+          "requirement": "annotated-doc>=0.0.2",
+          "to": "annotated-doc"
+        },
+        {
+          "from": "fastapi",
+          "requirement": "opentelemetry-api>=1.44.0",
+          "to": "opentelemetry-api"
+        },
+        {
+          "from": "httpcore",
+          "requirement": "certifi",
+          "to": "certifi"
+        },
+        {
+          "from": "httpcore",
+          "requirement": "h11>=0.16",
+          "to": "h11"
+        },
+        {
+          "from": "httpcore2",
+          "requirement": "h11>=0.16",
+          "to": "h11"
+        },
+        {
+          "from": "httpcore2",
+          "requirement": "truststore>=0.10",
+          "to": "truststore"
+        },
+        {
+          "from": "httpx",
+          "requirement": "anyio",
+          "to": "anyio"
+        },
+        {
+          "from": "httpx",
+          "requirement": "certifi",
+          "to": "certifi"
+        },
+        {
+          "from": "httpx",
+          "requirement": "httpcore==1.*",
+          "to": "httpcore"
+        },
+        {
+          "from": "httpx",
+          "requirement": "idna",
+          "to": "idna"
+        },
+        {
+          "from": "httpx2",
+          "requirement": "anyio>=4.10; sys_platform != 'emscripten'",
+          "to": "anyio"
+        },
+        {
+          "from": "httpx2",
+          "requirement": "httpcore2==2.16.2; sys_platform != 'emscripten'",
+          "to": "httpcore2"
+        },
+        {
+          "from": "httpx2",
+          "requirement": "idna>=3.18",
+          "to": "idna"
+        },
+        {
+          "from": "httpx2",
+          "requirement": "truststore>=0.10; sys_platform != 'emscripten'",
+          "to": "truststore"
+        },
+        {
+          "from": "httpx2",
+          "requirement": "typing-extensions>=4.5.0; python_version < '3.13'",
+          "to": "typing-extensions"
+        },
+        {
+          "from": "joblib",
+          "requirement": "cloudpickle>=3.0",
+          "to": "cloudpickle"
+        },
+        {
+          "from": "openpyxl",
+          "requirement": "et-xmlfile",
+          "to": "et-xmlfile"
+        },
+        {
+          "from": "opentelemetry-api",
+          "requirement": "typing-extensions>=4.5.0",
+          "to": "typing-extensions"
+        },
+        {
+          "from": "pandas",
+          "requirement": "numpy>=1.23.2; python_version == \"3.11\"",
+          "to": "numpy"
+        },
+        {
+          "from": "pandas",
+          "requirement": "python-dateutil>=2.8.2",
+          "to": "python-dateutil"
+        },
+        {
+          "from": "pandas",
+          "requirement": "pytz>=2020.1",
+          "to": "pytz"
+        },
+        {
+          "from": "pandas",
+          "requirement": "tzdata>=2022.7",
+          "to": "tzdata"
+        },
+        {
+          "from": "pydantic",
+          "requirement": "annotated-types>=0.6.0",
+          "to": "annotated-types"
+        },
+        {
+          "from": "pydantic",
+          "requirement": "pydantic-core==2.50.5",
+          "to": "pydantic-core"
+        },
+        {
+          "from": "pydantic",
+          "requirement": "typing-extensions>=4.16.0",
+          "to": "typing-extensions"
+        },
+        {
+          "from": "pydantic",
+          "requirement": "typing-inspection>=0.4.4",
+          "to": "typing-inspection"
+        },
+        {
+          "from": "pydantic-core",
+          "requirement": "typing-extensions>=4.16.0",
+          "to": "typing-extensions"
+        },
+        {
+          "from": "pytest",
+          "requirement": "iniconfig>=2",
+          "to": "iniconfig"
+        },
+        {
+          "from": "pytest",
+          "requirement": "packaging>=24",
+          "to": "packaging"
+        },
+        {
+          "from": "pytest",
+          "requirement": "pluggy<2,>=1.6",
+          "to": "pluggy"
+        },
+        {
+          "from": "pytest",
+          "requirement": "pygments>=2.15",
+          "to": "pygments"
+        },
+        {
+          "from": "python-dateutil",
+          "requirement": "tzdata",
+          "to": "tzdata"
+        },
+        {
+          "from": "reportlab",
+          "requirement": "pillow>=9.0.0",
+          "to": "pillow"
+        },
+        {
+          "from": "reportlab",
+          "requirement": "charset-normalizer",
+          "to": "charset-normalizer"
+        },
+        {
+          "from": "scikit-learn",
+          "requirement": "numpy>=1.24.1",
+          "to": "numpy"
+        },
+        {
+          "from": "scikit-learn",
+          "requirement": "scipy>=1.10.0",
+          "to": "scipy"
+        },
+        {
+          "from": "scikit-learn",
+          "requirement": "joblib>=1.4.0",
+          "to": "joblib"
+        },
+        {
+          "from": "scikit-learn",
+          "requirement": "narwhals>=2.0.1",
+          "to": "narwhals"
+        },
+        {
+          "from": "scikit-learn",
+          "requirement": "threadpoolctl>=3.5.0",
+          "to": "threadpoolctl"
+        },
+        {
+          "from": "scipy",
+          "requirement": "numpy<2.7,>=1.26.4",
+          "to": "numpy"
+        },
+        {
+          "from": "starlette",
+          "requirement": "anyio<5,>=4.0.0",
+          "to": "anyio"
+        },
+        {
+          "from": "starlette",
+          "requirement": "typing-extensions>=4.10.0; python_version < '3.13'",
+          "to": "typing-extensions"
+        },
+        {
+          "from": "typing-inspection",
+          "requirement": "typing-extensions>=4.15.0",
+          "to": "typing-extensions"
+        },
+        {
+          "from": "uvicorn",
+          "requirement": "click>=7.0",
+          "to": "click"
+        },
+        {
+          "from": "uvicorn",
+          "requirement": "h11>=0.8",
+          "to": "h11"
+        },
+        {
+          "from": "uvicorn",
+          "requirement": "httptools>=0.8.0; extra == 'standard'",
+          "to": "httptools"
+        },
+        {
+          "from": "uvicorn",
+          "requirement": "python-dotenv>=0.13; extra == 'standard'",
+          "to": "python-dotenv"
+        },
+        {
+          "from": "uvicorn",
+          "requirement": "pyyaml>=5.1; extra == 'standard'",
+          "to": "pyyaml"
+        },
+        {
+          "from": "uvicorn",
+          "requirement": "uvloop>=0.15.1; (sys_platform != 'win32' and (sys_platform != 'cygwin' and platform_python_implementation != 'PyPy')) and extra == 'standard'",
+          "to": "uvloop"
+        },
+        {
+          "from": "uvicorn",
+          "requirement": "watchfiles>=0.20; extra == 'standard'",
+          "to": "watchfiles"
+        },
+        {
+          "from": "uvicorn",
+          "requirement": "websockets>=13.0; extra == 'standard'",
+          "to": "websockets"
+        },
+        {
+          "from": "watchfiles",
+          "requirement": "anyio>=3.0.0",
+          "to": "anyio"
+        }
+      ],
+      "extras": {
+        "uvicorn": [
+          "standard"
+        ]
+      },
+      "graph_status": "DECLARED_GRAPH_COMPATIBLE",
+      "inactive": 301,
+      "issues": [],
+      "nodes": [
+        {
+          "filename": "annotated_doc-0.0.7-py3-none-any.whl",
+          "name": "annotated-doc",
+          "version": "0.0.7"
+        },
+        {
+          "filename": "annotated_types-0.8.0-py3-none-any.whl",
+          "name": "annotated-types",
+          "version": "0.8.0"
+        },
+        {
+          "filename": "anyio-4.16.0-py3-none-any.whl",
+          "name": "anyio",
+          "version": "4.16.0"
+        },
+        {
+          "filename": "certifi-2026.11.20-py3-none-any.whl",
+          "name": "certifi",
+          "version": "2026.11.20"
+        },
+        {
+          "filename": "charset_normalizer-3.5.3-cp311-cp311-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl",
+          "name": "charset-normalizer",
+          "version": "3.5.3"
+        },
+        {
+          "filename": "click-8.5.1-py3-none-any.whl",
+          "name": "click",
+          "version": "8.5.1"
+        },
+        {
+          "filename": "cloudpickle-3.1.3-py3-none-any.whl",
+          "name": "cloudpickle",
+          "version": "3.1.3"
+        },
+        {
+          "filename": "et_xmlfile-2.0.0-py3-none-any.whl",
+          "name": "et-xmlfile",
+          "version": "2.0.0"
+        },
+        {
+          "filename": "fastapi-0.165.0-py3-none-any.whl",
+          "name": "fastapi",
+          "version": "0.165.0"
+        },
+        {
+          "filename": "h11-0.16.0-py3-none-any.whl",
+          "name": "h11",
+          "version": "0.16.0"
+        },
+        {
+          "filename": "httpcore-1.0.9-py3-none-any.whl",
+          "name": "httpcore",
+          "version": "1.0.9"
+        },
+        {
+          "filename": "httpcore2-2.16.2-py3-none-any.whl",
+          "name": "httpcore2",
+          "version": "2.16.2"
+        },
+        {
+          "filename": "httptools-0.9.0-cp311-cp311-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl",
+          "name": "httptools",
+          "version": "0.9.0"
+        },
+        {
+          "filename": "httpx-0.28.1-py3-none-any.whl",
+          "name": "httpx",
+          "version": "0.28.1"
+        },
+        {
+          "filename": "httpx2-2.16.2-py3-none-any.whl",
+          "name": "httpx2",
+          "version": "2.16.2"
+        },
+        {
+          "filename": "idna-3.20-py3-none-any.whl",
+          "name": "idna",
+          "version": "3.20"
+        },
+        {
+          "filename": "iniconfig-2.3.1-py3-none-any.whl",
+          "name": "iniconfig",
+          "version": "2.3.1"
+        },
+        {
+          "filename": "joblib-1.6.0-py3-none-any.whl",
+          "name": "joblib",
+          "version": "1.6.0"
+        },
+        {
+          "filename": "narwhals-2.29.0-py3-none-any.whl",
+          "name": "narwhals",
+          "version": "2.29.0"
+        },
+        {
+          "filename": "numpy-2.4.6-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+          "name": "numpy",
+          "version": "2.4.6"
+        },
+        {
+          "filename": "openpyxl-3.1.5-py2.py3-none-any.whl",
+          "name": "openpyxl",
+          "version": "3.1.5"
+        },
+        {
+          "filename": "opentelemetry_api-1.45.2-py3-none-any.whl",
+          "name": "opentelemetry-api",
+          "version": "1.45.2"
+        },
+        {
+          "filename": "packaging-26.4-py3-none-any.whl",
+          "name": "packaging",
+          "version": "26.4"
+        },
+        {
+          "filename": "pandas-2.3.3-cp311-cp311-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl",
+          "name": "pandas",
+          "version": "2.3.3"
+        },
+        {
+          "filename": "pillow-13.0.0-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+          "name": "pillow",
+          "version": "13.0.0"
+        },
+        {
+          "filename": "pluggy-1.7.0-py3-none-any.whl",
+          "name": "pluggy",
+          "version": "1.7.0"
+        },
+        {
+          "filename": "pydantic-2.14.4-py3-none-any.whl",
+          "name": "pydantic",
+          "version": "2.14.4"
+        },
+        {
+          "filename": "pydantic_core-2.50.5-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+          "name": "pydantic-core",
+          "version": "2.50.5"
+        },
+        {
+          "filename": "pygments-2.21.0-py3-none-any.whl",
+          "name": "pygments",
+          "version": "2.21.0"
+        },
+        {
+          "filename": "pymupdf-1.28.2-cp310-abi3-manylinux_2_28_x86_64.whl",
+          "name": "pymupdf",
+          "version": "1.28.2"
+        },
+        {
+          "filename": "pytest-9.2.0-py3-none-any.whl",
+          "name": "pytest",
+          "version": "9.2.0"
+        },
+        {
+          "filename": "python_dateutil-4.0.0-py3-none-any.whl",
+          "name": "python-dateutil",
+          "version": "4.0.0"
+        },
+        {
+          "filename": "python_dotenv-1.2.4-py3-none-any.whl",
+          "name": "python-dotenv",
+          "version": "1.2.4"
+        },
+        {
+          "filename": "python_multipart-0.0.34-py3-none-any.whl",
+          "name": "python-multipart",
+          "version": "0.0.34"
+        },
+        {
+          "filename": "pytz-2026.6-py2.py3-none-any.whl",
+          "name": "pytz",
+          "version": "2026.6"
+        },
+        {
+          "filename": "pyyaml-6.0.4-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl",
+          "name": "pyyaml",
+          "version": "6.0.4"
+        },
+        {
+          "filename": "reportlab-4.5.1-py3-none-any.whl",
+          "name": "reportlab",
+          "version": "4.5.1"
+        },
+        {
+          "filename": "scikit_learn-1.9.1-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+          "name": "scikit-learn",
+          "version": "1.9.1"
+        },
+        {
+          "filename": "scipy-1.17.1-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+          "name": "scipy",
+          "version": "1.17.1"
+        },
+        {
+          "filename": "starlette-1.10.0-py3-none-any.whl",
+          "name": "starlette",
+          "version": "1.10.0"
+        },
+        {
+          "filename": "threadpoolctl-3.8.0-py3-none-any.whl",
+          "name": "threadpoolctl",
+          "version": "3.8.0"
+        },
+        {
+          "filename": "truststore-0.10.5-py3-none-any.whl",
+          "name": "truststore",
+          "version": "0.10.5"
+        },
+        {
+          "filename": "typing_extensions-4.16.0-py3-none-any.whl",
+          "name": "typing-extensions",
+          "version": "4.16.0"
+        },
+        {
+          "filename": "typing_inspection-0.4.5-py3-none-any.whl",
+          "name": "typing-inspection",
+          "version": "0.4.5"
+        },
+        {
+          "filename": "tzdata-2026.6-py2.py3-none-any.whl",
+          "name": "tzdata",
+          "version": "2026.6"
+        },
+        {
+          "filename": "uvicorn-0.54.0-py3-none-any.whl",
+          "name": "uvicorn",
+          "version": "0.54.0"
+        },
+        {
+          "filename": "uvloop-0.23.0-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl",
+          "name": "uvloop",
+          "version": "0.23.0"
+        },
+        {
+          "filename": "watchfiles-1.3.0-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+          "name": "watchfiles",
+          "version": "1.3.0"
+        },
+        {
+          "filename": "websockets-17.4-cp311-cp311-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl",
+          "name": "websockets",
+          "version": "17.4"
+        }
+      ],
+      "profile": "linux-x64-cp311-source-test",
+      "profile_status": "BLOCKED",
+      "python": "3.11.18",
+      "reachable": 49,
+      "roots": 14,
+      "scope": "source-test",
+      "unknown_python": [
+        "pytz"
+      ],
+      "unused_selected": []
+    },
+    {
+      "active_edges": 42,
+      "edges": [
+        {
+          "from": "anyio",
+          "requirement": "idna>=2.8",
+          "to": "idna"
+        },
+        {
+          "from": "anyio",
+          "requirement": "typing_extensions>=4.16.0; python_version < \"3.15\"",
+          "to": "typing-extensions"
+        },
+        {
+          "from": "fastapi",
+          "requirement": "starlette>=1.6.0",
+          "to": "starlette"
+        },
+        {
+          "from": "fastapi",
+          "requirement": "anyio>=4.1.0",
+          "to": "anyio"
+        },
+        {
+          "from": "fastapi",
+          "requirement": "pydantic>=2.9.0",
+          "to": "pydantic"
+        },
+        {
+          "from": "fastapi",
+          "requirement": "typing-extensions>=4.8.0",
+          "to": "typing-extensions"
+        },
+        {
+          "from": "fastapi",
+          "requirement": "typing-inspection>=0.4.2",
+          "to": "typing-inspection"
+        },
+        {
+          "from": "fastapi",
+          "requirement": "annotated-doc>=0.0.2",
+          "to": "annotated-doc"
+        },
+        {
+          "from": "fastapi",
+          "requirement": "opentelemetry-api>=1.44.0",
+          "to": "opentelemetry-api"
+        },
+        {
+          "from": "joblib",
+          "requirement": "cloudpickle>=3.0",
+          "to": "cloudpickle"
+        },
+        {
+          "from": "openpyxl",
+          "requirement": "et-xmlfile",
+          "to": "et-xmlfile"
+        },
+        {
+          "from": "opentelemetry-api",
+          "requirement": "typing-extensions>=4.5.0",
+          "to": "typing-extensions"
+        },
+        {
+          "from": "pandas",
+          "requirement": "numpy>=1.23.2; python_version == \"3.11\"",
+          "to": "numpy"
+        },
+        {
+          "from": "pandas",
+          "requirement": "python-dateutil>=2.8.2",
+          "to": "python-dateutil"
+        },
+        {
+          "from": "pandas",
+          "requirement": "pytz>=2020.1",
+          "to": "pytz"
+        },
+        {
+          "from": "pandas",
+          "requirement": "tzdata>=2022.7",
+          "to": "tzdata"
+        },
+        {
+          "from": "pydantic",
+          "requirement": "annotated-types>=0.6.0",
+          "to": "annotated-types"
+        },
+        {
+          "from": "pydantic",
+          "requirement": "pydantic-core==2.50.5",
+          "to": "pydantic-core"
+        },
+        {
+          "from": "pydantic",
+          "requirement": "typing-extensions>=4.16.0",
+          "to": "typing-extensions"
+        },
+        {
+          "from": "pydantic",
+          "requirement": "typing-inspection>=0.4.4",
+          "to": "typing-inspection"
+        },
+        {
+          "from": "pydantic-core",
+          "requirement": "typing-extensions>=4.16.0",
+          "to": "typing-extensions"
+        },
+        {
+          "from": "python-dateutil",
+          "requirement": "tzdata",
+          "to": "tzdata"
+        },
+        {
+          "from": "reportlab",
+          "requirement": "pillow>=9.0.0",
+          "to": "pillow"
+        },
+        {
+          "from": "reportlab",
+          "requirement": "charset-normalizer",
+          "to": "charset-normalizer"
+        },
+        {
+          "from": "scikit-learn",
+          "requirement": "numpy>=1.24.1",
+          "to": "numpy"
+        },
+        {
+          "from": "scikit-learn",
+          "requirement": "scipy>=1.10.0",
+          "to": "scipy"
+        },
+        {
+          "from": "scikit-learn",
+          "requirement": "joblib>=1.4.0",
+          "to": "joblib"
+        },
+        {
+          "from": "scikit-learn",
+          "requirement": "narwhals>=2.0.1",
+          "to": "narwhals"
+        },
+        {
+          "from": "scikit-learn",
+          "requirement": "threadpoolctl>=3.5.0",
+          "to": "threadpoolctl"
+        },
+        {
+          "from": "scipy",
+          "requirement": "numpy<2.7,>=1.26.4",
+          "to": "numpy"
+        },
+        {
+          "from": "starlette",
+          "requirement": "anyio<5,>=4.0.0",
+          "to": "anyio"
+        },
+        {
+          "from": "starlette",
+          "requirement": "typing-extensions>=4.10.0; python_version < '3.13'",
+          "to": "typing-extensions"
+        },
+        {
+          "from": "typing-inspection",
+          "requirement": "typing-extensions>=4.15.0",
+          "to": "typing-extensions"
+        },
+        {
+          "from": "uvicorn",
+          "requirement": "click>=7.0",
+          "to": "click"
+        },
+        {
+          "from": "uvicorn",
+          "requirement": "h11>=0.8",
+          "to": "h11"
+        },
+        {
+          "from": "uvicorn",
+          "requirement": "httptools>=0.8.0; extra == 'standard'",
+          "to": "httptools"
+        },
+        {
+          "from": "uvicorn",
+          "requirement": "python-dotenv>=0.13; extra == 'standard'",
+          "to": "python-dotenv"
+        },
+        {
+          "from": "uvicorn",
+          "requirement": "pyyaml>=5.1; extra == 'standard'",
+          "to": "pyyaml"
+        },
+        {
+          "from": "uvicorn",
+          "requirement": "uvloop>=0.15.1; (sys_platform != 'win32' and (sys_platform != 'cygwin' and platform_python_implementation != 'PyPy')) and extra == 'standard'",
+          "to": "uvloop"
+        },
+        {
+          "from": "uvicorn",
+          "requirement": "watchfiles>=0.20; extra == 'standard'",
+          "to": "watchfiles"
+        },
+        {
+          "from": "uvicorn",
+          "requirement": "websockets>=13.0; extra == 'standard'",
+          "to": "websockets"
+        },
+        {
+          "from": "watchfiles",
+          "requirement": "anyio>=3.0.0",
+          "to": "anyio"
+        }
+      ],
+      "extras": {
+        "uvicorn": [
+          "standard"
+        ]
+      },
+      "graph_status": "DECLARED_GRAPH_COMPATIBLE",
+      "inactive": 258,
+      "issues": [],
+      "nodes": [
+        {
+          "filename": "annotated_doc-0.0.7-py3-none-any.whl",
+          "name": "annotated-doc",
+          "version": "0.0.7"
+        },
+        {
+          "filename": "annotated_types-0.8.0-py3-none-any.whl",
+          "name": "annotated-types",
+          "version": "0.8.0"
+        },
+        {
+          "filename": "anyio-4.16.0-py3-none-any.whl",
+          "name": "anyio",
+          "version": "4.16.0"
+        },
+        {
+          "filename": "charset_normalizer-3.5.3-cp311-cp311-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl",
+          "name": "charset-normalizer",
+          "version": "3.5.3"
+        },
+        {
+          "filename": "click-8.5.1-py3-none-any.whl",
+          "name": "click",
+          "version": "8.5.1"
+        },
+        {
+          "filename": "cloudpickle-3.1.3-py3-none-any.whl",
+          "name": "cloudpickle",
+          "version": "3.1.3"
+        },
+        {
+          "filename": "et_xmlfile-2.0.0-py3-none-any.whl",
+          "name": "et-xmlfile",
+          "version": "2.0.0"
+        },
+        {
+          "filename": "fastapi-0.165.0-py3-none-any.whl",
+          "name": "fastapi",
+          "version": "0.165.0"
+        },
+        {
+          "filename": "h11-0.16.0-py3-none-any.whl",
+          "name": "h11",
+          "version": "0.16.0"
+        },
+        {
+          "filename": "httptools-0.9.0-cp311-cp311-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl",
+          "name": "httptools",
+          "version": "0.9.0"
+        },
+        {
+          "filename": "idna-3.20-py3-none-any.whl",
+          "name": "idna",
+          "version": "3.20"
+        },
+        {
+          "filename": "joblib-1.6.0-py3-none-any.whl",
+          "name": "joblib",
+          "version": "1.6.0"
+        },
+        {
+          "filename": "narwhals-2.29.0-py3-none-any.whl",
+          "name": "narwhals",
+          "version": "2.29.0"
+        },
+        {
+          "filename": "numpy-2.4.6-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+          "name": "numpy",
+          "version": "2.4.6"
+        },
+        {
+          "filename": "openpyxl-3.1.5-py2.py3-none-any.whl",
+          "name": "openpyxl",
+          "version": "3.1.5"
+        },
+        {
+          "filename": "opentelemetry_api-1.45.2-py3-none-any.whl",
+          "name": "opentelemetry-api",
+          "version": "1.45.2"
+        },
+        {
+          "filename": "pandas-2.3.3-cp311-cp311-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl",
+          "name": "pandas",
+          "version": "2.3.3"
+        },
+        {
+          "filename": "pillow-13.0.0-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+          "name": "pillow",
+          "version": "13.0.0"
+        },
+        {
+          "filename": "pydantic-2.14.4-py3-none-any.whl",
+          "name": "pydantic",
+          "version": "2.14.4"
+        },
+        {
+          "filename": "pydantic_core-2.50.5-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+          "name": "pydantic-core",
+          "version": "2.50.5"
+        },
+        {
+          "filename": "python_dateutil-4.0.0-py3-none-any.whl",
+          "name": "python-dateutil",
+          "version": "4.0.0"
+        },
+        {
+          "filename": "python_dotenv-1.2.4-py3-none-any.whl",
+          "name": "python-dotenv",
+          "version": "1.2.4"
+        },
+        {
+          "filename": "python_multipart-0.0.34-py3-none-any.whl",
+          "name": "python-multipart",
+          "version": "0.0.34"
+        },
+        {
+          "filename": "pytz-2026.6-py2.py3-none-any.whl",
+          "name": "pytz",
+          "version": "2026.6"
+        },
+        {
+          "filename": "pyyaml-6.0.4-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl",
+          "name": "pyyaml",
+          "version": "6.0.4"
+        },
+        {
+          "filename": "reportlab-4.5.1-py3-none-any.whl",
+          "name": "reportlab",
+          "version": "4.5.1"
+        },
+        {
+          "filename": "scikit_learn-1.9.1-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+          "name": "scikit-learn",
+          "version": "1.9.1"
+        },
+        {
+          "filename": "scipy-1.17.1-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+          "name": "scipy",
+          "version": "1.17.1"
+        },
+        {
+          "filename": "starlette-1.10.0-py3-none-any.whl",
+          "name": "starlette",
+          "version": "1.10.0"
+        },
+        {
+          "filename": "threadpoolctl-3.8.0-py3-none-any.whl",
+          "name": "threadpoolctl",
+          "version": "3.8.0"
+        },
+        {
+          "filename": "typing_extensions-4.16.0-py3-none-any.whl",
+          "name": "typing-extensions",
+          "version": "4.16.0"
+        },
+        {
+          "filename": "typing_inspection-0.4.5-py3-none-any.whl",
+          "name": "typing-inspection",
+          "version": "0.4.5"
+        },
+        {
+          "filename": "tzdata-2026.6-py2.py3-none-any.whl",
+          "name": "tzdata",
+          "version": "2026.6"
+        },
+        {
+          "filename": "uvicorn-0.54.0-py3-none-any.whl",
+          "name": "uvicorn",
+          "version": "0.54.0"
+        },
+        {
+          "filename": "uvloop-0.23.0-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl",
+          "name": "uvloop",
+          "version": "0.23.0"
+        },
+        {
+          "filename": "watchfiles-1.3.0-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+          "name": "watchfiles",
+          "version": "1.3.0"
+        },
+        {
+          "filename": "websockets-17.4-cp311-cp311-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl",
+          "name": "websockets",
+          "version": "17.4"
+        }
+      ],
+      "profile": "linux-x64-cp311-source-test",
+      "profile_status": "BLOCKED",
+      "python": "3.11.18",
+      "reachable": 37,
+      "roots": 10,
+      "scope": "runtime-root-subset",
+      "unknown_python": [
+        "pytz"
+      ],
+      "unused_selected": [
+        "certifi",
+        "httpcore",
+        "httpcore2",
+        "httpx",
+        "httpx2",
+        "iniconfig",
+        "packaging",
+        "pluggy",
+        "pygments",
+        "pymupdf",
+        "pytest",
+        "truststore"
+      ]
+    }
+  ]
+}
