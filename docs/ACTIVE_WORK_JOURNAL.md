@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | PUBLISHED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | cc92b727d8aee109638041ffd40aaa59e99f2a0b |
-| Product baseline | 686fa62ba76e3427acb8205abb89870c789a2342 all four exact routine workflows SUCCESS. |
+| Observed starting HEAD | cc92b727d8aee109638041ffd40aaa59e99f2a0b; write-ahead 60818c3d35591c476b5badd9823dee08e17f35ed; verified published e35447789ae8953ac1c99b77be387bc8194e4a0c. |
+| Product baseline | e35447789ae8953ac1c99b77be387bc8194e4a0c (test-only C1/PDF adapter batch; exact CI pending); 686fa62 first P1 adapter all four exact CI SUCCESS. |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
 | Operation ID | C3-INPROCESS-C1-PDF-20261125-source |
-| Operation state | ISSUED |
+| Operation state | RECONCILED |
 | Intended files | tests/test_c1_product_integration.py, tests/test_p2_pdf_export_route_integration.py, .github/workflows/p1-isolated-backend.yml (routine source test trigger and isolated nine-case PDF check), journal. Explicit guarded fixture requests, direct app introspection on actual composed FastAPI instance, preserve lifespan and ownership assertions; auth-negative requests use immutable desktop trust with no default header. PDF existing nine cases and isolated runner marker/count preserved; routine Linux CI uses synthetic temp home and refuses skipped cases, no owner runner invoked or release fonts. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | 686fa62 P1 backend #45574113353, lifecycle #45574113366, HTTP #45574113374, P4 #45574113368 terminal SUCCESS; P4 jobs p4-synthetic-source-and-frontend 139067665364 success; p4-r03-windows-local-answers 139067665690 success; p4-disposable-real-http-browser 139067665736 success; Exercise preservation/hash collector on synthetic Windows fixture ONLY 139067667786 skipped. C1 product fixture has two mutable desktop auth tests and two client.app route checks; PDF nine-case source suite gated by synthetic marker and separate existing Windows owner runner. No production changes or owner execution. Further ASGI callers identified in tests/test_c1_resource_training_store.py, tests/test_c1_resource_autonomy.py and tests/test_build_e_autonomous_investigations.py; separate next batch. Full caller inventory incomplete. Matching workflow P1 isolated backend routine Linux only; PDF manual Windows workflow remains unchanged and undispatched. |
-| Pending runs | None prior; expected P1 isolated backend only. No restricted dispatch. |
+| Verification | Four-file diff verified. C1 product composition exposes actual FastAPI app separately from guarded fixture client, preserves route inventory and route identity assertions, original lifespan and drain, explicit desktop negative requests with no extra lifespan; auth refusal before ownership admission, authorized training contention 503, status shape and immutable captured desktop session despite environment mutation. PDF suite retains nine cases, marker guard, existing Windows scoped runner count, release gate and no actual user data/assets; positive requests guarded; separate desktop negative client verifies load/render not called until authorization. Routine P1 isolated backend adds Linux disposable mktemp nine-case source check with exact count/no skips; existing owner runner and approval untouched. No actual Windows or native verification. Further C1 async training, autonomy and legacy investigation tests identified; full caller inventory incomplete. Backend/frontend fallback retained pending migration. |
+| Pending runs | P1 Isolated Backend Source Recovery #45574901687 in_progress. No restricted dispatch; native workflow guards unchanged. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Publish C1 product/PDF test-only batch and reconcile exact CI before overlap. Next migrate C1 training/autonomy/direct investigation tests and remaining direct/in-process QA callers; complete inventory, native smoke bootstrap and final main/frontend fallback removal, route matrix and C3 closure. C4 deferred. |
+| Recovery action | Reconcile exact e354477 CI before overlapping push; fix failures if any. Next C1 async training tests (ASGITransport with exact synthetic loopback peer/server), C1 autonomy and Build E investigation mutable auth cases; remaining direct/in-process and QA callers. Complete inventory, native smoke bootstrap, remove bare main/frontend fallback, C3 route matrix and closure. C4 deferred. |
 | Resume after closure | C4, C5 in order; D separately approved. |
 
 ## Prior operation
