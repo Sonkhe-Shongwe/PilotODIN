@@ -159,6 +159,10 @@ def main() -> int:
     parser.add_argument("--stage", action="store_true",
                         help="Explicitly copy verified files to ignored build-only review directory")
     args = parser.parse_args()
+    # C5: historical interactive consent is not current acquisition/build authority.
+    if args.stage:
+        print("C5_HISTORICAL_FONT_STAGE_BLOCKED: separate reviewed exact-input approval required.")
+        return 2
     try:
         source = safe_root(default_root() / "font-candidates", ROOT)
         manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))

@@ -209,6 +209,10 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--prepare", action="store_true")
     args = ap.parse_args()
+    # C5: historical interactive consent is not current acquisition/build authority.
+    if args.prepare:
+        print("C5_HISTORICAL_BUILDER_SETUP_BLOCKED: separate reviewed exact-input approval required.")
+        return 2
     try:
         if args.prepare:
             result = prepare()

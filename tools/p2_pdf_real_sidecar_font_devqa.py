@@ -248,6 +248,10 @@ def main() -> int:
     argp = argparse.ArgumentParser(description=__doc__)
     argp.add_argument("--build", action="store_true")
     args = argp.parse_args()
+    # C5: historical interactive consent is not current acquisition/build authority.
+    if args.build:
+        print("C5_HISTORICAL_SIDECAR_BUILD_BLOCKED: separate reviewed exact-input approval required.")
+        return 2
     result = _state("BLOCKED", "explicit_consent_required")
     if args.build:
         phase = "os_prerequisite"

@@ -916,3 +916,47 @@ def test_c5_candidate_inventory_rejects_missing_cargo_edge():
     lock["package"][0]["dependencies"] = ["fixture-missing"]
     with pytest.raises(preflight.Blocked, match="CARGO_DEPENDENCY_UNRESOLVED"):
         inventory.cargo_inventory(lock)
+
+
+# C5 historical frontdoor tests: isolate the actual main AST so any attempt
+# to invoke an old helper, filesystem or subprocess fails as an undefined name.
+C5_HISTORICAL_FRONTDOORS = [
+    ("Run_PilotODIN_P2_Prepare_Freezer_Tooling_DevQA.bat", "tools/p2_pdf_pyinstaller_tooling_devqa.py", "prepare", "C5_HISTORICAL_FREEZER_SETUP_BLOCKED"),
+    ("Run_PilotODIN_P2_Prepare_Full_Sidecar_Builder_DevQA.bat", "tools/p2_pdf_prepare_full_sidecar_builder.py", "prepare", "C5_HISTORICAL_BUILDER_SETUP_BLOCKED"),
+    ("Run_PilotODIN_P2_Font_Candidates_DevQA.bat", "tools/p2_pdf_font_stage_candidates.py", "download", "C5_HISTORICAL_FONT_ACQUISITION_BLOCKED"),
+    ("Run_PilotODIN_P2_Font_Build_Stage_DevQA.bat", "tools/p2_pdf_font_build_preflight.py", "stage", "C5_HISTORICAL_FONT_STAGE_BLOCKED"),
+    ("Run_PilotODIN_P2_Frozen_Font_OneFile_DevQA.bat", "tools/p2_pdf_frozen_font_onefile_devqa.py", "build", "C5_HISTORICAL_ONEFILE_BUILD_BLOCKED"),
+    ("Run_PilotODIN_P2_Real_Sidecar_Font_DevQA.bat", "tools/p2_pdf_real_sidecar_font_devqa.py", "build", "C5_HISTORICAL_SIDECAR_BUILD_BLOCKED"),
+    ("Run_PilotODIN_P2_Recheck_Existing_Sidecar_DevQA.bat", "tools/p2_pdf_recheck_real_sidecar_devqa.py", "recheck", "C5_HISTORICAL_SIDECAR_RECHECK_BLOCKED"),
+]
+
+
+@pytest.mark.parametrize("bat, module, flag, reason", C5_HISTORICAL_FRONTDOORS)
+def test_c5_historical_mutation_cli_refuses_before_old_helpers(
+        bat, module, flag, reason, monkeypatch, capsys):
+    import argparse
+    import sys
+    source = (ROOT / module).read_text(encoding="utf-8")
+    tree = ast.parse(source)
+    main = next(node for node in tree.body
+                if isinstance(node, ast.FunctionDef) and node.name == "main")
+    isolated = ast.Module(body=[main], type_ignores=[])
+    scope = {"argparse": argparse, "__doc__": "synthetic CLI refusal"}
+    exec(compile(isolated, module, "exec"), scope)
+    extra = ["--run-id", "run-" + "0" * 32] if flag == "recheck" else []
+    for option in ("--" + flag, "--" + flag[:4]):
+        monkeypatch.setattr(sys, "argv", [module, *extra, option])
+        assert scope["main"]() == 2
+        assert reason in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("bat, module, flag, reason", C5_HISTORICAL_FRONTDOORS)
+def test_c5_historical_batch_has_only_refusal(bat, module, flag, reason):
+    lines = (ROOT / bat).read_text(encoding="utf-8").splitlines()
+    commands = [line.strip() for line in lines
+                if line.strip() and not line.lstrip().lower().startswith("rem ")]
+    assert commands == [
+        "@echo off",
+        "echo STOP: " + reason + ". Separate reviewed exact-input approval required.",
+        "exit /b 2",
+    ]

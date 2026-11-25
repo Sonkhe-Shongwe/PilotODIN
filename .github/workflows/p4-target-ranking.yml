@@ -30,6 +30,20 @@ on:
       - frontend/scripts/verify-npm-lock.mjs
       - frontend/tests/c5-npm-lock.test.cjs
       - tests/test_c5_build_input_preflight.py
+      - Run_PilotODIN_P2_Prepare_Freezer_Tooling_DevQA.bat
+      - tools/p2_pdf_pyinstaller_tooling_devqa.py
+      - Run_PilotODIN_P2_Prepare_Full_Sidecar_Builder_DevQA.bat
+      - tools/p2_pdf_prepare_full_sidecar_builder.py
+      - Run_PilotODIN_P2_Font_Candidates_DevQA.bat
+      - tools/p2_pdf_font_stage_candidates.py
+      - Run_PilotODIN_P2_Font_Build_Stage_DevQA.bat
+      - tools/p2_pdf_font_build_preflight.py
+      - Run_PilotODIN_P2_Frozen_Font_OneFile_DevQA.bat
+      - tools/p2_pdf_frozen_font_onefile_devqa.py
+      - Run_PilotODIN_P2_Real_Sidecar_Font_DevQA.bat
+      - tools/p2_pdf_real_sidecar_font_devqa.py
+      - Run_PilotODIN_P2_Recheck_Existing_Sidecar_DevQA.bat
+      - tools/p2_pdf_recheck_real_sidecar_devqa.py
       - .github/workflows/frontend-compile.yml
       - .github/workflows/build-e-verification.yml
       - .github/workflows/p4-r03-qwen-idle-release.yml

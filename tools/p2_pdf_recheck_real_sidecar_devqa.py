@@ -149,6 +149,10 @@ def main() -> int:
     options.add_argument("--inspect", action="store_true")
     options.add_argument("--recheck", action="store_true")
     args = parser.parse_args()
+    # C5: historical interactive consent is not current acquisition/build authority.
+    if args.recheck:
+        print("C5_HISTORICAL_SIDECAR_RECHECK_BLOCKED: separate reviewed exact-input approval required.")
+        return 2
     if args.inspect:
         try:
             _, _, size, sha = inspect_stored_run(args.run_id)

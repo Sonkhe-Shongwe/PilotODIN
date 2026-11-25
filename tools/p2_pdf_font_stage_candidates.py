@@ -210,6 +210,10 @@ def main():
     parser.add_argument("--download", action="store_true",
                         help="Explicit opt-in to fetch only six pinned public assets")
     args = parser.parse_args()
+    # C5: historical interactive consent is not current acquisition/build authority.
+    if args.download:
+        print("C5_HISTORICAL_FONT_ACQUISITION_BLOCKED: separate reviewed exact-input approval required.")
+        return 2
     if not args.download:
         print(json.dumps({"state": "NOT_STARTED",
                           "reason": "Explicit --download required; no files written"}))

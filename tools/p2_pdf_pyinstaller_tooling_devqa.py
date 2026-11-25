@@ -130,6 +130,10 @@ def main() -> int:
     parser.add_argument("--prepare", action="store_true",
                         help="Requires separate interactive launcher consent")
     args = parser.parse_args()
+    # C5: historical interactive consent is not current acquisition/build authority.
+    if args.prepare:
+        print("C5_HISTORICAL_FREEZER_SETUP_BLOCKED: separate reviewed exact-input approval required.")
+        return 2
     try:
         if args.prepare:
             decision = prepare_tooling()

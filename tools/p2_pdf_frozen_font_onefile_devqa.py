@@ -229,6 +229,10 @@ def main() -> int:
     parser.add_argument("--build", action="store_true",
                         help="Explicit consent for isolated frozen DevQA build")
     args = parser.parse_args()
+    # C5: historical interactive consent is not current acquisition/build authority.
+    if args.build:
+        print("C5_HISTORICAL_ONEFILE_BUILD_BLOCKED: separate reviewed exact-input approval required.")
+        return 2
     if not args.build:
         result = _outcome("BLOCKED", stage="consent_required")
     else:
