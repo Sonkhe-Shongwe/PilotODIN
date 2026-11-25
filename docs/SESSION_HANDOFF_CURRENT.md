@@ -1,10 +1,6 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
-**CURRENT | Live reference.** Consult the [current handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md) for changing source status and next action, and the [official scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) for acceptance. [Continuation protocol](./CONTINUATION_PROTOCOL_CURRENT.md). Historical evidence below is not a current work order.
-
-Current work: [migration handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md). Active engineering receipts: [Package C evidence ledger](./PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md); [closed B5 ledger](./PILOTODIN_PACKAGE_B5_EVIDENCE_2026-11-24.md). [Current documentation audit](./DOCUMENTATION_AUDIT_C_MIGRATION_2026-11-25.md). [Exact pre-cleanup snapshot](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/b9a9181313b709abe729b3bddac3ac4e10709e59/docs/SESSION_HANDOFF_CURRENT.md). Historical material is preserved; current action is in [migration handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md).
-
-[Current compact migration handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md) | [Migration audit](./DOCUMENTATION_AUDIT_B4_MIGRATION_2026-11-24.md) | [Complete prior document and dated receipts at immutable source](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/39b8e5f8286f6b17122ddd0f9d1e72f31d87ff44/docs/SESSION_HANDOFF_CURRENT.md). Historical records below are not competing instructions.
+**HISTORICAL EVIDENCE ARCHIVE.** Filename retained for existing section links. Do not load the full chronology as a current work order. The [migration handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md) and [active journal](./ACTIVE_WORK_JOURNAL.md) own current action; [official scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) owns acceptance; [Package C ledger](./PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md) owns current receipts. [Documentation audit](./DOCUMENTATION_AUDIT_C4_READINESS_2026-11-25.md) records the distinction. [Exact pre-audit snapshot](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/bd7c1639c3b98ae93e0d83b8170e189dc042b365/docs/SESSION_HANDOFF_CURRENT.md). Historical body and anchors are retained below.
 
 ## Engineering progress and next checkpoints
 

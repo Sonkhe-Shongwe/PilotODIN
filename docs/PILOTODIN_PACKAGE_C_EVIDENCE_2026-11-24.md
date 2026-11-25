@@ -1,6 +1,6 @@
 # PilotODIN | Package C evidence ledger
 
-**Active source package.** [Integrated specification](./PILOTODIN_PACKAGE_C_RESOURCE_TRUST_SPEC_2026-11-24.md), [live handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md). Current exact product `ea524b2113e5d2aece9f434d383b5ca47f34baf2`. Retain [B5 ledger](./PILOTODIN_PACKAGE_B5_EVIDENCE_2026-11-24.md) for closed source evidence. This record owns new C receipts only.
+**Active source package.** [Integrated specification](./PILOTODIN_PACKAGE_C_RESOURCE_TRUST_SPEC_2026-11-24.md), [live handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md). The former header product SHA `ea524b2113e5d2aece9f434d383b5ca47f34baf2` is historical. Current source identity and progress are maintained in the live handoff; exact receipts below retain their own revisions. Retain [B5 ledger](./PILOTODIN_PACKAGE_B5_EVIDENCE_2026-11-24.md) for closed source evidence. This record owns C receipts. Jump to [C3 source closure](#25-november--c3-source-closed-explicit-startup-authentication-and-caller-compatibility) or [C4 baseline and implementation plan](#25-november--c4-baseline-research-and-proposed-implementation-plan-not-implementation-or-closure) rather than reading the entire ledger. Earlier dated status/next-action text is historical.
 
 ## 24 November 2026 | Integrated design and source review
 

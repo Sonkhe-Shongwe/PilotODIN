@@ -2,12 +2,12 @@
 
 **Purpose:** iteratively polish PilotODIN's fonts, colours, navigation, charts, ODIN interactions, and Python analytics without waiting for a new Windows NSIS installer after every change.
 
-For the active phase and next task, see the [current handoff](./SESSION_HANDOFF_CURRENT.md). Use disposable projects for development and reuse a prepared development environment where available. The owner’s intermediate installer freeze applies through P4–P7. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
+For the active phase and next task, see the [current handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md) and [active journal](./ACTIVE_WORK_JOURNAL.md). This guide describes the existing source-preview mechanism, not authorisation to perform setup or run any restricted operation. Reuse an already prepared environment; dependency acquisition, actual native/model activity, owner-data operations and installer work remain separately governed. Use disposable projects for development and reuse a prepared development environment where available. The owner’s intermediate installer freeze applies through P4–P7. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 
 ## Start (one-time setup, then one click)
 
 1. In GitHub Desktop, clone PilotODIN and check out `feature/live-dev-workspace-20261023` (this work sits on the Build E offline-fix branch). Keep a separate clone from any existing installed release or older production Studio directory.
-2. Install **Python 3.11+** and **Node.js 20+** on the development computer. Internet is needed for the first dependency install. You do **not** need Rust or Visual Studio Build Tools to develop the browser UI/backend.
+2. Install **Python 3.11+** and **Node.js 20+** on the development computer. Internet is needed for the first dependency install; do not acquire dependencies as part of C4 unless separately authorised under the applicable scope. You do **not** need Rust or Visual Studio Build Tools to develop the browser UI/backend.
 3. In the root of this clone, double-click **`Start_PilotODIN_Live_Dev.bat`**.
 4. The launcher prepares `.venv-live`, installs missing frontend dependencies, then starts two visible PowerShell consoles. It opens **http://127.0.0.1:5173** after the backend and frontend both respond.
 5. Keep the two consoles running while you edit. Save a React/CSS file for Vite hot reload; save a Python file for backend reload. **Neither operation produces an installer.**
@@ -52,7 +52,7 @@ To observe the UI on the same run, open **Ask ODIN**, select **Local analytics**
 
 ## Quick quality checks (no NSIS build)
 
-Run from the project root in PowerShell after starting the environment:
+Historical local commands, for an already approved disposable test environment only. The pip install line requires applicable dependency-acquisition authority; routine C4 hosted synthetic CI is separate. Do not execute these commands merely because this guide exists.
 
 ```powershell
 .\.venv-live\Scripts\python.exe -m pip install -r backend\requirements-test.txt
@@ -70,7 +70,7 @@ When a feature changes, verify the live preview first, then run regression tests
 - **Launcher failed before opening browser:** inspect its explicit error and the two PowerShell consoles. Python/Node missing or incomplete initial dependencies are common causes.
 - **A view says backend unavailable:** restart both paired launcher consoles and check their readiness diagnostics. A direct unauthenticated request to `:8000/api/health` should fail.
 - **Edits don't appear:** confirm you edited the checked-out branch and the source folder used by the launcher, not the already-installed PilotODIN EXE. Hard refresh the browser if needed.
-- **Need the native Tauri shell during development.** `npm run desktop:dev` refuses by default and uses the isolated `com.pilotodin.p4isolatednativedev` identity only with its own recorded owner approval and local opt-in. The previous direct `tauri dev` command could reach the production `com.pilotodin.studio` app-data and WebView directories. The default Tauri configuration has source-level hooks that refuse raw development and packaging commands. The completed Local analytics session used its own approved runner and disposable workspace. For its tested scope, see the [physical Windows session record](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#physical-windows-session-record). Use `Start_PilotODIN_Live_Dev.bat` for routine source preview. The installer freeze applies through P4–P7.
+- **Need the native Tauri shell during development.** `npm run desktop:dev` refuses by default; five historical P2/P3 native overlays now refuse before setup, and the existing reviewed launch plan only admits its specific isolated P4/A4 configurations. No historical approval is reusable. Any fresh approved route uses the isolated `com.pilotodin.p4isolatednativedev` identity only with its own recorded owner approval and local opt-in. The previous direct `tauri dev` command could reach the production `com.pilotodin.studio` app-data and WebView directories. The default Tauri configuration has source-level hooks that refuse raw development and packaging commands. The completed Local analytics session used its own approved runner and disposable workspace. For its tested scope, see the [physical Windows session record](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#physical-windows-session-record). Use `Start_PilotODIN_Live_Dev.bat` for routine source preview. The installer freeze applies through P4–P7.
 - **Stopping:** close the backend and frontend PowerShell windows. Do not delete `.pilotodin-dev-data` unless you intentionally want to reset only your isolated development projects.
 
 ## Development rhythm
