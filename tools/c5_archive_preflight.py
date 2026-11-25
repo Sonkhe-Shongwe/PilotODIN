@@ -166,7 +166,7 @@ def _member_bytes(raw, start, packed, method, expanded, crc, expected_sha):
             and h.hexdigest() == expected_sha, "ZIP_MEMBER_DIGEST")
 
 
-def verify_candidate_archive(path: Path, expected) -> None:
+def verified_candidate_snapshot(path: Path, expected) -> bytes:
     """Validate exact reviewed archive and all members, never extract.
 
     Use the same captured, hash-verified byte snapshot for all parsing. This
@@ -200,5 +200,11 @@ def verify_candidate_archive(path: Path, expected) -> None:
             _member_bytes(raw, data_start, packed, method, expanded, crc,
                           members[name]["sha256"])
         require(next_offset == cd_offset, "ZIP_LOCAL_LAYOUT")
+        return raw
     except (OSError, struct.error, zlib.error):
         raise Blocked("ZIP_UNREADABLE_OR_MALFORMED") from None
+
+
+def verify_candidate_archive(path: Path, expected) -> None:
+    """Read-only public check; do not expose a production extraction route."""
+    verified_candidate_snapshot(path, expected)

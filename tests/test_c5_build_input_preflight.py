@@ -751,3 +751,118 @@ def test_c5_zip_rejects_actual_extra_safe_name_even_with_new_archive_hash(tmp_pa
     expected["members"] = {"other.dll": expected["members"]["expected.dll"]}
     with pytest.raises(preflight.Blocked, match="ZIP_MEMBER_NOT_EXPECTED"):
         archive.verify_candidate_archive(path, expected)
+
+
+def c5_stage_fixture(tmp_path):
+    from qa.c5_metadata import synthetic_staging as stage
+    root = stage.create_fixture_store(tmp_path / "c5-synthetic-store")
+    _, source, expected = c5_zip_fixture(
+        tmp_path, [("a.txt", b"old text"), ("nested/b.bin", b"inert fixture" * 100)])
+    return stage, root, source, expected
+
+
+def test_c5_stage_success_and_prior_generation_preserved(tmp_path):
+    stage, root, source, expected = c5_stage_fixture(tmp_path)
+    first = stage.stage_fixture(root, source, expected, None)
+    assert stage.verify_generation(root, first)["archive"] == expected
+    before = snapshot(root / first["generation"])
+    _, source, newer = c5_zip_fixture(tmp_path, [("new.txt", b"second inert fixture")])
+    second = stage.stage_fixture(root, source, newer, first)
+    assert first["generation"] != second["generation"]
+    assert snapshot(root / first["generation"]) == before
+    assert stage.pointer_bytes(root) == stage.canonical(second)
+    assert stage.verify_generation(root, second)["archive"] == newer
+    assert not (root / stage.LOCK).exists()
+
+
+@pytest.mark.parametrize("failure", ["disk_full", "short_write", "receipt", "tamper",
+                                     "replace", "stale_pointer", "held_lock"])
+def test_c5_stage_failure_preserves_previous(tmp_path, monkeypatch, failure):
+    import errno
+    stage, root, source, expected = c5_stage_fixture(tmp_path)
+    first = stage.stage_fixture(root, source, expected, None)
+    before = snapshot(root / first["generation"])
+    prior = stage.pointer_bytes(root)
+    original = stage.write_new
+    if failure == "held_lock":
+        (root / stage.LOCK).mkdir()
+    elif failure == "replace":
+        def fail_replace(*args):
+            raise OSError(errno.EACCES, "fixture")
+        monkeypatch.setattr(stage.os, "replace", fail_replace)
+    elif failure != "stale_pointer":
+        def write(path, chunks):
+            if path.name == stage.RECEIPT and failure == "receipt":
+                raise OSError(errno.ENOSPC, "fixture")
+            if path.name == "a.txt":
+                if failure == "disk_full":
+                    raise OSError(errno.ENOSPC, "fixture")
+                if failure == "short_write":
+                    raise preflight.Blocked("STAGE_SHORT_WRITE")
+            original(path, chunks)
+            if path.name == "a.txt" and failure == "tamper":
+                path.write_bytes(b"bad data")
+        monkeypatch.setattr(stage, "write_new", write)
+    with pytest.raises(preflight.Blocked):
+        stage.stage_fixture(root, source, expected, None if failure == "stale_pointer" else first)
+    assert stage.pointer_bytes(root) == prior
+    assert snapshot(root / first["generation"]) == before
+    assert (root / stage.LOCK).exists() == (failure == "held_lock")
+
+
+def test_c5_stage_postpublication_failure_is_uncertain_not_rollback(tmp_path, monkeypatch):
+    stage, root, source, expected = c5_stage_fixture(tmp_path)
+    first = stage.stage_fixture(root, source, expected, None)
+    before = snapshot(root / first["generation"])
+    real = stage.sync_dir
+    def sync(path):
+        if path == root and stage.pointer_bytes(root) != stage.canonical(first):
+            raise OSError("fixture postpublication sync failure")
+        real(path)
+    monkeypatch.setattr(stage, "sync_dir", sync)
+    with pytest.raises(preflight.Blocked, match="STAGE_PUBLICATION_UNCERTAIN"):
+        stage.stage_fixture(root, source, expected, first)
+    current = preflight.strict_json(stage.pointer_bytes(root))
+    assert current != first
+    assert stage.verify_generation(root, current)["archive"] == expected
+    assert snapshot(root / first["generation"]) == before
+
+
+def test_c5_stage_rejects_unverified_archive_before_writes(tmp_path):
+    stage, root, source, expected = c5_stage_fixture(tmp_path)
+    expected["sha256"] = "0" * 64
+    with pytest.raises(preflight.Blocked, match="ZIP_ARCHIVE_DIGEST"):
+        stage.stage_fixture(root, source, expected, None)
+    assert not list(root.iterdir())
+
+
+def test_c5_stage_refuses_production_names_and_existing_store(tmp_path):
+    stage, root, source, expected = c5_stage_fixture(tmp_path)
+    with pytest.raises(FileExistsError):
+        stage.create_fixture_store(root)
+    _, source, expected = c5_zip_fixture(tmp_path, [("runtime.exe", b"inert")])
+    with pytest.raises(preflight.Blocked, match="STAGE_FIXTURE_SCOPE"):
+        stage.stage_fixture(root, source, expected, None)
+    assert not list(root.iterdir())
+
+
+def test_c5_stage_uses_verified_snapshot_not_changed_source(tmp_path, monkeypatch):
+    stage, root, source, expected = c5_stage_fixture(tmp_path)
+    real = stage.archive.verified_candidate_snapshot
+    def capture(path, expectation):
+        raw = real(path, expectation)
+        path.write_bytes(b"changed after snapshot")
+        return raw
+    monkeypatch.setattr(stage.archive, "verified_candidate_snapshot", capture)
+    pointer = stage.stage_fixture(root, source, expected, None)
+    assert stage.verify_generation(root, pointer)["archive"] == expected
+
+
+def test_c5_stage_refuses_tampered_prior_receipt(tmp_path):
+    stage, root, source, expected = c5_stage_fixture(tmp_path)
+    first = stage.stage_fixture(root, source, expected, None)
+    (root / first["generation"] / stage.RECEIPT).write_bytes(b"tampered")
+    prior = stage.pointer_bytes(root)
+    with pytest.raises(preflight.Blocked, match="STAGE_BLOCKED_BEFORE_PUBLICATION"):
+        stage.stage_fixture(root, source, expected, first)
+    assert stage.pointer_bytes(root) == prior

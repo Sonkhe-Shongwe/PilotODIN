@@ -11,6 +11,7 @@ on:
       - tools/live_dev.py
       - tools/build_input_preflight.py
       - tools/c5_archive_preflight.py
+      - qa/c5_metadata/synthetic_staging.py
       - contracts/build_input_policy_v1.json
       - contracts/build_inputs_v1.schema.json
       - contracts/c5_observed_python_wheels_2026-11-25.json
