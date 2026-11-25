@@ -10,14 +10,14 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | c07502ef7965152377ca3f1ac503b8c04400b302 |
-| Product baseline | ebd01f45c5c2040835586628f23ab5702184d0b4 exact P1 frontend/P3 HTTP/P4 terminal SUCCESS; all four new transport tests pass. |
+| Product baseline | Latest product ebd01f4 verified P1/P3/P4; hosted fixture correction c329e0d226384bb0046accaea0c2d89f88ee1322 published; product code unchanged; exact verification pending. |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
 | Operation ID | C3-HOSTED-CHILD-ENV-CONFINEMENT-20261125 |
-| Operation state | ISSUED (source publication identifiable by prepared parent 5af4e85 and operation marker; resolve exact SHA) |
+| Operation state | RECONCILED (hosted fixture source publication verified at c329e0d226384bb0046accaea0c2d89f88ee1322; exact CI pending) |
 | Intended files | frontend/e2e/hosted-http-config.ts; four playwright.p1/p2/p3/p4-real-http.config.ts; p1-real-http.spec.ts, p1-real-http-export.spec.ts, p2-real-http-guided-report-persistence.spec.ts, p4-real-http-review-queue.spec.ts; frontend/tests/p1-playwright-pilot-contract.test.cjs; canonical journal, handoff and ledger. No native/approval or production change. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | Prior frontend exact P1/P3/P4 terminal SUCCESS including four new tests. Hosted fixture Chromium default launchOptions and persistent context now use explicit ordinary runtime environment; three auxiliary Python calls use ordinary runtime and exact CI allocation witness only. Trusted coordinator, Vite and owned Uvicorn retain private capability. Two inert Node contract tests registered in existing P1 isolated frontend suite. Exact five routine workflows pending. Historical five native QA launchers still require disposition, do not run or rearm. C3 open. |
-| Pending runs | Expected five routine push workflows at commit with prepared parent 5af4e85 and operation marker (P1 frontend, P1 HTTP, P2 HTTP, P3 HTTP, P4). |
+| Pending runs | Exact `c329e0d`: [45612959275](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45612959275) P2 Real HTTP Saved Revision Comparison IN_PROGRESS; [45612959316](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45612959316) P3 Real HTTP Semantic Context Browser Acceptance IN_PROGRESS; [45612959284](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45612959284) P1 Disposable Real HTTP Browser/Backend Acceptance IN_PROGRESS; [45612958254](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45612958254) P4 Target Review Queue and Transparent Ranking IN_PROGRESS; [45612958408](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45612958408) P1 Isolated Frontend Verification IN_PROGRESS. Reconcile all terminal jobs. |
 | Unpublished work | Owner-local tree not inspected. |
 | Recovery action | Resolve exact source/run identities, reconcile terminal CI; finish remaining credential candidate dispositions, historical QA confinement and C-D05 closure matrix. No native permission or score credit. |
 | Resume after closure | C4, C5 in order; D separately approved. |
