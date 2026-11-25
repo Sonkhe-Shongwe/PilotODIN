@@ -7,7 +7,7 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | VERIFYING |
+| State | READY |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 2347b2c8cb1dba8b65c1664d06d0708ca223b4ef |
 | Product baseline | C3 source exit supported at 78c8672, latest product ebd01f4 and verified fixture/historical changes c329e0d/83c83f8. |
@@ -16,10 +16,10 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Operation state | RECONCILED: exact B6 source [1a1799d](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/1a1799d6cc6cdc01173a9fe700c2f8b41128f136); no replay |
 | Intended files | backend/ai_provider.py, tests/test_c4_cloud_intent.py, tests/test_p4_r03_verified_answers.py, canonical records. No workflow changes. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | B6 positive typed nested projection, support threshold and suppressed sensitive-looking names/paths, no arbitrary cloud stringification, local unchanged; eight new projection cases plus updated prior serializer and P4 fixtures; exact CI pending. |
-| Pending runs | [P4 Target Review Queue and Transparent Ranking #45634055287](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45634055287) IN_PROGRESS; [P1 Isolated Backend Source Recovery #45634055861](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45634055861) IN_PROGRESS. Both at exact 1a1799d. |
+| Verification | Exact 1a1799d P1 #45634055861 SUCCESS (108 combined C4/settings/intent and selected historical tests; eight added projection cases), P4 #45634055287 SUCCESS (1086 passed, 6 skipped, 552 subtests); browser and scoped Windows passed, restricted collector skipped. |
+| Pending runs | None; both exact runs terminal SUCCESS. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Reconcile both exact B6 CI runs, preserve failures, verify positive typed nested projection and small-support negatives. Then B7 generation/revocation/single-slot cloud dispatch and B8 mandatory strict transport registry/deadline/whole wire bounds; remaining historical test migration, disclosure and frontend. No actual provider/model/native/owner-data operation. |
+| Recovery action | B6 scoped pass reconciled; source review identified support-witness gaps: analytics.describe counts non-null unique values including infinities while numeric aggregates use finite-only data; held-out sample_count is not a CV-fold support witness. Correct finite support provenance and separate CV evidence conservatively within B6/B7 before final privacy exit. B7 generation-at-request-admission, shared single-slot lifecycle, revocation and stale-result barriers; B8 mandatory strict registry/whole body/deadline/status/shape/error cleanup; historical fake-test migration and C UI intent/disclosure/cache. OpenRouter remains held. No actual provider/model/native/owner-data operation. |
 | Resume after closure | C5 then D with separately approved scope. |
 
 ## Prior operation
