@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 679f5643828dbd234f5a048c8f018c0f66d7a675 |
 | Product baseline | 6b257546734f01808c9dee8c6ef840ea63200fb1 exact P1/P4 terminal SUCCESS; diagnostic 860678c exact P1 SUCCESS. |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
 | Operation ID | C3-MANDATORY-INNER-AUTH-20261125 |
-| Operation state | PREPARED (mandatory HTTP scope witness; publication identified by prepared parent and operation marker) |
+| Operation state | ISSUED (product publication identifiable by prepared parent 9542f3e and operation marker; resolve exact SHA) |
 | Intended files | backend/main.py; tests/test_c1_product_integration.py; canonical journal, handoff and evidence. No route inventory, native, settings, workspace migration, dependency, activation or approval change. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Exact diagnostic 860678c P1 #45602844010 job 139165915851 terminal SUCCESS; verifier group 77 PASS including 25 new; 879/879 decoded, 433 candidates, 76 routes, zero AST/decode gaps. Inspected all 67 Python main-app-reference candidate paths (57 test modules; 10 non-test), guarded fixture or factory except route identity and direct synthetic lifespan assertions. Previously classified direct endpoint references; reviewed 15 additional launcher paths and archived R03 refusal before compile. Active serving paths use outer RequestGuard, no active bare Uvicorn identified. Frontend source assertions retain _local_request call. Main fallback and weaker _local_request only remaining known HTTP bypasses. Preserve inner CORS for actual authenticated response headers, archive-before-scratch order. Eight matching routine workflow jobs reviewed: P1 isolated backend, project lifecycle, real HTTP; P2 real HTTP and revision idempotency; P3 real HTTP and semantic context (PowerShell parser only); P4 target ranking (restricted collector false). Add direct ASGI all-route refusal/preflight and guarded positive ordering tests. Wider lexical credential/caller classification and actual CI remain required for C3 closure. |
-| Pending runs | None; exact 860678c P1 terminal SUCCESS. |
+| Verification | Diagnostic exact P1 SUCCESS. Reviewed 67 main application references and active serving launchers; archived bare R03 preflight unconditionally refuses. Mandatory identity witness now required by main HTTP guard and local-control helper; bare requests and all inner OPTIONS refused before archive/scratch. Existing inner actual-response CORS and archive/scratch order retained. New 9 parameterized matrix/ordering cases exercising both compositions and all 76 routes, including raw no-body refusal, desktop/dev negative cases, bounded preflight and authorized health. Eight routine CI workflows expected; no native activation, no C3 closure claim. Wider credential/caller disposition and exit matrix remain pending. |
+| Pending runs | Expected eight exact routine push workflows at product commit identified by prepared parent 9542f3e and operation marker; resolve IDs and job conclusions. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Publish mandatory inner witness and route-matrix tests only after expected HEAD check; reconcile all eight exact routine CI runs, inspect remaining caller/credential evidence and closure matrix. Do not award C3 credit until complete. |
+| Recovery action | Reconcile exact product CI, inspect any failure before further source changes, finish semantic credential/caller dispositions and C-D05/section 10 matrix. C3 not closed. |
 | Resume after closure | C4, C5 in order; D separately approved. |
 
 ## Prior operation

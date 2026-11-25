@@ -8,10 +8,7 @@ import logging
 from contextlib import asynccontextmanager, closing
 import json
 import math
-import os
-import re
 import traceback
-import hmac
 from fastapi.responses import JSONResponse, Response
 from pathlib import Path
 from typing import Literal
@@ -74,18 +71,8 @@ app.add_middleware(CORSMiddleware,
                                    "X-PilotODIN-Export-Operation","X-PilotODIN-Export-MAC"])
 MAX_BYTES = 40 * 1024 * 1024
 
-# Desktop mode uses a randomly generated per-launch secret supplied by the
-# Rust shell through the SIDE-CAR ENVIRONMENT, never through a URL or bundle.
-# CORS alone cannot protect a loopback HTTP server against local processes.
-# Existing browser-only dev mode remains unchanged when the secret is absent.
-_DESKTOP_ORIGINS = {"http://tauri.localhost", "https://tauri.localhost", "tauri://localhost"}
-
-
-def _allowed_desktop_origin(origin: str) -> bool:
-    if origin in _DESKTOP_ORIGINS:
-        return True
-    return bool(os.environ.get("PILOTODIN_DESKTOP_ALLOW_DEV") == "1" and
-                re.fullmatch(r"http://(?:localhost|127\.0\.0\.1):517[3-9]", origin))
+# Runtime trust is captured by the outer RequestGuard at serving startup.
+# No environment-based or header-only authorization is accepted here.
 
 
 @app.middleware("http")
@@ -101,34 +88,12 @@ async def workspace_scratch_guard(request: Request, call_next):
 
 @app.middleware("http")
 async def desktop_session_guard(request: Request, call_next):
-    # Desktop serving entrypoints have already authorized raw transport and
-    # credential against their immutable contract. Preserve the archive gate.
-    if request_authorized(request.scope):
-        archived = project_lifecycle.archived_mutation_project(request.method, request.url.path)
-        if archived is not None:
-            return JSONResponse({"detail": "Project is archived. Restore it in Manage projects before making changes."},status_code=409)
-        return await call_next(request)
-    # Non-desktop and in-process compatibility remains pending C3 migration.
-    secret = os.environ.get("PILOTODIN_DESKTOP_SESSION", "")
-    if not secret:
-        archived = project_lifecycle.archived_mutation_project(request.method, request.url.path)
-        if archived is not None:
-            return JSONResponse({"detail": "Project is archived. Restore it in Manage projects before making changes."},status_code=409)
-        return await call_next(request)
-    # Let CORSMiddleware handle preflight; it must not grant an arbitrary
-    # cross-site origin permission. Browser actual requests still need token.
-    if request.method == "OPTIONS":
-        return await call_next(request)
-    origin = request.headers.get("origin", "")
-    if origin and not _allowed_desktop_origin(origin):
-        return JSONResponse({"detail": "Untrusted desktop request origin"}, status_code=403)
-    host = request.url.hostname
-    if host not in ("127.0.0.1", "localhost", "testserver"):
-        return JSONResponse({"detail": "Desktop API is local-only"}, status_code=403)
-    provided = request.headers.get("x-pilotodin-session", "")
-    if not hmac.compare_digest(provided, secret):
-        return JSONResponse({"detail": "Desktop session authentication required"}, status_code=401)
-    # Session authentication precedes the read-only archive-status lookup.
+    # The immutable outer RequestGuard must admit every HTTP request first.
+    # Its identity-only witness cannot be supplied by a request header.
+    # Negotiation is handled exclusively by the outer guard, not business routes.
+    if not request_authorized(request.scope) or request.method == "OPTIONS":
+        return JSONResponse({"detail": "Local API request refused"}, status_code=401,
+                            headers={"Cache-Control": "no-store"})
     archived = project_lifecycle.archived_mutation_project(request.method, request.url.path)
     if archived is not None:
         return JSONResponse({"detail": "Project is archived. Restore it in Manage projects before making changes."},status_code=409)
@@ -1133,18 +1098,11 @@ class AIInsightRequest(BaseModel):
 
 
 def _local_request(request:Request):
-    if request_authorized(getattr(request, "scope", {})):
-        return
-    # CORS is not an authorization boundary. Forbid cross-site browsers from
-    # writing keys or triggering paid/external calls on localhost.
-    origin=request.headers.get('origin','')
-    allowed = (_allowed_desktop_origin(origin) if os.environ.get('PILOTODIN_DESKTOP_SESSION')
-               else bool(re.fullmatch(r'http://(?:localhost|127\.0\.0\.1):517[3-9]',origin)))
-    if origin and not allowed:
-        raise HTTPException(status_code=403,detail='AI controls are limited to the local PilotODIN interface')
-    host=request.url.hostname
-    if host not in ('localhost','127.0.0.1','testserver'):
-        raise HTTPException(status_code=403,detail='Local access only')
+    # Keep defense in depth for settings, resource and other local controls.
+    # Only the authenticated ASGI scope is authoritative, never Host or Origin alone.
+    if not request_authorized(getattr(request, "scope", {})):
+        raise HTTPException(status_code=401, detail="Local API request refused",
+                            headers={"Cache-Control": "no-store"})
 
 
 class ResourcePolicyRequest(BaseModel):

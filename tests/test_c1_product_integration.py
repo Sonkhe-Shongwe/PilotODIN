@@ -294,3 +294,154 @@ def test_owned_transport_rechecks_at_actual_dispatch(monkeypatch):
     with pytest.raises(RuntimeError,match="no longer authorized"):
         ai._call_provider("gemini",ai.MODELS["gemini"]["routine"],"System","Question",
                           "fixture-secret-key",10,strict=True,still_authorized=lambda:False)
+
+
+# C3 route-wide refusal uses the real ASGI compositions and the exact C1
+# route inventory. No application lifespan, actual model or provider is run.
+def _c3_scope(method, path, port=18042, headers=None):
+    return {
+        "type": "http", "asgi": {"version": "3.0", "spec_version": "2.4"},
+        "http_version": "1.1", "scheme": "http", "method": method,
+        "path": path, "raw_path": path.encode("ascii"), "query_string": b"",
+        "root_path": "", "client": ("127.0.0.1", 50000),
+        "server": ("127.0.0.1", port),
+        "headers": [(b"host", f"127.0.0.1:{port}".encode("ascii"))] + list(headers or []),
+    }
+
+
+def _c3_path(template):
+    import re
+    return re.sub(r"\{[^}]+\}", "a"*32, template)
+
+
+async def _c3_exchange(app, scope):
+    messages = []
+    async def receive():
+        pytest.fail("Refused request or preflight accessed its body")
+    async def send(message):
+        messages.append(message)
+    await app(scope, receive, send)
+    assert messages and messages[0]["type"] == "http.response.start"
+    return messages[0]
+
+
+def _c3_refusal_witnesses(monkeypatch):
+    def forbidden(*args, **kwargs):
+        pytest.fail("Denied HTTP reached archive or scratch storage")
+    monkeypatch.setattr(main.project_lifecycle, "archived_mutation_project", forbidden)
+    monkeypatch.setattr(storage, "check_scratch", forbidden)
+
+
+@pytest.mark.parametrize("composition", ("legacy", "owned"))
+def test_c3_bare_app_refuses_every_route_even_with_legacy_credentials(
+        product_composition, monkeypatch, composition):
+    import asyncio
+    from fastapi.routing import APIRoute
+    app = main.app if composition == "legacy" else product_composition[0]
+    observed = {(method, route.path) for route in app.routes if isinstance(route, APIRoute)
+                for method in route.methods}
+    assert observed == set(ROUTES) and len(observed) == 76
+    _c3_refusal_witnesses(monkeypatch)
+    secret = "b"*64
+    monkeypatch.setenv("PILOTODIN_DESKTOP_SESSION", secret)
+    monkeypatch.setenv("PILOTODIN_DESKTOP_ALLOW_DEV", "1")
+    async def exercise():
+        for method, template in sorted(observed):
+            path = _c3_path(template)
+            for headers in ([], [(b"x-pilotodin-session", secret.encode("ascii"))],
+                            [(b"x-pilotodin-dev-capability", secret.encode("ascii"))]):
+                scope = _c3_scope(method, path, headers=headers)
+                # A forged truthy/serialized witness does not confer authority.
+                scope["pilotodin.request_authorized"] = True
+                result = await _c3_exchange(app, scope)
+                assert result["status"] == 401, (composition, method, template)
+                assert (b"cache-control", b"no-store") in result["headers"]
+            result = await _c3_exchange(app, _c3_scope("OPTIONS", path, headers=[
+                (b"origin", b"http://tauri.localhost"),
+                (b"access-control-request-method", method.encode("ascii")),
+                (b"access-control-request-headers", b"x-pilotodin-session"),
+            ]))
+            assert result["status"] == 401, (composition, "OPTIONS", template)
+    asyncio.run(exercise())
+
+
+@pytest.mark.parametrize("composition", ("legacy", "owned"))
+@pytest.mark.parametrize("mode,origin", (("desktop", "https://tauri.localhost"),
+                                         ("dev", "http://127.0.0.1:5173")))
+def test_c3_outer_guard_routewide_negative_and_bounded_preflight_matrix(
+        product_composition, monkeypatch, composition, mode, origin):
+    import asyncio
+    from backend.request_auth import RequestGuard
+    app = main.app if composition == "legacy" else product_composition[0]
+    _c3_refusal_witnesses(monkeypatch)
+    trust = RequestTrust(mode, 18042, "a"*64, origin if mode == "dev" else None)
+    guarded = RequestGuard(app, trust)
+    good = (trust.header, trust.secret.encode("ascii"))
+    other = b"x-pilotodin-session" if mode == "dev" else b"x-pilotodin-dev-capability"
+    origin_header = (b"origin", origin.encode("ascii"))
+
+    async def exercise():
+        assert len(ROUTES) == 76
+        for method, template in sorted(ROUTES):
+            path = _c3_path(template)
+            cases = (
+                ([], 401),
+                ([(trust.header, b"b"*64)], 401),
+                ([good, (other, b"b"*64)], 401),
+                ([good, good], 400),
+                ([good, (b"host", b"127.0.0.1:18042")], 400),
+                ([good, (b"origin", b"https://invalid.example")], 403),
+                ([good, (b"x-forwarded-for", b"127.0.0.1")], 403),
+                ([good, (b"origin", b"\xff")], 400),
+            )
+            for headers, expected in cases:
+                scope = _c3_scope(method, path, headers=headers)
+                scope["pilotodin.request_authorized"] = True
+                assert (await _c3_exchange(guarded, scope))["status"] == expected, (
+                    composition, mode, method, template, expected)
+            for override in ({"client": ("192.0.2.1", 50000)},
+                             {"server": ("127.0.0.1", 18043)},
+                             {"scheme": "https"}):
+                scope = _c3_scope(method, path, headers=[good, origin_header])
+                scope.update(override)
+                assert (await _c3_exchange(guarded, scope))["status"] == 403
+            scope = _c3_scope(method, path, headers=[good])
+            scope["headers"][0] = (b"host", b"localhost:18043")
+            assert (await _c3_exchange(guarded, scope))["status"] == 403
+            negotiation = [
+                origin_header, (b"access-control-request-method", method.encode("ascii")),
+                (b"access-control-request-headers", trust.header + b", content-type"),
+            ]
+            result = await _c3_exchange(guarded, _c3_scope("OPTIONS", path, headers=negotiation))
+            assert result["status"] == 204, (composition, mode, method, template)
+            assert (b"access-control-allow-origin", origin_header[1]) in result["headers"]
+            refused = negotiation[:-1] + [(b"access-control-request-headers", trust.header+b", authorization")]
+            assert (await _c3_exchange(guarded, _c3_scope("OPTIONS", path, headers=refused)))["status"] == 403
+    asyncio.run(exercise())
+
+
+@pytest.mark.parametrize("composition", ("legacy", "owned"))
+def test_c3_authorized_archive_then_scratch_order(product_composition, monkeypatch, composition):
+    app = main.app if composition == "legacy" else product_composition[0]
+    trace = []
+    def archive(method, path):
+        trace.append("archive")
+        return None
+    def scratch():
+        trace.append("scratch")
+    monkeypatch.setattr(main.project_lifecycle, "archived_mutation_project", archive)
+    monkeypatch.setattr(storage, "check_scratch", scratch)
+    with closing(fixture_client(app)) as client:
+        result = client.get("/api/health")
+    assert result.status_code == 200
+    assert trace == ["archive", "scratch"]
+
+
+def test_c3_direct_local_control_requires_identity_witness(monkeypatch):
+    from fastapi import HTTPException, Request
+    monkeypatch.setenv("PILOTODIN_DESKTOP_SESSION", "b"*64)
+    scope = _c3_scope("GET", "/api/ai/settings", headers=[(b"x-pilotodin-session", b"b"*64)])
+    scope["pilotodin.request_authorized"] = True
+    with pytest.raises(HTTPException) as error:
+        main._local_request(Request(scope))
+    assert error.value.status_code == 401
