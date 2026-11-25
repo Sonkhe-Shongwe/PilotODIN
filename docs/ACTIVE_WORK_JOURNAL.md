@@ -13,13 +13,13 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Product baseline | 16f3cf135f26a3b63d997f6b15d117ec845a6041: 7/8 terminal workflows SUCCESS; P1 source recovery FAIL before new route matrix. |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
 | Operation ID | C3-FSYNC-FIXTURE-COMPATIBILITY-20261125 |
-| Operation state | ISSUED (test-only publication identifiable by prepared parent 4c3209a and operation marker; resolve exact SHA) |
+| Operation state | RECONCILED (test-only correction published at 94c5d27d84bd7dbe9c1ba8d544e7fa90c2a778d8; exact CI pending) |
 | Intended files | tests/test_p1_upload_atomic_staging.py; journal, compact handoff and C ledger. No product source or workflow change. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | Exact product 16f3cf1: 7/8 terminal workflows SUCCESS, P1 FAIL (199 passed, 1 failed, 2 subtests), route matrix skipped. Test correction changes only stale main.os reference to actual dataset_publication.os, retains identical error injection and assertions. All 85 push definitions reviewed, only routine P1 expected. Product code unchanged. New CI pending; C3 not closed. |
-| Pending runs | Expected exact P1 source recovery push run at correction commit; resolve by prepared parent 4c3209a and operation marker. |
+| Pending runs | Exact `94c5d27` [P1 #45604752675](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45604752675) job 139172634824 IN_PROGRESS; scanner and backend compile SUCCESS; upload regression running, route matrix not yet run. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Publish minimal test-only correction, verify exact P1; use time during CI for independent read-only credential audit, no further product edit before reconciliation. Close C3 only on full exit evidence. |
+| Recovery action | Reconcile exact P1 #45604752675 terminal result and all route-matrix cases. New read-only credential audit found production frontend/src/api.ts fetchLocal and upload default redirect-following, and archived hosted R03 driver frontend/e2e/p4-r03-hosted-desktop.mjs direct desktop-session fetches also lack explicit redirect refusal. No observed leak; require fixed-origin/path and redirect refusal source/mock regression in next authorized batch, retain hosted native approval freeze. Continue remaining credential candidate dispositions; C3 stays open. |
 | Resume after closure | C4, C5 in order; D separately approved. |
 
 ## Prior operation
