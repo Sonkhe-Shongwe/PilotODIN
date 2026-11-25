@@ -1,6 +1,6 @@
 # PilotODIN 1.0 | Current tab migration handoff
 
-**CURRENT | 25 November 2026.** P4 active. A/B and C1–C4 SOURCE CLOSED. **Next: C5.0 research, architecture and implementation-readiness review (C-D08).** C5 not implemented. Source remediation **14/17 (82.4%)**; official P4 **14/20 (70%)**. G2 BLOCKED; D pending; P5 unauthorized; P8 installer frozen. All six native approvals consumed/disarmed; no new restricted operation authorized.
+**CURRENT | 25 November 2026.** P4 active. A/B and C1–C4 SOURCE CLOSED. **C5.0 design/readiness recorded; next: first bounded C5 source guard batch (C-D08).** C5 not implemented. Source remediation **14/17 (82.4%)**; official P4 **14/20 (70%)**. G2 BLOCKED; D pending; P5 unauthorized; P8 installer frozen. All six native approvals consumed/disarmed; no new restricted operation authorized.
 
 ## 1. Identity and reading order
 
@@ -14,7 +14,7 @@
 | --- | ---: | --- |
 | A storage/lifecycle | 5/5 | Source closed; production evidence deferred |
 | B durable data integrity | 5/5 | Source closed; B5 library 7/7; [closure audit](./DOCUMENTATION_AUDIT_PACKAGE_B_SOURCE_CLOSURE_2026-11-24.md) |
-| C resource/trust | 4/5 | C1–C4 source closed; C5 active, research readiness outstanding |
+| C resource/trust | 4/5 | C1–C4 source closed; C5 active, source guard design ready; exact inputs unresolved |
 | D consolidated verification | 0/2 | C readiness, G2 method resolution and fresh approval required |
 | Total | 14/17 | 82.4%; independent of P4 acceptance |
 
@@ -22,7 +22,7 @@ C1/C2 source closed: shared admission, owned host bridge, asynchronous inference
 
 ### Latest source checkpoint (25 November)
 
-[C4 source closure](./PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md#25-november--c4-source-exit-audit-and-formal-source-closure): exact product `76e9d0f`, all three matching workflows SUCCESS. C5 initial inventory is read-only, not a lock or implementation. No outstanding exact CI. See journal for current operation.
+[C4 source closure](./PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md#25-november--c4-source-exit-audit-and-formal-source-closure): exact product `76e9d0f`, all three matching workflows SUCCESS. C5 initial inventory and C5.0 design are read-only, not a lock or implementation. No outstanding exact CI. See journal for current operation.
 
 ## 3. Product-source CI and historical failure
 
@@ -36,8 +36,8 @@ Earlier exact successes, failures, cancellations and corrective runs are preserv
 
 ## 4. Immediate next work (in order)
 
-1. **C5.0: detailed research and architecture readiness.** Complete the entrypoint/trigger map; inspect exact build and dependency contracts; review platform-specific resolution, toolchain, offline wheelhouse, model/runtime/DLL/WebView2/font provenance, license/SBOM and integrity/recovery strategy. Produce a bounded implementation specification or linked extension of C-D08 with alternatives, concrete file changes, failure matrix, direct tests and measurable exit evidence. The [initial inventory](./PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md#25-november--c5-initial-read-only-build-input-inventory-not-a-production-lock) is partial. The audit is not this completed research deliverable.
-2. **C5 implementation after readiness:** preserve current npm/Cargo locks, remove missing-lock fallbacks, enforce early installer freeze and fail-closed preflight; separate exact production and test Python locks, toolchain and asset provenance. No guessed hashes or new dependency framework. Prepare narrow one-use acquisition proposal only if missing exact inputs require it. No acquisition, installer/build or activation under this task.
+1. **C5.0 design/readiness recorded.** [C5.0 implementation-readiness specification](./PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md) maps the inspected build/DevQA entrypoints, 85 workflow triggers, existing npm/Cargo pins, platform locks, toolchain, independent assets/licenses, failure and test plan. Exact Tauri CLI 2.12.4 source performs a Microsoft HEAD even for cached offlineInstaller input; later offline-build consumption unresolved. Full provenance and complete implementation inventory validation remain outstanding. No source or acceptance credit.
+2. **C5 implementation (next):** prepare first bounded guard batch; preserve current npm/Cargo locks, remove missing-lock fallbacks including Live Dev and historical maintained frontend workflows, enforce early installer freeze and fail-closed preflight; separate exact production and test Python locks, toolchain and asset provenance. No guessed hashes or new dependency framework. Prepare narrow one-use acquisition proposal only if missing exact inputs require it. No acquisition, installer/build or activation under this task.
 3. **C5 closure then D:** exact scoped synthetic checks and complete verified input provenance before C5 credit; 15/17 (88.2%) only once earned. D requires separate G2 proof-method decision and fresh required approvals. No P5 progression.
 
 Five unsupported historical P2/P3 native overlays remain frozen and refuse before setup. No native launch, model execution, activation, migration or release authority is created by planning or cleanup.
