@@ -163,9 +163,7 @@ def emit(kind, value):
                                                 separators=(",", ":")), flush=True)
 
 
-MEDIA = re.compile(r"[a-z0-9!#class Client:
-    def __init__(self, groups, connection=http.client.HTTPSConnection):^_.+-]+/[a-z0-9!#class Client:
-    def __init__(self, groups, connection=http.client.HTTPSConnection):^_.+-]+")
+MEDIA = re.compile(r"[a-z0-9!#$&^_.+-]+/[a-z0-9!#$&^_.+-]+")
 INDEX_TYPE = "application/vnd.pypi.simple.v1+json"
 
 
