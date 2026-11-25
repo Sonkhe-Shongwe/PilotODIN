@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+import re
 import shutil
 import secrets
 import socket
@@ -31,19 +32,62 @@ def announce(stage: int, message: str) -> None:
     print(f"[{stage}/5] {message}", flush=True)
 
 
-def run(command: list[str], *, directory: Path = ROOT) -> None:
-    print("    Executing:", " ".join(command[:3]), flush=True)
-    subprocess.run(command, cwd=directory, check=True)
-
-
 def fingerprint(*paths: Path) -> str:
+    """Retain the historical stamp format; missing files never count as inputs."""
     digest = hashlib.sha256()
     for path in paths:
-        if path.exists():
-            digest.update(path.read_bytes())
-        else:
-            digest.update(b"<missing>")
+        if not path.is_file():
+            raise RuntimeError("C5_DEV_INPUT_MISSING: separate reviewed setup required")
+        digest.update(path.read_bytes())
     return digest.hexdigest()
+
+
+def require_prepared_files(root: Path, venv: Path, cache: Path, frontend: Path) -> Path:
+    """Read-only legacy readiness check, not a complete installed-byte lock."""
+    python = venv / "Scripts" / "python.exe"
+    requirements = root / "backend" / "requirements.txt"
+    manifest = frontend / "package.json"
+    lockfile = frontend / "package-lock.json"
+    vite_cmd = frontend / "node_modules" / ".bin" / "vite.cmd"
+    py_stamp = cache / "python-requirements.sha256"
+    js_stamp = cache / "frontend-requirements.sha256"
+    for required in (python, requirements, manifest, lockfile, vite_cmd, py_stamp, js_stamp):
+        if not required.is_file():
+            raise RuntimeError("C5_DEV_INPUT_MISSING: separate reviewed setup required; nothing installed")
+    if (py_stamp.read_text(encoding="utf-8").strip() != fingerprint(requirements) or
+            js_stamp.read_text(encoding="utf-8").strip() != fingerprint(manifest, lockfile)):
+        raise RuntimeError("C5_DEV_INPUT_CHANGED: separate reviewed setup required; nothing installed")
+    return python
+
+
+def verify_python_environment(python: Path, venv: Path, requirements: Path) -> None:
+    """Check existing interpreter identity, direct distributions and dependency consistency."""
+    names = []
+    for line in requirements.read_text(encoding="utf-8").splitlines():
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        match = re.fullmatch(r"([A-Za-z0-9_.-]+)(?:\[[A-Za-z0-9_,.-]+\])?[<>=!~][A-Za-z0-9.,<>=!~+*_-]+", line.strip())
+        if not match:
+            raise RuntimeError("C5_DEV_REQUIREMENT_FORMAT_UNREVIEWED")
+        names.append(match.group(1))
+    if not names:
+        raise RuntimeError("C5_DEV_REQUIREMENTS_EMPTY")
+    env = {k: v for k, v in os.environ.items()
+           if not k.upper().startswith("PIP_") and k.upper() not in ("PYTHONPATH", "PYTHONHOME")}
+    env["PIP_CONFIG_FILE"] = os.devnull
+    env["PIP_NO_INDEX"] = "1"
+    probe = (
+        "import sys,pathlib,importlib.metadata as m;"
+        "p=pathlib.Path(sys.argv[1]).resolve();"
+        "assert pathlib.Path(sys.prefix).resolve()==p and sys.version_info >= (3,11);"
+        "assert all(pathlib.Path(m.distribution(n).locate_file('')).resolve().is_relative_to(p) "
+        "for n in sys.argv[2:])"
+    )
+    subprocess.run([str(python), "-I", "-B", "-c", probe, str(venv), *names],
+                   check=True, timeout=30, env=env)
+    subprocess.run([str(python), "-I", "-B", "-m", "pip", "--isolated",
+                    "--disable-pip-version-check", "--no-input", "check"],
+                   check=True, timeout=30, env=env)
 
 
 def is_listening(port: int) -> bool:
@@ -93,7 +137,8 @@ def main() -> int:
         print(f"Python 3.11+ is required; found {sys.version.split()[0]}.")
         return 2
 
-    announce(1, "Checking developer tools and ports")
+    announce(1, "Checking existing dependency inputs and developer tools")
+    python = require_prepared_files(ROOT, VENV, CACHE, FRONTEND)
     if not shutil.which("node") or not shutil.which("npm.cmd"):
         print("Install Node.js 20+ once (including npm), then reopen this launcher.")
         return 2
@@ -106,45 +151,22 @@ def main() -> int:
     if node_major < 20:
         print(f"Node.js 20+ required; found {node_version}.")
         return 2
+    subprocess.run(["node", str(FRONTEND / "scripts" / "verify-npm-lock.mjs"), "--installed"],
+                   check=True, timeout=30)
     for port, label in ((8000, "Python backend"), (5173, "Vite frontend")):
         if is_listening(port):
             print(f"Port {port} ({label}) is occupied. Close the previous DEV console or another server.")
             print("No running process was stopped or overwritten.")
             return 2
 
-    announce(2, "Preparing isolated Python environment")
+    announce(2, "Checking existing isolated Python environment")
+    verify_python_environment(python, VENV, ROOT / "backend" / "requirements.txt")
+    announce(3, "Existing React/Vite dependency metadata ready; no setup performed")
     # The owned ASGI factory validates and creates the final data directory.
-    CACHE.mkdir(exist_ok=True)
-    python = VENV / "Scripts" / "python.exe"
-    if not python.is_file():
-        run([sys.executable, "-m", "venv", str(VENV)])
-    requirements = ROOT / "backend" / "requirements.txt"
-    py_stamp = CACHE / "python-requirements.sha256"
-    new_py_stamp = fingerprint(requirements)
-    if not py_stamp.is_file() or py_stamp.read_text().strip() != new_py_stamp:
-        print("    Installing/updating dependencies (first run or requirements changed).")
-        run([str(python), "-m", "pip", "install", "-r", str(requirements)])
-        py_stamp.write_text(new_py_stamp, encoding="utf-8")
-    else:
-        print("    Python dependencies unchanged; installation skipped.")
-
-    announce(3, "Preparing React/Vite development dependencies")
-    manifest = FRONTEND / "package.json"
-    lockfile = FRONTEND / "package-lock.json"
-    js_stamp = CACHE / "frontend-requirements.sha256"
-    new_js_stamp = fingerprint(manifest, lockfile)
-    vite_cmd = FRONTEND / "node_modules" / ".bin" / "vite.cmd"
-    if not vite_cmd.exists() or not js_stamp.is_file() or js_stamp.read_text().strip() != new_js_stamp:
-        npm_action = "ci" if lockfile.exists() else "install"
-        print(f"    Running npm {npm_action} (first run or dependency changes).")
-        run(["npm.cmd", npm_action, "--no-audit", "--no-fund"], directory=FRONTEND)
-        # npm install can create a lockfile; fingerprint the installed state.
-        js_stamp.write_text(fingerprint(manifest, lockfile), encoding="utf-8")
-    else:
-        print("    Frontend dependencies unchanged; installation skipped.")
 
     announce(4, "Launching two live-reloading consoles")
     env = dict(os.environ)
+    env.update(npm_config_offline="true", npm_config_audit="false")
     env["PILOTODIN_HOME"] = str(DEV_HOME)
     for key in ("PILOTODIN_DESKTOP_SESSION", "PILOTODIN_DESKTOP_PORT",
                 "PILOTODIN_DESKTOP_WATCH_STDIN", "PILOTODIN_CONTROL_MODE",
@@ -180,6 +202,6 @@ def main() -> int:
 if __name__ == "__main__":
     try:
         raise SystemExit(main())
-    except (RuntimeError, OSError, subprocess.CalledProcessError) as exc:
+    except (RuntimeError, OSError, UnicodeError, subprocess.SubprocessError) as exc:
         print(f"\nERROR: {exc}", file=sys.stderr)
         raise SystemExit(1)

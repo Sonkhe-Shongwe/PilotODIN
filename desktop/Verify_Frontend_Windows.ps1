@@ -4,6 +4,13 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $frontend = Join-Path $root 'frontend'
+# Local verification reuses a prepared environment; it never acquires packages.
+if (-not (Get-Command 'node.exe' -ErrorAction SilentlyContinue)) { throw 'Node.js 22 LTS is required.' }
+if (-not (Get-Command 'npm.cmd' -ErrorAction SilentlyContinue)) { throw 'npm.cmd is required.' }
+& node.exe (Join-Path $frontend 'scripts\verify-npm-lock.mjs') --installed
+if ($LASTEXITCODE -ne 0) { throw 'Existing frontend dependencies are not ready; separate reviewed setup is required. Nothing installed.' }
+$env:npm_config_offline = 'true'
+$env:npm_config_audit = 'false'
 $results = Join-Path $root 'frontend-check-results'
 New-Item -ItemType Directory -Path $results -Force | Out-Null
 $summary = Join-Path $results 'frontend_verification_summary.txt'
@@ -32,13 +39,7 @@ try {
   Record ('Platform: ' + [Environment]::OSVersion.VersionString)
   Record ('Node: ' + (& node.exe --version))
   Record ('npm: ' + (& npm.cmd --version))
-  if (Test-Path (Join-Path $frontend 'package-lock.json')) {
-    Record 'Lockfile present: reproducible npm ci'
-    Run-Logged 'npm_install' 'npm.cmd' @('ci','--no-audit','--no-fund')
-  } else {
-    Record 'No package-lock.json in source: generating initial dependency lock with npm install. Preserve the generated lockfile for the release.'
-    Run-Logged 'npm_install' 'npm.cmd' @('install','--no-audit','--no-fund')
-  }
+  Record 'Existing locked package metadata verified; no installation attempted.'
   Run-Logged 'frontend_test' 'npm.cmd' @('run','test:workspace')
   Run-Logged 'frontend_build' 'npm.cmd' @('run','build')
   if (-not (Test-Path (Join-Path $frontend 'dist/index.html'))) {throw 'Vite reported success but dist/index.html is missing.'}
@@ -46,7 +47,7 @@ try {
   if ($assets.Count -eq 0) { throw 'Vite completed without any JavaScript assets.' }
   Record ("JavaScript bundles produced: $($assets.Count)")
   $lock = Join-Path $frontend 'package-lock.json'
-  if (-not (Test-Path $lock)) { throw 'Dependency lockfile missing after dependency installation.' }
+  if (-not (Test-Path $lock)) { throw 'Dependency lockfile missing after frontend verification.' }
   Record ('Dependency lockfile SHA-256: ' + (Get-FileHash -Algorithm SHA256 -Path $lock).Hash)
   Record ('BUILD_ARTIFACT=' + (Join-Path $frontend 'dist/index.html'))
   Record 'FRONTEND_GATE=PASS'

@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | PREPARED |
+| State | PUBLISHED |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 8dd2528ec12dca047c602e30bba14f3f201a1cca |
 | Product baseline | C4 source closed at verified product 76e9d0f; C5 not implemented. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
 | Operation ID | C5-GUARD-BATCH-20261125 |
-| Operation state | PREPARED; bounded source guard changes and direct synthetic tests; no publication yet. |
+| Operation state | ISSUED; this source transaction is identified by parent 95fec5667279fdb25bc5bb62164896b30c21fb58 and operation C5-GUARD-BATCH-20261125. Resolve actual commit and exact matching CI before proceeding. |
 | Intended files | Installer/frontend PS1, Self_Test.bat, tools/live_dev.py, stdlib frontend lock guard, dedicated C5 synthetic tests, legacy frontend and Cargo metadata workflows, P4 synthetic workflow and Live Dev guide. Preserve both lock files and native markers. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | Exact desktop gate `76e9d0fb5f7a060ca0a89a937b8a21eb64e4b062`: P1 #45673926641 SUCCESS (206 Node, TypeScript/Vite, 11/11 Chromium; job 139416287673); P3 #45673926651 SUCCESS (3 real HTTP browser; job 139416288188); P4 #45673926563 SUCCESS (1086 Python, 6 skipped, 552 subtests, 15 Rust, 146 Node/Vite including all three new confirmed POST regressions; job 139416288324; 13 HTTP browser job 139416288348; 68 Windows/133 subtests and five simulated scenarios job 139416287756; restricted collector 139416289955 skipped). C-D06/07 matrix in C ledger. |
-| Pending runs | None for exact 76e9d0f (three completed successes); no runs at documentation baseline or prepared journal. Branch in_progress API count inconsistent with empty run array; no outstanding exact product operation identified. |
+| Pending runs | Expected P1 isolated frontend, P4 target-ranking source/browser/synthetic Windows (collector disabled), P4 Cargo metadata-only on source commit. Run IDs not yet observed. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Implement early unconditional installer freeze, no local dependency acquisition, validate npm lock and existing environment readiness, remove maintained legacy workflow and Cargo fallback, direct synthetic tests. Before publication reconcile exact path filters and actual job scopes, expected HEAD non-force. No sidecar or model/build invocation. |
+| Recovery action | Reconcile published source SHA, exact matching CI jobs and any failures; preserve existing verified product baseline until new evidence. No native or acquisition operations. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation

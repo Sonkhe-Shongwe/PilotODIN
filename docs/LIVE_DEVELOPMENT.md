@@ -4,12 +4,12 @@
 
 For the active phase and next task, see the [current handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md) and [active journal](./ACTIVE_WORK_JOURNAL.md). This guide describes the existing source-preview mechanism, not authorisation to perform setup or run any restricted operation. Reuse an already prepared environment; dependency acquisition, actual native/model activity, owner-data operations and installer work remain separately governed. Use disposable projects for development and reuse a prepared development environment where available. The owner’s intermediate installer freeze applies through P4–P7. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 
-## Start (one-time setup, then one click)
+## Start (existing prepared environment only)
 
 1. In GitHub Desktop, clone PilotODIN and check out `feature/live-dev-workspace-20261023` (this work sits on the Build E offline-fix branch). Keep a separate clone from any existing installed release or older production Studio directory.
 2. Install **Python 3.11+** and **Node.js 20+** on the development computer. Internet is needed for the first dependency install; do not acquire dependencies as part of C5 unless separately authorised under the applicable scope. You do **not** need Rust or Visual Studio Build Tools to develop the browser UI/backend.
 3. In the root of this clone, double-click **`Start_PilotODIN_Live_Dev.bat`**.
-4. The launcher prepares `.venv-live`, installs missing frontend dependencies, then starts two visible PowerShell consoles. This historical setup behaviour is not approval to invoke it during C5 research; reuse a prepared isolated environment only under applicable authority. It opens **http://127.0.0.1:5173** after the backend and frontend both respond.
+4. The launcher checks the existing `.venv-live`, prior requirements fingerprints, npm lock and Windows x64 installed package metadata. It refuses missing or changed prerequisites without creating a venv, installing packages or rewriting stamps; separately reviewed setup is required. These compatibility checks do not prove complete installed-byte provenance. With ready inputs it starts the existing two consoles and opens **http://127.0.0.1:5173** after both respond.
 5. Keep the two consoles running while you edit. Save a React/CSS file for Vite hot reload; save a Python file for backend reload. **Neither operation produces an installer.**
 
 The launcher shows elapsed startup time at five-second intervals; this is actual elapsed time, **not** an invented percentage. It reports failures instead of silently proceeding. The backend readiness probe uses a fresh private capability passed to both launcher children. The browser uses the same-origin Vite API proxy at `http://127.0.0.1:5173/api/`; opening the backend health URL directly without the private capability is intentionally refused.

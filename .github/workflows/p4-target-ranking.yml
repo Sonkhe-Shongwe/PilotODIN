@@ -8,6 +8,15 @@ on:
       - feature/live-dev-workspace-20261023
     paths:
       - .github/workflows/p4-target-ranking.yml
+      - tools/live_dev.py
+      - desktop/Build_Windows_Installer.ps1
+      - desktop/Verify_Frontend_Windows.ps1
+      - Self_Test_PilotODIN.bat
+      - frontend/scripts/verify-npm-lock.mjs
+      - frontend/tests/c5-npm-lock.test.cjs
+      - tests/test_c5_build_input_preflight.py
+      - .github/workflows/frontend-compile.yml
+      - .github/workflows/build-e-verification.yml
       - .github/workflows/p4-r03-qwen-idle-release.yml
       - desktop/verify_live_bundled_inference.py
       - frontend/src-tauri/src/lib.rs
@@ -204,6 +213,8 @@ jobs:
           node-version: "22"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
+      - name: Check existing npm lock structure
+        run: node frontend/scripts/verify-npm-lock.mjs
       - name: Install existing declared test dependencies
         run: |
           python -m pip install -r backend/requirements-test.txt
@@ -273,6 +284,7 @@ jobs:
           tests/test_p4_n12_tmp_debugger_fixture.py
           tests/test_p4_n12_procmon_environment_control.py
           tests/test_p4_installer_provenance.py
+          tests/test_c5_build_input_preflight.py
       - name: Verify P4 source contracts and manual target choice
         run: >-
           node --test
@@ -285,6 +297,7 @@ jobs:
           frontend/tests/p4-75-selected-feature-budget.test.cjs
           frontend/tests/p1-primary-button-edit-markers.test.cjs
           frontend/tests/p4-native-dev-isolation.test.cjs
+          frontend/tests/c5-npm-lock.test.cjs
           frontend/tests/a4-native-smoke-runner.test.cjs
           frontend/tests/desktop-ai-boundaries.test.cjs
           frontend/tests/p1-resource-settings.test.cjs
@@ -357,6 +370,18 @@ jobs:
           } finally {
             if (Test-Path -LiteralPath $object) { Remove-Item -LiteralPath $object -Force }
           }
+      - name: Parse C5 guarded Windows source entrypoints without running them
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          foreach ($file in @('desktop/Build_Windows_Installer.ps1','desktop/Verify_Frontend_Windows.ps1')) {
+            $tokens = $null
+            $parseErrors = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $file).Path, [ref]$tokens, [ref]$parseErrors)
+            if ($parseErrors.Count) { throw 'C5 entrypoint parser failed' }
+          }
+      - name: Exercise C5 synthetic source guard fixtures
+        run: python -B -m pytest -q tests/test_c5_build_input_preflight.py
       - name: Measure exact local answers at simulated laptop headroom
         run: python -B qa/p4_research/measure_local_answers.py
       - name: Verify engine shutdown with and without a desktop owner
