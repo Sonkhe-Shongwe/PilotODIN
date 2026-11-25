@@ -8,12 +8,15 @@ import threading
 import time
 
 import pytest
-from fastapi.testclient import TestClient
+from contextlib import closing
+from secrets import token_hex
+from tests.fixture_http import fixture_client
+from backend.request_auth import RequestTrust
 
 from backend.main import app
 from backend import ai_provider, autonomy, investigations, resource_policy, storage, quality
 
-client=TestClient(app)
+client=fixture_client(app)
 RAW=b'Region,Revenue,Profit,CustomerSegment\nNorth,100,25,Consumer\nSouth,200,80,\nNorth,300,120,Enterprise\nSouth,400,175,\n'
 
 
@@ -238,13 +241,17 @@ def test_public_api_endpoints(monkeypatch):
 
 def test_autonomy_api_requires_authenticated_desktop_session(monkeypatch):
     _,inv_id=new_inv()
-    monkeypatch.setenv('PILOTODIN_DESKTOP_SESSION','local-secret-'+'b'*60)
+    trust=RequestTrust("desktop",9012,token_hex(32))
     route=f'/api/investigations/{inv_id}/autonomy'
-    assert client.get(route).status_code==401
-    assert client.get(route,headers={'Origin':'https://unknown.example',
-          'X-PilotODIN-Session':'local-secret-'+'b'*60}).status_code==403
-    assert client.get(route,headers={'Origin':'http://tauri.localhost',
-          'X-PilotODIN-Session':'local-secret-'+'b'*60}).status_code==200
+    with closing(fixture_client(app,trust=trust,authenticated=False)) as desktop:
+        with monkeypatch.context() as guarded:
+            guarded.setattr(investigations,"load",
+                            lambda *_:pytest.fail("Unauthorized investigation read"))
+            assert desktop.get(route).status_code==401
+            assert desktop.get(route,headers={'Origin':'https://unknown.example',
+                  'X-PilotODIN-Session':trust.secret}).status_code==403
+        assert desktop.get(route,headers={'Origin':'http://tauri.localhost',
+              'X-PilotODIN-Session':trust.secret}).status_code==200
 
 
 @pytest.mark.parametrize(('enabled', 'free_gib', 'reason'), [

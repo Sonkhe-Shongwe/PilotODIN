@@ -3,8 +3,10 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier, Event
 
-import httpx
 import pytest
+from tests.fixture_http import async_fixture_client
+from backend.request_auth import RequestTrust, request_authorized
+from secrets import token_hex
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
 
 from backend import storage, resource_training_store as durable
@@ -121,6 +123,7 @@ def make_app(project, c, worker, *, reject=False, register=True):
     ids = []
     @app.post("/train", status_code=202)
     def train(request: Request, background_tasks: BackgroundTasks):
+        assert request_authorized(request.scope)
         owner = training_owner(request.scope)
         assert c.status()["phase"] == "reserved"
         assert c.try_acquire(Operation.DATA).code == "resource_busy"
@@ -137,8 +140,7 @@ def make_app(project, c, worker, *, reject=False, register=True):
 
 
 async def post(app):
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app),
-                                 base_url="http://testserver") as client:
+    async with async_fixture_client(app) as client:
         return await client.post("/train")
 
 
@@ -151,6 +153,31 @@ def test_http_denial_and_validation_do_not_create_queue(project):
         assert not c.status()["active"]
     with storage.connect() as con:
         assert con.execute("SELECT COUNT(*) FROM experiments").fetchone()[0] == 0
+
+
+def test_async_auth_denial_never_enters_training_admission(project):
+    async def scenario():
+        c = coordinator()
+        app, ids = make_app(project, c, lambda _: pytest.fail("Unauthorized worker"))
+        trust = RequestTrust("desktop", 9012, token_hex(32))
+        lease = c.try_acquire(Operation.DATA).lease
+        assert c.start(lease)
+        try:
+            async with async_fixture_client(app, trust=trust, authenticated=False) as denied:
+                assert (await denied.post("/train")).status_code == 401
+                headers = {"X-PilotODIN-Session": trust.secret}
+                assert (await denied.post("/train", headers={
+                    **headers, "Origin": "https://untrusted.invalid"})).status_code == 403
+                assert (await denied.post("/train", headers={
+                    **headers, "X-Forwarded-For": "127.0.0.1"})).status_code == 403
+                assert (await denied.post("/train", headers=headers)).status_code == 503
+            assert c.status()["operation"] == "data"
+            assert not ids
+            with storage.connect() as con:
+                assert con.execute("SELECT COUNT(*) FROM experiments").fetchone()[0] == 0
+        finally:
+            assert c.release(lease)
+    asyncio.run(scenario())
 
 
 def test_actual_background_worker_holds_lane_until_durable_terminal(project):
@@ -267,8 +294,7 @@ def production_fixture(project, c, monkeypatch, *, queue_error=None):
 
 
 async def production_post(app, project):
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app),
-                                 base_url="http://testserver") as client:
+    async with async_fixture_client(app) as client:
         return await client.post(f"/api/projects/{project}/experiments",json={
             "target":"target","task":"classification","models":["logistic"],
             "acknowledge_random_split":True,"expected_quality_version":0})

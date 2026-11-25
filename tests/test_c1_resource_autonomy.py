@@ -4,7 +4,7 @@ import threading
 from pathlib import Path
 
 import pytest
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
 
 from backend import autonomy, investigations, quality, storage
 from backend.main import app
@@ -27,7 +27,7 @@ def fixture(monkeypatch,tmp_path):
     quality._init_tables()
     investigations.init()
     autonomy.init()
-    with TestClient(app) as client:
+    with fixture_client(app) as client:
         response=client.post("/api/projects",files={"file":("test.csv",b"Region,Revenue\nNorth,100\nSouth,200\nNorth,300\n","text/csv")})
         assert response.status_code==201,response.text
         pid=response.json()["id"]

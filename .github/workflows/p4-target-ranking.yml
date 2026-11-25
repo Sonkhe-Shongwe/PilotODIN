@@ -19,6 +19,8 @@ on:
       - tools/Verify_P2_Real_API_Integration_Local.py
       - tools/Verify_Local_Analytics_Windows_Native.py
       - tests/test_owned_server.py
+      - tests/fixture_http.py
+      - tests/test_build_e_autonomous_investigations.py
       - tests/test_workspace_boundary.py
       - frontend/src-tauri/src/storage_boundary.rs
       - frontend/src-tauri/src/desktop_profile.rs

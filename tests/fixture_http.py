@@ -6,17 +6,13 @@ monkeypatch the framework. Callers still own disposable data setup.
 """
 from secrets import token_hex
 
+import httpx
 from fastapi.testclient import TestClient
 from backend.request_auth import RequestGuard, RequestTrust
 
 
-def fixture_client(app, *, trust=None, authenticated=True):
-    """Construct a guarded ASGI client, with explicit negative-test opt-out.
-
-    The default is a fresh per-client development capability at the existing
-    loopback contract. For auth-negative tests, supply an immutable trust
-    explicitly and set authenticated=False; requests still pass the guard.
-    """
+def _fixture_contract(trust, authenticated):
+    """Fresh default trust, or an explicitly supplied immutable contract."""
     if type(authenticated) is not bool:
         raise ValueError("Explicit fixture authentication selection required")
     if trust is None:
@@ -26,7 +22,29 @@ def fixture_client(app, *, trust=None, authenticated=True):
     if not isinstance(trust, RequestTrust):
         raise ValueError("Explicit fixture request trust required")
     headers = {trust.header.decode("ascii"): trust.secret} if authenticated else {}
+    return trust, headers
+
+
+def fixture_client(app, *, trust=None, authenticated=True):
+    """Guarded synchronous ASGI client, with explicit negative-test opt-out."""
+    trust, headers = _fixture_contract(trust, authenticated)
     return TestClient(RequestGuard(app, trust),
                       base_url=f"http://127.0.0.1:{trust.port}",
                       client=("127.0.0.1", 50000),
                       headers=headers, follow_redirects=False)
+
+
+def async_fixture_client(app, *, trust=None, authenticated=True):
+    """Guarded asynchronous ASGI client; no lifespan or socket is started.
+
+    Keep original HTTPX scheduling and propagated application exceptions.
+    Negative cases require explicit trust and still pass the same guard.
+    """
+    trust, headers = _fixture_contract(trust, authenticated)
+    transport = httpx.ASGITransport(app=RequestGuard(app, trust),
+                                   client=("127.0.0.1", 50000),
+                                   raise_app_exceptions=True)
+    return httpx.AsyncClient(transport=transport,
+                             base_url=f"http://127.0.0.1:{trust.port}",
+                             headers=headers, follow_redirects=False,
+                             trust_env=False)

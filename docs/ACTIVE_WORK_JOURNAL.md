@@ -7,13 +7,13 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | PREPARED |
+| State | PUBLISHED |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 03c907b42c6460bb0eafec6de9bfcdf043d50d3a |
 | Product baseline | e35447789ae8953ac1c99b77be387bc8194e4a0c exact P1 backend SUCCESS. |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
 | Operation ID | C3-INPROCESS-ASYNC-AUTONOMY-20261125-source |
-| Operation state | PREPARED |
+| Operation state | ISSUED |
 | Intended files | tests/fixture_http.py, tests/test_c1_resource_training_store.py, tests/test_c1_resource_autonomy.py, tests/test_build_e_autonomous_investigations.py, .github/workflows/p1-isolated-backend.yml, .github/workflows/p4-target-ranking.yml (routine triggers), journal. Shared explicit immutable trust construction for sync and async test-only clients; HTTPX ASGITransport exact loopback peer/port, no lifespan changes or exception suppression, no sockets, no global/environment auth bypass. Guard synthetic/actual training endpoints, assert no admission/queue on denied async requests; autonomy and investigation HTTP clients migrate; preserve mocked planner desktop branch tests because environment there selects legacy inference implementation, not HTTP trust. No production change. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | e354477 P1 backend #45574901687 terminal SUCCESS; Temporary-store source and import recovery 139070296276 success; PDF step success. Read training store two async ASGITransport construction sites (synthetic TrainingHTTP and actual production endpoint), staged autonomy one TestClient, legacy investigation global TestClient and mutable desktop HTTP auth test. Other two desktop env planner tests exercise explicitly mocked existing legacy planner behavior; not HTTP callers. P1 backend triggers helper and C1 tests, P4 routinely runs legacy investigation and owned server; register helper/investigation paths to exercise relevant P4. Existing restricted workflow literal false, no marker/launcher change. Full caller inventory still incomplete. |

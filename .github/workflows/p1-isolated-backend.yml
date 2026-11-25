@@ -23,6 +23,7 @@ on:
       - tests/test_c1_resource_host.py
       - backend/autonomy.py
       - tests/test_c1_resource_autonomy.py
+      - tests/test_build_e_autonomous_investigations.py
       - tests/test_c1_resource_training_store.py
       - tests/test_c1_resource_training.py
       - tests/test_c1_resource_upload.py
