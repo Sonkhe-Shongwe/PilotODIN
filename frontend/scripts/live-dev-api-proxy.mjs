@@ -23,13 +23,22 @@ export function liveDevProxyTrust(env){
     !!env.RUNNER_TEMP&&env.PILOTODIN_HOME===`${env.RUNNER_TEMP}/pilotodin-p1-real-http-${env.GITHUB_RUN_ID}`;
   const home=env.PILOTODIN_HOME??'',localAppData=env.LOCALAPPDATA??'';
   const rawPort=env.PILOTODIN_DEV_PORT??'',backendPort=Number(rawPort);
+  const phasePorts={'P2-NATIVE-DELIVER-CONSENT':5177,'P2-NATIVE-TWO-WINDOW-DELIVER':5177,
+    'P3-NATIVE-SEMANTIC-CONTEXT':5178,'P3-NATIVE-QUALITY-W5':5178};
+  const runName=basename(dirname(home));
+  const phase=Object.keys(phasePorts).find(key=>new RegExp('^'+key+'-[0-9]{8}T[0-9]{6}Z-[a-f0-9]{10}$').test(runName));
+  const fixed=env.PILOTODIN_SERVER_MODE==='local-devqa'&&phase!==undefined&&
+    env.PILOTODIN_DEV_ORIGIN==='http://127.0.0.1:'+phasePorts[phase]&&rawPort==='8000'&&
+    isAbsolute(home)&&isAbsolute(localAppData)&&
+    !home.split(/[\\/]/).includes('..')&&!localAppData.split(/[\\/]/).includes('..')&&
+    basename(home)==='workspace'&&resolve(dirname(dirname(home)))===resolve(localAppData,'PilotODIN','DevQA','runs');
   const chain=env.PILOTODIN_SERVER_MODE==='local-devqa'&&env.RL_invariant==='1'&&
     env.PILOTODIN_DEV_ORIGIN===REPORT_CHAIN_ORIGIN&&isAbsolute(home)&&isAbsolute(localAppData)&&
     !home.split(/[\\/]/).includes('..')&&!localAppData.split(/[\\/]/).includes('..')&&
     basename(home)==='workspace'&&/^P2-NATIVE-CHAIN-[0-9]{8}T[0-9]{6}Z-[a-f0-9]{10}$/.test(basename(dirname(home)))&&
     resolve(dirname(dirname(home)))===resolve(localAppData,'PilotODIN','DevQA','runs')&&
     /^[1-9][0-9]{3,4}$/.test(rawPort)&&backendPort>=1024&&backendPort<=65535&&backendPort!==5176;
-  if((!live&&!hosted&&!chain)||env.VITE_PILOTODIN_AUTH_DEV!=='1'||
+  if((!live&&!hosted&&!chain&&!fixed)||env.VITE_PILOTODIN_AUTH_DEV!=='1'||
      (!chain&&env.PILOTODIN_DEV_PORT!=='8000')||
      !/^[0-9a-f]{64}$/.test(env.PILOTODIN_DEV_CAPABILITY??'')||
      env.PILOTODIN_DESKTOP_SESSION||env.PILOTODIN_DESKTOP_PORT||
@@ -38,6 +47,8 @@ export function liveDevProxyTrust(env){
      (env.PILOTODIN_DESKTOP_ALLOW_DEV??'0')!=='0'){
     throw new Error('Invalid isolated Live Dev proxy configuration');
   }
+  if(fixed)return Object.freeze({capability:env.PILOTODIN_DEV_CAPABILITY,origin:env.PILOTODIN_DEV_ORIGIN,
+    host:'127.0.0.1:'+phasePorts[phase],port:phasePorts[phase]});
   if(chain)return Object.freeze({capability:env.PILOTODIN_DEV_CAPABILITY,origin:REPORT_CHAIN_ORIGIN,
     host:'127.0.0.1:5176',port:5176,backendPort});
   return Object.freeze({capability:env.PILOTODIN_DEV_CAPABILITY,origin:env.PILOTODIN_DEV_ORIGIN,

@@ -44,6 +44,7 @@ $record=[ordered]@{
  failure_category=''
 }
 $ownedNames=@('PILOTODIN_HOME','PILOTODIN_SERVER_MODE','PILOTODIN_DESKTOP_SESSION','PILOTODIN_DESKTOP_ALLOW_DEV',
+ 'PILOTODIN_DEV_CAPABILITY','PILOTODIN_DEV_PORT','PILOTODIN_DEV_ORIGIN','VITE_PILOTODIN_AUTH_DEV',
  'VITE_PILOTODIN_NATIVE_SMOKE','VITE_P3_NATIVE_QUALITY_W5_QA',
  'VITE_P3_NATIVE_W5_PROJECT','VITE_P3_NATIVE_W5_ISSUE','CARGO_NET_OFFLINE')
 $previousEnvironment=@{}
@@ -58,10 +59,28 @@ function Port-Occupied([int]$number){
  }catch{return $false}
  finally{$client.Close()}
 }
+# Exact owned loopback readiness request; never send a capability via a proxy or redirect.
+function Read-AuthenticatedProject([string]$projectId){
+ if($projectId -cnotmatch '^[a-f0-9]{32}$' -or $env:PILOTODIN_DEV_CAPABILITY -cnotmatch '^[a-f0-9]{64}$'){
+  throw 'Invalid isolated project readiness configuration.'
+ }
+ $request=[Net.HttpWebRequest]::Create('http://127.0.0.1:8000/api/projects/'+$projectId)
+ $request.Proxy=$null
+ $request.AllowAutoRedirect=$false
+ $request.Timeout=2000
+ $request.ReadWriteTimeout=2000
+ $request.Headers.Add('X-PilotODIN-Dev-Capability',$env:PILOTODIN_DEV_CAPABILITY)
+ $reply=$request.GetResponse()
+ try{
+  if([int]$reply.StatusCode -ne 200){throw 'Isolated project readiness refused.'}
+  $reader=[IO.StreamReader]::new($reply.GetResponseStream())
+  try{return ($reader.ReadToEnd() | ConvertFrom-Json)}finally{$reader.Dispose()}
+ }finally{$reply.Dispose()}
+}
 function Wait-Project([string]$projectId){
  for($i=0;$i -lt 80;$i++){
   try{
-   $result=Invoke-RestMethod -Uri ('http://127.0.0.1:8000/api/projects/'+$projectId) -TimeoutSec 2
+   $result=Read-AuthenticatedProject $projectId
    if($result.id -eq $projectId){return $true}
   }catch{}
   Start-Sleep -Milliseconds 250
@@ -170,8 +189,17 @@ try{
  if((Get-FileHash -LiteralPath $original -Algorithm SHA256).Hash -ine $manifest.original_sha256){
   throw 'Synthetic original checksum mismatch before launch.'
  }
+ $random=[Security.Cryptography.RandomNumberGenerator]::Create()
+ try{
+  $capabilityBytes=New-Object byte[] 32
+  $random.GetBytes($capabilityBytes)
+  $env:PILOTODIN_DEV_CAPABILITY=([BitConverter]::ToString($capabilityBytes)).Replace('-','').ToLowerInvariant()
+ }finally{$random.Dispose()}
+ $env:PILOTODIN_DEV_PORT='8000'
+ $env:PILOTODIN_DEV_ORIGIN='http://127.0.0.1:5178'
+ $env:VITE_PILOTODIN_AUTH_DEV='1'
  $backendProcess=Start-Process -FilePath $pythonExe -WorkingDirectory $root -ArgumentList @(
-  '-m','uvicorn','backend.server_entry:owned_app','--factory','--host','127.0.0.1','--port','8000','--lifespan','off'
+  '-m','uvicorn','backend.server_entry:owned_app','--factory','--host','127.0.0.1','--port','8000','--lifespan','off','--no-proxy-headers'
  ) -PassThru -NoNewWindow -RedirectStandardOutput $backendStdout -RedirectStandardError $backendStderr
  if(-not(Wait-Project $id)){throw 'Isolated FastAPI backend did not become available.'}
  # Start an independent data verifier WHILE the native QA window is open.

@@ -38,7 +38,9 @@ test('browser QA locks exact synthetic project and permits only read requests to
  assert.match(ui,/localStorage\.setItem\('pilotodin-current',id\)/);
  assert.match(ui,/localStorage\.setItem\('pilotodin-workspace-active-v1-'\+id,'deliver'\)/);
  assert.match(ui,/window\.fetch=\(\(input:RequestInfo\|URL,init\?:RequestInit\)=>/);
- assert.match(ui,/url\.origin!=='http:\/\/127\.0\.0\.1:8000'/);
+ assert.match(ui,/url\.origin!==location\.origin/);
+  assert.match(ui,/configureDevelopmentAPI\(location\.origin\)/);
+  assert.match(ui,/VITE_PILOTODIN_AUTH_DEV==='1'/);
  assert.match(ui,/!url\.pathname\.startsWith\('\/api\/'\)/);
  assert.match(ui,/!\['GET','HEAD'\]\.includes\(method\)/);
  assert.doesNotMatch(ui,/\bpost\(|\bupload\(|\btrain\(/);

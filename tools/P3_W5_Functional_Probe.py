@@ -17,7 +17,9 @@ import sys
 import time
 from typing import Any
 from urllib.error import HTTPError, URLError
-from urllib.request import Request, urlopen
+from urllib.request import Request, build_opener, ProxyHandler, HTTPRedirectHandler
+
+from backend.request_auth import local_fixed_qa_trust_from_environ
 
 from tools.Seed_P3_Native_Quality_W5_Local import PHASE, source_bytes
 from tools.Verify_P3_Native_Quality_W5_History_Local import verify as verify_history
@@ -80,13 +82,30 @@ def check_write_audit(log: str, project_id: str) -> None:
         require(value in mutations[index], "UNEXPECTED_BACKEND_WRITE_ORDER")
 
 
+class _NoRedirect(HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
 def request_json(path: str, *, payload: dict | None = None) -> tuple[int, dict]:
+    try:
+        trust = local_fixed_qa_trust_from_environ(os.environ, PHASE)
+    except ValueError as exc:
+        raise ProbeFailure("INVALID_PRIVATE_QA_CONFIGURATION") from exc
+    # This independent probe has a fixed, narrow HTTP contract: no arbitrary
+    # destination, no write other than its existing stale semantic POST.
+    match = re.fullmatch(r"/projects/[a-f0-9]{32}/(quality|quality/history|semantics\?expected_version=[01]|quality/preview\?offset=0&limit=10&expected_version=1|semantic-business-context)", path)
+    if (not match or (payload is not None) != (match.group(1) == "semantic-business-context")
+            or (payload is not None and payload.get("expected_version") != 0)):
+        raise ProbeFailure("OUT_OF_SCOPE_PROBE_REQUEST")
     data = None if payload is None else json.dumps(payload).encode("utf-8")
-    request = Request(API + path, data=data,
-                      headers={"Content-Type": "application/json"} if data else {},
+    headers = {"X-PilotODIN-Dev-Capability": trust.secret}
+    if data is not None:
+        headers["Content-Type"] = "application/json"
+    request = Request(API + path, data=data, headers=headers,
                       method="POST" if data is not None else "GET")
     try:
-        with urlopen(request, timeout=12) as response:
+        with build_opener(ProxyHandler({}), _NoRedirect()).open(request, timeout=12) as response:
             status = response.status
             raw = response.read(1_000_000)
     except HTTPError as exc:

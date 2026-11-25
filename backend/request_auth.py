@@ -209,6 +209,31 @@ def local_report_chain_trust_from_environ(environ):
                         "http://127.0.0.1:5176")
 
 
+# Exact existing fixed-port local DevQA phases, not arbitrary QA origins.
+_LOCAL_QA_PORTS = {
+    "P2-NATIVE-DELIVER-CONSENT": 5177,
+    "P2-NATIVE-TWO-WINDOW-DELIVER": 5177,
+    "P3-NATIVE-SEMANTIC-CONTEXT": 5178,
+    "P3-NATIVE-QUALITY-W5": 5178,
+}
+
+
+def local_fixed_qa_trust_from_environ(environ, phase):
+    origin = f"http://127.0.0.1:{_LOCAL_QA_PORTS.get(phase, 0)}"
+    if (phase not in _LOCAL_QA_PORTS
+            or environ.get("PILOTODIN_SERVER_MODE") != "local-devqa"
+            or environ.get("PILOTODIN_DEV_PORT") != "8000"
+            or environ.get("PILOTODIN_DEV_ORIGIN") != origin
+            or environ.get("PILOTODIN_DESKTOP_ALLOW_DEV", "0") != "0"
+            or any(environ.get(key) for key in (
+                "PILOTODIN_DESKTOP_SESSION", "PILOTODIN_DESKTOP_PORT",
+                "PILOTODIN_DESKTOP_WATCH_STDIN", "PILOTODIN_CONTROL_MODE",
+                "PILOTODIN_CONTROL_GENERATION", "PILOTODIN_CONTROL_CAPABILITY"))):
+        raise ValueError("Invalid fixed-port local DevQA serving configuration")
+    return RequestTrust("local-devqa", 8000,
+                        environ.get("PILOTODIN_DEV_CAPABILITY", ""), origin)
+
+
 # In-process identity witness, never a request header or serialized token.
 # The outer guard overwrites any incoming value on the admitted HTTP scope.
 _AUTHORIZED = object()

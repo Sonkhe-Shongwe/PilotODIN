@@ -2,6 +2,7 @@ import React from 'react';
 import {createRoot} from 'react-dom/client';
 import {UnifiedShell} from './UnifiedShell';
 import {isDesktop} from './desktopBootstrap';
+import {configureDevelopmentAPI} from './api';
 import './styles.css';
 import './studio.css';
 import './design-tokens.css';
@@ -11,18 +12,20 @@ import './finish-polish.css';
 // It never launches a normal installed sidecar or authorises browser writes.
 const id=String(import.meta.env.VITE_P2_NATIVE_DELIVER_PROJECT_ID??'');
 const allowed=import.meta.env.DEV&&
+  import.meta.env.VITE_PILOTODIN_AUTH_DEV==='1'&&
   import.meta.env.VITE_P2_NATIVE_DELIVER_QA==='1'&&
   import.meta.env.VITE_PILOTODIN_NATIVE_SMOKE==='1'&&
   location.origin==='http://127.0.0.1:5177'&&
   /^[a-f0-9]{32}$/.test(id)&&isDesktop()&&!!document.getElementById('root');
 if(!allowed)throw new Error('Refusing non-isolated full-shell native consent test.');
 
+configureDevelopmentAPI(location.origin);
 const originalFetch=window.fetch.bind(window);
 window.fetch=((input:RequestInfo|URL,init?:RequestInit)=>{
   const raw=input instanceof Request?input.url:String(input);
   const url=new URL(raw,location.href);
   const method=(init?.method??(input instanceof Request?input.method:'GET')).toUpperCase();
-  if(url.origin!=='http://127.0.0.1:8000'||!url.pathname.startsWith('/api/')||
+  if(url.origin!==location.origin||!url.pathname.startsWith('/api/')||
      !['GET','HEAD'].includes(method)){
     return Promise.reject(new Error('Synthetic native consent QA blocks API mutations and remote requests.'));
   }

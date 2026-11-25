@@ -457,3 +457,30 @@ test('managed P2 native report chain uses exact server-side origin and allocated
  assert.match(chain,/url\.origin!==location\.origin/);
  assert.doesNotMatch(chain,/PILOTODIN_DEV_CAPABILITY|VITE_P2_CHAIN_API_PORT/);
 });
+
+
+test('fixed-port local DevQA proxy binds exact phase and refuses mixed credentials',async()=>{
+ const {liveDevProxyTrust,liveDevProxyPlan}=await import('../scripts/live-dev-api-proxy.mjs');
+ const localAppData=path.resolve(__dirname,'synthetic-local-appdata');
+ for(const [phase,port] of [['P2-NATIVE-DELIVER-CONSENT',5177],['P2-NATIVE-TWO-WINDOW-DELIVER',5177],
+   ['P3-NATIVE-SEMANTIC-CONTEXT',5178],['P3-NATIVE-QUALITY-W5',5178]]){
+   const origin='http://127.0.0.1:'+port;
+   const env={PILOTODIN_SERVER_MODE:'local-devqa',LOCALAPPDATA:localAppData,
+     PILOTODIN_HOME:path.join(localAppData,'PilotODIN','DevQA','runs',phase+'-20261125T000000Z-1234567890','workspace'),
+     PILOTODIN_DEV_ORIGIN:origin,PILOTODIN_DEV_PORT:'8000',PILOTODIN_DEV_CAPABILITY:'a'.repeat(64),
+     VITE_PILOTODIN_AUTH_DEV:'1'};
+   const trust=liveDevProxyTrust(env);
+   assert.equal(trust.port,port);
+   const req={url:'/api/projects',method:'GET',socket:{remoteAddress:'127.0.0.1'},
+     rawHeaders:['Host','127.0.0.1:'+port,'Sec-Fetch-Site','same-origin','X-PilotODIN-Dev-Request','1']};
+   assert.equal(liveDevProxyPlan(req,trust).options.port,8000);
+   assert.equal(liveDevProxyPlan({...req,rawHeaders:req.rawHeaders.slice(0,-2)},trust).status,403);
+   for(const change of [{PILOTODIN_DEV_ORIGIN:'http://127.0.0.1:5176'},{PILOTODIN_DEV_PORT:'8001'},
+     {PILOTODIN_DEV_CAPABILITY:''},{PILOTODIN_HOME:path.join(localAppData,'foreign','workspace')}])
+     assert.throws(()=>liveDevProxyTrust({...env,...change}));
+ }
+ const w5=fs.readFileSync(path.resolve(__dirname,'../src/p3NativeQualityW5Qa.tsx'),'utf8');
+ assert.match(w5,/url\.origin===location\.origin&&!url\.pathname\.startsWith\('\/api\/'\)/);
+ assert.match(w5,/X-PilotODIN-Dev-Request/);
+ assert.doesNotMatch(w5,/PILOTODIN_DEV_CAPABILITY/);
+});

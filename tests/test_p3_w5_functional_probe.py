@@ -169,3 +169,46 @@ def test_real_backend_rejects_inherited_v1_description_as_invalid(tmp_path,monke
     probe=_redirect_probe_to_real_local_test_client(monkeypatch,workspace,client)
     with pytest.raises(ProbeFailure,match="V1_CONTEXT_NOT_EMPTY"):
         probe.observe(workspace)
+
+
+def test_probe_private_http_contract_and_no_redirect(monkeypatch):
+    from tools import P3_W5_Functional_Probe as probe
+    from urllib.request import ProxyHandler
+    secret = "a"*64
+    for key, value in {"PILOTODIN_SERVER_MODE":"local-devqa",
+                       "PILOTODIN_DEV_PORT":"8000",
+                       "PILOTODIN_DEV_ORIGIN":"http://127.0.0.1:5178",
+                       "PILOTODIN_DEV_CAPABILITY":secret}.items():
+        monkeypatch.setenv(key, value)
+    pid = "1"*32
+    seen = []
+    class Reply:
+        status = 200
+        def read(self, n):
+            return b'{"version":1}'
+        def __enter__(self):
+            return self
+        def __exit__(self, *args):
+            pass
+    class Opener:
+        def open(self, request, timeout):
+            assert request.full_url == probe.API + "/projects/" + pid + "/quality"
+            assert request.get_header("X-pilotodin-dev-capability") == secret
+            assert timeout == 12
+            seen.append(request.full_url)
+            return Reply()
+    def fake_builder(proxy, redirect):
+        assert isinstance(proxy, ProxyHandler) and proxy.proxies == {}
+        assert redirect.redirect_request(None, None, 302, "", {}, "http://elsewhere") is None
+        return Opener()
+    monkeypatch.setattr(probe, "build_opener", fake_builder)
+    assert probe.request_json("/projects/"+pid+"/quality") == (200, {"version":1})
+    for path, payload in [("/projects/"+pid+"/quality",{}),
+                          ("/projects/"+pid+"/semantic-business-context",{"expected_version":1}),
+                          ("//elsewhere/api",None)]:
+        with pytest.raises(ProbeFailure, match="OUT_OF_SCOPE_PROBE_REQUEST"):
+            probe.request_json(path,payload=payload)
+    monkeypatch.delenv("PILOTODIN_DEV_CAPABILITY")
+    with pytest.raises(ProbeFailure, match="INVALID_PRIVATE_QA_CONFIGURATION"):
+        probe.request_json("/projects/"+pid+"/quality")
+    assert len(seen) == 1

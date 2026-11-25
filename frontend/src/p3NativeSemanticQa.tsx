@@ -2,6 +2,7 @@ import React from 'react';
 import {createRoot} from 'react-dom/client';
 import {UnifiedShell} from './UnifiedShell';
 import {isDesktop} from './desktopBootstrap';
+import {configureDevelopmentAPI} from './api';
 import './styles.css';
 import './studio.css';
 import './design-tokens.css';
@@ -12,6 +13,7 @@ import './finish-polish.css';
 const aid=String(import.meta.env.VITE_P3_NATIVE_QA_PROJECT_A??'');
 const bid=String(import.meta.env.VITE_P3_NATIVE_QA_PROJECT_B??'');
 const allowed=import.meta.env.DEV&&
+  import.meta.env.VITE_PILOTODIN_AUTH_DEV==='1'&&
   import.meta.env.VITE_PILOTODIN_NATIVE_SMOKE==='1'&&
   import.meta.env.VITE_P3_NATIVE_SEMANTIC_QA==='1'&&
   location.origin==='http://127.0.0.1:5178'&&
@@ -19,6 +21,7 @@ const allowed=import.meta.env.DEV&&
   isDesktop()&&!!document.getElementById('root');
 if(!allowed)throw new Error('P3 native QA requires an isolated synthetic Tauri window.');
 
+configureDevelopmentAPI(location.origin);
 const originalFetch=window.fetch.bind(window);
 // A blocked synthetic request is an explicit local 403, not a network failure.
 // The shared API client can then display the controlled QA reason accurately.
@@ -39,7 +42,7 @@ window.fetch=((input:RequestInfo|URL,init?:RequestInit)=>{
   const raw=input instanceof Request?input.url:String(input);
   const url=new URL(raw,location.href);
   const method=(init?.method??(input instanceof Request?input.method:'GET')).toUpperCase();
-  if(url.origin==='http://127.0.0.1:8000'&&url.pathname.startsWith('/api/')){
+  if(url.origin===location.origin&&url.pathname.startsWith('/api/')){
     if(method==='GET'||method==='HEAD')return originalFetch(input,init);
     // W1/W2: only two explicit owner-description POSTs on synthetic project A,
     // version 0. The server still validates the same payload and local origin.

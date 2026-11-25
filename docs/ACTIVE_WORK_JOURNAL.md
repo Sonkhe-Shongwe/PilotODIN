@@ -7,13 +7,13 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | PREPARED |
+| State | PUBLISHED |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 2e07cf0a748a426f2b861b0ac2fe8d337d35bca0 |
 | Product baseline | d5036773d7c3fea6f79280524ac25b2e0a8fc5ac; all four exact routine workflows SUCCESS. |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
 | Operation ID | C3-LOCAL-DEVQA-FIXED-PORT-AUTH-20261125-source |
-| Operation state | PREPARED |
+| Operation state | ISSUED |
 | Intended files | backend/request_auth.py, backend/server_entry.py, frontend/scripts/live-dev-api-proxy.mjs, frontend/src/api.ts, three native QA pages, four existing local DevQA PowerShell launchers, P3 W5 probe, scoped Python/Node source tests and canonical records. Bind four exact phase names to 5177/5178 and fixed backend 8000, use private capability and no proxy/redirect for readiness/probe, keep all QA mutation budgets and IPC restrictions. No new listener or native execution. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | Prior exact d503677 P1 frontend #45560998685, P3 HTTP #45560998671, P1 HTTP #45560998645 job 139024433573 all four acceptance steps SUCCESS, P4 #45560999140 source 139024432962, browser 139024433248 and Windows synthetic 139024432539 SUCCESS; restricted 139024433877 SKIPPED. New batch not yet published. |

@@ -63,6 +63,8 @@ class OwnedServerTests(unittest.TestCase):
             env = {**os.environ, "LOCALAPPDATA": str(base),
                    "PILOTODIN_SERVER_MODE": "local-devqa",
                    "PILOTODIN_HOME": str(home), "PILOTODIN_DESKTOP_SESSION": ""}
+            env.update(PILOTODIN_DEV_CAPABILITY="a"*64, PILOTODIN_DEV_PORT="8000",
+                       PILOTODIN_DEV_ORIGIN="http://127.0.0.1:5178")
             # The allocator alone must not admit a server before seeding.
             with self.assertRaises(WorkspaceBoundaryError):
                 admitted_home(env)
@@ -78,8 +80,15 @@ class OwnedServerTests(unittest.TestCase):
                 with self.assertRaises(WorkspaceBoundaryError):
                     admitted_home({**env, **invalid})
             code = ("from backend.server_entry import owned_app; "
-                    "owned_app(); from backend import storage; "
-                    "assert len(storage.list_projects()) == 2")
+                    "from fastapi.testclient import TestClient; "
+                    "client=TestClient(owned_app(),base_url='http://127.0.0.1:8000',"
+                    "client=('127.0.0.1',50000)); "
+                    "assert client.get('/api/projects').status_code==401; "
+                    "assert client.get('/api/projects',headers={'X-PilotODIN-Dev-Capability':'a'*64,"
+                    "'Origin':'http://127.0.0.1:5177'}).status_code==403; "
+                    "assert client.get('/api/projects',headers={'X-PilotODIN-Dev-Capability':'a'*64,"
+                    "'Origin':'http://127.0.0.1:5178'}).status_code==200; "
+                    "from backend import storage; assert len(storage.list_projects()) == 2")
             with engine_workspace(str(home)):
                 result = subprocess.run([sys.executable, "-B", "-c", code],
                     cwd=ROOT, env=env, capture_output=True, text=True, timeout=20)
@@ -456,6 +465,28 @@ class C3RequestTrustTests(unittest.TestCase):
             with self.subTest(change=tuple(change)):
                 with self.assertRaises(ValueError):
                     hosted_browser_trust_from_environ({**env,**change})
+
+    def test_c3_fixed_local_qa_phase_contracts(self):
+        from backend.request_auth import local_fixed_qa_trust_from_environ, authorize
+        from backend.server_entry import LOCAL_FIXTURES, owned_app
+        from unittest.mock import patch
+        for phase in LOCAL_FIXTURES:
+            origin = "http://127.0.0.1:5177" if phase.startswith("P2") else "http://127.0.0.1:5178"
+            env = {"PILOTODIN_SERVER_MODE":"local-devqa", "PILOTODIN_DEV_PORT":"8000",
+                   "PILOTODIN_DEV_ORIGIN":origin, "PILOTODIN_DEV_CAPABILITY":self.secret,
+                   "PILOTODIN_HOME":str(ROOT/(phase+"-20261125T000000Z-1234567890")/"workspace")}
+            trust = local_fixed_qa_trust_from_environ(env, phase)
+            self.assertTrue(authorize(self.scope(trust, origin=origin), trust).allowed)
+            for changes in ({"PILOTODIN_DEV_CAPABILITY":""},{"PILOTODIN_DEV_PORT":"8001"},
+                            {"PILOTODIN_DEV_ORIGIN":"http://127.0.0.1:5176"},
+                            {"PILOTODIN_DESKTOP_SESSION":self.secret}):
+                with self.subTest(phase=phase, changes=tuple(changes)):
+                    with patch.dict(os.environ,{**env,**changes},clear=True), \
+                         patch("backend.server_entry.admitted_home",side_effect=AssertionError("Workspace inspected")):
+                        with self.assertRaises(ValueError):
+                            owned_app()
+        with self.assertRaises(ValueError):
+            local_fixed_qa_trust_from_environ(env, "unknown")
 
     def test_c3_managed_report_chain_contract(self):
         from backend.request_auth import local_report_chain_trust_from_environ, authorize

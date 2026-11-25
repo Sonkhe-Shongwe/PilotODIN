@@ -2,6 +2,7 @@ import React from 'react';
 import {createRoot} from 'react-dom/client';
 import {UnifiedShell} from './UnifiedShell';
 import {isDesktop} from './desktopBootstrap';
+import {configureDevelopmentAPI} from './api';
 import {invoke} from '@tauri-apps/api/core';
 import {isNativeW5FinishIpcRequest} from './p3NativeW5IpcGuard';
 import './styles.css';
@@ -13,8 +14,9 @@ import './finish-polish.css';
 // Never loaded in a production build or in the installed product's profile.
 const pid=String(import.meta.env.VITE_P3_NATIVE_W5_PROJECT??'');
 const issueId=String(import.meta.env.VITE_P3_NATIVE_W5_ISSUE??'');
-const API='http://127.0.0.1:8000';
+const API=location.origin;
 const allowed=import.meta.env.DEV&&
+  import.meta.env.VITE_PILOTODIN_AUTH_DEV==='1'&&
   import.meta.env.VITE_PILOTODIN_NATIVE_SMOKE==='1'&&
   import.meta.env.VITE_P3_NATIVE_QUALITY_W5_QA==='1'&&
   location.origin==='http://127.0.0.1:5178'&&
@@ -22,6 +24,7 @@ const allowed=import.meta.env.DEV&&
   isDesktop()&&!!document.getElementById('root');
 if(!allowed)throw new Error('P3 W5 requires a fresh synthetic native Tauri QA window.');
 
+configureDevelopmentAPI(location.origin);
 const nativeFetch=window.fetch.bind(window);
 const key='pilotodin-p3-native-w5-write-budget';
 type Budget={proposals:number;commits:number};
@@ -63,7 +66,7 @@ window.fetch=((input:RequestInfo|URL,init?:RequestInit):Promise<Response>=>{
   // Only the exact native W5 finish command with Tauri's IPC headers is
   // forwarded to the original WebView fetch; all unrelated IPC stays blocked.
   if(isNativeW5FinishIpcRequest(url,method,init))return nativeFetch(input,init);
-  if(url.origin===location.origin&&(method==='GET'||method==='HEAD'))
+  if(url.origin===location.origin&&!url.pathname.startsWith('/api/')&&(method==='GET'||method==='HEAD'))
     return nativeFetch(input,init);
   if(url.origin!==API||!url.pathname.startsWith('/api/'))
     return refuse('P3 W5 native QA blocked an external or unrelated request.');
@@ -145,10 +148,10 @@ finishButton.addEventListener('click',async()=>{
  try{
   if(budget.proposals!==1||budget.commits!==1)
    throw new Error('Approve the exact two-cell Region correction first.');
-  const q=await window.fetch(`${API}/api/projects/${pid}/quality`);
+  const q=await window.fetch(`${API}/api/projects/${pid}/quality`,{headers:{'X-PilotODIN-Dev-Request':'1'}});
   if(!q.ok||((await q.json()) as {version:number}).version!==1)
    throw new Error('Working version 1 was not confirmed.');
-  const s=await window.fetch(`${API}/api/projects/${pid}/semantics?expected_version=1`);
+  const s=await window.fetch(`${API}/api/projects/${pid}/semantics?expected_version=1`,{headers:{'X-PilotODIN-Dev-Request':'1'}});
   const snapshot=(await s.json()) as {version:number;user_context:unknown};
   if(!s.ok||snapshot.version!==1||snapshot.user_context!==null)
    throw new Error('Version 1 must have no inherited user descriptions.');
