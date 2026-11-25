@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import sqlite3
 import pandas as pd
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
 from backend import main, quality, storage
 
 
@@ -22,7 +22,7 @@ def prepared(tmp_path, monkeypatch):
     raw=("claim_id,claim_amount,policy_number,Region\n"+
          "".join(f"C{i:03d},{100+i},P{i%4},{' Mpumalanga ' if i in (1,2) else 'Gauteng'}\n"
                  for i in range(36))).encode("utf-8")
-    client=TestClient(main.app)
+    client=fixture_client(main.app)
     result=client.post("/api/projects",
         files={"file":("synthetic_owner_review.csv",raw,"text/csv")})
     assert result.status_code==201,result.text

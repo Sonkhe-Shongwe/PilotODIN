@@ -26,11 +26,11 @@ if not SAFE:
     pytest.skip("Only the isolated disposable P2 report runner may import backend.main",
                 allow_module_level=True)
 
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
 from backend.main import app
 from backend import storage
 
-client = TestClient(app)
+client = fixture_client(app)
 SOURCE = b"OrderID,Region,Revenue\n001,West,19.00\n002,East,25.00\n003,West,41.00\n"
 
 

@@ -39,12 +39,14 @@ def seeded(tmp_path, monkeypatch):
     manifest = json.loads(fixture.read_text(encoding="utf-8"))
     from backend import storage, quality
     from backend.main import app
-    from fastapi.testclient import TestClient
+    from secrets import token_hex
+    from backend.request_auth import RequestTrust
+    from tests.fixture_http import fixture_client
     monkeypatch.setattr(storage, "HOME", workspace)
     monkeypatch.setattr(storage, "DB_PATH", workspace / "pilotodin.sqlite3")
     storage.init()
     quality._init_tables()
-    return workspace, fixture, manifest, TestClient(app)
+    return workspace, fixture, manifest, fixture_client(app, trust=RequestTrust("local-devqa", 8000, token_hex(32), "http://127.0.0.1:5178"))
 
 
 def approve(w5):

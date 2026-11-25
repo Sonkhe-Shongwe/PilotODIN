@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import pandas as pd
 import pytest
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
 
 from backend import main, semantic_profile, storage
 
@@ -123,7 +123,7 @@ def test_semantic_api_is_project_scoped_and_version_pinned(tmp_path, monkeypatch
     # No writes, imports or Model Lab jobs on the test path.
     monkeypatch.setattr(main.quality,"current_data",lambda project_id:
                         (data,3) if project_id==pid else (_ for _ in ()).throw(AssertionError("wrong project")))
-    client=TestClient(main.app)
+    client=fixture_client(main.app)
     ok=client.get(f"/api/projects/{pid}/semantics?expected_version=3")
     assert ok.status_code==200,ok.text
     assert ok.json()["version"]==3

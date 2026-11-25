@@ -138,7 +138,9 @@ def test_native_qa_origin_allowed_by_real_backend_cors_and_local_guard(
     tmp_path, monkeypatch
 ):
     """Test configured QA port against actual API middleware, not copied regexes."""
-    from fastapi.testclient import TestClient
+    from secrets import token_hex
+    from backend.request_auth import RequestTrust
+    from tests.fixture_http import fixture_client
     from backend import main, storage
 
     config = json.loads(read("frontend/src-tauri/tauri.p3-native-semantic-qa.conf.json"))
@@ -150,30 +152,35 @@ def test_native_qa_origin_allowed_by_real_backend_cors_and_local_guard(
     monkeypatch.setattr(storage, "HOME", home)
     monkeypatch.setattr(storage, "DB_PATH", home / "pilotodin.sqlite3")
     storage.init()
-    client = TestClient(main.app)
-
-    # Actual browser preflight and local-only protected GET should reach
-    # the expected not-found path, not fail cross-origin security.
-    preflight = client.options(
-        "/api/projects/not_a_project/semantic-business-context",
-        headers={
-            "Origin": origin,
-            "Access-Control-Request-Method": "POST",
-            "Access-Control-Request-Headers": "content-type",
-        },
-    )
-    assert preflight.status_code == 200, preflight.text
-    assert preflight.headers["access-control-allow-origin"] == origin
-    get = client.get(
-        "/api/projects/not_a_project/semantics?expected_version=0",
-        headers={"Origin": origin},
-    )
-    assert get.status_code == 404, get.text
-    assert get.headers["access-control-allow-origin"] == origin
-
-    # Preserve the boundary: the old out-of-range port remains prohibited.
-    denied = client.get(
-        "/api/projects/not_a_project/semantics?expected_version=0",
-        headers={"Origin": "http://127.0.0.1:5181"},
-    )
-    assert denied.status_code == 403, denied.text
+    trust = RequestTrust("local-devqa", 8000, token_hex(32), origin)
+    client = fixture_client(main.app, trust=trust)
+    negotiation = fixture_client(main.app, trust=trust, authenticated=False)
+    headers = {
+        "Origin": origin,
+        "Access-Control-Request-Method": "POST",
+        "Access-Control-Request-Headers": "content-type, x-pilotodin-dev-capability",
+    }
+    try:
+        preflight = negotiation.options("/api/projects/not_a_project/semantic-business-context", headers=headers)
+        assert preflight.status_code == 204, preflight.text
+        assert preflight.headers["access-control-allow-origin"] == origin
+        assert "x-pilotodin-dev-capability" in preflight.headers["access-control-allow-headers"]
+        assert not preflight.content
+        assert negotiation.options("/api/projects/not_a_project/semantic-business-context", headers={
+            **headers, "Access-Control-Request-Headers": "content-type"
+        }).status_code == 403
+        for wrong_origin in ("http://127.0.0.1:5181", "http://127.0.0.1:5177"):
+            assert negotiation.options("/api/projects/not_a_project/semantic-business-context", headers={
+                **headers, "Origin": wrong_origin
+            }).status_code == 403
+            denied = client.get("/api/projects/not_a_project/semantics?expected_version=0", headers={"Origin": wrong_origin})
+            assert denied.status_code == 403, denied.text
+            assert "access-control-allow-origin" not in denied.headers
+        assert client.options("/api/projects/not_a_project/semantic-business-context", headers=headers).status_code == 403
+        assert negotiation.get("/api/projects/not_a_project/semantics?expected_version=0", headers={"Origin": origin}).status_code == 401
+        good = client.get("/api/projects/not_a_project/semantics?expected_version=0", headers={"Origin": origin})
+        assert good.status_code == 404, good.text
+        assert good.headers["access-control-allow-origin"] == origin
+    finally:
+        negotiation.close()
+        client.close()

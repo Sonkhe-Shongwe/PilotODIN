@@ -13,7 +13,7 @@ from pathlib import Path
 import unittest
 
 import fitz
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
 from backend import reports, storage, quality, report_charts
 from backend.main import app
 
@@ -22,7 +22,7 @@ HOLDOUT = "SYNTHETIC_HOLDOUT_ROW_NEVER_EXPORT"
 ROWS = (("0001", "North", 120, "Y"), ("0002", "South", 180, "N"),
         ("0003", "North", 240, "N"), ("0004", "South", 280, "Y"),
         ("0005", "North", 40, "N"), ("0006", "South", 80, "Y"))
-client = TestClient(app)
+client = fixture_client(app)
 
 
 def oracle():

@@ -3,13 +3,13 @@ from __future__ import annotations
 
 import io
 import re
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
 import fitz
 
 from backend.main import app
 from backend import storage, quality, reports
 
-client=TestClient(app)
+client=fixture_client(app)
 
 
 def project(name='retail.csv'):

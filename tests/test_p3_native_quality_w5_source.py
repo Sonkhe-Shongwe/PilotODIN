@@ -191,7 +191,9 @@ def test_w5_seeder_fails_closed_on_nonempty_workspace(tmp_path):
     assert not (workspace/"datasets").exists()
 
 def test_w5_native_origin_uses_existing_allowlist(tmp_path,monkeypatch):
-    from fastapi.testclient import TestClient
+    from secrets import token_hex
+    from backend.request_auth import RequestTrust
+    from tests.fixture_http import fixture_client
     from backend import main,storage
     c=json.loads(read("frontend/src-tauri/tauri.p3-native-quality-w5-qa.conf.json"))
     origin=c["build"]["devUrl"].split("/p3_native_quality_w5_qa.html")[0]
@@ -202,17 +204,35 @@ def test_w5_native_origin_uses_existing_allowlist(tmp_path,monkeypatch):
     monkeypatch.setattr(storage,"HOME",home)
     monkeypatch.setattr(storage,"DB_PATH",home/"pilotodin.sqlite3")
     storage.init()
-    client=TestClient(main.app)
-    pre=client.options("/api/projects/not_a_project/quality/proposals",headers={
-      "Origin":origin,"Access-Control-Request-Method":"POST",
-      "Access-Control-Request-Headers":"content-type",
-    })
-    assert pre.status_code==200 and pre.headers["access-control-allow-origin"]==origin
-    good=client.get("/api/projects/not_a_project/quality",headers={"Origin":origin})
-    assert good.status_code==404
-    bad=client.get("/api/projects/not_a_project/quality",headers={"Origin":"http://127.0.0.1:5181"})
-    # CORS forbids the response even though this read-only Quality route
-    # returns 404 for an absent project rather than calling _local_request.
-    # Browser access depends on the allow-origin header, not this status.
-    assert bad.status_code==404
-    assert "access-control-allow-origin" not in bad.headers
+    trust = RequestTrust("local-devqa", 8000, token_hex(32), origin)
+    client = fixture_client(main.app, trust=trust)
+    negotiation = fixture_client(main.app, trust=trust, authenticated=False)
+    headers = {
+        "Origin": origin,
+        "Access-Control-Request-Method": "POST",
+        "Access-Control-Request-Headers": "content-type, x-pilotodin-dev-capability",
+    }
+    try:
+        preflight = negotiation.options("/api/projects/not_a_project/quality/proposals", headers=headers)
+        assert preflight.status_code == 204, preflight.text
+        assert preflight.headers["access-control-allow-origin"] == origin
+        assert "x-pilotodin-dev-capability" in preflight.headers["access-control-allow-headers"]
+        assert not preflight.content
+        assert negotiation.options("/api/projects/not_a_project/quality/proposals", headers={
+            **headers, "Access-Control-Request-Headers": "content-type"
+        }).status_code == 403
+        for wrong_origin in ("http://127.0.0.1:5181", "http://127.0.0.1:5177"):
+            assert negotiation.options("/api/projects/not_a_project/quality/proposals", headers={
+                **headers, "Origin": wrong_origin
+            }).status_code == 403
+            denied = client.get("/api/projects/not_a_project/quality", headers={"Origin": wrong_origin})
+            assert denied.status_code == 403, denied.text
+            assert "access-control-allow-origin" not in denied.headers
+        assert client.options("/api/projects/not_a_project/quality/proposals", headers=headers).status_code == 403
+        assert negotiation.get("/api/projects/not_a_project/quality", headers={"Origin": origin}).status_code == 401
+        good = client.get("/api/projects/not_a_project/quality", headers={"Origin": origin})
+        assert good.status_code == 404, good.text
+        assert good.headers["access-control-allow-origin"] == origin
+    finally:
+        negotiation.close()
+        client.close()

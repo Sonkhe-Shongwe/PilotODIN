@@ -78,7 +78,9 @@ def _seed_real_backend(tmp_path, monkeypatch):
     import subprocess
     import sys
 
-    from fastapi.testclient import TestClient
+    from secrets import token_hex
+    from backend.request_auth import RequestTrust
+    from tests.fixture_http import fixture_client
     from tools import qa_foundation
     from backend import main, storage
     from tools.Seed_P3_Native_Quality_W5_Local import PHASE
@@ -99,7 +101,7 @@ def _seed_real_backend(tmp_path, monkeypatch):
     monkeypatch.setattr(storage,"HOME",workspace)
     monkeypatch.setattr(storage,"DB_PATH",workspace/"pilotodin.sqlite3")
     storage.init()
-    client=TestClient(main.app)
+    client=fixture_client(main.app, trust=RequestTrust("local-devqa", 8000, token_hex(32), "http://127.0.0.1:5178"))
     return workspace,meta,client
 
 

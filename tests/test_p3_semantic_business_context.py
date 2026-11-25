@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import pandas as pd
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
 from backend import main, storage
 
 
@@ -26,7 +26,7 @@ def fixture(tmp_path, monkeypatch):
     monkeypatch.setattr(main.quality, "current_data",
                         lambda project_id: (frame, 3) if project_id in ids else
                         (_ for _ in ()).throw(AssertionError("wrong project")))
-    return TestClient(main.app), ids
+    return fixture_client(main.app), ids
 
 
 def payload(version=3):
@@ -141,7 +141,7 @@ def test_actual_approved_quality_version_change_does_not_reuse_prior_semantic_co
     monkeypatch.setattr(storage, "DB_PATH", home / "pilotodin.sqlite3")
     storage.init()
     quality._init_tables()
-    client = TestClient(main.app)
+    client = fixture_client(main.app)
 
     regions = (
         ["Mpumalanga"] * 20

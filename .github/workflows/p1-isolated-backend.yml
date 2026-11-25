@@ -44,6 +44,9 @@ on:
       - desktop/verify_packaged_engine.py
       - tests/test_c3_local_verifier_trust.py
       - tests/test_p2_legacy_pdf_visual_source.py
+      - tests/test_p2_mixed_report_devqa.py
+      - tests/test_p2_mixed_runner_contract.py
+      - tools/p2_mixed_report_devqa.py
       - tools/Seed_P2_Native_Deliver_Consent_Local.py
       - tools/Seed_P2_Native_Live_Chain_Local.py
       - tools/Seed_P2_Native_Two_Window_Local.py
@@ -134,6 +137,34 @@ jobs:
           tests/test_c3_local_verifier_trust.py
           tests/test_p2_legacy_pdf_pagination.py
           tests/test_p2_legacy_pdf_visual_source.py
+
+      - name: Exercise existing mixed-report workers in a disposable synthetic allocation
+        run: |
+          python -B - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          import subprocess
+          import sys
+          from tempfile import TemporaryDirectory
+          from tools.qa_foundation import create_run
+          from tools.p2_mixed_report_devqa import EXPECTED, simple_status, worker_status_path
+          root = Path.cwd().resolve()
+          with TemporaryDirectory(prefix="pilotodin-p2-mixed-ci-") as temporary:
+              run, _ = create_run(Path(temporary) / "qa", "P2-MIXED-REPORT", repo=root)
+              env = {key: value for key, value in os.environ.items()
+                     if not key.upper().startswith(("PILOTODIN_", "VITE_PILOTODIN_"))}
+              env.update(PILOTODIN_HOME=str(run / "workspace"), PILOTODIN_DEVQA_RUN=str(run),
+                         PYTHONPATH=str(root), PYTHONDONTWRITEBYTECODE="1", RL_invariant="1")
+              for kind in ("contract", "mixed"):
+                  completed = subprocess.run(
+                      [sys.executable, "-B", str(root / "tools/p2_mixed_report_devqa.py"), "--worker", kind],
+                      cwd=root, env=env, capture_output=True, text=True, timeout=180, check=False)
+                  status = json.loads(worker_status_path(run, kind).read_text(encoding="utf-8"))
+                  assert completed.returncode == 0 and simple_status(status, EXPECTED[kind]) == "PASS", status
+                  print(f"Mixed-report {kind}: {status['tests_run']}/{EXPECTED[kind]} PASS")
+              assert not any((run / "workspace" / "models").iterdir())
+          PY
 
       - name: Exercise nine isolated authenticated P2 PDF export route cases
         run: |
