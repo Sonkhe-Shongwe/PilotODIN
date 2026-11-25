@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 45d284b685124009d2fd4d9fc735fbe2d6410a16 |
+| Observed starting HEAD | 01afb52106f3245f7ce03129965f03107d7a1e56 |
 | Product baseline | C3 source exit supported at 78c8672, latest product ebd01f4 and verified fixture/historical changes c329e0d/83c83f8. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
-| Operation ID | C4-A-IMPORT-HTTP-WITNESS-CORRECTION-20261125 |
-| Operation state | RECONCILED: exact test-only correction [41db8e7](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/41db8e7e1289da773e3c2a9887d783c0ce6ac21a); no replay |
-| Intended files | frontend/e2e/p1-real-http.spec.ts and canonical records only; exact POST response synchronization, no product, authority, workflow or fixture allowlist changes. |
+| Operation ID | C4-B1-COMMON-CLOUD-INTENT-20261125 |
+| Operation state | PREPARED; corrected Batch A two exact CI runs SUCCESS; new source batch not issued |
+| Intended files | backend/ai_provider.py, backend/main.py, backend/resource_session.py, tests/test_c1_product_integration.py, tests/test_p4_r03_verified_answers.py, tests/test_c4_cloud_intent.py, P1 isolated backend workflow, canonical records. Transient request intent only, no settings schema or native change. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Added exact import response witness before independent catalogue read. Retains 201, ID, count, switcher and all prior safety/recovery assertions. Exact CI pending. |
-| Pending runs | [P1 Isolated Frontend Verification #45628391274](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45628391274) IN_PROGRESS; [P1 Disposable Real HTTP Browser/Backend Acceptance #45628391002](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45628391002) IN_PROGRESS. Both at exact 41db8e7. |
+| Verification | Exact 41db8e7 corrected P1 frontend 206 source + 7 browser passes; P1 real HTTP all four stages (1+1+2+2) pass. Batch A source implementation verified. |
+| Pending runs | None; both corrected runs terminal SUCCESS. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Reconcile both exact corrected test runs and all four real HTTP stages. If still failing, inspect the exact import response and do not broaden the allowlist or weaken acceptance. After green, C4 Batch B common explicit intent/consent and removal of implicit legacy dispatch, using mocked transport only. Read-only caller review confirms main legacy respond/verify/test routes and startup are still divergent from owned wrappers; unify policy and preserve owned context/version stop checks. Positive payload schema, strict transport and UI follow. |
+| Recovery action | Converge legacy and owned explicit cloud selection, require transient strict cloud_intent=true for HTTP insight and explicit connection test, remove startup/verify probes, no fanout or silent local worker wake. Old frontend calls lack intent and therefore defer safely until C4-C wiring. Preserve local preferences where safe; cloud continuation refused. Positive nested payload projection, strict wire/deadline and full revocation lifecycle remain follow-ups. Use fake transport only. |
 | Resume after closure | C5 then D with separately approved scope. |
 
 ## Prior operation
