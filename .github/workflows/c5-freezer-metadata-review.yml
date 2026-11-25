@@ -1,0 +1,43 @@
+name: C5 freezer metadata offline review
+on:
+  push:
+    branches: [feature/live-dev-workspace-20261023]
+    paths:
+      - .github/workflows/c5-freezer-metadata-review.yml
+      - qa/c5_wheel_metadata/collect_freezer.py
+permissions:
+  contents: read
+jobs:
+  offline-review:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - run: python3 -I -B qa/c5_wheel_metadata/collect_freezer.py --self-test
+      - name: Assert collection refusal
+        run: |
+          set +e
+          python3 -I -B qa/c5_wheel_metadata/collect_freezer.py --collect
+          code=$?
+          set -e
+          test "$code" = 2
+  collect-once:
+    if: ${{ false }} # Proposal only. No owner approval.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - run: python3 -I -B qa/c5_wheel_metadata/collect_freezer.py --self-test
+      # Exact future activation requires marker-only trigger, source blob pin,
+      # exact message and attempt 1. No retry or wider scope.
+      - name: Freezer metadata only (currently unreachable)
+        env:
+          C5_APPROVED_ONCE: C5-FREEZER-METADATA-ONCE-20261125
+          C5_EXPECTED_SOURCE_SHA: ${{ github.sha }}
+        run: python3 -I -B qa/c5_wheel_metadata/collect_freezer.py --collect
