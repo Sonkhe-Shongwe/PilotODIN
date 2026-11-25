@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | d4b58a86b952d6db3f7514ff35a5c2cdf0bdacb7 |
-| Product baseline | ec74f49487dc7748cba85db874a12263c473649c; exact graph P4 #45687344896 SUCCESS. |
+| Observed starting HEAD | 0a98b851f2c26e9a1f8730597286afd188e93afa |
+| Product baseline | e7ffc07d6801628eb5319f3be7484cad81c09e40; exact archive CI #45687966996 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
-| Operation ID | C5-ARCHIVE-VALIDATION-20261125 |
-| Operation state | RECONCILED publication at e7ffc07d6801628eb5319f3be7484cad81c09e40; exact archive fixture CI IN_PROGRESS. No restricted action. |
-| Intended files | tools/c5_archive_preflight.py, tests/test_c5_build_input_preflight.py, .github/workflows/p4-target-ranking.yml, canonical documentation. No lock, marker, asset or production entrypoint changes. |
+| Operation ID | C5-SYNTHETIC-ATOMIC-STAGING-20261125 |
+| Operation state | PREPARED; synthetic QA generation and atomic pointer publication only, no production staging activation. |
+| Intended files | tools/c5_archive_preflight.py (reuse immutable verified snapshot and bounded decoder), qa/c5_metadata/synthetic_staging.py, tests/test_c5_build_input_preflight.py, .github/workflows/p4-target-ranking.yml, canonical docs. No lock, approval marker, production staging or asset changes. |
 | Approval | C5 metadata-only approval CONSUMED; no replay. Exact run 45686334903 attempt 1 only. All six native approvals still consumed/disarmed. No artifact bytes, native, model, installer, owner device, OS/network change or additional metadata dispatch authorized. |
-| Verification | Exact ec74f49 SUCCESS: 1170 Python/6 skipped/552 subtests, 15 Rust, 160 Node/Vite, 3 bundle refusal; 13 HTTP; Windows 83 C5/1 skipped, parser, 3 refusal, 68/133 subtests; restricted skipped. Graph both 49 reachable/59 active edges, no missing named declarations; both BLOCKED. |
-| Pending runs | P4 #45687966996 IN_PROGRESS; 139465500465 in_progress; 139465501085 in_progress; 139465501193 in_progress; 139465504033 skipped. |
+| Verification | Exact e7ffc07 P4 SUCCESS: Linux 1206 Python/6 skipped/552 subtests, 15 Rust, 160 Node/Vite, 3 bundle refusal; Windows 119 C5/1 skipped, parser, 3 refusal, 68/133 subtests; HTTP 13; restricted collector skipped. |
+| Pending runs | None. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Reconcile exact archive fixture CI and any failures before edits. Candidate classic ZIP verifier captures bounded hash-verified snapshot, strict complete independent inventory, local/central consistency, streamed member hashes; no actual archive acquired, no extraction or physical ownership proof. Next implement synthetic fresh-generation staging and atomic publication with failure preservation, then non-executable candidate graph/asset/toolchain/license inventory. No new metadata/native/acquisition approval. |
+| Recovery action | Validate full archive snapshot before writes; stage inert bounded fixture-only files with exclusive creates, rehash exact inventory, receipt last; compare expected prior pointer under exclusive cooperative lock, atomic same-directory pointer replace, preserve old/failed generations. Distinguish prepublication failure from ambiguous postpublication durability; no cleanup/retry or owner paths. Test failure, stale pointer, collision, tamper, disk full and interruption in existing routine synthetic CI. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
