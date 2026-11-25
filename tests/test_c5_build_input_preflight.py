@@ -555,3 +555,65 @@ def test_legacy_analytics_digest_import_remains_read_only(tmp_path, monkeypatch)
     with pytest.raises(preflight.Blocked, match="C5_INFERENCE_PROVENANCE_BLOCKED"):
         legacy.verify(tmp_path)
     assert snapshot(tmp_path) == before
+
+
+def test_c5_release_graph_exact_pinned_candidate_profiles():
+    from qa.c5_metadata import graph_review as graph
+    report = graph.review(ROOT)
+    assert report["status"] == "BLOCKED"
+    assert report["receipt_sha256"] == graph.RECEIPT_SHA
+    windows, linux = report["profiles"]
+    for p in (windows, linux):
+        assert p["status"] == "BLOCKED"
+        assert p["declared_graph"] == "COMPATIBLE_PARTIAL"
+        assert len(p["root_requirements"]) == 14
+        assert p["reachable_packages"] == len(p["nodes"]) == 49
+        assert len(p["active_edges"]) == 59
+        assert p["enabled_extras"] == {"uvicorn": ["standard"]}
+        assert all(n["selected_wheel_metadata"] == "UNVERIFIED" for n in p["nodes"])
+        assert all(n["license_state"] == "DECLARED_NOT_REVIEWED" for n in p["nodes"])
+        assert [n["name"] for n in p["nodes"] if n["release_python"] == "UNKNOWN"] == ["pytz"]
+    assert len(windows["unknown_release_dependencies"]) == 23
+    assert len(linux["unknown_release_dependencies"]) == 22
+    assert windows["inactive_declarations"] == 288
+    assert linux["inactive_declarations"] == 301
+    win_edges = {(e["from"], e["to"]) for e in windows["active_edges"]}
+    lin_edges = {(e["from"], e["to"]) for e in linux["active_edges"]}
+    assert win_edges - lin_edges == {("pytest", "colorama")}
+    assert lin_edges - win_edges == {("uvicorn", "uvloop")}
+
+
+def test_c5_graph_rejects_wrong_platform_marker_and_version():
+    from qa.c5_metadata import graph_review as graph
+    from packaging.requirements import Requirement
+    from packaging.tags import Tag
+    env = graph.target_environment("3.11.9", "win32")
+    assert not graph.marker_active(Requirement('uvloop; sys_platform != "win32"'), env, {"standard"})
+    with pytest.raises(preflight.Blocked, match="UNVERIFIED_MARKER_ENVIRONMENT"):
+        graph.marker_active(Requirement('fixture; platform_release == "1"'), env, set())
+    with pytest.raises(preflight.Blocked, match="DECLARED_VERSION_CONFLICT"):
+        graph.check_requirement(Requirement("fixture>=2"), {"fixture": {"version": "1"}})
+    with pytest.raises(preflight.Blocked, match="DECLARED_DEPENDENCY_MISSING"):
+        graph.check_requirement(Requirement("fixture"), {})
+    assert Tag("cp310", "abi3", "win_amd64") in graph.candidate_tags("win32")
+    assert Tag("cp311", "cp311", "win_amd64") not in graph.candidate_tags("linux")
+    assert Tag("cp311", "cp311", "manylinux_2_29_x86_64") not in graph.candidate_tags("linux")
+
+
+def test_c5_graph_rejects_changed_receipt_before_parsing(monkeypatch):
+    from qa.c5_metadata import graph_review as graph
+    real = graph.canonical_source
+    def changed(root, path):
+        raw = real(root, path)
+        return raw + b"\n" if path == graph.RECEIPT else raw
+    monkeypatch.setattr(graph, "canonical_source", changed)
+    with pytest.raises(preflight.Blocked, match="METADATA_RECEIPT_PIN"):
+        graph.review(ROOT)
+
+
+def test_c5_graph_distinguishes_unknown_python_from_incompatible():
+    from qa.c5_metadata import graph_review as graph
+    assert graph.check_python(None, "3.11.9") == "UNKNOWN"
+    assert graph.check_python(">=3.11,<4", "3.11.9") == "COMPATIBLE_DECLARATION"
+    with pytest.raises(preflight.Blocked, match="REQUIRES_PYTHON_CONFLICT"):
+        graph.check_python(">=3.12", "3.11.9")
