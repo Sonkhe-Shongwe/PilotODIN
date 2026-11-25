@@ -13,13 +13,13 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Product baseline | C4 C1 frontend e576ccd plus assertion 3b2c5f3; exact P1/P4 SUCCESS; P2 previous source SUCCESS. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
 | Operation ID | C4-C2-PANEL-DISCLOSURE-LOCAL-ROUTING-20261125 |
-| Operation state | ISSUED; reconcile source commit from prepared parent 1bb12b3; do not replay |
+| Operation state | RECONCILED; C2 staged disclosure/local-routing source published at [fb97119](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/fb9711993ac2fbfb240a300897d9d4085dc2d840), prepared at 1bb12b3; exact CI outstanding. |
 | Intended files | frontend/src/AIWorkspace.tsx, frontend/src/AssistantWorkspace.tsx, frontend/src/cloudConsentSession.ts, frontend/tests/desktop-ai-boundaries.test.cjs and canonical records. No backend/schema/workflow changes. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Exact 3b2c5f3 P1 206 Node/7 browser/Vite; P4 1086 backend/6 skipped/552 subtests, 136 Node/Vite, Windows 68/133 subtests, browser 13 SUCCESS. |
-| Pending runs | None from 3b2c5f3. Expected P1 frontend and P4 routine CI. |
+| Verification | C1 exact correction P1/P4 SUCCESS. C2 local-only routing, no shared answer/promise cache, provider disclosure and disabled project send, local continuation guard, renderer generation checks and three new Node tests published. Exact new CI pending. |
+| Pending runs | [P1 Isolated Frontend Verification #45665454223](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45665454223) IN_PROGRESS; [P4 Target Review Queue and Transparent Ranking #45665454214](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45665454214) IN_PROGRESS |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Stage provider-specific disclosure and explicit action controls, preserve saved local routes only, automatic requests explicitly local-only, deny cloud project dispatch until C3 cross-renderer/response safeguards, never continue a cloud answer. Remove shared response/promise cache or restrict local-only; preserve existing request ownership. Verify exact CI; then implement fresh server consent-generation binding, cross-renderer invalidation, per-click confirmation and mounted browser witnesses before enabling project cloud intent. OpenRouter remains held. |
+| Recovery action | Reconcile exact fb97119 P1 frontend/P4 terminal jobs and logs. Correct evidenced issues. Then C3 fresh server-issued consent witness and cross-renderer invalidation/per-click confirmation with mounted browser witnesses; only enable Gemini/Groq project intent after safeguards. OpenRouter project sharing stays held. No score increment. |
 | Resume after closure | C5 then D with separately approved scope. |
 
 ## Prior operation
