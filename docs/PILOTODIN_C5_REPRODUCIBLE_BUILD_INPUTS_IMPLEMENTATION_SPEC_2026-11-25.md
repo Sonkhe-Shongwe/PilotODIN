@@ -174,3 +174,8 @@ The one-use run completed SUCCESS; exact [receipt](../qa/c5_metadata/release_met
 ### Historical DevQA mutation frontdoors (25 November)
 
 Seven P2 local font/freezer/sidecar launchers now have unconditional early refusal, with equivalent direct CLI mutation flag refusal after argument parsing. Old helper implementations, read-only inspection modes and immutable prior source preserved for synthetic regression and provenance. Prior interactive consent cannot authorize current restricted work. This is not a complete security boundary against arbitrary Python imports or other historical native/owner wrappers, which still need scoped review. No production font approval, lock, native workflow or installer change. See [C evidence](./PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md#25-november--c5-inventory-ci-reconciled-and-historical-p2-mutation-frontdoors-partial-source).
+
+
+### Native and installer executable frontdoor freeze (25 November)
+
+The ordinary npm native executable launcher refuses unconditionally until a separately reviewed exact-source/approval activation; historical environment flags do not bypass it. Pure launch planning and A4 explicit preflight remain, but non-preflight A4, legacy native export and installer verification refuse before setup. Preserve prior source/receipts; no changes to owner kit verification, native workflows, production configuration, locks or installer freeze. Source guards do not prove isolation against arbitrary direct invocation or all historical helper functions. See [C evidence](./PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md#25-november--c5-historical-cli-ci-reconciled-and-nativeinstaller-frontdoor-freeze-partial-source).

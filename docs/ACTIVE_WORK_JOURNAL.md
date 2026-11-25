@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | PUBLISHED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | eb216a634ec1442579a89651c39f809ccf997cce |
 | Product baseline | a573c254b53f0a9af6738d652a92dca1636aefbe; exact historical P2 CLI P4 #45691933928 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
 | Operation ID | C5-NATIVE-ENTRYPOINT-FREEZE-20261125 |
-| Operation state | ISSUED; recover exact source from prepared parent c78f906e2ddb0d0459a51d78654f8faeb9017e5a. Native/installer frontdoor denials only. |
+| Operation state | RECONCILED publication at 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P4 IN_PROGRESS, P1 IN_PROGRESS. No restricted action. |
 | Intended files | tools/Verify_A4_Native_Windows.ps1, tools/Verify_P2_Native_Export_Local.ps1, Run_PilotODIN_P2_Native_Export.bat, desktop/Verify_Installed_PilotODIN.ps1, frontend/scripts/p4-isolated-native-dev.mjs, frontend/tests/p4-native-dev-isolation.test.cjs, tests/test_c5_build_input_preflight.py, .github/workflows/p4-target-ranking.yml, canonical docs. Owner QA kit verification scripts unchanged. |
 | Approval | C5 metadata-only approval CONSUMED; no replay. Exact run 45686334903 attempt 1 only. All six native approvals still consumed/disarmed. No artifact bytes, native, model, installer, owner device, OS/network change or additional metadata dispatch authorized. |
 | Verification | Exact a573c25 P4 SUCCESS: 1237 Python/6 skipped/552 subtests, 15 Rust, 160 Node/Vite, 3 refusal; Windows 150 C5/1 skipped, parser, 3 refusal, 68/133 subtests; HTTP 13; restricted collector skipped. |
-| Pending runs | Expected routine P4 synthetic source/browser/Windows only. No restricted dispatch. |
+| Pending runs | #45693703789 IN_PROGRESS: 139485487826 in_progress; 139485488293 in_progress; 139485488459 in_progress; 139485490641 skipped. #45693704390 IN_PROGRESS: 139485488706 in_progress. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Keep old native/export/installer implementation and exact receipts in Git; reject non-preflight A4, all legacy P2 native export and actual installer verification before setup, no native npm exec even if historical consent env present. Preserve pure native plan tests and A4 PreflightOnly mode; no owner kit launcher changes. Test static early PowerShell refusal and JS consent bypass rejection in existing source CI. Do not invoke PowerShell scripts or native processes. |
+| Recovery action | Reconcile exact P4 and P1 CI. Native npm executable frontdoor unconditionally refuses, A4 preflight-only preserved, P2 export and installer verification deny before setup; owner RAM/R03 QA kit launchers retained for separate explicitly approved use only. Remaining direct historical helper/owner paths are not a security boundary or fully audited. Next focus on a bounded selected-wheel metadata provenance plan and explicit artifact acquisition prerequisites; no replay or new network/native operation authorised. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
