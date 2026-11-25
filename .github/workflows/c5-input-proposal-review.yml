@@ -1,0 +1,26 @@
+name: C5 input verification proposals offline review
+on:
+  push:
+    branches: [feature/live-dev-workspace-20261023]
+    paths:
+      - .github/workflows/c5-input-proposal-review.yml
+      - qa/c5_wheel_metadata/review_input_proposals.py
+permissions:
+  contents: read
+jobs:
+  offline-proposals:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - run: python3 -I -B qa/c5_wheel_metadata/review_input_proposals.py --review
+      - name: Assert no live command
+        run: |
+          set +e
+          python3 -I -B qa/c5_wheel_metadata/review_input_proposals.py --collect
+          code=$?
+          set -e
+          test "$code" != 0
