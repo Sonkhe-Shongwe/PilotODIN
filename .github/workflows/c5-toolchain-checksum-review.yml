@@ -25,7 +25,7 @@ jobs:
           set -e
           test "$code" = 2
   collect-once:
-    if: ${{ github.run_attempt == 1 && github.event.head_commit.message == 'C5-TOOLCHAIN-CHECKSUMS-ONCE-20261125 activate' }}
+    if: ${{ false }} # Consumed by run 45715282364; no replay.
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
