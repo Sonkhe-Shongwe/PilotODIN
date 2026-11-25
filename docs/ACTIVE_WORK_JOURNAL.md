@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | PUBLISHED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 02f719a2f669a39d7526a54e9d3ac93419b93516 |
-| Product baseline | b1ce6f7c794870ba977ef19027b547fa1c89de54 both exact routine workflows SUCCESS. |
+| Observed starting HEAD | 02f719a2f669a39d7526a54e9d3ac93419b93516; write-ahead 561c19e12ce57ae277414a02684ebc209310f990; verified published c0af2597572f89f51adc47dfce23aaa49d627ba8. |
+| Product baseline | c0af2597572f89f51adc47dfce23aaa49d627ba8 (source-only caller inventory scanner; exact CI pending); b1ce6f7 async/autonomy both exact CI SUCCESS. |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
 | Operation ID | C3-SOURCE-CALLER-INVENTORY-20261125-source |
-| Operation state | ISSUED |
+| Operation state | RECONCILED |
 | Intended files | tools/c3_source_caller_inventory.py (new), .github/workflows/p1-isolated-backend.yml (source trigger and read-only inventory step before dependencies), journal. Enumerate first-party tracked code/config blobs from exact committed SHA, no working-tree or owner data, no application imports/runtime, no network, no source values/credential contents printed. Emit deterministic path/line/category candidates and direct registered route matrix, compare static C1 ROUTES inventory; AST references plus lexical indicators for embedded/dynamic sources. Explicitly classify limits, not evidence of complete caller migration. No product change. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | b1ce6f7 P1 backend #45575855972, P4 #45575856219 terminal SUCCESS; P4 jobs p4-disposable-real-http-browser 139073495574 success; p4-r03-windows-local-answers 139073495868 success; p4-synthetic-source-and-frontend 139073496075 success; Exercise preservation/hash collector on synthetic Windows fixture ONLY 139073497781 skipped. Exact nontruncated branch tree 1425 entries, 383 first-party .py blobs, five local DevQA seeders have bare TestClient imports/calls: Seed_P2_Native_Deliver_Consent_Local, Seed_P2_Native_Live_Chain_Local, Seed_P2_Native_Two_Window_Local, Seed_P3_Native_Quality_W5_Local, Seed_P3_Native_Semantic_Context_Local. Report chain explicit Origin 5176 must be preserved. desktop/verify_packaged_engine.py uses direct urllib and desktop token, further review required; other inspected tools include wrappers without actual client construction. Static route decorator list and C1 resource_routes available. New scan only first-party code/config, excludes vendor/binary/docs text; reports candidates, not automatic semantic proof. P1 routine Linux job source-only inventory before normal synthetic checks. No additional restricted workflows enabled. |
-| Pending runs | None prior; expect P1 isolated backend. |
+| Verification | Three-file diff verified. New stdlib scanner reads exact committed Git tree/blob IDs, checks CI SHA, excludes nonregular and vendor/non-code paths, never opens working-tree data or imports application, emits sorted category/path/line-count and first 12 matching lines by number only, reports undecoded/unparsed paths, extracts route decorators and C1 static ROUTES via AST and compares endpoint identities. Independent exact-source lexical check: 76 actual routes, 76 static plans, zero discrepancy. Starting tree nontruncated 1425 entries, 383 first-party Python blobs; scanner adds one Python blob. Five local DevQA bare TestClient seeders confirmed by direct inspection, managed chain 5176 Origin must be retained. Packaged engine verifier direct urllib needs review. Lexical/AST candidate inventory is not semantic closure; aliases/embedded/dynamic code need manual classification. P1 routine Linux read-only scanner step before dependencies; no application run by scanner. No product change, runtime fallback removal or native/model/owner/installer operation. |
+| Pending runs | P1 Isolated Backend Source Recovery #45577293167 in_progress. No restricted dispatch; native workflow guards unchanged. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Publish reproducible scanner and exact CI; inspect inventory log and classify candidates into reviewed batches (five seeders, remaining bare test clients/direct endpoint tests, direct HTTP verifiers/launchers, frontend/native bootstrap). Then remove fallbacks and complete C3 route/direct-call matrix and closure. C4 deferred. |
+| Recovery action | Reconcile exact c0af259 CI and inspect inventory step log C3_SUMMARY, C3_INV, C3_ROUTE (job logs, not raw credentials). Classify candidates; next migrate five verified local DevQA seeders with exact origins and existing workspace guards, then remaining direct test/QA callers and frontend bootstrap, final main/frontend fallback removal and closure matrix. C4 deferred. |
 | Resume after closure | C4, C5 in order; D separately approved. |
 
 ## Prior operation
