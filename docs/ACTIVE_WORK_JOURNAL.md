@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | e951e2d734f1fa0ca4471fd9fd3569f61982bb7e; write-ahead 07b707a9bfd948b1f6926b0619aab8123e22c372; verified corrective test-only HEAD 78ca6e1fa07cdd543ae6fc8861c1dcb8ed89f33d. |
-| Product baseline | 736a0fe9def039f07936dbc52ecfb6e162e63e84 unchanged product; correction 78ca6e1fa07cdd543ae6fc8861c1dcb8ed89f33d test/trigger-only, exact CI pending. |
+| Observed starting HEAD | 88348a51aee2289c30a0283e46dac0c66a31d81c |
+| Product baseline | 736a0fe9def039f07936dbc52ecfb6e162e63e84; six original passes plus corrected test/trigger-only 78ca6e1fa07cdd543ae6fc8861c1dcb8ed89f33d exact P1/P4 SUCCESS. |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
-| Operation ID | C3-FIXED-DEVQA-ORIGIN-TEST-20261125 |
-| Operation state | RECONCILED |
-| Intended files | frontend/tests/desktop-ai-boundaries.test.cjs and .github/workflows/p4-target-ranking.yml (add this already-executed test to routine trigger filter only), journal. Test every explicit allowed development origin 5173/5176/5177/5178 with same-origin marker; reject unapproved, localhost and non-loopback origins; retain mixed-desktop rejection. No product change or restricted workflow activation. |
+| Operation ID | C3-A4-LIVE-DEV-RELAY-20261125-source |
+| Operation state | PREPARED |
+| Intended files | frontend/scripts/live-dev-api-proxy.mjs, frontend/src/api.ts, frontend/src/desktopBootstrap.ts, tools/Verify_A4_Native_Windows.ps1, frontend/tests/desktop-ai-boundaries.test.cjs, frontend/tests/p1-playwright-pilot-contract.test.cjs, canonical journal. Keep existing A4 5174 origin/profile; explicitly enabled server-side relay only to existing authenticated Live Dev 5173 frontdoor; no inherited/copied capability, no direct 8000 fallback, same raw local origin/Host/marker checks, fixed destination and no redirects; authenticate readiness via 5173 marker. Do not change native compile wrapper, overlay or consent. Other hosted/native compatibility later. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Exact original 736a0fe six PASS, P4 source job failure as recorded in ledger. Corrective test covers all four exact approved origins, 10 invalid origins per approved origin, nonsecret marker, rejects mixed configurations in both directions; routine P4 trigger filter adds existing test only. Verified three-file diff; no product or restricted job change. Read-only next-caller inventory confirms A4 separate 5174 server currently depends on bare Live Dev health, P4-71 launcher bare backend.main:app and direct Node fetch, N12 lifetime owned factory with hosted fixture env, main.tsx native smoke path lacks development configuration. No native execution. |
-| Pending runs | P1 Isolated Frontend Verification #45563477327 in_progress; P4 Target Review Queue and Transparent Ranking #45563477349 in_progress. Existing restricted P4 collector remains literal false. |
+| Verification | Corrective 78ca6e1 exact P1 #45563477327 job 139032533316 SUCCESS; P4 #45563477349 source 139032533689, browser 139032533739, Windows 139032533438 SUCCESS, restricted 139032535271 SKIPPED. Original 736a0fe six successes retained; stale test failure resolved. A4 script currently expects bare 8000 health; separately invokes desktop:dev which is frozen by existing explicit P4 consent wrapper and uses P4 isolated overlay rather than supplied A4 config. Do not loosen/change native launch guard; A4 compatibility source-only and existing actual launch issue remains separate. |
+| Pending runs | None for prior batch. Expected new routine P1 frontend/P1 HTTP/P3 HTTP/P4 synthetic workflows; no restricted operation. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Reconcile exact 78ca6e1 corrected P4 and P1 runs before overlapping source pushes. Then A4 isolated Vite 5174 separate launcher (currently bare Live Dev readiness, needs explicit paired capability design), hosted native P4-71/N12 owned startup and direct HTTP clients (including browser fetch, readiness/probe paths and exact route restrictions); review native smoke bootstrap and scoped tests. No G2 experiments or native execution; explicit in-process test adapter, bare fallback removal and C3 closure follow. C4 deferred. |
+| Recovery action | Publish only bounded A4 relay source and exact synthetic source tests after scope review. Check current HEAD, non-force. Reconcile exact CI. Hosted P4-71/N12 authentication/direct clients then explicit in-process adapter and no-secret fallback removal; no native activation or wrapper bypass; C4 deferred. |
 | Resume after closure | C4, C5 in order; D separately approved. |
 
 ## Prior operation
