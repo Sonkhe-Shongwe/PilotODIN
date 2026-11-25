@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | READY |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 7db2f60e7daa4e4f975822503b4e78008f4977e2 |
+| Observed starting HEAD | bd7c1639c3b98ae93e0d83b8170e189dc042b365 |
 | Product baseline | C3 source exit supported at 78c8672, latest product ebd01f4 and verified fixture/historical changes c329e0d/83c83f8. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
-| Operation ID | C4-RESEARCH-AND-IMPLEMENTATION-PLAN-20261125 |
-| Operation state | RECONCILED (C4 research proposal documented; identify docs publication by parent d5a9887 and operation marker) |
-| Intended files | C4 research ledger, compact handoff and journal only; next batch A exact source inventory/preparation before edit. |
+| Operation ID | C4-DOCUMENTATION-AUDIT-20261125 |
+| Operation state | PREPARED (owner-requested docs-only cleanup; preserve all historical anchors/evidence and controlling decisions) |
+| Intended files | README.md; docs/CONTINUE_HERE.md; DOCUMENTATION_INDEX.md; TAB_MIGRATION_HANDOFF_CURRENT.md; ACTIVE_WORK_JOURNAL.md; SESSION_HANDOFF_CURRENT.md; PROJECT_STATUS_CURRENT.md; PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md; PILOTODIN_CONSOLIDATED_ROADMAP_COMPLEXITY_LAST.md; PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md; LIVE_DEVELOPMENT.md; P2_ACCEPTANCE_REGISTER_CURRENT.md; new DOCUMENTATION_AUDIT_C4_READINESS_2026-11-25.md. Markdown only. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | C4 baseline review and proposed architecture documented; no product edit or new test claim. Confirm exact schema/fixture compatibility, bounds, request validation and matching workflow scopes before source batch. C-D06/07 unchanged. C3/official P4 scores unchanged. |
+| Verification | Repository inventory 333 documentation/Markdown blobs including 304 docs/ files; 17 core files checked, 577 relative file-link occurrences zero missing paths; additional historical guides/architecture/G2 and recovery records reviewed. Nine latest exact CI workflows terminal SUCCESS (restricted collector SKIPPED); three native C1/C2 literal false and activation false verified; all 85 workflow trigger definitions rechecked, no matching docs-only push. Preserve source 13/17 and P4 14/20, no new authority; audit not line-by-line recertification of every archived file. Compact live handoff/journal and navigation, correct stale roadmap/ledger status, keep history/anchors and immutable before snapshot, audit new links and scorecard rows. |
 | Pending runs | None. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Begin C4 batch A: finish exact readers/writers/secret-store and fixture inventory, validate bounds/legacy compatibility and strict request/redaction mechanism, prepare shared bounded settings reader/writer and migrate three existing targets with direct fault injection. Review all actual matching workflows before non-force push. Next B unified consent/transport, C UI integration, closure only on evidence. No provider call/native/owner data. |
+| Recovery action | Publish one coherent Markdown cleanup and audit report, verify exact diff, paths and current handoff; return READY to C4 batch A with original plan and constraints. No implementation or new tests. |
 | Resume after closure | C5 then D with separately approved scope. |
 
 ## Prior operation
