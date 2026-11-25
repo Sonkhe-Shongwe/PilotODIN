@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | PUBLISHED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | fd0b5400a6dcd85a9151ecca8be22515e43306ca |
-| Product baseline | 1fb15af2fcb7fe519d454e1d9c1f00d2ce630277, both exact routine workflows SUCCESS. |
+| Observed starting HEAD | fd0b5400a6dcd85a9151ecca8be22515e43306ca; write-ahead b5fea7c7b48cc623a8099d1199b6bbbd82fc738b; verified published ff80ea54d5f77ae742036fbeec39679650c972d7. |
+| Product baseline | ff80ea54d5f77ae742036fbeec39679650c972d7 (bytecode direct diagnostic auth; exact CI pending); 1fb15af A4 launch-plan both exact routine workflows SUCCESS. |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
 | Operation ID | C3-BYTECODE-DIRECT-TRUST-20261125-source |
-| Operation state | ISSUED |
+| Operation state | RECONCILED |
 | Intended files | backend/request_auth.py, qa/p4_research/n12_backend_bytecode.py, tests/test_owned_server.py, .github/workflows/p4-target-ranking.yml (source triggers only), journal. Explicit origin-free diagnostic-direct immutable trust, existing one-use hosted bytecode environment + exact runner-temp allocation and case name, guarded QA-only factory, dynamic port and private per-case credential, no redirect or proxy; no change to hosted native approvals, case workload, observation/reducer or diagnostic workflow. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | 1fb15af P1 frontend #45569446683 and P4 #45569446599 terminal SUCCESS; P4 jobs p4-disposable-real-http-browser 139052183720 success; p4-synthetic-source-and-frontend 139052184322 success; p4-r03-windows-local-answers 139052184690 success; Exercise preservation/hash collector on synthetic Windows fixture ONLY 139052186507 skipped. A4 launch plan source verified only. Bytecode workflow job literal false, approval marker consumed by #44268706863, no new diagnostic execution. Existing direct HTTP callers confirmed in bytecode, P2 real API and local analytics native; broader inventory incomplete. |
-| Pending runs | None prior; expected P1 real HTTP, P4 routine source/HTTP/Windows synthetic, no restricted dispatch. |
+| Verification | Five-file diff verified. Immutable diagnostic-direct RequestTrust admits no browser origin/preflight, private capability and exact raw transport/Host; separate QA-only bytecode factory (no general runtime admission) verifies existing trusted hosted first push context, exact runner-temp allocation and observed/baseline child name before workspace lease/import, dynamic loopback port, rejects mixed config. Fresh per-case capability, direct Python HTTP destination derives from immutable trust, no proxy/redirect or forwarding. Synthetic tests exercise negatives before workspace access, positive authenticated ASGI app in child without network listener or diagnostic capture. Routine P4 trigger adds request_auth and diagnostic source, not approval marker. Bytecode workflow literal false unchanged; original audit and workload sequence maintained, but new ownership/scratch and guard startup affect current source and are not a new native evidence result. Remaining P2 full-stack and owner local analytics bare API, P4-71 native capability inheritance, direct in-process adapter and general main/frontend fallback outstanding. Full inventory incomplete. |
+| Pending runs | P1 Disposable Real HTTP Browser/Backend Acceptance #45570331896 in_progress; P4 Target Review Queue and Transparent Ranking #45570331839 in_progress. No restricted dispatch; native workflow guards unchanged. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Publish bounded bytecode direct trust; reconcile exact CI before overlap. Next local P2 dynamic-port real API, owner native analytics, P4-71 capability confinement and full direct/in-process caller matrix. General bare main/frontend fallback retained pending migration. No C4. |
+| Recovery action | Reconcile exact ff80ea5 CI job scopes and failures before overlap. Next migrate local P2 dynamic-port real API integration and owner native analytics without adding broad trust or weakening approval; P4-71 credential confinement, complete direct-call inventory and explicit in-process adapter, remove legacy native bootstrap/main/frontend fallback; finish C3 matrix and closure. C4 deferred. |
 | Resume after closure | C4, C5 in order; D separately approved. |
 
 ## Prior operation
