@@ -7,17 +7,17 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 9b2ba6328d1c6f28d90559b00bc2371a979d84c9 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
 | Operation ID | C5-WHEEL-TRANSPORT-RECEIPTS-20261126 |
-| Operation state | PREPARED: disabled exact-URL wheel transport, fixed byte/count/framing bounds, write-ahead request receipts, exclusive disposable evidence generation and independent manifest replay; synthetic responses only. Prior exact notice CI 45723315032 SUCCESS. |
+| Operation state | PUBLISHED/VERIFYING if live HEAD confirmed: exact-URL synthetic transport, request intent/result and exclusive receipt generation, manifest replay; no live socket adapter, activation or artifact upload. Exact Ubuntu/Windows CI pending. |
 | Intended files | New qa/c5_wheel_metadata/wheel_acquisition_offline.py and test_wheel_acquisition_offline.py; existing .github/workflows/c5-wheel-archive-review.yml extends only synthetic test/refusal scope; journal/handoff/ledger. Prior 97 workflow trigger declarations unchanged; current archive workflow sole expected match. No approval markers or product source. |
 | Approval | Twelve restricted approvals consumed/disarmed (six native, six metadata). No additional registry/metadata requests, artifacts, installs, native/model, owner device/data or installer authorized. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | None issued; expect dedicated Ubuntu/Windows synthetic matrix only. |
+| Pending runs | Inspect exact source push (parent d1e84d40aa9a585b13a645c88580f5414cc5cf6d), dedicated synthetic archive workflow only. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
 | Recovery action | Reconcile branch and exact synthetic CI, preserve failures; no live acquisition, no wheel publication, no installer. Actual hosted evidence transfer/retrieval, owner approval and activation reviewed separately. Previous remaining-checksum proposal still awaits separate fresh approval. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
