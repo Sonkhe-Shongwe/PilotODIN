@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | dc64b687d178724306820c1cae0ff79383de102d |
 | Product baseline | ebd01f4 verified product; c329e0d hosted child confinement five exact routine workflows SUCCESS. |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
 | Operation ID | C3-HISTORICAL-QA-EARLY-REFUSAL-20261125 |
-| Operation state | PREPARED (early unconditional refusal for already unsupported native overlays; identify publication by parent and marker) |
+| Operation state | ISSUED (source publication identifiable by prepared parent 668ade8 and operation marker; resolve exact SHA) |
 | Intended files | tools/Run_P2_Native_Deliver_Consent_Local.ps1; tools/Run_P2_Native_Two_Window_Local.ps1; tools/Run_P3_Native_Quality_W5_QA_Local.ps1; tools/Run_P3_Native_Semantic_QA_Local.ps1; tools/Verify_P2_DevQA_Native_Chain_Local.ps1; frontend/tests/p1-playwright-pilot-contract.test.cjs; journal, handoff, ledger. Preserve historical bodies; no workflow/native permission change. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Exact c329e0d five routine workflows terminal SUCCESS (205 Node + 7 isolated Chromium; P1 HTTP 6, P2 HTTP 7, P3 HTTP 3, P4 HTTP 13, P4 1086 Python/133 Node/68 Windows synthetic; collector skipped). Native plan rejects the five overlay arguments regardless of opt-in and rejects private serving inputs; their earlier setup/build inherited capabilities and could allocate/write before refusal. Add unconditional early throw immediately after ErrorActionPreference, before any filesystem/process/env side effects. Preserve old body, independent synthetic seed/probe and tests; future separate source-pinned design and approval required, do not rearm. Source-only tests assert exact refusal position. Exact workflow definitions unchanged from full 85 trigger review, matching P1 frontend, P2 native source/preflight and report export safety, P3 semantic source/parser reviewed. No native run. |
-| Pending runs | None; hosted correction terminal SUCCESS. |
+| Verification | Five hosted fixture workflows terminal SUCCESS. Five unsupported historical native QA scripts now unconditionally refuse immediately after parameter setup, before workspace, capability, build or child operations. Historical bodies retained; no authority or overlay changes, future replacement requires fresh review/approval. One source-only Node test covers all five refusal positions and existing native launch-plan allowlist. Four routine workflows expected; full credential disposition/exit matrix outstanding. |
+| Pending runs | Expected four routine push workflows at commit with prepared parent 668ade8 and operation marker (P1 frontend, P2 native source, P2 report safety, P3 semantic source). |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Publish narrow early refusal and verify exact four routine workflow results; final credential candidate matrix and C-D05 review remain open. Do not claim native compatibility for unavailable historical overlays. |
+| Recovery action | Reconcile exact four routine workflow results, complete remaining credential candidate matrix and C-D05 closure; unsupported historical native overlays remain frozen and untested. No native execution or acceptance credit. |
 | Resume after closure | C4, C5 in order; D separately approved. |
 
 ## Prior operation

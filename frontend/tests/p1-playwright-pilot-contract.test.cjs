@@ -648,3 +648,24 @@ test('C3 all hosted browser launch sites and auxiliary Python children select co
   assert.match(source,/env:hostedAuditEnvironment\(\)/,name);
  }
 });
+
+
+test('C3 historical unsupported native QA launchers refuse before any setup, secret or child process',()=>{
+ const names=['Run_P2_Native_Deliver_Consent_Local.ps1','Run_P2_Native_Two_Window_Local.ps1',
+  'Run_P3_Native_Quality_W5_QA_Local.ps1','Run_P3_Native_Semantic_QA_Local.ps1',
+  'Verify_P2_DevQA_Native_Chain_Local.ps1'];
+ for(const name of names){
+  const source=fs.readFileSync(path.resolve(__dirname,'../../tools',name),'utf8');
+  const executable=source.split(/\r?\n/).map(line=>line.trim()).filter(line=>line&&!line.startsWith('#'));
+  assert.equal(executable[0],'[CmdletBinding()]',name);
+  assert.match(executable[1],/^param\(/,name);
+  assert.equal(executable[2],"$ErrorActionPreference='Stop'",name);
+  assert.equal(executable[3],"throw 'Historical native QA overlay is frozen. No workspace, credential, build or process was started. A separately reviewed replacement and fresh owner approval are required.'",name);
+  assert.ok(source.indexOf('Historical native QA overlay is frozen')<source.indexOf('RandomNumberGenerator'),name);
+  assert.ok(source.indexOf('Historical native QA overlay is frozen')<source.indexOf('Start-Process'),name);
+  assert.match(source,/run desktop:dev -- --config/,name); // historical body retained
+ }
+ const nativePlan=fs.readFileSync(path.resolve(__dirname,'../scripts/native-dev-plan.mjs'),'utf8');
+ assert.match(nativePlan,/if \(args\.length !== 0 && !a4\)/);
+ assert.match(nativePlan,/Only the fixed isolated P4 default or exact A4 overlay is permitted/);
+});

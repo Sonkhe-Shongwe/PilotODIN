@@ -4,6 +4,10 @@
 [CmdletBinding()]
 param([Parameter(Mandatory=$true)][string]$QaRunDir)
 $ErrorActionPreference='Stop'
+# Historical overlay is not admitted by the current isolated native launch plan.
+# Keep the old QA body as evidence only; a separately reviewed replacement
+# and fresh owner authority are required before any setup or native action.
+throw 'Historical native QA overlay is frozen. No workspace, credential, build or process was started. A separately reviewed replacement and fresh owner approval are required.'
 $root=(Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $frontend=Join-Path $root 'frontend'
 $pythonExe=Join-Path $root '.venv-live\Scripts\python.exe'
