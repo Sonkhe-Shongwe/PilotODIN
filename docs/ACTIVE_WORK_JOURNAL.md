@@ -7,14 +7,14 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | BLOCKED |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 33814044ae5bb708b8263f4d0c9e49e4ab0ccc2c |
+| Observed starting HEAD | d1a83dfd9f5af79369b60e0db159c5c8cdc0c210 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
-| Operation ID | C5-SELECTED-WHEEL-METADATA-V2-ONCE-20261125 |
-| Operation state | RECONCILED: run 45700172241 attempt 1 on e0787864f6d95a8e20dd79c811a3000f82ad0e89, job 139507921855 FAILURE/exit 2, RESPONSE_LENGTH_REFUSED at pydantic-core index. 33/62 sidecars verified, 29 missing, 29 index + 33 sidecar requests, 12,867,486 body bytes, zero artifact requests. Full partial receipt and independently reconstructed SHA256 verified at 2e9aefd; disarmed at b05387a. No replay. |
-| Intended files | V2 live gate, dedicated v2 workflow, new v2 marker, canonical records and terminal receipt only. Both old collectors unchanged. |
+| Operation ID | C5-MISSING-METADATA-RECONCILIATION-20261125 |
+| Operation state | PREPARED: revalidate immutable partial v2 receipt from repository, derive exact missing-only inventory and test a disarmed candidate. No registry acquisition approved. Proposed per-index budget increase subject to explicit future approval only; unchanged aggregate and sidecar caps. |
+| Intended files | New isolated qa/c5_wheel_metadata/collect_missing.py and dedicated offline-only workflow, canonical records. Preserve all prior source, markers, receipts, product and locks. |
 | Approval | Nine restricted approvals consumed/disarmed (six native, three metadata). No additional registry requests, artifacts, installs, native/model, owner data or installer authorized. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
 | Pending runs | None for this operation. |
