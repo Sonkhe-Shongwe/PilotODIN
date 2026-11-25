@@ -7,13 +7,13 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | ad547c96a6f0020f094e786b03f02db96280f05c |
 | Product baseline | C3 source exit supported at 78c8672, latest product ebd01f4 and verified fixture/historical changes c329e0d/83c83f8. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
 | Operation ID | C4-B6-FIXTURE-NAME-20261125 |
-| Operation state | PREPARED; exact 0aafb61 CI reconciled; test-only fixture correction not yet published |
+| Operation state | ISSUED; reconcile exact test-only commit by parent 05c317b and operation marker; do not replay blindly |
 | Intended files | tests/test_c4_cloud_intent.py and canonical records only. No product, workflow or policy changes. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | Exact P1 failed 118 passed/1 failed: `valid` matches conservative `id# PilotODIN | Active work journal
@@ -35,9 +35,9 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Intended files | tests/test_c4_cloud_intent.py and canonical records only. No product, workflow or policy changes. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
  name refusal. P4 three routine jobs passed; restricted collector skipped. Preserve product screening. |
-| Pending runs | None from 0aafb61. Expected P1 isolated backend CI after test-only publication; confirm exact SHA and run. |
+| Pending runs | Expected P1 isolated backend exact-source run after publication; discover run and reconcile terminal outcome. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Rename positive synthetic `valid` column to `balanced`; keep identical finite population and exact positive assertions, add `valid` identifier-suffix negative to verify suppression. Check HEAD and publish non-force; reconcile exact P1 CI before B7. No source/official score change. |
+| Recovery action | Verify test-only correction publication and exact P1 CI. If green proceed B7 shared revocation/admission lifecycle; otherwise preserve failure and address only evidenced defect. |
 | Resume after closure | C5 then D with separately approved scope. |
 
 ## Prior operation

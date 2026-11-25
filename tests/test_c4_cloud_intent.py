@@ -284,6 +284,8 @@ def test_actual_finite_population_controls_cloud_statistics(dispatch):
     cfg,calls=dispatch
     df=pd.DataFrame({
         "mixed":[10,20,30,float("inf"),float("-inf"),None,None],
+        "balanced":[1,2,3,4,5,float("inf"),None],
+        # The conservative identifier suffix filter must remain independent of support.
         "valid":[1,2,3,4,5,float("inf"),None],
         "repeated":[1,1,1,2,3,4,4],
         "skew":[1,2,3,4,50,float("inf"),None],
@@ -293,6 +295,7 @@ def test_actual_finite_population_controls_cloud_statistics(dispatch):
     assert local["mixed"]["unique_count"]==5 and local["mixed"]["missing_count"]==2
     assert local["mixed"]["_finite_count"]==3 and local["mixed"]["_finite_unique_count"]==3
     assert local["mixed"]["mean"]==20
+    assert local["balanced"]["_finite_count"]==local["balanced"]["_finite_unique_count"]==5
     assert local["valid"]["_finite_count"]==local["valid"]["_finite_unique_count"]==5
     assert local["repeated"]["_finite_count"]==7 and local["repeated"]["_finite_unique_count"]==4
     r=ai.respond(context,"overview","Explain statistics","Rules",selected_provider="gemini",cloud_intent=True)
@@ -302,7 +305,8 @@ def test_actual_finite_population_controls_cloud_statistics(dispatch):
     columns={c["name"]:c for c in actual["columns"]}
     assert "mean" not in columns["mixed"] and "median" not in columns["mixed"]
     assert "mean" not in columns["repeated"]
-    assert columns["valid"]["mean"]==3 and columns["valid"]["median"]==3
+    assert "valid" not in columns
+    assert columns["balanced"]["mean"]==3 and columns["balanced"]["median"]==3
     assert columns["skew"]["mean"]==12 and columns["skew"]["median"]==3
     assert actual["computed_patterns"]==[{"column":"skew","mean":12.0,"median":3.0}]
     assert "_finite_count" not in wire and "_finite_unique_count" not in wire
