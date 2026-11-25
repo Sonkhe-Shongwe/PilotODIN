@@ -9,6 +9,7 @@ This is an index of decisions, not a parallel requirements document. The Master 
 | Product scope and remediation sequence | [Product-first directive](./PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md) and [architecture review](./PILOTODIN_PRODUCT_ARCHITECTURE_REVIEW_AND_REMEDIATION_2026-11-24.md) |
 | Storage and lifecycle | [Package A specification](./PILOTODIN_PACKAGE_A_STORAGE_LIFECYCLE_IMPLEMENTATION_SPEC_2026-11-24.md) |
 | Durable data integrity | [Package B specification](./PILOTODIN_PACKAGE_B_DURABLE_DATA_INTEGRITY_SPEC_2026-11-24.md) |
+| Resource/trust and build inputs | [Package C specification](./PILOTODIN_PACKAGE_C_RESOURCE_TRUST_SPEC_2026-11-24.md), [C-D08 build inputs](./PILOTODIN_PACKAGE_C_RESOURCE_TRUST_SPEC_2026-11-24.md#7-c5-reproducible-build-inputs) |
 | G2 blocked evidence method | [G2 consolidated decision](./P4_R02_5_G2_CONSOLIDATED_CLOSURE_DECISION_2026-11-24.md) |
 | Acceptance and approval boundaries | [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md), [scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) |
 

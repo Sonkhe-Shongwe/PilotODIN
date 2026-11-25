@@ -2,7 +2,7 @@
 
 **Start current work:** [Migration handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md), then [active journal](./ACTIVE_WORK_JOURNAL.md), [AGENTS](../AGENTS.md) and [continuation protocol](./CONTINUATION_PROTOCOL_CURRENT.md). The [live directive](./PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md) and [phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md) govern authority.
 
-[Current next action](./TAB_MIGRATION_HANDOFF_CURRENT.md#4-immediate-next-work-in-order) | [Active specification](./PILOTODIN_PACKAGE_C_RESOURCE_TRUST_SPEC_2026-11-24.md) | [C4 plan](./PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md#25-november--c4-baseline-research-and-proposed-implementation-plan-not-implementation-or-closure) | [Official scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) | [Current documentation audit](./DOCUMENTATION_AUDIT_C4_READINESS_2026-11-25.md).
+[Current next action](./TAB_MIGRATION_HANDOFF_CURRENT.md#4-immediate-next-work-in-order) | [Active specification](./PILOTODIN_PACKAGE_C_RESOURCE_TRUST_SPEC_2026-11-24.md) | [C5 initial inventory](./PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md#25-november--c5-initial-read-only-build-input-inventory-not-a-production-lock) | [C4 source closure](./PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md#25-november--c4-source-exit-audit-and-formal-source-closure) | [Official scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) | [Current documentation audit](./DOCUMENTATION_AUDIT_C5_READINESS_2026-11-25.md).
 
 ## Historical continuation records (superseded instructions)
 
