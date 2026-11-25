@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | PUBLISHED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 88348a51aee2289c30a0283e46dac0c66a31d81c |
-| Product baseline | 736a0fe9def039f07936dbc52ecfb6e162e63e84; six original passes plus corrected test/trigger-only 78ca6e1fa07cdd543ae6fc8861c1dcb8ed89f33d exact P1/P4 SUCCESS. |
+| Observed starting HEAD | 88348a51aee2289c30a0283e46dac0c66a31d81c; write-ahead 27dcfb98b5bb06eaf1a076d62276fc8c49648178; verified published d0818430bf1ad760fdc5fe97fbb5701624dafba2. |
+| Product baseline | d0818430bf1ad760fdc5fe97fbb5701624dafba2 (A4 relay source, exact routine CI pending); 736a0fe fixed-port local QA product and 78ca6e1 correction verified. |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
 | Operation ID | C3-A4-LIVE-DEV-RELAY-20261125-source |
-| Operation state | ISSUED |
+| Operation state | RECONCILED |
 | Intended files | frontend/scripts/live-dev-api-proxy.mjs, frontend/src/api.ts, frontend/src/desktopBootstrap.ts, tools/Verify_A4_Native_Windows.ps1, frontend/tests/desktop-ai-boundaries.test.cjs, frontend/tests/p1-playwright-pilot-contract.test.cjs, canonical journal. Keep existing A4 5174 origin/profile; explicitly enabled server-side relay only to existing authenticated Live Dev 5173 frontdoor; no inherited/copied capability, no direct 8000 fallback, same raw local origin/Host/marker checks, fixed destination and no redirects; authenticate readiness via 5173 marker. Do not change native compile wrapper, overlay or consent. Other hosted/native compatibility later. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Corrective 78ca6e1 exact P1 #45563477327 job 139032533316 SUCCESS; P4 #45563477349 source 139032533689, browser 139032533739, Windows 139032533438 SUCCESS, restricted 139032535271 SKIPPED. Original 736a0fe six successes retained; stale test failure resolved. A4 script currently expects bare 8000 health; separately invokes desktop:dev which is frozen by existing explicit P4 consent wrapper and uses P4 isolated overlay rather than supplied A4 config. Do not loosen/change native launch guard; A4 compatibility source-only and existing actual launch issue remains separate. |
-| Pending runs | None for prior batch. Expected new routine P1 frontend/P1 HTTP/P3 HTTP/P4 synthetic workflows; no restricted operation. |
+| Verification | Seven-file diff verified at exact HEAD. A4 launcher authenticates readiness via 5173 without redirect/proxy, refuses inherited serving credentials and restores relay env. Explicit local 5174 relay validates raw origin, peer, Host, marker and forwards only to existing 5173 frontdoor, not 8000; existing live proxy adds private capability. Native smoke configures development API before health check; existing hosted legacy callers still pending. Source tests check composed two-hop plan, all five approved origins, invalid startup/mixed state, hostile cross-origin/forwarded headers. Native compilation wrapper unchanged; currently selects P4 isolated overlay instead of supplied A4 overlay. A4 actual native launch not validated; no new approval. Prior exact CI all routine jobs passed, restricted skipped. |
+| Pending runs | P4 Target Review Queue and Transparent Ranking #45565819496 in_progress; P3 Real HTTP Semantic Context Browser Acceptance #45565819471 in_progress; P1 Disposable Real HTTP Browser/Backend Acceptance #45565819443 in_progress; P1 Isolated Frontend Verification #45565819480 in_progress. No restricted dispatch. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Publish only bounded A4 relay source and exact synthetic source tests after scope review. Check current HEAD, non-force. Reconcile exact CI. Hosted P4-71/N12 authentication/direct clients then explicit in-process adapter and no-secret fallback removal; no native activation or wrapper bypass; C4 deferred. |
+| Recovery action | Reconcile exact d081843 CI, including any failures, before overlapping source pushes. Then hosted native P4-71/N12 launchers/direct HTTP clients, fixed admitted hosted home and private capability; maintain all native/trace gates and historic evidence. Address A4 existing wrapper/config compatibility at source scope without enabling native compilation; explicit in-process adapter and removal of bare runtime fallback; C3 route/caller matrix and closure. C4 deferred. |
 | Resume after closure | C4, C5 in order; D separately approved. |
 
 ## Prior operation
