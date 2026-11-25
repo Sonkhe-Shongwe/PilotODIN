@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | PUBLISHED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 8dd2528ec12dca047c602e30bba14f3f201a1cca |
 | Product baseline | C4 source closed at verified product 76e9d0f; C5 not implemented. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
 | Operation ID | C5-GUARD-BATCH-20261125 |
-| Operation state | ISSUED; this source transaction is identified by parent 95fec5667279fdb25bc5bb62164896b30c21fb58 and operation C5-GUARD-BATCH-20261125. Resolve actual commit and exact matching CI before proceeding. |
+| Operation state | RECONCILED publication at 0d91a071fcf07c564ed493a940015146f654b73e; exact CI outstanding. No restricted dispatch. |
 | Intended files | Installer/frontend PS1, Self_Test.bat, tools/live_dev.py, stdlib frontend lock guard, dedicated C5 synthetic tests, legacy frontend and Cargo metadata workflows, P4 synthetic workflow and Live Dev guide. Preserve both lock files and native markers. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | Exact desktop gate `76e9d0fb5f7a060ca0a89a937b8a21eb64e4b062`: P1 #45673926641 SUCCESS (206 Node, TypeScript/Vite, 11/11 Chromium; job 139416287673); P3 #45673926651 SUCCESS (3 real HTTP browser; job 139416288188); P4 #45673926563 SUCCESS (1086 Python, 6 skipped, 552 subtests, 15 Rust, 146 Node/Vite including all three new confirmed POST regressions; job 139416288324; 13 HTTP browser job 139416288348; 68 Windows/133 subtests and five simulated scenarios job 139416287756; restricted collector 139416289955 skipped). C-D06/07 matrix in C ledger. |
-| Pending runs | Expected P1 isolated frontend, P4 target-ranking source/browser/synthetic Windows (collector disabled), P4 Cargo metadata-only on source commit. Run IDs not yet observed. |
+| Pending runs | P1 #45681663586 SUCCESS, P4 #45681663537 IN_PROGRESS (source 139443496808; HTTP 139443497477; Windows 139443497531; restricted collector 139443499656 skipped); Cargo metadata #45681663542 SUCCESS, job 139443496671. Reconcile exact outcomes before further source changes. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Reconcile published source SHA, exact matching CI jobs and any failures; preserve existing verified product baseline until new evidence. No native or acquisition operations. |
+| Recovery action | Reconcile exact guard-batch CI at 0d91a071fcf07c564ed493a940015146f654b73e, inspect test logs, preserve failures. Next narrow correction: separate Cargo shell file/link tests (avoid bash AND-list errexit exception) and explicit manifest path; then complete lock/profile provenance design and asset/sidecar guards. No acquisition or build. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
