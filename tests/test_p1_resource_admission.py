@@ -174,10 +174,10 @@ def test_invalid_admission_operation_never_changes_preferences(
 
 
 def test_readonly_api_preflight_uses_same_policy_as_training(isolated_policy,monkeypatch):
-    from fastapi.testclient import TestClient
+    from tests.fixture_http import fixture_client
     resource_policy.save_policy("low_memory")
     memory(monkeypatch,0.45)
-    client=TestClient(main.app)
+    client=fixture_client(main.app)
     before=resource_policy.read_policy()
     blocked=client.get("/api/resource/preflight?operation=training")
     assert blocked.status_code==200, blocked.text
@@ -194,14 +194,14 @@ def test_readonly_api_preflight_uses_same_policy_as_training(isolated_policy,mon
 
 
 def test_insight_preflight_respects_settings_and_provider_precedence(isolated_policy, monkeypatch):
-    from fastapi.testclient import TestClient
+    from tests.fixture_http import fixture_client
 
     settings = {**ai_provider.DEFAULTS, 'preferred_provider': 'local',
                 'workspace_preferences': {'assistant': 'auto'}}
     monkeypatch.setattr(ai_provider, '_read_config', lambda: settings)
     resource_policy.save_policy('low_memory')
     memory(monkeypatch, 2.5)
-    client = TestClient(main.app)
+    client = fixture_client(main.app)
     endpoint = '/api/resource/preflight'
 
     assert client.get(endpoint, params={'insight_context': 'assistant'}).json()['decision'] == 'allow'

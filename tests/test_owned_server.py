@@ -397,6 +397,44 @@ class C3RequestTrustTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError,"Historical R03 native approval consumed"):
                     retired.preflight(reuse=reuse)
 
+    def test_c3_explicit_inprocess_fixture_adapter(self):
+        from fastapi import FastAPI, Request
+        from backend.request_auth import request_authorized, RequestTrust
+        from tests.fixture_http import fixture_client
+        from unittest.mock import patch
+
+        app = FastAPI()
+        calls = []
+
+        @app.get("/api/witness")
+        def witness(request: Request):
+            calls.append(request_authorized(request.scope))
+            return {"authorized": calls[-1], "peer": request.client.host,
+                    "server": request.url.hostname, "port": request.url.port}
+
+        before = dict(os.environ)
+        with fixture_client(app) as first, fixture_client(app) as second:
+            self.assertEqual(first.get("/api/witness").json(),
+                {"authorized": True, "peer": "127.0.0.1", "server": "127.0.0.1", "port": 8000})
+            self.assertNotEqual(first.headers["x-pilotodin-dev-capability"],
+                                second.headers["x-pilotodin-dev-capability"])
+            self.assertEqual(second.get("/api/witness",headers={
+                "X-PilotODIN-Dev-Capability": first.headers["x-pilotodin-dev-capability"]}).status_code,401)
+            self.assertEqual(first.get("/api/witness",headers={"Origin":"https://untrusted.invalid"}).status_code,403)
+            self.assertEqual(first.get("/api/witness",headers={"X-Forwarded-For":"127.0.0.1"}).status_code,403)
+        self.assertEqual(dict(os.environ),before)
+        self.assertEqual(calls,[True])
+        trust=RequestTrust("desktop",9012,self.secret)
+        with fixture_client(app,trust=trust,authenticated=False) as negative:
+            self.assertEqual(negative.get("/api/witness").status_code,401)
+            self.assertEqual(negative.get("/api/witness",headers={"X-PilotODIN-Session":self.secret}).json()["port"],9012)
+            with patch.dict(os.environ,{"PILOTODIN_DESKTOP_SESSION":"b"*64}):
+                self.assertEqual(negative.get("/api/witness",headers={"X-PilotODIN-Session":self.secret}).status_code,200)
+                self.assertEqual(negative.get("/api/witness",headers={"X-PilotODIN-Session":"b"*64}).status_code,401)
+        self.assertEqual(calls,[True,True,True])
+        with self.assertRaises(ValueError):
+            fixture_client(app,authenticated=False)
+
     def test_c3_transport_and_exact_origin(self):
         from backend.request_auth import authorize
         for origin in (None, "http://tauri.localhost", "https://tauri.localhost", "tauri://localhost"):

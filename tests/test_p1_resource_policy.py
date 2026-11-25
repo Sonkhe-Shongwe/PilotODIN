@@ -1,7 +1,7 @@
 """Isolated P1 resource status and per-device preference regressions."""
 import json
 import pytest
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
 from backend import resource_policy, storage
 from backend.main import app
 
@@ -74,7 +74,7 @@ def test_memory_unavailable_is_truthfully_null(monkeypatch):
 def test_api_mode_roundtrip_and_validation(isolated_home, monkeypatch):
     monkeypatch.setattr(resource_policy, "_physical_memory_bytes",
                         lambda: (8*1024**3, 1024**3, "fixture"))
-    client = TestClient(app)
+    client = fixture_client(app)
     status = client.get("/api/resource/status")
     assert status.status_code == 200, status.text
     assert status.json()["memory"]["available_gib"] == 1.0
@@ -93,7 +93,7 @@ def test_api_mode_roundtrip_and_validation(isolated_home, monkeypatch):
 
 
 def test_local_origin_scope_for_resource_controls(isolated_home):
-    client=TestClient(app)
+    client=fixture_client(app)
     response = client.put("/api/resource/policy",json={"mode":"performance"},
                           headers={"Origin":"https://example.org"})
     assert response.status_code == 403

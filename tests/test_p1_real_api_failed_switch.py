@@ -9,7 +9,7 @@ from __future__ import annotations
 import hashlib
 from pathlib import Path
 
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
 
 from backend import main, quality, storage
 
@@ -31,7 +31,7 @@ def _isolated_client(monkeypatch, tmp_path):
     monkeypatch.setattr(storage, "DB_PATH", home / "pilotodin.sqlite3")
     storage.init()
     quality._init_tables()
-    client = TestClient(main.app)
+    client = fixture_client(main.app)
     projects = {}
     for label in ("A", "B"):
         payload = _csv(label)

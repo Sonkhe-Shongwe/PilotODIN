@@ -14,7 +14,7 @@ from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
 
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
 
 from backend import artifact_publication, dataset_publication, engine, main, quality, storage
 
@@ -35,7 +35,7 @@ def _data():
 
 
 def _upload():
-    return TestClient(main.app).post(
+    return fixture_client(main.app).post(
         "/api/projects",
         files={"file":("source.csv",_data(),"text/csv")},
     )
@@ -93,7 +93,7 @@ def test_successful_import_pins_complete_original_sha_and_no_staging(monkeypatch
 
 def test_bad_content_is_discarded_without_publication(monkeypatch,tmp_path):
     home=_isolated(monkeypatch,tmp_path)
-    response=TestClient(main.app).post(
+    response=fixture_client(main.app).post(
         "/api/projects",files={"file":("invalid.csv",b"only_column\nhello\n","text/csv")}
     )
     assert response.status_code==422,response.text
@@ -115,7 +115,7 @@ class CsvEncodingTests(unittest.TestCase):
         self.enterContext(patch.object(storage, "DB_PATH", self.home / "pilotodin.sqlite3"))
         storage.init()
         quality._init_tables()
-        self.client = TestClient(main.app)
+        self.client = fixture_client(main.app)
         self.addCleanup(self.client.close)
 
     def _upload_bytes(self, raw):
@@ -298,7 +298,7 @@ def test_receipt_disagreement_blocks_quality_without_rewriting_history(monkeypat
     path=Path(storage.get_project(pid)["dataset_path"])
     with storage.connect() as con:
         con.execute("UPDATE artifact_publications_v1 SET sha256=? WHERE subject_id=?",("0"*64,pid))
-    response=TestClient(main.app).get(f"/api/projects/{pid}/live-profile")
+    response=fixture_client(main.app).get(f"/api/projects/{pid}/live-profile")
     assert response.status_code==409,response.text
     assert path.read_bytes()==_data()
     with storage.connect() as con:
@@ -356,7 +356,7 @@ def test_committed_receipt_survives_exact_digest_relink(monkeypatch,tmp_path):
         before=tuple(con.execute("SELECT * FROM artifact_publications_v1 WHERE subject_id=?",(pid,)).fetchone())
         con.execute("UPDATE projects SET dataset_path=? WHERE id=?",(str(relocated),pid))
     assert dataset_publication.recover_pending()==0
-    response=TestClient(main.app).get(f"/api/projects/{pid}/live-profile")
+    response=fixture_client(main.app).get(f"/api/projects/{pid}/live-profile")
     assert response.status_code==200,response.text
     assert response.json()["version"]==0
     assert relocated.read_bytes()==_data()

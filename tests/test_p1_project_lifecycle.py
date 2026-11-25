@@ -9,7 +9,7 @@ from types import SimpleNamespace
 from unittest.mock import Mock
 
 import pytest
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
 
 from backend import main, quality, storage
 
@@ -23,7 +23,7 @@ def workspace(monkeypatch, tmp_path):
     monkeypatch.setattr(storage, "DB_PATH", home / "pilotodin.sqlite3")
     storage.init()
     quality._init_tables()
-    client = TestClient(main.app)
+    client = fixture_client(main.app)
     ids = []
     sources = []
     for name in ("alpha", "beta"):
@@ -436,14 +436,19 @@ def test_archived_project_blocks_direct_and_indirect_http_mutations(workspace):
     assert client.post(f"/api/projects/{b}/quality/commit",json={}).status_code==422
 
 
-def test_archived_write_gate_does_not_preempt_desktop_session_auth(workspace,monkeypatch):
+def test_archived_write_gate_does_not_preempt_desktop_session_auth(workspace):
+    from secrets import token_hex
+    from backend.request_auth import RequestTrust
     client,home,(a,b),sources=workspace
     assert _change(client,a,"archive",0).status_code==200
-    monkeypatch.setenv("PILOTODIN_DESKTOP_SESSION","synthetic-local-test-only")
-    response=client.post(f"/api/projects/{a}/quality/commit",json={})
-    assert response.status_code==401,response.text
-    response=client.post(f"/api/projects/{a}/quality/commit",json={},
-        headers={"x-pilotodin-session":"synthetic-local-test-only"})
+    trust=RequestTrust("desktop",9012,token_hex(32))
+    # Preserve the original test's request-only lifetime (no startup recovery).
+    from contextlib import closing
+    with closing(fixture_client(main.app,trust=trust,authenticated=False)) as denied:
+        response=denied.post(f"/api/projects/{a}/quality/commit",json={})
+        assert response.status_code==401,response.text
+        response=denied.post(f"/api/projects/{a}/quality/commit",json={},
+            headers={"x-pilotodin-session":trust.secret})
     assert response.status_code==409,response.text
     assert all(path.read_bytes()==payload for path,payload,_ in sources)
 

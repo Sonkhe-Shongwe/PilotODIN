@@ -8,7 +8,7 @@ from __future__ import annotations
 import hashlib
 from pathlib import Path
 
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
 
 from backend import main, quality, storage
 
@@ -24,7 +24,7 @@ def _fixture(monkeypatch, tmp_path):
     monkeypatch.setattr(storage, "DB_PATH", home / "pilotodin.sqlite3")
     storage.init()
     quality._init_tables()
-    client = TestClient(main.app)
+    client = fixture_client(main.app)
     response = client.post(
         "/api/projects",
         files={"file": ("synthetic.csv", _SOURCE, "text/csv")},

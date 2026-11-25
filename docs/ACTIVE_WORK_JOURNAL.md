@@ -7,13 +7,13 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | PREPARED |
+| State | PUBLISHED |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | a5ba3098bc122fe9f9aed21b655a4a4598dd502c |
 | Product baseline | bfc7399b927c91cbd9eecb4199dc286d6f970d53, both exact routine workflows SUCCESS. |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
 | Operation ID | C3-INPROCESS-P1-ADAPTER-20261125-source |
-| Operation state | PREPARED |
+| Operation state | ISSUED |
 | Intended files | tests/fixture_http.py (new), tests/test_owned_server.py, tests/test_p1_import_recovery.py, tests/test_p1_project_lifecycle.py, tests/test_p1_real_api_failed_switch.py, tests/test_p1_resource_admission.py, tests/test_p1_resource_policy.py, tests/test_p1_source_location_recovery.py, tests/test_p1_upload_atomic_staging.py, .github/workflows/p1-isolated-backend.yml (add source trigger and existing two resource suites), journal. Explicit test-only helper wraps actual RequestGuard with fresh immutable capability, exact synthetic ASGI loopback peer/server, no real socket, no global patch/environment bypass, no backend import in helper. Preserve fixtures and failure/restart cases; archive auth-order case uses explicit desktop contract and unauthenticated client. Test-only change; backend runtime fallback not yet removed. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | bfc7399 P1 frontend #45572840413 and P4 #45572840400 terminal SUCCESS; P4 jobs p4-synthetic-source-and-frontend 139063445268 success; p4-disposable-real-http-browser 139063445453 success; p4-r03-windows-local-answers 139063445482 success; Exercise preservation/hash collector on synthetic Windows fixture ONLY 139063446963 skipped. Exact branch tree nontruncated, 191 top-level Python test files; read P1 candidate source, seven use bare TestClient, relink test has no direct client; import recovery child embedded TestClient also migrates. C1 owned composition tests inspect client.app.routes and mutate desktop session; PDF tests deliberately manipulate legacy auth; require separate migration, not blindly replace. Remaining full inventory incomplete. P1 lifecycle, P1 isolated backend, P1 HTTP and P4 routine triggers match; legacy native compile branch build-e; native marker workflows unchanged. |

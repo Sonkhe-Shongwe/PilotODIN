@@ -15,7 +15,7 @@ import unittest
 from unittest.mock import patch
 
 import pandas as pd
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
 
 import pytest
 
@@ -55,7 +55,7 @@ def test_import_rollback_works_when_quality_schema_is_missing(monkeypatch, tmp_p
         tables = {r[0] for r in con.execute(
             "SELECT name FROM sqlite_master WHERE type='table'")}
     assert "quality_versions" not in tables
-    response = TestClient(app).post(
+    response = fixture_client(app).post(
         "/api/projects",
         files={"file": ("source.csv", _csv(), "text/csv")},
     )
@@ -73,7 +73,7 @@ def test_partial_quality_registration_is_rolled_back_atomically(monkeypatch, tmp
             CREATE TRIGGER interrupt_registration BEFORE INSERT ON quality_versions
             BEGIN SELECT RAISE(ABORT, 'Synthetic interrupted registration'); END
         """)
-    response = TestClient(app).post(
+    response = fixture_client(app).post(
         "/api/projects",
         files={"file": ("source.csv", _csv(), "text/csv")},
     )
@@ -87,7 +87,7 @@ def test_partial_quality_registration_is_rolled_back_atomically(monkeypatch, tmp
 
 def test_rejected_invalid_dataset_removes_staged_bytes(monkeypatch, tmp_path):
     home = _temporary_store(monkeypatch, tmp_path)
-    response = TestClient(app).post(
+    response = fixture_client(app).post(
         "/api/projects",
         files={"file": ("invalid.csv", b"single_column\nvalue\n", "text/csv")},
     )
@@ -105,7 +105,7 @@ def test_identifier_csv_import_quality_and_ml_preparation_agree(monkeypatch, tmp
         for i in range(1, 13)
     )
     source = ("\n".join(lines) + "\n").encode("utf-8")
-    with TestClient(app) as client:
+    with fixture_client(app) as client:
         uploaded = client.post(
             "/api/projects", files={"file": ("leading_zeros.csv", source, "text/csv")},
         )
@@ -156,7 +156,7 @@ def test_unknown_commit_state_keeps_source_for_recovery(monkeypatch, tmp_path):
     connect = storage.connect
     monkeypatch.setattr(storage, "commit_dataset_publication", fail_and_disable)
     try:
-        response = TestClient(app).post(
+        response = fixture_client(app).post(
             "/api/projects", files={"file": ("recoverable.csv", _csv(), "text/csv")},
         )
     finally:
@@ -179,7 +179,7 @@ def test_error_after_commit_preserves_catalogue_and_source(monkeypatch, tmp_path
         raise OSError("Synthetic acknowledgement failure")
 
     monkeypatch.setattr(storage, "commit_dataset_publication", save_then_fail)
-    client = TestClient(app)
+    client = fixture_client(app)
     response = client.post("/api/projects", files={"file": ("generated.csv", _csv(), "text/csv")})
     assert response.status_code == 201, response.text
     row, = client.get("/api/projects").json()
@@ -207,7 +207,7 @@ class ImportRestartTests(unittest.TestCase):
 import os
 import sys
 from unittest.mock import patch
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
 from backend import main, storage, dataset_publication
 
 boundary, raw = sys.argv[1:]
@@ -259,7 +259,7 @@ else:
     interruption = patch.object(storage, 'commit_dataset_publication', save_and_stop)
 
 with interruption:
-    response = TestClient(main.app).post('/api/projects', files={'file': ('generated.csv', raw, 'text/csv')})
+    response = fixture_client(main.app).post('/api/projects', files={'file': ('generated.csv', raw, 'text/csv')})
     raise AssertionError(response.text)
 '''
         result = subprocess.run(
@@ -275,7 +275,7 @@ with interruption:
         self.assertEqual(len(retained), 1 if suffix == ".csv.uploading" else 2)
         self.assertTrue(any(p.name.endswith(suffix) for p in retained))
         self.assertTrue(all(p.read_bytes() == _csv() for p in retained))
-        with TestClient(app) as client:
+        with fixture_client(app) as client:
             self.assertEqual(client.get("/api/projects").json(), [])
             self.assertEqual(client.get("/api/projects/manage").json(), [])
             with storage.connect() as con:
@@ -290,7 +290,7 @@ with interruption:
     def test_restart_after_intent_before_payload_creation(self):
         self.interrupt_child("intent")
         self.assertEqual(list(self.datasets.iterdir()), [])
-        with TestClient(app) as client:
+        with fixture_client(app) as client:
             self.assertEqual(client.get("/api/projects").json(), [])
             with storage.connect() as con:
                 self.assertEqual(con.execute("SELECT state FROM artifact_publications_v1").fetchone()[0], "interrupted")
@@ -314,7 +314,7 @@ with interruption:
 
     def test_restart_after_catalogue_commit_loads_original_version(self):
         self.interrupt_child("committed")
-        with TestClient(app) as client:
+        with fixture_client(app) as client:
             project, = client.get("/api/projects").json()
             pid = project["id"]
             with storage.connect() as con:
@@ -339,7 +339,7 @@ with interruption:
         pid = storage.save_project("Legacy", "legacy.csv", ".csv", source, {"rows": 3})
         changed = _csv() + b"0004,480\n"
         source.write_bytes(changed)
-        with TestClient(app) as client:
+        with fixture_client(app) as client:
             self.assertEqual([row["id"] for row in client.get("/api/projects/manage").json()], [pid])
             response = client.get(f"/api/projects/{pid}/live-profile")
             self.assertEqual(response.status_code, 409, response.text)
