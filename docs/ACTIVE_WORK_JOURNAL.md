@@ -7,14 +7,14 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | READY |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | afb56f91ebe9bfde50da5acf1e9b172d2139bc63 |
+| Observed starting HEAD | 5ccf217105c548ee76b1211c7031e4a85eefc079 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
-| Operation ID | C5-PRODUCTION-CANDIDATE-GRAPH-20261125 |
-| Operation state | RECONCILED: exact 7ed8a47, run 45705552265 job 139526478605 SUCCESS; 68 persisted sidecars revalidated, 12 controls, Windows CP311.9 production candidate 43 reachable nodes, 48 active and 303 inactive declarations, no issues, 87904549 expected wheel bytes. Two absent Requires-Python declarations (altgraph/pytz). No executable lock, actual wheel bytes, install or live requests. |
-| Intended files | Isolated qa/c5_wheel_metadata/production_graph.py, dedicated offline-only workflow, evidence-only receipt and canonical records; preserve all prior evidence, collectors and product. |
+| Operation ID | C5-TOOLCHAIN-PROVENANCE-MATRIX-20261125 |
+| Operation state | PREPARED: read-only provenance matrix from pinned workflow sources, exact historical CI logs and existing C5 policy; no distribution acquisition, tool invocation, production pin or executable lock. |
+| Intended files | Evidence-only qa/c5_wheel_metadata/toolchain_provenance_20261125.json and canonical journal/handoff/ledger; preserve product, policy, prior receipts and approvals. |
 | Approval | Eleven restricted approvals consumed/disarmed (six native, five metadata). No additional registry requests, artifacts, installs, native/model, owner device/data or installer authorized. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
 | Pending runs | None for this operation. |
