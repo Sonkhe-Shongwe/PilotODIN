@@ -7,14 +7,14 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | READY |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | b94564bb0f30b8efb6b756be072df8b007e1416b |
+| Observed starting HEAD | afb56f91ebe9bfde50da5acf1e9b172d2139bc63 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
-| Operation ID | C5-FREEZER-METADATA-ONCE-20261125 |
-| Operation state | RECONCILED: run 45704870236 attempt 1 on e11d637138a7542f78934e1ace55c9575ad93a2b, job 139524162115 SUCCESS; 6 indexes + 6 sidecars, 1359876 response bytes, 6 verified, zero artifact requests. Disarmed 8b13cd9; independently checked receipt preserved 23140a8. No replay. |
-| Intended files | Isolated qa/c5_wheel_metadata/collect_freezer.py and dedicated offline-only workflow, canonical records, evidence-only toolchain/licence summary; preserve prior collectors, receipts, product and locks. |
+| Operation ID | C5-PRODUCTION-CANDIDATE-GRAPH-20261125 |
+| Operation state | PREPARED: offline production graph and candidate inventory; revalidate all 68 persisted sidecars, fixed runtime and freezer roots, target-specific markers/extras/version/tags, independent source comparison. No executable lock or acquisition. |
+| Intended files | Isolated qa/c5_wheel_metadata/production_graph.py, dedicated offline-only workflow, evidence-only receipt and canonical records; preserve all prior evidence, collectors and product. |
 | Approval | Eleven restricted approvals consumed/disarmed (six native, five metadata). No additional registry requests, artifacts, installs, native/model, owner device/data or installer authorized. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
 | Pending runs | None for this operation. |
