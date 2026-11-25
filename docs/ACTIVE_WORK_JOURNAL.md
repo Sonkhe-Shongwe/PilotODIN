@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 06f0772883b7ed5db6f78c8de2800c211660f273 |
-| Product baseline | First C5 guard batch 0d91a071fcf07c564ed493a940015146f654b73e, all three matched CI completed SUCCESS; C5 remains open. |
+| Observed starting HEAD | 55fdb5d175b2fac22b2ca15169d071984fab85b3 |
+| Product baseline | 6cfb8375df68bd714b28bbd12b4c62ac9e933eb2; Cargo and P4 exact matching CI SUCCESS; C5 open. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
-| Operation ID | C5-PROFILE-CONTRACT-20261125 |
-| Operation state | RECONCILED publication at 6cfb8375df68bd714b28bbd12b4c62ac9e933eb2; verification recorded as observed, no restricted dispatch. |
-| Intended files | Cargo metadata workflow, contracts/build_inputs_v1.schema.json, contracts/build_input_policy_v1.json, tools/build_input_preflight.py, existing C5 Python tests, P4 synthetic workflow; canonical documentation. No locks, approvals or native markers changed. |
+| Operation ID | C5-WHEEL-METADATA-20261125 |
+| Operation state | PREPARED; bound both wheelhouse scans, align row grammar, record observed exact CI wheel selections and upstream metadata availability, add synthetic tests. |
+| Intended files | tools/build_input_preflight.py, contracts/build_inputs_v1.schema.json, tests/test_c5_build_input_preflight.py, C5 observed metadata inventory under contracts, P4 source workflow only if needed, canonical documentation. No locks, approvals, native markers or artifact acquisition. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Exact 0d91a07: P1 #45681663586 success (206 Node, TS/Vite, 11 browser); Cargo #45681663542 success (457 packages, no lock drift); P4 #45681663537 success (1100 Python/6 skipped/552 subtests, 15 Rust, 160 Node/Vite, 13 HTTP browser, Windows 14 C5 tests, PowerShell parser, 68/133 subtests and 5 simulated scenarios; restricted collector skipped). |
-| Pending runs | Cargo #45682825147 SUCCESS job 139447529632; P4 #45682825061 IN_PROGRESS source 139447529613, HTTP 139447529709, Windows 139447529266, restricted collector 139447531526 skipped. Reconcile actual outcomes and test logs before further edits. |
+| Verification | Exact 6cfb837: Cargo #45682825147 SUCCESS, job 139447529632; P4 #45682825061 SUCCESS, 1131 Python/6 skipped/552 subtests, 15 Rust, 160 Node/Vite, 13 HTTP browser, Windows 44 C5/1 skipped, 68/133 subtests and parser, restricted collector skipped. |
+| Pending runs | None for exact 6cfb837, both completed success. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Reconcile exact CI at 6cfb8375df68bd714b28bbd12b4c62ac9e933eb2. Cargo corrected metadata passed and blocked-policy audit passed; source profile primitive is not archive/graph/production authorization. Before using candidate inventory for real artifacts, bound second directory enumeration and align candidate schema filename/version grammar. Then independent metadata-only research from exact observed test resolutions; exact graph/markers, wheel bytes and toolchain/license evidence still required. No actual acquisition/build or native run. |
+| Recovery action | Publish bounded wheelhouse enumeration and schema alignment; retain exact CI selected wheel names as non-authoritative metadata inventory. Public metadata research partial; missing upstream hash/graph/license proof blocks locks. No actual downloads or build. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
