@@ -40,6 +40,9 @@ on:
       - tests/test_p1_real_api_failed_switch.py
       - tests/fixture_http.py
       - tools/c3_source_caller_inventory.py
+      - tools/Run_P2_Legacy_PDF_Visual_Local.py
+      - desktop/verify_packaged_engine.py
+      - tests/test_c3_local_verifier_trust.py
       - tools/Seed_P2_Native_Deliver_Consent_Local.py
       - tools/Seed_P2_Native_Live_Chain_Local.py
       - tools/Seed_P2_Native_Two_Window_Local.py
@@ -123,6 +126,12 @@ jobs:
           tests/test_p3_native_qa_source.py::test_disposable_seeder_fails_closed_when_workspace_not_empty
           tests/test_p3_native_quality_w5_source.py::test_w5_seeder_exact_source_and_v0
           tests/test_p3_native_quality_w5_source.py::test_w5_seeder_fails_closed_on_nonempty_workspace
+
+      - name: Verify local verifier trust boundaries without native execution
+        run: >-
+          python -m pytest -q
+          tests/test_c3_local_verifier_trust.py
+          tests/test_p2_legacy_pdf_pagination.py
 
       - name: Exercise nine isolated authenticated P2 PDF export route cases
         run: |

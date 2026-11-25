@@ -45,6 +45,38 @@ def request(client, method: str, path: str, *, expected: int, **kwargs):
     return response
 
 
+def _visual_client(home: Path):
+    """Own only the freshly allocated synthetic visual-review workspace."""
+    from secrets import token_hex
+    from backend.workspace_boundary import (
+        existing_fixture_home, existing_fixture_file, hold_fresh_fixture_workspace,
+    )
+    from backend.request_auth import RequestTrust
+    from tests.fixture_http import fixture_client
+
+    need(os.environ.get("PILOTODIN_HOME") == str(home),
+         "Unexpected visual fixture environment")
+    canonical = existing_fixture_home(str(home))
+    run = canonical.parent
+    need(canonical.name == "workspace" and re.fullmatch(
+        re.escape(PHASE) + r"-[0-9]{8}T[0-9]{6}Z-[a-f0-9]{10}", run.name),
+        "Unexpected visual fixture workspace")
+    allocation = run / "manifest.json"
+    existing_fixture_file(allocation)
+    meta = json.loads(allocation.read_text(encoding="utf-8"))
+    need(meta.get("schema_version") == 1 and meta.get("phase") == PHASE
+         and meta.get("run_id") == run.name and meta.get("state") == "READY_NOT_TESTED"
+         and meta.get("product_acceptance") == "NOT_TESTED"
+         and meta.get("rules") == {"synthetic_only": True, "no_auto_delete": True,
+                                  "no_model_or_installer": True},
+         "Unexpected visual fixture allocation")
+    owned = hold_fresh_fixture_workspace(str(home), canonical)
+    os.environ["PILOTODIN_HOME"] = str(owned)
+    from backend.main import app
+
+    return fixture_client(app, trust=RequestTrust("diagnostic-direct", 8000, token_hex(32)))
+
+
 def main() -> int:
     need(os.name == "nt", "Owner Windows is required")
     need(not os.getenv("PILOTODIN_HOME") and not os.getenv("PILOTODIN_DESKTOP_SESSION"),
@@ -80,8 +112,7 @@ def main() -> int:
     html_path = outputs / "P2_BE030_SYNTHETIC_STANDARD_HTML_REFERENCE.html"
     os.environ["PILOTODIN_HOME"] = str(home)
     try:
-        from fastapi.testclient import TestClient
-        from backend.main import app
+        client = _visual_client(home)
         from backend import storage, pdf_release_font_loader
         import fitz
 
@@ -89,7 +120,6 @@ def main() -> int:
              and pdf_release_font_loader.RELEASE_PINNED_FILES == ()
              and pdf_release_font_loader.RELEASE_APPROVAL_REFERENCE == "",
              "Refusing changed/approved font release configuration in this legacy-only QA")
-        client = TestClient(app)
         created = request(client, "POST", "/api/projects", expected=201,
                           files={"file": ("p2-be030-synthetic.csv", CSV, "text/csv")}).json()
         pid = created["id"]

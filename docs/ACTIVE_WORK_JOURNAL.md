@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | PREPARED |
+| State | PUBLISHED |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 52adc52f891c476cb93c8b8e05057c0668ca0b11 (documentation-only). |
 | Product baseline | 4046c386e17463d8e9b1faacb5bb0e4838bcaaa8 (fixture/QA/CI only); five exact routine runs terminal SUCCESS; prior c0af259 exact P1 SUCCESS. |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
 | Operation ID | C3-LOCAL-VERIFIER-TRUST-20261125-source |
-| Operation state | PREPARED |
+| Operation state | ISSUED |
 | Intended files | tools/Run_P2_Legacy_PDF_Visual_Local.py (fresh allocated fixture lease, explicit diagnostic-direct guarded in-process client, no browser origin); desktop/verify_packaged_engine.py (fixed literal loopback port + two allowed GET paths, direct HTTPConnection without proxy/redirect, bounded body, fresh child environment excludes inherited PilotODIN/Vite flags and capabilities); tests/test_c3_local_verifier_trust.py (synthetic transport mocks and disposable fixture helper tests, no owner visual main); .github/workflows/p1-isolated-backend.yml (register new tests and existing in-memory legacy PDF pagination). Preserve release/visual gates, source bytes, exact smoke result schema, owner pipe/cleanup assertions. No actual frozen engine or native visual operation. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | Prior exact 4046c38 five workflows terminal SUCCESS, 12/12 seeders and 7/7 Chromium. Source inspection confirms legacy PDF visual tool allocates a new DevQA home but uses bare TestClient; existing helper supports diagnostic-direct trust with no origin. Packaged verifier uses ambient urllib proxy and redirect defaults and copies mixed launcher flags; switch to HTTPConnection fixed loopback, reject redirects and destination/header overrides, strip inherited app-specific flags from child only. Existing routine P4 trigger on verifier includes unchanged unfrozen Python backend smoke, Windows source tests and disposable browser, restricted collector false. P1 new source/synthetic test step only; historical build-e packaged engine and installer workflows branch-filtered, installer guard false. Other branch workflows unchanged since previous complete audit; no matching restricted trigger paths. |
-| Pending runs | None; new operation not issued. |
+| Pending runs | Source commit identified by parent c7dd4c81 and operation marker; resolve exact SHA and matching CI. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Inspect expected HEAD and exact diff; publish guarded visual helper and packaged verifier plus focused tests, reconcile routine P1/P4 exact CI. No native/owner visual smoke; next remaining direct caller classification and frontend/native bootstrap before fallback removal. |
+| Recovery action | Resolve exact source commit and routine P1/P4 run IDs; verify actual synthetic tests, existing unfrozen engine smoke and disabled native collector. Correct failures without weakening gates. Next remaining direct caller classification and frontend/native bootstrap before fallback removal. |
 | Resume after closure | C4, C5 in order; D separately approved. |
 
 ## Prior operation

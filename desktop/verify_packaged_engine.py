@@ -6,6 +6,7 @@ It intentionally avoids loading an AI model or connecting to cloud services.
 from __future__ import annotations
 
 import argparse
+import http.client
 import json
 import os
 from pathlib import Path
@@ -16,8 +17,6 @@ import sys
 import tempfile
 import time
 from typing import Sequence
-import urllib.error
-import urllib.request
 
 
 def _unused_port() -> int:
@@ -26,13 +25,52 @@ def _unused_port() -> int:
         return int(sock.getsockname()[1])
 
 
-def _request(url: str, headers: dict[str, str] | None = None) -> tuple[int, object]:
-    request = urllib.request.Request(url, headers=headers or {})
+def _request(port: int, path: str, headers: dict[str, str] | None = None) -> tuple[int, object]:
+    """Send only the two smoke GETs directly to the selected literal loopback port.
+
+    HTTPConnection neither consults proxy environment variables nor follows a
+    redirect. No caller can override Host or supply another destination.
+    """
+    if type(port) is not int or not 1024 <= port <= 65535 or path not in (
+            '/api/health', '/api/projects'):
+        raise ValueError('Invalid desktop smoke destination')
+    supplied = dict(headers or {})
+    if set(supplied) - {'X-PilotODIN-Session', 'Origin'}:
+        raise ValueError('Invalid desktop smoke headers')
+    connection = http.client.HTTPConnection('127.0.0.1', port, timeout=3)
     try:
-        with urllib.request.urlopen(request, timeout=3) as response:
-            return response.status, json.loads(response.read(1024 * 1024))
-    except urllib.error.HTTPError as exc:
-        return exc.code, json.loads(exc.read(1024 * 1024))
+        connection.request('GET', path, headers=supplied)
+        response = connection.getresponse()
+        if 300 <= response.status < 400:
+            raise RuntimeError('Desktop engine returned a redirect')
+        limit = 1024 * 1024
+        body = response.read(limit + 1)
+        if len(body) > limit:
+            raise RuntimeError('Desktop engine response exceeded smoke limit')
+        try:
+            return response.status, json.loads(body)
+        except (ValueError, UnicodeError):
+            raise RuntimeError('Desktop engine returned invalid smoke JSON') from None
+    except http.client.RemoteDisconnected:
+        raise
+    except http.client.HTTPException:
+        raise RuntimeError('Desktop engine returned invalid HTTP') from None
+    finally:
+        connection.close()
+
+
+def _smoke_environment(environ, data_dir: Path, port: int, token: str) -> dict:
+    """Build a clean, independent child contract without changing the parent."""
+    env = {key: value for key, value in environ.items()
+           if not key.upper().startswith(('PILOTODIN_', 'VITE_PILOTODIN_'))}
+    env.update({
+        'PILOTODIN_DESKTOP_PORT': str(port),
+        'PILOTODIN_DESKTOP_SESSION': token,
+        'PILOTODIN_DESKTOP_WATCH_STDIN': '1',
+        'PILOTODIN_HOME': str(data_dir),
+        'PILOTODIN_DESKTOP_ALLOW_DEV': '0',
+    })
+    return env
 
 
 def _wait_for_database_unlock(db: Path, timeout_seconds: float = 25) -> None:
@@ -78,17 +116,7 @@ def smoke_test_engine(command: Sequence[str], root: Path, startup_seconds: float
         data_dir = tmp / 'isolated-user-data'
         port = _unused_port()
         token = secrets.token_hex(32)
-        env = os.environ.copy()
-        env.update({
-            'PILOTODIN_DESKTOP_PORT': str(port),
-            'PILOTODIN_DESKTOP_SESSION': token,
-            'PILOTODIN_DESKTOP_WATCH_STDIN': '1',
-            'PILOTODIN_HOME': str(data_dir),
-            'PILOTODIN_DESKTOP_ALLOW_DEV': '0',
-        })
-        for key in ('PILOTODIN_BUNDLED_LLM_PORT', 'PILOTODIN_BUNDLED_LLM_TOKEN'):
-            env.pop(key, None)
-        url = f'http://127.0.0.1:{port}'
+        env = _smoke_environment(os.environ, data_dir, port, token)
         creationflags = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
         child = subprocess.Popen(list(command), cwd=root, env=env,
                                  stdin=subprocess.PIPE, stdout=subprocess.DEVNULL,
@@ -99,25 +127,25 @@ def smoke_test_engine(command: Sequence[str], root: Path, startup_seconds: float
                 if child.poll() is not None:
                     raise RuntimeError(f'Desktop engine stopped before health readiness (exit={child.returncode})')
                 try:
-                    code, _ = _request(url + '/api/health')
+                    code, _ = _request(port, '/api/health')
                     if code == 401:
                         break
                     if code == 200:
                         raise RuntimeError('Unauthenticated desktop engine health request succeeded')
-                except (ConnectionError, TimeoutError, OSError, urllib.error.URLError):
+                except (ConnectionError, TimeoutError, OSError):
                     pass
                 if time.monotonic() >= deadline:
                     raise RuntimeError('Desktop engine did not become reachable in time')
                 time.sleep(0.2)
             valid = {'X-PilotODIN-Session': token, 'Origin': 'http://tauri.localhost'}
-            if _request(url + '/api/health', {'X-PilotODIN-Session': 'invalid'})[0] != 401:
+            if _request(port, '/api/health', {'X-PilotODIN-Session': 'invalid'})[0] != 401:
                 raise RuntimeError('Desktop session rejected wrong token incorrectly')
-            status, health = _request(url + '/api/health', valid)
+            status, health = _request(port, '/api/health', valid)
             if status != 200 or not isinstance(health, dict) or health.get('status') != 'ok':
                 raise RuntimeError('Authenticated health check was not successful')
-            if _request(url + '/api/health', {**valid, 'Origin': 'https://untrusted.example'})[0] != 403:
+            if _request(port, '/api/health', {**valid, 'Origin': 'https://untrusted.example'})[0] != 403:
                 raise RuntimeError('Desktop API incorrectly accepted untrusted origin')
-            code, projects = _request(url + '/api/projects', valid)
+            code, projects = _request(port, '/api/projects', valid)
             if code != 200 or not isinstance(projects, list):
                 raise RuntimeError('Authenticated project listing failed')
             if not (data_dir / 'pilotodin.sqlite3').is_file() or not (data_dir / 'datasets').is_dir():
