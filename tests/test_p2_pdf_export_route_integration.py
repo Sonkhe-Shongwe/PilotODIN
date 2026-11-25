@@ -27,10 +27,12 @@ class P2ActualReportExportRoute(unittest.TestCase):
     def setUpClass(cls):
         if not (SAFE and HOME.is_absolute() and PROJECT_MARKER.is_file()):
             raise RuntimeError("Disposable P2 API home was not established")
-        from fastapi.testclient import TestClient
+        from tests.fixture_http import fixture_client
         from backend.main import app
         from backend import reports, pdf_release_font_loader
-        cls.client = TestClient(app)
+        cls.app = app
+        cls.client = fixture_client(app)
+        cls.addClassCleanup(cls.client.close)
         cls.reports = reports
         cls.loader = pdf_release_font_loader
 
@@ -46,8 +48,7 @@ class P2ActualReportExportRoute(unittest.TestCase):
         with patch.object(self.reports, "load", return_value=self.saved) as load, \
              patch.object(self.reports, "render_pdf_for_export",
                           return_value=content) as export, \
-             patch.object(self.reports, "render_html") as html, \
-             patch.dict(os.environ, {"PILOTODIN_DESKTOP_SESSION": ""}):
+             patch.object(self.reports, "render_html") as html:
             response = self.client.get(self.path_pdf + "?revision=7")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.content, content)
@@ -63,8 +64,7 @@ class P2ActualReportExportRoute(unittest.TestCase):
         content = b"<html><body>synthetic-only</body></html>"
         with patch.object(self.reports, "load", return_value=self.saved), \
              patch.object(self.reports, "render_html", return_value=content) as html, \
-             patch.object(self.reports, "render_pdf_for_export") as pdf, \
-             patch.dict(os.environ, {"PILOTODIN_DESKTOP_SESSION": ""}):
+             patch.object(self.reports, "render_pdf_for_export") as pdf:
             response = self.client.get(self.path_html)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.content, content)
@@ -109,8 +109,7 @@ class P2ActualReportExportRoute(unittest.TestCase):
         }
         original = copy.deepcopy(snapshot)
         with patch.object(self.reports, "load", return_value=snapshot), \
-             patch.object(self.loader, "_verified_context") as candidate_font, \
-             patch.dict(os.environ, {"PILOTODIN_DESKTOP_SESSION": ""}):
+             patch.object(self.loader, "_verified_context") as candidate_font:
             pdf = self.client.get(self.path_pdf)
             html = self.client.get(self.path_html)
         self.assertEqual(pdf.status_code, 200)
@@ -132,8 +131,7 @@ class P2ActualReportExportRoute(unittest.TestCase):
              patch.object(self.loader, "RELEASE_APPROVAL_STATUS",
                           "GRANTED_BY_INDEPENDENT_OWNER_REVIEW"), \
              patch.object(self.loader, "RELEASE_PINNED_FILES", ()), \
-             patch.object(self.reports, "render_pdf") as legacy, \
-             patch.dict(os.environ, {"PILOTODIN_DESKTOP_SESSION": ""}):
+             patch.object(self.reports, "render_pdf") as legacy:
             response = self.client.get(self.path_pdf)
         self.assertEqual(response.status_code, 503)
         self.assertIn("Verified Unicode PDF resources unavailable",
@@ -143,34 +141,40 @@ class P2ActualReportExportRoute(unittest.TestCase):
         legacy.assert_not_called()
 
     def test_desktop_session_requires_token_and_rejects_bad_origin(self):
-        marker = "synthetic-not-a-real-session-token"
+        from contextlib import closing
+        from secrets import token_hex
+        from backend.request_auth import RequestTrust
+        from tests.fixture_http import fixture_client
+        marker = token_hex(32)
+        trust = RequestTrust("desktop", 9012, marker)
         headers = {"x-pilotodin-session": marker,
                    "origin": "http://tauri.localhost"}
-        with patch.object(self.reports, "load", return_value=self.saved), \
+        with patch.object(self.reports, "load", return_value=self.saved) as load, \
              patch.object(self.reports, "render_pdf_for_export",
                           return_value=b"%PDF-1.4\nsynthetic") as pdf, \
-             patch.dict(os.environ, {"PILOTODIN_DESKTOP_SESSION": marker}):
-            unauthorized = self.client.get(self.path_pdf)
-            untrusted = self.client.get(self.path_pdf,
+             closing(fixture_client(self.app, trust=trust, authenticated=False)) as desktop:
+            unauthorized = desktop.get(self.path_pdf)
+            untrusted = desktop.get(self.path_pdf,
                  headers={**headers, "origin": "https://untrusted.invalid"})
-            authorized = self.client.get(self.path_pdf, headers=headers)
+            load.assert_not_called()
+            pdf.assert_not_called()
+            authorized = desktop.get(self.path_pdf, headers=headers)
         self.assertEqual(unauthorized.status_code, 401)
         self.assertEqual(untrusted.status_code, 403)
         self.assertEqual(authorized.status_code, 200)
+        load.assert_called_once()
         pdf.assert_called_once_with(self.saved)
         self.assertNotIn(marker, authorized.content.decode("utf-8", errors="ignore"))
 
     def test_invalid_export_format_is_rejected_before_report_load(self):
-        with patch.object(self.reports, "load") as load, \
-             patch.dict(os.environ, {"PILOTODIN_DESKTOP_SESSION": ""}):
+        with patch.object(self.reports, "load") as load:
             response = self.client.get(
                 f"/api/reports/{self.report_id}/export/exe")
         self.assertEqual(response.status_code, 404)
         load.assert_not_called()
 
     def test_invalid_revision_does_not_resolve_saved_report(self):
-        with patch.object(self.reports, "load") as load, \
-             patch.dict(os.environ, {"PILOTODIN_DESKTOP_SESSION": ""}):
+        with patch.object(self.reports, "load") as load:
             response = self.client.get(self.path_pdf + "?revision=0")
         self.assertEqual(response.status_code, 422)
         load.assert_not_called()

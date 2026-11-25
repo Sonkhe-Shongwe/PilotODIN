@@ -1,20 +1,22 @@
 """Actual FastAPI routes in separate owned composition; no real model/provider."""
 import json
 import pytest
-from fastapi.testclient import TestClient
+from contextlib import closing
+from secrets import token_hex
+from tests.fixture_http import fixture_client
+from backend.request_auth import RequestTrust
 from backend import main, storage, quality, investigations, autonomy
 from backend.resource_admission import Coordinator, GIB, Operation
 from backend.resource_autonomy import AutonomyStages
 from backend.resource_routes import ROUTES
 
 @pytest.fixture
-def product(monkeypatch,tmp_path):
+def product_composition(monkeypatch,tmp_path):
     home=tmp_path/"product"
     (home/"datasets").mkdir(parents=True)
     (home/"models").mkdir()
     monkeypatch.setattr(storage,"HOME",home)
     monkeypatch.setattr(storage,"DB_PATH",home/"pilotodin.sqlite3")
-    monkeypatch.delenv("PILOTODIN_DESKTOP_SESSION",raising=False)
     storage.init()
     quality._init_tables()
     investigations.init()
@@ -31,19 +33,28 @@ def product(monkeypatch,tmp_path):
         assert c.release(lease)
         return {"answer":"Inert fixture answer","fallback":False}
     app=main.build_owned_app(c,a,insight)
-    with TestClient(app) as client:
+    try:
+        yield app,c,a,calls
+    finally:
+        a.drain(2)
+
+
+@pytest.fixture
+def product(product_composition):
+    app,c,a,calls=product_composition
+    with fixture_client(app) as client:
         yield client,c,a,calls
-    a.drain(2)
 
 def upload(client):
     return client.post("/api/projects",files={"file":("test.csv",b"Region,Revenue\nNorth,100\nSouth,200\nNorth,300\n","text/csv")})
 
-def test_actual_inventory_is_bound_without_mutating_legacy(product):
+def test_actual_inventory_is_bound_without_mutating_legacy(product,product_composition):
     client,c,_,_=product
+    app,_,_,_=product_composition
     from fastapi.routing import APIRoute
-    assert {(method,r.path) for r in client.app.routes if isinstance(r,APIRoute) for method in r.methods}==set(ROUTES)
+    assert {(method,r.path) for r in app.routes if isinstance(r,APIRoute) for method in r.methods}==set(ROUTES)
     legacy={r.path:r for r in main.app.routes if isinstance(r,APIRoute)}
-    assert all(r is not legacy[r.path] for r in client.app.routes if isinstance(r,APIRoute))
+    assert all(r is not legacy[r.path] for r in app.routes if isinstance(r,APIRoute))
     assert client.get("/api/health").status_code==200
 
 def test_actual_upload_and_data_routes_are_denied_while_training_owns_lane(product,monkeypatch):
@@ -96,13 +107,19 @@ def test_actual_insight_releases_data_before_host_callback(product,monkeypatch):
     assert len(calls)==1 and calls[0]["dataset_version"]==0
     assert not c.status()["active"]
 
-def test_actual_auth_precedes_owned_upload(product,monkeypatch):
+def test_actual_auth_precedes_owned_upload(product,product_composition):
     client,c,_,_=product
-    monkeypatch.setenv("PILOTODIN_DESKTOP_SESSION","private-fixture-token")
+    app,_,_,_=product_composition
+    trust=RequestTrust("desktop",9012,token_hex(32))
     lease=c.try_acquire(Operation.TRAINING).lease
     assert c.start(lease)
-    assert upload(client).status_code==401
-    assert c.release(lease)
+    try:
+        # Do not start another app lifespan or alter the existing coordinator.
+        with closing(fixture_client(app,trust=trust,authenticated=False)) as denied:
+            assert upload(denied).status_code==401
+        assert upload(client).status_code==503
+    finally:
+        assert c.release(lease)
 
 def test_export_settlement_rejects_uncertain_receipt_or_open_handle():
     from backend.export_transfer import Transfer
@@ -180,14 +197,22 @@ def test_actual_successful_export_releases_receipt_and_lane(product):
     assert client.get("/api/resource/status").json()["workload"]["active"] is False
 
 
-def test_resource_status_legacy_shape_and_owned_auth(product,monkeypatch):
+def test_resource_status_legacy_shape_and_owned_auth(product,product_composition,monkeypatch):
     client,c,_,_=product
-    with TestClient(main.app) as legacy:
+    app,_,_,_=product_composition
+    with fixture_client(main.app) as legacy:
         assert "workload" not in legacy.get("/api/resource/status").json()
     assert client.get("/api/resource/status").json()["workload"]==c.status()
-    monkeypatch.setenv("PILOTODIN_DESKTOP_SESSION","fixture-secret")
-    assert client.get("/api/resource/status").status_code==401
-    assert client.get("/api/resource/status",headers={"X-PilotODIN-Session":"fixture-secret"}).json()["workload"]==c.status()
+    trust=RequestTrust("desktop",9012,token_hex(32))
+    with closing(fixture_client(app,trust=trust,authenticated=False)) as desktop:
+        assert desktop.get("/api/resource/status").status_code==401
+        headers={"X-PilotODIN-Session":trust.secret}
+        assert desktop.get("/api/resource/status",headers=headers).json()["workload"]==c.status()
+        # Runtime environment changes must not replace a captured contract.
+        replacement=token_hex(32)
+        monkeypatch.setenv("PILOTODIN_DESKTOP_SESSION",replacement)
+        assert desktop.get("/api/resource/status",headers={"X-PilotODIN-Session":replacement}).status_code==401
+        assert desktop.get("/api/resource/status",headers=headers).json()["workload"]==c.status()
 
 
 @pytest.fixture

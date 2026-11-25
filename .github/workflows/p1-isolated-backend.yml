@@ -19,6 +19,7 @@ on:
       - backend/resource_session.py
       - backend/export_transfer.py
       - tests/test_c1_product_integration.py
+      - tests/test_p2_pdf_export_route_integration.py
       - tests/test_c1_resource_host.py
       - backend/autonomy.py
       - tests/test_c1_resource_autonomy.py
@@ -102,3 +103,17 @@ jobs:
         env:
           PILOTODIN_HOME: ${{ runner.temp }}/pilotodin-c1-product-${{ github.run_id }}
         run: python -m pytest -q tests/test_c1_product_integration.py
+
+      - name: Exercise nine isolated authenticated P2 PDF export route cases
+        run: |
+          set -euo pipefail
+          home="$(mktemp -d)"
+          trap 'rm -rf -- "$home"' EXIT
+          printf '%s\n' SYNTHETIC_TEMP_ONLY > "$home/.pilotodin-p2-export-route-devqa"
+          PILOTODIN_HOME="$home" PILOTODIN_P2_EXPORT_ROUTE_DEVQA=1 python -B - <<'PY'
+          import unittest
+          suite = unittest.defaultTestLoader.loadTestsFromName("tests.test_p2_pdf_export_route_integration")
+          assert suite.countTestCases() == 9
+          result = unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful() and result.testsRun == 9 and not result.skipped
+          PY
