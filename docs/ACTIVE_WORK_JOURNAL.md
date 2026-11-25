@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 79506210ddec3633f20160c08459ae07ba0cafc1 |
 | Product baseline | C3 source exit supported at 78c8672, latest product ebd01f4 and verified fixture/historical changes c329e0d/83c83f8. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
 | Operation ID | C4-A-SETTINGS-FOUNDATION-20261125 |
-| Operation state | PREPARED (read-only review reconciled; source operation not yet published) |
+| Operation state | ISSUED (source publication identified by prepared parent 80e7aa8 and operation marker; reconcile actual branch and CI before any retry) |
 | Intended files | Bounded settings validation/publication helper, direct inert synthetic tests, reviewed P1 source-only CI wiring; journal/handoff and C ledger at checkpoint. No live integration until remaining exact caller/fixture compatibility and platform boundaries are reconciled. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | HEAD audit commit 7950621 confirmed documentation-only; latest 12 branch CI runs terminal success, exact C3 receipts unchanged. 85 workflow trigger/job summaries reviewed at HEAD; existing P1 backend workflow source/test steps read. Core three settings paths, HTTP request models, existing resource/AI fixtures and storage guards reviewed. Exact-source verification pending for planned helper; C4 remains open. |
-| Pending runs | None. |
+| Verification | Dormant fixed-target bounded settings foundation and direct synthetic fault tests; no live writer changes. P1 isolated Ubuntu backend workflow extended to run these tests. Exact CI pending; no C4 closure. |
+| Pending runs | P1 isolated backend push run expected at source commit; resolve actual run ID/status from branch/commit before claiming test result. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Resolve this prepared operation by parent/marker and actual diff before replay. Complete remaining settings caller/fixture inventory and implement/test bounded helper independently; no live integration, DPAPI execution, provider requests, native work or owner data. Review exact matching workflow scope again before source publication. |
+| Recovery action | Verify actual published HEAD/diff by parent 80e7aa8 and operation marker; reconcile exact P1 CI. Complete exhaustive settings/caller/fixture inventory, verify request redaction and production lease integration, then wire resource/AI/DPAPI services with direct regression tests. No actual DPAPI, cloud calls, owner data, native or installer. |
 | Resume after closure | C5 then D with separately approved scope. |
 
 ## Prior operation
