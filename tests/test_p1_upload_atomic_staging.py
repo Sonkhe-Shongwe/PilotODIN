@@ -53,7 +53,7 @@ def test_fsync_failure_cleans_partial_upload_before_metadata(monkeypatch,tmp_pat
     home=_isolated(monkeypatch,tmp_path)
     def interrupted(_fd):
         raise OSError("Synthetic disk synchronization failure")
-    monkeypatch.setattr(main.os,"fsync",interrupted)
+    monkeypatch.setattr(dataset_publication.os,"fsync",interrupted)
     response=_upload()
     assert response.status_code==422,response.text
     assert "Synthetic disk synchronization failure" in response.json()["detail"]

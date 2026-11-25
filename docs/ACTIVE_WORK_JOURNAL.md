@@ -7,17 +7,17 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | ec26dce8e8d0a933001cf250d15f453903ba98a9 |
 | Product baseline | 16f3cf135f26a3b63d997f6b15d117ec845a6041: 7/8 terminal workflows SUCCESS; P1 source recovery FAIL before new route matrix. |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
 | Operation ID | C3-FSYNC-FIXTURE-COMPATIBILITY-20261125 |
-| Operation state | PREPARED (test-only compatibility correction; resolve publication by parent and operation marker) |
+| Operation state | ISSUED (test-only publication identifiable by prepared parent 4c3209a and operation marker; resolve exact SHA) |
 | Intended files | tests/test_p1_upload_atomic_staging.py; journal, compact handoff and C ledger. No product source or workflow change. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Exact 16f3cf1 run and job results independently reconciled; P1 job 139169172324 199 passed, 1 failed, 2 subtests passed; AttributeError main.os at test_fsync_failure_cleans_partial_upload_before_metadata, later matrix step SKIPPED. Dataset publication owns actual fsync; replace stale test target with dataset_publication.os, retain every assertion and same injected error. Reviewed all 85 exact workflow triggers and P1 job; only P1 matches intended test/docs push. Seven other workflows passed; P4 restricted collector skipped. No new restricted authority. Full P1 regression including 76-route matrix required. |
-| Pending runs | None (all eight previous runs terminal; one failure retained). |
+| Verification | Exact product 16f3cf1: 7/8 terminal workflows SUCCESS, P1 FAIL (199 passed, 1 failed, 2 subtests), route matrix skipped. Test correction changes only stale main.os reference to actual dataset_publication.os, retains identical error injection and assertions. All 85 push definitions reviewed, only routine P1 expected. Product code unchanged. New CI pending; C3 not closed. |
+| Pending runs | Expected exact P1 source recovery push run at correction commit; resolve by prepared parent 4c3209a and operation marker. |
 | Unpublished work | Owner-local tree not inspected. |
 | Recovery action | Publish minimal test-only correction, verify exact P1; use time during CI for independent read-only credential audit, no further product edit before reconciliation. Close C3 only on full exit evidence. |
 | Resume after closure | C4, C5 in order; D separately approved. |
