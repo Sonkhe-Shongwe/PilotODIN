@@ -25,7 +25,7 @@ jobs:
           set -e
           test "$code" = 2
   collect-once:
-    if: ${{ github.run_attempt == 1 && github.event.head_commit.message == 'C5-SELECTED-WHEEL-METADATA-MISSING-ONCE-20261125 activate' }} # Owner-approved one use.
+    if: ${{ false }} # Approval issued to exact run 45701493997 attempt 1; never replay.
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
