@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | PREPARED |
+| State | READY |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | ce5e3bd2ffd3376b5eae25df43cb868af481ea54 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
 | Operation ID | C5-INPUT-VERIFICATION-PROPOSALS-20261125 |
-| Operation state | PREPARED: exact 68-wheel acquisition/notice plan and four-document checksum metadata proposal, synthetic scope and parser review only; no live requests or bytes acquired. |
+| Operation state | RECONCILED: exact fcc1902, run 45708074853 job 139535067907 SUCCESS, 26 offline checks and explicit --collect refusal. Two pinned disabled plans: 4 checksum documents (6-request maximum incl. 2 permitted redirects, 5 MiB body cap) and 68 exact wheel identities/225699980 bytes. No transport/archive inspector implemented, no live requests, no artifacts. |
 | Intended files | Isolated qa/c5_wheel_metadata input verification plans/reviewer, dedicated offline workflow, canonical records; preserve product, policy, collectors, locks and receipts. |
 | Approval | Eleven restricted approvals consumed/disarmed (six native, five metadata). No additional registry requests, artifacts, installs, native/model, owner device/data or installer authorized. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
 | Pending runs | None for this operation. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Prepare a narrowly scoped, disabled metadata-only retrieval proposal for the two exact Actions Python hashes.sha256 manifests, Node v22.23.5 SHASUMS256.txt and Rust 1.100.0 exact channel manifest (plus independently bounded signature/size evidence where necessary); no binary downloads, resolver, installs, native or owner-device activity. Review source and synthetic scope/refusal controls before seeking fresh owner approval for hosted metadata retrieval if needed. In parallel prepare evidence-only exact 68-wheel candidate acquisition/notice verification plan from existing pinned receipts; no wheel acquisition without separate fresh approval. Preserve all unknown CP311 pip/MSVC/SDK/redist identities and four BLOCKED profiles. |
+| Recovery action | Implement and independently test disabled checksum retrieval transport and raw receipt persistence for the four pinned documents, with exact GitHub release asset identity and narrow redirect policy, no binary downloads; then seek fresh explicit one-use approval for actual metadata retrieval. In parallel implement and test bounded wheel archive inspection, RECORD and metadata hash comparisons, notice inventory and retention, before proposing the separate 68-wheel acquisition-only operation. No live requests or wheel acquisition currently authorized. All 11 prior approvals consumed/disarmed and four profiles BLOCKED. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
