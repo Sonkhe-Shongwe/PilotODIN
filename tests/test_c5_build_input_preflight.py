@@ -8,6 +8,7 @@ import json
 import os
 import shutil
 import subprocess
+from types import SimpleNamespace
 
 import pytest
 from tools import live_dev, build_input_preflight as preflight
@@ -299,3 +300,79 @@ def test_cargo_missing_or_linked_inputs_refuse_before_command(tmp_path):
     result = subprocess.run(["bash", "-c", script], cwd=tmp_path,
                             capture_output=True, text=True)
     assert result.returncode == 0 and result.stdout == "reached"
+
+
+@pytest.mark.parametrize("pass_number", [1, 2])
+def test_wheelhouse_both_scans_refuse_first_extra_entry(tmp_path, pass_number):
+    row = candidate_wheel(tmp_path)
+    real_scan = preflight.os.scandir
+    visits = []
+    calls = 0
+
+    class ExtraEntries:
+        def __enter__(self):
+            def entries():
+                visits.append("expected")
+                yield SimpleNamespace(name=row["filename"])
+                visits.append("extra")
+                yield SimpleNamespace(name="unexpected.whl")
+                raise AssertionError("enumeration did not stop at first unexpected entry")
+            return entries()
+
+        def __exit__(self, *args):
+            return False
+
+    def scan(path):
+        nonlocal calls
+        calls += 1
+        return ExtraEntries() if calls == pass_number else real_scan(path)
+
+    before = snapshot(tmp_path)
+    with patch.object(preflight.os, "scandir", side_effect=scan):
+        with pytest.raises(preflight.Blocked, match="UNEXPECTED_WHEELHOUSE_ENTRY"):
+            preflight.verify_candidate_wheel_bytes(tmp_path, [row], {"py3-none-any"})
+    assert visits == ["expected", "extra"]
+    assert snapshot(tmp_path) == before
+
+
+@pytest.mark.parametrize("filename", [
+    "fixture.package-1.2.3-py3-none-any.whl",
+    "fixture+package-1.2.3-py3-none-any.whl",
+    "fixture_package-1.2.3-PY3-none-any.whl",
+    "fixture_package-1.2.3-py3-none-any.whl\n",
+])
+def test_candidate_filename_grammar_rejects_noncanonical_spelling(tmp_path, filename):
+    row = candidate_wheel(tmp_path)
+    row["filename"] = filename
+    with pytest.raises(preflight.Blocked):
+        preflight.validate_candidate_wheels([row], {"py3-none-any"})
+
+
+def test_schema_matches_candidate_filename_and_version_patterns():
+    import re
+    doc = json.loads((ROOT / "contracts/build_inputs_v1.schema.json").read_text())
+    properties = doc["$defs"]["candidateWheel"]["properties"]
+    assert properties["filename"]["pattern"] == "^" + preflight.FILENAME.pattern + "$"
+    assert properties["version"]["pattern"] == "^" + preflight.VERSION.pattern + "$"
+
+
+def test_observed_inventory_is_not_an_expected_lock_or_authority():
+    inventory = preflight.strict_json(
+        (ROOT / "contracts/c5_observed_python_wheels_2026-11-25.json").read_bytes())
+    assert inventory["schema_version"] == 1
+    assert len(inventory["profiles"]) == 2
+    sets = []
+    for profile in inventory["profiles"]:
+        assert profile["status"] == "OBSERVED_ONLY_BLOCKED"
+        rows = profile["selected_wheels"]
+        assert len(rows) == 49
+        assert len({row["name"] for row in rows}) == 49
+        assert all(preflight.FILENAME.fullmatch(row["filename"]) for row in rows)
+        assert all(row[key] is None for row in rows
+                   for key in ("artifact_sha256", "artifact_bytes", "requires_dist", "license_review"))
+        assert profile["observed_cpython"].startswith("3.11.")
+        with pytest.raises(preflight.Blocked):
+            preflight.validate_candidate_wheels(rows, {"py3-none-any"})
+        sets.append({row["name"] for row in rows})
+    assert sets[0] - sets[1] == {"colorama"}
+    assert sets[1] - sets[0] == {"uvloop"}

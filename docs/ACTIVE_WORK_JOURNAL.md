@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | PREPARED |
+| State | PUBLISHED |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 55fdb5d175b2fac22b2ca15169d071984fab85b3 |
 | Product baseline | 6cfb8375df68bd714b28bbd12b4c62ac9e933eb2; Cargo and P4 exact matching CI SUCCESS; C5 open. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
 | Operation ID | C5-WHEEL-METADATA-20261125 |
-| Operation state | PREPARED; bound both wheelhouse scans, align row grammar, record observed exact CI wheel selections and upstream metadata availability, add synthetic tests. |
+| Operation state | ISSUED; identify exact source from prepared parent 4ddc884c7cafefbe7fb5886c86317e9e92c7e9e2. No restricted dispatch. |
 | Intended files | tools/build_input_preflight.py, contracts/build_inputs_v1.schema.json, tests/test_c5_build_input_preflight.py, C5 observed metadata inventory under contracts, P4 source workflow only if needed, canonical documentation. No locks, approvals, native markers or artifact acquisition. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | Exact 6cfb837: Cargo #45682825147 SUCCESS, job 139447529632; P4 #45682825061 SUCCESS, 1131 Python/6 skipped/552 subtests, 15 Rust, 160 Node/Vite, 13 HTTP browser, Windows 44 C5/1 skipped, 68/133 subtests and parser, restricted collector skipped. |
-| Pending runs | None for exact 6cfb837, both completed success. |
+| Pending runs | Expected P4 reviewed synthetic/source/browser/Windows CI only. Verify actual exact SHA and jobs. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Publish bounded wheelhouse enumeration and schema alignment; retain exact CI selected wheel names as non-authoritative metadata inventory. Public metadata research partial; missing upstream hash/graph/license proof blocks locks. No actual downloads or build. |
+| Recovery action | Reconcile exact CI and observed inventory; independent metadata access incomplete. Do not treat 98 historical selections as approved lock rows. Next obtain reviewed wheel metadata, dependency graph and toolchain evidence; sidecar and asset guards still required. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation

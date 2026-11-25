@@ -269,7 +269,7 @@
   },
   "$defs": {
     "candidateWheel": {
-      "description": "Expected artifact row for an independently reviewed candidate inventory. Not executable setup authority.",
+      "description": "Candidate artifact row structural constraints. The standard-library verifier additionally checks normalized distribution identity, version equality, expanded tag compatibility, exact URL binding, duplicate rows and license sentinel rejection. Neither schema nor row validity grants setup authority.",
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -291,11 +291,12 @@
         "version": {
           "type": "string",
           "minLength": 1,
-          "maxLength": 128
+          "maxLength": 128,
+          "pattern": "^[0-9][A-Za-z0-9_.+!]*$"
         },
         "filename": {
           "type": "string",
-          "pattern": "^[A-Za-z0-9_.+-]+\\.whl$",
+          "pattern": "^[A-Za-z0-9_]+-[0-9][A-Za-z0-9_.+!]*(?:-[0-9][A-Za-z0-9_]*)?-[a-z0-9_.]+-[a-z0-9_.]+-[a-z0-9_.]+\\.whl$",
           "maxLength": 240
         },
         "bytes": {
@@ -308,21 +309,23 @@
         },
         "source": {
           "type": "string",
-          "pattern": "^https://files\\.pythonhosted\\.org/packages/"
+          "pattern": "^https://files\\.pythonhosted\\.org/packages/[0-9a-f]{2}/[0-9a-f]{2}/[0-9a-f]{60}/[A-Za-z0-9_.+!-]+\\.whl$"
         },
         "metadata_source": {
           "type": "string",
-          "pattern": "^https://pypi\\.org/pypi/"
+          "pattern": "^https://pypi\\.org/pypi/[a-z0-9]+(?:-[a-z0-9]+)*/[0-9][A-Za-z0-9_.+!]*/json$"
         },
         "license_expression": {
           "type": "string",
           "minLength": 1,
-          "maxLength": 200
+          "maxLength": 200,
+          "pattern": "^[ -~]+$"
         },
         "license_review": {
           "type": "string",
           "minLength": 1,
-          "maxLength": 200
+          "maxLength": 200,
+          "pattern": "^[ -~]+$"
         }
       }
     }

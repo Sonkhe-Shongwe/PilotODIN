@@ -45,7 +45,7 @@ HEX64 = re.compile(r"[0-9a-f]{64}")
 NAME = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
 VERSION = re.compile(r"[0-9][A-Za-z0-9_.+!]*")
 TAG = re.compile(r"[a-z0-9_]+-[a-z0-9_]+-[a-z0-9_]+")
-FILENAME = re.compile(r"[A-Za-z0-9_.+!-]{1,240}\.whl")
+FILENAME = re.compile(r"[A-Za-z0-9_]+-[0-9][A-Za-z0-9_.+!]*(?:-[0-9][A-Za-z0-9_]*)?-[a-z0-9_.]+-[a-z0-9_.]+-[a-z0-9_.]+\.whl")
 DEVICE = re.compile(r"(?i)(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)")
 
 
@@ -252,6 +252,19 @@ def validate_candidate_wheels(rows, accepted_tags):
     return rows
 
 
+def _scan_wheelhouse(root, expected):
+    """Both passes use the same bounded, exact, case-sensitive inventory."""
+    actual = set()
+    with os.scandir(root) as entries:
+        for entry in entries:
+            require(len(actual) < len(expected) and entry.name in expected,
+                    "UNEXPECTED_WHEELHOUSE_ENTRY")
+            require(entry.name not in actual, "DUPLICATE_WHEELHOUSE_ENTRY")
+            actual.add(entry.name)
+    require(actual == set(expected), "MISSING_WHEELHOUSE_ENTRY")
+    return actual
+
+
 def verify_candidate_wheel_bytes(wheelhouse, rows, accepted_tags):
     """Flat exact-inventory read only. No archive extraction or subprocess."""
     validate_candidate_wheels(rows, accepted_tags)
@@ -259,21 +272,13 @@ def verify_candidate_wheel_bytes(wheelhouse, rows, accepted_tags):
     try:
         before = checked_directory(root)
         expected = {row["filename"]: row for row in rows}
-        with os.scandir(root) as entries:
-            actual = set()
-            for entry in entries:
-                require(len(actual) < len(expected) and entry.name in expected,
-                        "UNEXPECTED_WHEELHOUSE_ENTRY")
-                require(entry.name not in actual, "DUPLICATE_WHEELHOUSE_ENTRY")
-                actual.add(entry.name)
-        require(actual == set(expected), "MISSING_WHEELHOUSE_ENTRY")
+        actual = _scan_wheelhouse(root, expected)
         result = {}
         for filename, row in expected.items():
             digest, _ = read_exact(root / filename, size=row["bytes"])
             require(digest == row["sha256"], "WHEEL_DIGEST_MISMATCH")
             result[filename] = digest
-        with os.scandir(root) as entries:
-            require({entry.name for entry in entries} == actual, "WHEELHOUSE_CHANGED")
+        require(_scan_wheelhouse(root, expected) == actual, "WHEELHOUSE_CHANGED")
         require(identity(checked_directory(root)) == identity(before), "WHEELHOUSE_CHANGED")
         return result
     except OSError:
