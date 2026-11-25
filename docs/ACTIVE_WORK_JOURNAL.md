@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | a3686345608bf033ce42bf0204698be135cfe719 |
+| Observed starting HEAD | 45d284b685124009d2fd4d9fc735fbe2d6410a16 |
 | Product baseline | C3 source exit supported at 78c8672, latest product ebd01f4 and verified fixture/historical changes c329e0d/83c83f8. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
-| Operation ID | C4-A-BOUNDED-SETTINGS-HTTP-20261125 |
-| Operation state | RECONCILED: exact bounded HTTP source [e94d87f](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/e94d87f676913b51c05cabf48421ffdeb42712aa); no replay |
-| Intended files | backend/settings_http.py (new pure ASGI boundary), backend/main.py, backend/settings_storage.py, tests/test_c4_settings_http.py, tests/test_c4_settings_storage.py, existing P1 workflow and canonical records. Three settings PUT routes only; no transport, UI, model or native activation. |
+| Operation ID | C4-A-IMPORT-HTTP-WITNESS-CORRECTION-20261125 |
+| Operation state | PREPARED; prior e94d87f 7/8 SUCCESS; [P1 HTTP #45627663897](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45627663897) FAILURE; test-only correction not issued |
+| Intended files | frontend/e2e/p1-real-http.spec.ts and canonical records only; exact POST response synchronization, no product, authority, workflow or fixture allowlist changes. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Three settings PUT routes now have a pure ASGI bounded strict JSON guard shared by both compositions; fixed framing/size/timeout/redaction responses and direct fixture tests. Exact CI pending. |
-| Pending runs | [P1 Disposable Real HTTP Browser/Backend Acceptance #45627663897](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45627663897) IN_PROGRESS; [P1 Project Lifecycle Disposable Backend Acceptance #45627663643](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45627663643) IN_PROGRESS; [P2 Real HTTP Saved Revision Comparison #45627663765](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45627663765) IN_PROGRESS; [P1 Isolated Backend Source Recovery #45627663352](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45627663352) IN_PROGRESS; [P4 Target Review Queue and Transparent Ranking #45627663919](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45627663919) IN_PROGRESS; [P3 Real HTTP Semantic Context Browser Acceptance #45627664164](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45627664164) IN_PROGRESS; [P2 Immutable Report Revision Idempotency #45627663718](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45627663718) IN_PROGRESS; [P3 User-Described Semantic Business Context #45627664283](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45627664283) IN_PROGRESS. All at exact e94d87f. |
+| Verification | e94d87f P1 backend 50 foundation, 73 AI/HTTP combined, 206 recovery + 2 subtests; six other workflows passed, P1 HTTP failed on catalogue length before awaiting import. Three downstream stages skipped. |
+| Pending runs | None; all eight e94d87f runs terminal, one failure preserved. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Reconcile eight exact CI runs, especially P1 direct ASGI and both compositions' bounded request tests. Preserve any failure. After batch A source verification, proceed to C4 batch B: common explicit provider intent and saved consent, removal of startup/verify-connected probes and legacy cloud failover; strict fake transport only. Positive payload projection and frontend intent/status/cache still required. No actual provider/native/owner-data operation. |
+| Recovery action | Correct observed test race by registering exact same-origin POST /api/projects response waiter before Analyse click; require 201 and exact committed ID in independently read catalogue, retain all counts and isolation checks. Reconcile exact P1 HTTP and P1 frontend workflows; if failure persists inspect actual response. Then C4 Batch B. |
 | Resume after closure | C5 then D with separately approved scope. |
 
 ## Prior operation
