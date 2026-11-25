@@ -1562,7 +1562,8 @@ test('C4 mounted consent requires explicit confirmation and a reviewed witness i
   await expect(drawer.getByText('Synthetic cloud explanation only.',{exact:true})).toBeVisible();
   expect(posted).toHaveLength(2);expect(posted[1].selected_provider).toBe('groq');
   expect(posted[1].prediction).toBeNull();
-  expect(audit.writes).toEqual([]);expect(audit.blockedOrigins).toEqual([]);
+  expect(audit.writes).toEqual([]);
+  expect(audit.blockedOrigins).toEqual([]);
 });
 test('C4 mounted consent revocation in a second renderer suppresses an in-flight response',async({page,context})=>{
   const {audit,posted,hold}=await installC4ConsentAPI(context);
@@ -1575,7 +1576,7 @@ test('C4 mounted consent revocation in a second renderer suppresses an in-flight
     await page.getByRole('textbox',{name:'Dataset question'}).fill('Synthetic late question');
     const send=page.getByRole('button',{name:'Send to Google Gemini',exact:true});
     await expect(send).toBeEnabled();
-    page.once('dialog',dialog=>dialog.accept());await send.click();
+    page.once('dialog',async dialog=>{expect(dialog.message()).toContain('Google Gemini');expect(dialog.message()).toContain('Synthetic late question');expect(dialog.message()).toContain('Confirm only this request');await dialog.accept()});await send.click();
     await expect.poll(()=>posted.length).toBe(1);
     const other=await context.newPage();
     await other.goto('/#/studio/ai_settings');
@@ -1585,9 +1586,11 @@ test('C4 mounted consent revocation in a second renderer suppresses an in-flight
     await other.getByRole('button',{name:'Save AI preferences',exact:true}).click();
     await expect(other.getByText('AI preferences saved. Cloud permission disabled.',{exact:true})).toBeVisible();
     release();
+    await expect(page.getByText('Waiting for the selected cloud request…',{exact:true})).toHaveCount(0);
     await expect(page.getByRole('button',{name:'Send to Google Gemini',exact:true})).toBeDisabled();
     await expect(page.getByText('Synthetic stale response must never render.',{exact:true})).toHaveCount(0);
     expect(posted).toHaveLength(1);
-    expect(audit.writes).toEqual([]);expect(audit.blockedOrigins).toEqual([]);
+    expect(audit.writes).toEqual([]);
+  expect(audit.blockedOrigins).toEqual([]);
   }finally{release()}
 });

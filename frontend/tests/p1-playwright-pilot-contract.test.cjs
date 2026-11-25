@@ -79,6 +79,8 @@ test('isolated browser does not reuse server or approve import',()=>{
     'genuine primary Prepare reload Stay preserves draft and Leave discards only in-memory edit',
     'genuine cross-tab reload Stay keeps A draft and Leave adopts shared B selection',
     'isolated import Quality and failed project switch preserve the synthetic unsaved draft',
+    'C4 mounted consent requires explicit confirmation and a reviewed witness in both panels',
+    'C4 mounted consent revocation in a second renderer suppresses an in-flight response',
   ]);
   const approvedScenarios=spec.split(/^test\('/m).slice(1)
     .filter(section=>section.includes('await dialog.accept()'));

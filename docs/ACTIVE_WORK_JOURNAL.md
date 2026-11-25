@@ -7,13 +7,13 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | a931ff9775af8d32d391f2490cbaa15f2527aef6 |
 | Product baseline | C4 C3 frontend witness/fence 35d2bd2 + test-only a931ff9 exact P1/P4 SUCCESS. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
 | Operation ID | C4-C3-MOUNTED-TEST-CONTRACT-CORRECTION-20261125 |
-| Operation state | PREPARED; test-only correction following exact 59cb7a1 P1 failure. No product enablement. |
+| Operation state | ISSUED from prepared parent 924bf37eda4a59dfac6d28edcfa92e994916d43c; exact test-only correction; reconcile mounted CI before any real cloud activation. |
 | Intended files | frontend/tests/p1-playwright-pilot-contract.test.cjs, frontend/e2e/isolated-workspace.spec.ts, canonical records. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | Exact a931ff9: P1 #45668632462 SUCCESS (206 Node, Vite, 7 browser); P4 #45668632455 SUCCESS (1086 Python/6 skipped/552 subtests, 15 Rust, 141 Node/Vite, 13 browser, Windows 68/133 subtests); collector skipped. Original 35d2bd2 P1/P4 cancelled, source inspection error preserved. |
