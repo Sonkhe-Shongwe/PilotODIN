@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | PUBLISHED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 5404001d7571c5c2718ae3ecf35a4293cdb73b9e |
-| Product baseline | b74f0fa exact P1 SUCCESS and seven construction paths classified; c901eb73dee2d4629cb9a7864300100e379ea9d9 native smoke fail-closed source pending terminal reconciliation. |
+| Observed starting HEAD | 5404001d7571c5c2718ae3ecf35a4293cdb73b9e; prepared 69aa0b965e6761a6d370352bbdb8a245c275c9d9; published d53651b0923840d10af7e5189122bec52028d262 |
+| Product baseline | b74f0fa exact P1 SUCCESS; c901eb7 native smoke source; d53651b corrective source assertion only. |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
 | Operation ID | C3-NATIVE-SMOKE-SOURCE-ASSERTION-20261125-fix |
-| Operation state | ISSUED |
+| Operation state | RECONCILED |
 | Intended files | frontend/tests/p1-playwright-pilot-contract.test.cjs: update stale A4-only error-text source assertion to exact new fail-closed smoke error and preserve all relay/header checks; no product edit. Journal. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Exact c901eb7 P1 frontend #45588860686 job 139117423330 FAILURE: source test #70 expects old /A4 requires the authenticated Live Dev relay/ text; new intentional generic A4/hosted fail-closed message differs. No behavioral failure evidenced. P4 #45588860715 still in progress, restricted collector skipped. Correct one source assertion; only P1 isolated frontend expected. No native operation. |
-| Pending runs | Original P4 #45588860715; corrective P1 exact SHA identified by parent 69aa0b9 and operation marker. |
+| Verification | Original c901eb7 P1 #45588860686 job 139117423330 FAILURE, stale source assertion #70 expecting old A4-only error string; no behavioral failure established. Exact corrective diff two files (one source assertion, journal) verified; all existing relay/header requirements retained, no product change. Corrective P1 [#45589119957](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45589119957) in_progress; job 139118322808: in_progress. Original product P4 [#45588860715](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45588860715) in_progress. No native app, inference or installer execution. |
+| Pending runs | Corrective P1 [#45589119957](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45589119957) in_progress; job 139118322808: in_progress. Original product P4 [#45588860715](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45588860715) in_progress. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Publish exact stale assertion fix; reconcile corrective P1 and original P4. Next explicit browser fixture bootstrap and frontend default-port removal, backend fallback removal, remaining semantic route/caller audit. |
+| Recovery action | Reconcile exact corrective P1 and original P4 terminal results before new source. Next explicit 5187 synthetic browser fixture bootstrap and frontend default-port removal, backend fail-closed guard, remaining direct caller/credential matrix and direct inference verifier source review. No activation. |
 | Resume after closure | C4, C5 in order; D separately approved. |
 
 ## Prior operation
