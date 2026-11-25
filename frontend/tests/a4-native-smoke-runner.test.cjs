@@ -41,7 +41,9 @@ test('A4 Windows runner checks native prerequisites and includes regression diag
  const launcher=fs.readFileSync(path.join(base,'..','Run_PilotODIN_A4_Native_Smoke.bat'),'utf8');
  assert.match(script,/rustc\.exe/);
  assert.match(script,/cargo\.exe/);
- assert.match(script,/http:\/\/127\.0\.0\.1:8000\/api\/health/);
+ assert.match(script,/http:\/\/127\.0\.0\.1:5173\/api\/health/);
+ assert.doesNotMatch(script,/http:\/\/127\.0\.0\.1:8000\/api\/health/);
+ assert.match(script,/PILOTODIN_P4_UNPACKAGED_NATIVE_DEV_CONSENT -cne 'I_APPROVE_UNPACKAGED_P4_NATIVE_DEV'/);
  assert.match(script,/Port-Open 5174/);
  assert.match(script,/Verify_P0_A4_Readiness\.py/);
  assert.match(script,/VITE_PILOTODIN_NATIVE_SMOKE='1'/);

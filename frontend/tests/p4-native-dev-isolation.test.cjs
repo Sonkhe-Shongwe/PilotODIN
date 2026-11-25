@@ -68,3 +68,32 @@ test("raw default Tauri dev and build have source-level fail-closed hooks", () =
   assert.match(denial.stderr, /STOP: Default Tauri native development uses PilotODIN production identity/);
   assert.equal(prod.identifier, "com.pilotodin.studio");
 });
+
+
+test("fixed native launch plan selects A4 only with exact relay and existing separate consent", async () => {
+  const { nativeDevPlan } = await import("../scripts/native-dev-plan.mjs");
+  const a4 = "src-tauri/tauri.native-a4-smoke.conf.json";
+  const p4 = "src-tauri/tauri.p4-isolated-native-dev.conf.json";
+  const consent = { PILOTODIN_P4_UNPACKAGED_NATIVE_DEV_CONSENT: "I_APPROVE_UNPACKAGED_P4_NATIVE_DEV" };
+  const relay = { ...consent, PILOTODIN_A4_RELAY: "1", VITE_PILOTODIN_AUTH_DEV: "1", VITE_PILOTODIN_NATIVE_SMOKE: "1" };
+  assert.deepEqual(nativeDevPlan([], consent, read), ["exec","--","tauri","dev","--config",p4]);
+  assert.deepEqual(nativeDevPlan(["--config",a4], relay, read), ["exec","--","tauri","dev","--config",a4]);
+  assert.throws(() => nativeDevPlan(["--config",a4], {}, () => {throw Error("must not read");}), /compilation is frozen/);
+  for (const args of [["--config",p4],["--config","src-tauri/tauri.conf.json"],["--config",a4,"--release"],["--config","../"+a4],["--no-watch"]])
+    assert.throws(() => nativeDevPlan(args, relay, read), /fixed isolated P4 default/);
+  for (const change of [{PILOTODIN_A4_RELAY:"0"},{VITE_PILOTODIN_AUTH_DEV:"0"},{VITE_PILOTODIN_NATIVE_SMOKE:"0"},
+    {PILOTODIN_HOME:"foreign"},{PILOTODIN_DEV_CAPABILITY:"private"},{PILOTODIN_HOSTED_NATIVE_AUTH:"1"}])
+    assert.throws(() => nativeDevPlan(["--config",a4], {...relay,...change}, read), /separate authenticated relay/);
+  assert.throws(() => nativeDevPlan([], relay, read), /A4 relay cannot use the P4 overlay/);
+  assert.throws(() => nativeDevPlan([], {...consent,TAURI_CONFIG:"{}"},read), /Inherited Tauri configuration/);
+  for (const mutate of [
+    config => {config.identifier = prod.identifier;},
+    config => {config.bundle.active = true;},
+    config => {config.app.appDirectoriesOverride = {};},
+    config => {config.build.devUrl = "http://127.0.0.1:5173";},
+    config => {config.build.beforeBuildCommand = "arbitrary";}
+  ]) {
+    const altered = p => {const config=read(p);if(p===a4)mutate(config);return config;};
+    assert.throws(() => nativeDevPlan(["--config",a4],relay,altered));
+  }
+});

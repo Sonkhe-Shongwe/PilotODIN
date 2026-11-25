@@ -152,7 +152,7 @@ if(-not $results.checks['backend_8000_running'] -or -not $results.checks['live_d
     Stop-With 'Start both paired PilotODIN Live Dev consoles first (frontend 5173 and backend 8000).'
 }
 # Independent launcher: never inherit, copy or expose a backend capability.
-foreach($name in @('PILOTODIN_HOME','PILOTODIN_SERVER_MODE','PILOTODIN_DEV_CAPABILITY',
+foreach($name in @('PILOTODIN_HOME','PILOTODIN_SERVER_MODE','PILOTODIN_HOSTED_NATIVE_AUTH','PILOTODIN_DEV_CAPABILITY',
     'PILOTODIN_DEV_PORT','PILOTODIN_DEV_ORIGIN','PILOTODIN_DESKTOP_SESSION',
     'PILOTODIN_DESKTOP_PORT','PILOTODIN_DESKTOP_WATCH_STDIN','PILOTODIN_CONTROL_MODE',
     'PILOTODIN_CONTROL_GENERATION','PILOTODIN_CONTROL_CAPABILITY')){
@@ -196,6 +196,12 @@ if($PreflightOnly){
     $results.message='Preflight only; regressions and native compilation/window not run.'
     Save-Result
     exit 0
+}
+# A4 does not grant its own native compile authority. Preflight above is
+# read-only readiness; the existing separate owner decision and local opt-in
+# are still mandatory before any regression/compile sequence.
+if($env:PILOTODIN_P4_UNPACKAGED_NATIVE_DEV_CONSENT -cne 'I_APPROVE_UNPACKAGED_P4_NATIVE_DEV'){
+    Stop-With 'Native compilation is frozen pending separate explicit owner approval.'
 }
 $regressionPython = Join-Path $root '.venv-live\Scripts\python.exe'
 if(-not (Test-Path $regressionPython)){

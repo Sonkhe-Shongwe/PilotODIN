@@ -7,13 +7,13 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | PREPARED |
+| State | PUBLISHED |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | c26a67fd25e6f348e65eacabc3c40176d9812e3f |
 | Product baseline | 8f12e8f3a1dc4319c37dacf0fd7d5087e0b715d0; all four exact routine workflows SUCCESS. |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
 | Operation ID | C3-A4-FIXED-LAUNCH-PLAN-20261125-source |
-| Operation state | PREPARED |
+| Operation state | ISSUED |
 | Intended files | frontend/scripts/p4-isolated-native-dev.mjs, new pure frontend/scripts/native-dev-plan.mjs, tools/Verify_A4_Native_Windows.ps1, frontend/tests/p4-native-dev-isolation.test.cjs, frontend/tests/a4-native-smoke-runner.test.cjs, .github/workflows/p4-target-ranking.yml (add existing A4 source-only test and watch it), journal. Preserve consent requirement, no arbitrary arguments, only exact existing A4 overlay and exact relay flags; P4 default unchanged. Validate all four identities and both unbundled overlays; no raw Tauri bypass, no config changes, no actual compilation. Correct stale A4 test expecting bare 8000 health, add pure plan positives/negatives. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | 8f12e8f P1 frontend #45568774727, P1 HTTP #45568774595, P4 #45568774687, R02.5 source-only #45568774737 terminal SUCCESS; P4 jobs p4-disposable-real-http-browser 139049989235 success; p4-synthetic-source-and-frontend 139049989547 success; p4-r03-windows-local-answers 139049989667 success; Exercise preservation/hash collector on synthetic Windows fixture ONLY 139049991541 skipped. Prior A4 runner source test not included in exact P1/P4 run lists, stale bare health assertion observed; fix and include in routine P4. Existing wrapper discards CLI arguments and always selects P4 overlay. |
