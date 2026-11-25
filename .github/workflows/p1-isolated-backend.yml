@@ -39,6 +39,7 @@ on:
       - tests/test_p1_upload_atomic_staging.py
       - tests/test_p1_real_api_failed_switch.py
       - tests/fixture_http.py
+      - tools/c3_source_caller_inventory.py
       - tests/test_p1_resource_policy.py
       - tests/test_p1_resource_admission.py
 
@@ -67,6 +68,8 @@ jobs:
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: "3.11"
+      - name: Inventory committed C3 routes and caller candidates (read-only)
+        run: python -B tools/c3_source_caller_inventory.py
       - name: Install existing test dependencies
         run: python -m pip install -r backend/requirements-test.txt
       - name: Compile backend modules
