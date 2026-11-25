@@ -22,8 +22,10 @@ jobs:
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
           cd frontend/src-tauri
-          test -f Cargo.lock && test ! -L Cargo.lock
-          test -f Cargo.toml && test ! -L Cargo.toml
+          test -f Cargo.lock
+          test ! -L Cargo.lock
+          test -f Cargo.toml
+          test ! -L Cargo.toml
           python - <<'PY'
           import base64, hashlib, pathlib, re, tomllib
           raw = pathlib.Path("Cargo.lock").read_bytes()
@@ -55,6 +57,6 @@ jobs:
           print("LOCK-END", (len(data)+1599)//1600)
           PY
           cargo --version
-          cargo metadata --locked --no-deps --format-version 1 > "$RUNNER_TEMP/pilotodin-cargo-metadata.json"
+          cargo metadata --locked --no-deps --manifest-path "$PWD/Cargo.toml" --format-version 1 > "$RUNNER_TEMP/pilotodin-cargo-metadata.json"
           git diff --exit-code -- Cargo.lock Cargo.toml ../../third_party/tauri-plugin-shell-2.6.0
           test ! -d target

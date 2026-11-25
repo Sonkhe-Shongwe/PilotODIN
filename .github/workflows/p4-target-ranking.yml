@@ -9,6 +9,9 @@ on:
     paths:
       - .github/workflows/p4-target-ranking.yml
       - tools/live_dev.py
+      - tools/build_input_preflight.py
+      - contracts/build_input_policy_v1.json
+      - contracts/build_inputs_v1.schema.json
       - desktop/Build_Windows_Installer.ps1
       - desktop/Verify_Frontend_Windows.ps1
       - Self_Test_PilotODIN.bat
@@ -213,6 +216,8 @@ jobs:
           node-version: "22"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
+      - name: Validate blocked build-input policy and pinned source identity
+        run: python -B tools/build_input_preflight.py --audit-policy
       - name: Check existing npm lock structure
         run: node frontend/scripts/verify-npm-lock.mjs
       - name: Install existing declared test dependencies

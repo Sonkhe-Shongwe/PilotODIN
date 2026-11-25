@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | PREPARED |
+| State | PUBLISHED |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 06f0772883b7ed5db6f78c8de2800c211660f273 |
 | Product baseline | First C5 guard batch 0d91a071fcf07c564ed493a940015146f654b73e, all three matched CI completed SUCCESS; C5 remains open. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
 | Operation ID | C5-PROFILE-CONTRACT-20261125 |
-| Operation state | PREPARED; Cargo guard correction and blocked exact profile contract, read-only wheel identity validation and direct synthetic tests. No source publication yet. |
+| Operation state | ISSUED; resolve exact commit from parent 44465d94a21401e7d567991dec41edae61a84b49 and C5-PROFILE-CONTRACT-20261125. No restricted dispatch. |
 | Intended files | Cargo metadata workflow, contracts/build_inputs_v1.schema.json, contracts/build_input_policy_v1.json, tools/build_input_preflight.py, existing C5 Python tests, P4 synthetic workflow; canonical documentation. No locks, approvals or native markers changed. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | Exact 0d91a07: P1 #45681663586 success (206 Node, TS/Vite, 11 browser); Cargo #45681663542 success (457 packages, no lock drift); P4 #45681663537 success (1100 Python/6 skipped/552 subtests, 15 Rust, 160 Node/Vite, 13 HTTP browser, Windows 14 C5 tests, PowerShell parser, 68/133 subtests and 5 simulated scenarios; restricted collector skipped). |
-| Pending runs | None at exact 0d91a07, three completed successes. |
+| Pending runs | Expected Cargo metadata-only and P4 reviewed synthetic/source/browser/Windows CI. Observe exact SHA and job outcomes; prior 0d91a07 all three green. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Publish narrow Cargo guard correction plus strict blocked profile policy and wheel inventory identity primitive. No executable fake locks, no downloads; future graph/marker and toolchain/license review required. Verify expected HEAD and matching workflow scope. |
+| Recovery action | Reconcile exact profile foundation CI, then independently verify exact wheel metadata and complete graph/toolchain/license provenance. All four candidate profiles deliberately BLOCKED; no executable lock, artifact acquisition, native build or installer. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation

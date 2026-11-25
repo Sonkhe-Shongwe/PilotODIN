@@ -2,10 +2,15 @@
 from pathlib import Path
 from unittest.mock import patch
 import ast
+import copy
+import hashlib
+import json
 import os
+import shutil
+import subprocess
 
 import pytest
-from tools import live_dev
+from tools import live_dev, build_input_preflight as preflight
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -125,3 +130,172 @@ def test_source_entrypoint_order_and_no_install_fallback():
     assert "git diff --exit-code -- Cargo.lock" in cargo
     self_test = (ROOT / "Self_Test_PilotODIN.bat").read_text()
     assert "pip install" not in self_test and self_test.index("verify-npm-lock.mjs") < self_test.index("-m pytest")
+
+
+def test_policy_source_pins_and_all_candidate_profiles_blocked(capsys):
+    policy = preflight.audit_policy(ROOT)
+    assert len(policy["profiles"]) == 4
+    assert preflight.main(["--audit-policy"]) == 0
+    assert "BLOCKED_POLICY_VALID" in capsys.readouterr().out
+    for row in policy["profiles"]:
+        with patch.dict(os.environ, {"PILOTODIN_ALLOW_BUILD": "1", "PIP_INDEX_URL": "foreign"}):
+            assert preflight.main(["--profile", row["id"]]) == 2
+        output = json.loads(capsys.readouterr().out)
+        assert output["status"] == "BLOCKED"
+        assert output["blockers"]
+        if row["planned_lock"]:
+            assert not (ROOT / row["planned_lock"]).exists()
+
+
+@pytest.mark.parametrize("change", [
+    lambda p: p["profiles"].pop(),
+    lambda p: p["profiles"].append(copy.deepcopy(p["profiles"][0])),
+    lambda p: p["profiles"][0].update(status="READY"),
+    lambda p: p["profiles"][0].update(blockers=[]),
+    lambda p: p["profiles"][0].update(planned_lock="../foreign"),
+    lambda p: p["source_inputs"][0].update(path="../foreign"),
+    lambda p: p.update(schema_version=True),
+    lambda p: p.update(override=True),
+])
+def test_policy_cannot_grant_unreviewed_readiness(change):
+    doc = preflight.audit_policy(ROOT)
+    change(doc)
+    with pytest.raises(preflight.Blocked):
+        preflight.validate_policy(doc)
+
+
+def test_policy_duplicate_and_nonfinite_json_refused():
+    for raw in (b'{"a":1,"a":2}', b'{"a":NaN}', b'{"a":1e2,"\\u0061":2}'):
+        with pytest.raises(preflight.Blocked):
+            preflight.strict_json(raw)
+
+
+def candidate_wheel(tmp_path):
+    # These are deliberately inert bytes, not a real executable wheel.
+    data = b"synthetic non-wheel test input"
+    filename = "fixture_package-1.2.3-py3-none-any.whl"
+    row = {
+        "name": "fixture-package",
+        "version": "1.2.3",
+        "filename": filename,
+        "bytes": len(data),
+        "sha256": hashlib.sha256(data).hexdigest(),
+        "source": "https://files.pythonhosted.org/packages/ab/cd/" + "0"*60 + "/" + filename,
+        "metadata_source": "https://pypi.org/pypi/fixture-package/1.2.3/json",
+        "license_expression": "MIT",
+        "license_review": "synthetic test only",
+    }
+    (tmp_path / filename).write_bytes(data)
+    return row
+
+
+def test_candidate_wheel_exact_bytes_read_only(tmp_path):
+    row = candidate_wheel(tmp_path)
+    before = snapshot(tmp_path)
+    with patch.object(subprocess, "run") as run, patch.object(subprocess, "Popen") as popen:
+        assert preflight.verify_candidate_wheel_bytes(tmp_path, [row], {"py3-none-any"}) == {
+            row["filename"]: row["sha256"]
+        }
+        run.assert_not_called()
+        popen.assert_not_called()
+    assert snapshot(tmp_path) == before
+
+
+@pytest.mark.parametrize("mutate", [
+    lambda p, r: (p / r["filename"]).unlink(),
+    lambda p, r: (p / "extra.whl").write_bytes(b"extra"),
+    lambda p, r: (p / "unreviewed").mkdir(),
+    lambda p, r: (p / r["filename"]).write_bytes(b"x" * r["bytes"]),
+    lambda p, r: (p / r["filename"]).write_bytes(b"short"),
+    lambda p, r: r.update(bytes=True),
+    lambda p, r: r.update(sha256="x" * 64),
+    lambda p, r: r.update(filename="../outside.whl"),
+    lambda p, r: r.update(filename="fixture_package-1.2.3.tar.gz"),
+    lambda p, r: r.update(name="Fixture_Package"),
+    lambda p, r: r.update(version="9.9.9"),
+    lambda p, r: r.update(source="https://foreign.invalid/fixture.whl"),
+    lambda p, r: r.update(metadata_source="https://foreign.invalid/metadata"),
+    lambda p, r: r.update(license_expression="unknown"),
+    lambda p, r: r.update(license_review="pending"),
+    lambda p, r: r.update(unreviewed=True),
+])
+def test_candidate_wheel_refuses_drift_or_unreviewed_input(tmp_path, mutate):
+    row = candidate_wheel(tmp_path)
+    mutate(tmp_path, row)
+    before = snapshot(tmp_path)
+    with patch.object(subprocess, "run") as run:
+        with pytest.raises(preflight.Blocked):
+            preflight.verify_candidate_wheel_bytes(tmp_path, [row], {"py3-none-any"})
+        run.assert_not_called()
+    assert snapshot(tmp_path) == before
+
+
+def test_candidate_wheel_requires_independently_reviewed_compatible_tags(tmp_path):
+    row = candidate_wheel(tmp_path)
+    for tags in (set(), {"cp311-cp311-win_amd64"}, {"bad tag"}):
+        with pytest.raises(preflight.Blocked):
+            preflight.verify_candidate_wheel_bytes(tmp_path, [row], tags)
+    with pytest.raises(preflight.Blocked):
+        preflight.verify_candidate_wheel_bytes(tmp_path, [row, row], {"py3-none-any"})
+
+
+def test_hardlink_wheel_refused_when_supported(tmp_path):
+    row = candidate_wheel(tmp_path)
+    source = tmp_path / row["filename"]
+    outside = tmp_path.parent / (tmp_path.name + "-outside")
+    try:
+        os.link(source, outside)
+    except OSError:
+        pytest.skip("hardlink unavailable in disposable fixture")
+    try:
+        with pytest.raises(preflight.Blocked):
+            preflight.verify_candidate_wheel_bytes(tmp_path, [row], {"py3-none-any"})
+    finally:
+        outside.unlink()
+
+
+def test_symlink_wheel_refused_when_supported(tmp_path):
+    row = candidate_wheel(tmp_path)
+    source = tmp_path / row["filename"]
+    outside = tmp_path.parent / (tmp_path.name + "-outside")
+    outside.write_bytes(source.read_bytes())
+    source.unlink()
+    try:
+        try:
+            source.symlink_to(outside)
+        except OSError:
+            pytest.skip("symlink unavailable in disposable fixture")
+        with pytest.raises(preflight.Blocked):
+            preflight.verify_candidate_wheel_bytes(tmp_path, [row], {"py3-none-any"})
+    finally:
+        outside.unlink()
+
+
+def test_cargo_missing_or_linked_inputs_refuse_before_command(tmp_path):
+    if os.name != "posix" or not shutil.which("bash"):
+        pytest.skip("exact bash workflow guard is Linux-only")
+    source = (ROOT / ".github/workflows/p4-product-cargo-resolution.yml").read_text()
+    guard = source[source.index("          test -f Cargo.lock"):source.index("          python - <<'PY'")]
+    assert "&&" not in guard
+    assert 'cargo metadata --locked --no-deps --manifest-path "$PWD/Cargo.toml"' in source
+    # Run only the extracted four read-only guard statements, never cargo.
+    script = "set -euo pipefail\n" + guard + "\nprintf reached"
+    for missing in ("Cargo.lock", "Cargo.toml"):
+        for name in ("Cargo.lock", "Cargo.toml"):
+            (tmp_path / name).write_text("inert")
+        (tmp_path / missing).unlink()
+        result = subprocess.run(["bash", "-c", script], cwd=tmp_path,
+                                capture_output=True, text=True)
+        assert result.returncode != 0 and not result.stdout
+    for name in ("Cargo.lock", "Cargo.toml"):
+        (tmp_path / name).write_text("inert")
+    (tmp_path / "Cargo.toml").unlink()
+    (tmp_path / "Cargo.toml").symlink_to(tmp_path / "Cargo.lock")
+    result = subprocess.run(["bash", "-c", script], cwd=tmp_path,
+                            capture_output=True, text=True)
+    assert result.returncode != 0 and not result.stdout
+    (tmp_path / "Cargo.toml").unlink()
+    (tmp_path / "Cargo.toml").write_text("inert")
+    result = subprocess.run(["bash", "-c", script], cwd=tmp_path,
+                            capture_output=True, text=True)
+    assert result.returncode == 0 and result.stdout == "reached"
