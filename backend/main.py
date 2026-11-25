@@ -1149,10 +1149,21 @@ def update_resource_policy(body: ResourcePolicyRequest, request: Request):
     _local_request(request)
     try:
         resource_policy.save_policy(body.mode)
-    except OSError as exc:
-        logging.exception("Could not persist local resource policy")
-        raise HTTPException(status_code=500,
-                            detail="Could not save resource settings. Existing settings were not replaced.") from exc
+    except resource_policy.settings_storage.SettingsWriteError as exc:
+        # An acknowledged replace may have occurred before readback failed.
+        # Do not promise rollback or invite an automatic retry.
+        if exc.code == "settings_commit_uncertain":
+            message = "Resource settings save outcome is uncertain. Refresh status before any further save."
+        elif exc.code == "settings_not_committed_stage_retained":
+            message = "Resource settings were not committed. A temporary file requires recovery."
+        else:
+            message = "Resource settings were not committed."
+        raise HTTPException(status_code=503, detail={"code": exc.code, "message": message}) from None
+    except OSError:
+        raise HTTPException(status_code=503, detail={
+            "code": "settings_unavailable",
+            "message": "Resource settings unavailable or unsafe. Existing preferences require review."
+        }) from None
     return resource_policy.status()
 
 

@@ -6,11 +6,13 @@ import pandas as pd
 from fastapi import BackgroundTasks, HTTPException
 
 from backend import ai_provider, main, resource_policy, storage
+from tests.settings_fixture import fixture_store
 
 
 @pytest.fixture
 def isolated_policy(monkeypatch, tmp_path):
     monkeypatch.setattr(storage, "HOME", tmp_path)
+    monkeypatch.setattr(resource_policy, "_settings_store", lambda: fixture_store(tmp_path))
     return tmp_path
 
 

@@ -429,3 +429,19 @@ class Store:
                     if not self._cleanup(stage, identity) and code == "settings_not_committed":
                         code = "settings_not_committed_stage_retained"
                 raise SettingsWriteError(code) from None
+
+def owned_store(home):
+    """Product adapter: require the live cooperating workspace lease.
+
+    No environment/test-mode bypass. Disposable callers must explicitly
+    inject a Store with a separate test-only checker.
+    """
+    try:
+        from .workspace_boundary import validate_process_write
+    except ImportError:
+        from workspace_boundary import validate_process_write
+
+    def check(path, **options):
+        return validate_process_write(home, path, require_owned=True, **options)
+
+    return Store(home, check_path=check)

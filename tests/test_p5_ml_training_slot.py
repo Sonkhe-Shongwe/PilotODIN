@@ -15,6 +15,7 @@ import pytest
 from fastapi import BackgroundTasks, HTTPException
 
 from backend import main, quality, resource_policy, storage
+from tests.settings_fixture import fixture_store
 
 
 @pytest.fixture
@@ -23,6 +24,7 @@ def store(monkeypatch, tmp_path):
     (home/"datasets").mkdir(parents=True)
     (home/"models").mkdir()
     monkeypatch.setattr(storage,"HOME",home)
+    monkeypatch.setattr(resource_policy, "_settings_store", lambda: fixture_store(home))
     monkeypatch.setattr(storage,"DB_PATH",home/"pilotodin.sqlite3")
     storage.init()
     quality._init_tables()

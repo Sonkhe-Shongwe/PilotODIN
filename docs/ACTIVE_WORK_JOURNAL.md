@@ -7,17 +7,17 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | a40aea099b4281952abaca8afd53bdf8074ef9d8 |
 | Product baseline | C3 source exit supported at 78c8672, latest product ebd01f4 and verified fixture/historical changes c329e0d/83c83f8. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
 | Operation ID | C4-A-RESOURCE-SETTINGS-INTEGRATION-20261125 |
-| Operation state | PREPARED; prior exact CI reconciled SUCCESS; new source operation not issued |
+| Operation state | ISSUED; reconcile source commit by parent 66e1f3c and operation marker before retry |
 | Intended files | backend/resource_policy.py, settings_storage.py, workspace_boundary.py, main.py; explicit disposable fixture adapter and resource regression tests, P1 workflow scope, continuity records. Resource preferences only; no AI settings/credential writer or cloud routing change yet. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Exact 17b9477 P1 #45622084263 SUCCESS; 48 foundation + 5 scanner tests, historical desktop/import 16/16, all remaining steps pass. 883 eligible/decoded blobs, 113 candidate files, zero decode failures. Resource reader/writer and relevant fixture references reviewed. |
-| Pending runs | None; prior run terminal SUCCESS. |
+| Verification | Resource preferences integrated with strict bounded store and mandatory production lease; explicit disposable test adapters, existing route error reporting corrected and new fault cases added. Exact CI pending. |
+| Pending runs | Eight reviewed exact-source workflows expected; resolve actual run IDs before claiming verification. |
 | Unpublished work | Owner-local tree not inspected. |
 | Recovery action | Integrate resource preferences using mandatory active lease, existing fixed target and shared helper, explicit test-only disposable checker, truthful API errors for failed/uncertain writes. Review matching existing CI scopes and publish with expected HEAD. Remaining AI/DPAPI and API redaction candidate review follows. |
 | Resume after closure | C5 then D with separately approved scope. |

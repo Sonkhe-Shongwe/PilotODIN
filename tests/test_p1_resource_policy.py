@@ -2,6 +2,7 @@
 import json
 import pytest
 from tests.fixture_http import fixture_client
+from tests.settings_fixture import fixture_store
 from backend import resource_policy, storage
 from backend.main import app
 
@@ -9,6 +10,7 @@ from backend.main import app
 @pytest.fixture
 def isolated_home(monkeypatch, tmp_path):
     monkeypatch.setattr(storage, "HOME", tmp_path)
+    monkeypatch.setattr(resource_policy, "_settings_store", lambda: fixture_store(tmp_path))
     return tmp_path
 
 
@@ -99,3 +101,49 @@ def test_local_origin_scope_for_resource_controls(isolated_home):
     assert response.status_code == 403
     assert client.get("/api/resource/status",
                       headers={"Origin":"https://example.org"}).status_code == 403
+
+
+def test_unleased_resource_service_does_not_admit_real_settings(tmp_path, monkeypatch):
+    monkeypatch.setattr(storage, "HOME", tmp_path)
+    path = tmp_path / "resource_preferences.json"
+    original = b'{"schema_version":1,"mode":"performance"}'
+    path.write_bytes(original)
+    assert resource_policy.read_policy()["source"] == "fallback"
+    with pytest.raises(OSError):
+        resource_policy.save_policy("low_memory")
+    assert path.read_bytes() == original
+    assert not list(tmp_path.glob(".resource-policy-*"))
+
+
+@pytest.mark.parametrize("raw", [
+    b'{"schema_version":true,"mode":"adaptive"}',
+    b'{"schema_version":1,"mode":"adaptive","mode":"performance"}',
+    b'{"schema_version":1,"mode":"adaptive","future":true}',
+    b'x' * 4097,
+])
+def test_resource_service_refuses_invalid_existing_bytes(isolated_home, raw):
+    path = isolated_home / "resource_preferences.json"
+    path.write_bytes(raw)
+    assert resource_policy.read_policy()["source"] == "fallback"
+    with pytest.raises(OSError):
+        resource_policy.save_policy("performance")
+    response = fixture_client(app).put("/api/resource/policy", json={"mode": "performance"})
+    assert response.status_code == 503
+    assert response.json()["detail"]["code"] == "settings_unavailable"
+    assert path.read_bytes() == raw
+    assert not list(isolated_home.glob(".resource-policy-*"))
+
+
+def test_resource_api_uncertain_acknowledgement_not_claimed_as_rollback(isolated_home, monkeypatch):
+    resource_policy.save_policy("adaptive")
+    real_replace = resource_policy.os.replace
+    def ambiguous(src, dst):
+        real_replace(src, dst)
+        raise OSError("private-marker")
+    monkeypatch.setattr(resource_policy.os, "replace", ambiguous)
+    client = fixture_client(app)
+    response = client.put("/api/resource/policy", json={"mode": "performance"})
+    assert response.status_code == 503
+    assert response.json()["detail"]["code"] == "settings_commit_uncertain"
+    assert "private-marker" not in response.text
+    assert client.get("/api/resource/status").json()["policy"]["mode"] == "performance"

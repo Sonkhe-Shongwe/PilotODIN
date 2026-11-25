@@ -12,6 +12,7 @@ from unittest.mock import patch
 import pandas as pd
 from secrets import token_hex
 from tests.fixture_http import fixture_client
+from tests.settings_fixture import fixture_store
 from backend.request_auth import RequestTrust
 
 from backend import ai_context, ai_provider, main, quality, resource_policy, storage
@@ -275,7 +276,8 @@ class VerifiedAnswersTests(unittest.TestCase):
             root = Path(tmp)
             candidate = root / 'com.pilotodin.p4r03benchmark' / 'data' / 'candidate'
             for home, floor in ((root, 2.0), (candidate, 1.5)):
-                with self.subTest(floor=floor), patch.object(storage, 'HOME', home), patch.object(
+                home.mkdir(parents=True, exist_ok=True)
+                with self.subTest(floor=floor), patch.object(storage, 'HOME', home), patch.object(resource_policy, '_settings_store', side_effect=lambda: fixture_store(home)), patch.object(
                     resource_policy, '_physical_memory_bytes', return_value=(8 * 1024**3, 1536 * 1024**2, 'test'),
                 ):
                     resource_policy.save_policy('low_memory')
@@ -305,7 +307,8 @@ class VerifiedAnswersTests(unittest.TestCase):
             'PILOTODIN_R03_BENCHMARK': 'candidate', 'PILOTODIN_DESKTOP_SESSION': secret,
         }), patch.object(resource_policy.sys, 'platform', 'win32'):
             home = Path(tmp) / 'com.pilotodin.p4r03benchmark' / 'data' / 'candidate'
-            with patch.object(storage, 'HOME', home), patch.object(
+            home.mkdir(parents=True)
+            with patch.object(storage, 'HOME', home), patch.object(resource_policy, '_settings_store', side_effect=lambda: fixture_store(home)), patch.object(
                 ai_provider, '_read_config', return_value={**ai_provider.DEFAULTS, 'intelligence_mode': 'local'},
             ), patch.object(resource_policy, '_physical_memory_bytes', side_effect=[
                 (8 * 1024**3, 1536 * 1024**2, 'test'), (8 * 1024**3, 1536 * 1024**2 - 4096, 'test'),

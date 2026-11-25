@@ -11,69 +11,51 @@ import ctypes
 import json
 import os
 import sys
-import tempfile
 import threading
 from datetime import datetime, timezone
 from pathlib import Path
 
 try:
-    from . import storage
+    from . import storage, settings_storage
 except ImportError:
-    import storage
+    import storage, settings_storage
 
 MODES = ("adaptive", "low_memory", "performance")
 _GIB_BYTES = 1024 ** 3
 _lock = threading.RLock()
 
 
-def _path() -> Path:
-    # Resolve dynamically so isolated Pytest HOME patches never write to
-    # the owner's normal PilotODIN home.
-    return storage.HOME / "resource_preferences.json"
+def _settings_store():
+    return settings_storage.owned_store(storage.HOME)
 
 
 def read_policy() -> dict:
-    with _lock:
+    with settings_storage.SETTINGS_LOCK:
         try:
-            content = _path().read_text(encoding="utf-8")
-        except FileNotFoundError:
-            return {"mode": "adaptive", "source": "default", "warning": None}
+            value = _settings_store().read(settings_storage.Kind.RESOURCE)
+        except settings_storage.InvalidSettings:
+            return {"mode": "adaptive", "source": "fallback",
+                    "warning": "Saved resource preferences are invalid; nothing was overwritten."}
         except OSError:
             return {"mode": "adaptive", "source": "fallback",
                     "warning": "Resource preferences could not be read; nothing was overwritten."}
-        try:
-            value = json.loads(content)
-            if (not isinstance(value, dict) or value.get("schema_version") != 1
-                    or value.get("mode") not in MODES):
-                raise ValueError("Unsupported resource preference data")
-            return {"mode": value["mode"], "source": "saved", "warning": None}
-        except (ValueError, TypeError):
-            return {"mode": "adaptive", "source": "fallback",
-                    "warning": "Saved resource preferences are invalid; nothing was overwritten."}
+        if value is None:
+            return {"mode": "adaptive", "source": "default", "warning": None}
+        return {"mode": value["mode"], "source": "saved", "warning": None}
 
 
 def save_policy(mode: str) -> dict:
-    if mode not in MODES:
+    if type(mode) is not str or mode not in MODES:
         raise ValueError("Unknown resource policy")
-    with _lock:
-        target = _path()
-        storage.check_write_path(target, missing=True)
-        target.parent.mkdir(parents=True, exist_ok=True)
-        descriptor, temporary = tempfile.mkstemp(prefix=".resource-policy-",
-                                                suffix=".tmp", dir=str(target.parent))
-        identity = None
+    with settings_storage.SETTINGS_LOCK:
+        raw = json.dumps({"schema_version": 1, "mode": mode},
+                         separators=(",", ":")).encode("utf-8")
         try:
-            with os.fdopen(descriptor, "w", encoding="utf-8") as file:
-                identity = os.fstat(file.fileno())
-                json.dump({"schema_version": 1, "mode": mode}, file, separators=(",", ":"))
-                file.flush()
-                os.fsync(file.fileno())
-            storage.check_write_path(Path(temporary), expected=identity)
-            storage.check_write_path(target, missing=True)
-            os.replace(temporary, target)
-        finally:
-            storage.guarded_unlink(Path(temporary), expected=identity)
-        return {"mode": mode, "source": "saved", "warning": None}
+            saved = _settings_store().replace(settings_storage.Kind.RESOURCE, raw)
+        except settings_storage.InvalidSettings:
+            raise settings_storage.SettingsIOError(
+                "Existing resource preferences require recovery") from None
+        return {"mode": saved["mode"], "source": "saved", "warning": None}
 
 
 def _physical_memory_bytes() -> tuple[int, int, str]:

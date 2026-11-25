@@ -77,6 +77,8 @@ on:
       - tests/test_c3_devqa_seeders.py
       - tests/test_p1_resource_policy.py
       - backend/settings_storage.py
+      - backend/resource_policy.py
+      - tests/settings_fixture.py
       - tests/test_c4_settings_storage.py
       - tools/c4_settings_inventory.py
       - tests/test_c4_settings_inventory.py

@@ -686,7 +686,7 @@ def validate_process_database(home, database):
 
 
 def validate_process_write(home, path, *, directory=False, missing=False,
-                           absent=False, expected=None):
+                           absent=False, expected=None, require_owned=False):
     """Bounded observed-identity preflight, not atomic OS handle confinement.
 
     The active product lease is authoritative. Unleased in-process test/legacy
@@ -694,6 +694,8 @@ def validate_process_write(home, path, *, directory=False, missing=False,
     write families are admitted; missing parents are never created here.
     """
     if _process_workspace is None:
+        if require_owned:
+            raise WorkspaceBoundaryError("Workspace writer ownership required")
         return None
     owned, fd, root_identity, _ = _process_workspace
     path = Path(path)

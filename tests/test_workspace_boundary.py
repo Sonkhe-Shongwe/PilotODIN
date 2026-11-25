@@ -367,7 +367,12 @@ try:
     os.link(original, target)
 except OSError:
     sys.exit(77)
-refuse(lambda: resource_policy.save_policy("performance"))
+try:
+    resource_policy.save_policy("performance")
+except resource_policy.settings_storage.SettingsIOError:
+    pass
+else:
+    raise AssertionError("Unsafe settings write admitted")
 assert original.read_bytes() == b"preserve"
 target.unlink()
 resource_policy.save_policy("performance")
