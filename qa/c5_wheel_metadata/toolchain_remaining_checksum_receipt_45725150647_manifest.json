@@ -1,0 +1,25 @@
+{
+  "attempt": 1,
+  "records": 156,
+  "run_id": "45725150647",
+  "sha256": "ab853994195f51e7f57dcf792298436dd55a98f28efbbe8f2a5207f7b851e53f",
+  "source_sha": "7d416e75a26cceb243113e169de41e24cde04f58",
+  "job_id": 139593010924,
+  "receipt_blob": "5c51fbf25b0b2a78cdc9a313758569aad9f53561",
+  "receipt_path": "qa/c5_wheel_metadata/toolchain_remaining_checksum_receipt_45725150647.jsonl",
+  "live_result": {
+    "artifact_requests": 0,
+    "failure": null,
+    "fixture": false,
+    "missing": [],
+    "requests": 4,
+    "response_bytes": 898778,
+    "status": "METADATA_ONLY_COMPLETE",
+    "verified": [
+      "python-linux",
+      "node",
+      "rust"
+    ]
+  },
+  "verification": "pending independent offline replay; original collector self-verification passed"
+}
