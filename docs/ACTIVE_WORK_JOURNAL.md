@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 57db2621433cd781b09b854d30d96028adb97822 |
-| Product baseline | Last fully verified 898230f; 40d0e13 guard batch published, P4 Linux/Windows failed on removed SHA256 compatibility helper. |
+| Observed starting HEAD | 7d8efb93795b66da427e46f39bc73af480657762 |
+| Product baseline | 9163e6c6a4c55dae3b021aa8be90205c8fa6250d; corrective P4 #45684953141 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
-| Operation ID | C5-ASSET-HASH-COMPATIBILITY-20261125 |
-| Operation state | RECONCILED publication at 9163e6c6a4c55dae3b021aa8be90205c8fa6250d; exact corrective CI IN_PROGRESS. No restricted dispatch. |
-| Intended files | desktop/verify_inference_assets.py, tests/test_c5_build_input_preflight.py, canonical documentation only. No lock, workflow, approval or native marker changes. |
-| Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Exact 40d0e13 P4 #45684550154: source job 139453570467 FAILURE (two collection errors); Windows 139453569167 FAILURE after 78 C5 passed/1 skipped and 3 bundle preflight passes; shared cause missing sha256 export imported by offline_analytics_cases.py. HTTP 139453569971 still running at observation; collector skipped. |
-| Pending runs | P4 #45684953141 IN_PROGRESS; source 139454972323, Windows 139454972829, HTTP 139454972762, restricted collector 139454975080 skipped. Prior #45684550154 completed FAILURE, HTTP completed SUCCESS. |
+| Operation ID | C5-PYPI-METADATA-ONCE-20261125 |
+| Operation state | PREPARED; owner reply 'i approve' explicitly authorizes one disposable metadata-only hosted run, 50 exact pairs, no artifact bytes. No dispatch yet. |
+| Intended files | qa/c5_metadata/collect.py, qa/c5_metadata/APPROVAL_20261125.txt, .github/workflows/c5-pypi-metadata-once.yml, canonical docs. Pin inventory Git blob 6ccd3d47efe363ecf87fd13ce7d867cba4bef020. Exact prepared parent and attempt 1 gate; marker path only. |
+| Approval | One C5 metadata-only hosted attempt approved. Exactly 50 GET requests to exact PyPI release JSON URLs; no redirects, wheel/.metadata downloads, pip, model, installer, native, owner data or further network action. Six native approvals remain consumed/disarmed. Failed or uncertain attempt consumes approval; no replay. |
+| Verification | Exact corrective 9163e6c P4 SUCCESS: Linux 1166 passed/6 skipped/552 subtests, 15 Rust, 160 Node/Vite, 3 bundle refusal; Windows 79 C5/1 skipped, 3 refusal, 68/133 subtests; HTTP 13; restricted collector skipped. |
+| Pending runs | None; previous correction completed SUCCESS. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Reconcile corrective CI. Independently confirmed llama archive upstream digest/size, candidate Actions Linux Python distribution digest/size, Windows Python archive has no upstream digest in release API; PyPI exact metadata unavailable through direct research. Obtain owner approval for bounded hosted metadata-only collection if necessary (see evidence/spec); no wheel/model/runtime bytes, pip resolution/install beyond routine existing CI, or native activity. Independent archive member validation remains authorised source work. |
+| Recovery action | Publish exact prepared-parent and attempt-1 marker-gated job once. Confirm exact run SHA, immediately disarm with if false, preserve marker and receipt. Read only sanitized metadata logs; no retry even on failure. No production readiness credit. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
