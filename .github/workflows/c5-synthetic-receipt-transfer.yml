@@ -1,0 +1,82 @@
+name: C5 synthetic receipt transfer once
+on:
+  push:
+    branches: [feature/live-dev-workspace-20261023]
+    paths:
+      - .github/workflows/c5-synthetic-receipt-transfer.yml
+      - qa/c5_wheel_metadata/synthetic_receipt_transfer.py
+permissions:
+  contents: read
+jobs:
+  offline-review:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Verify source and synthetic receipt preflight
+        run: |
+          test "$(git hash-object qa/c5_wheel_metadata/synthetic_receipt_transfer.py)" = "48d3b2aefd5bf6cf850ea3bcf3ba6272cb3646c1"
+          python3 -I -B qa/c5_wheel_metadata/synthetic_receipt_transfer.py --self-test
+  upload-once:
+    if: ${{ false }}
+    needs: offline-review
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    outputs:
+      record: ${{ steps.produce.outputs.record }}
+      artifact-id: ${{ steps.upload.outputs.artifact-id }}
+      digest: ${{ steps.upload.outputs.artifact-digest }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Verify exact marker-only activation
+        env:
+          EXPECTED_PARENT: ${{ github.event.before }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(git show -s --format=%P HEAD)" = "$EXPECTED_PARENT"
+          test "$(git diff-tree --no-commit-id --name-status -r HEAD)" = "$(printf 'A\tqa/c5_wheel_metadata/APPROVAL_SYNTHETIC_RECEIPT_TRANSFER_20261126.txt')"
+          test "$(git hash-object qa/c5_wheel_metadata/synthetic_receipt_transfer.py)" = "48d3b2aefd5bf6cf850ea3bcf3ba6272cb3646c1"
+          test "$(git show -s --format=%B HEAD)" = "C5-SYNTHETIC-RECEIPT-TRANSFER-ONCE-20261126 owner approved synthetic evidence only"
+      - id: produce
+        run: python3 -I -B qa/c5_wheel_metadata/synthetic_receipt_transfer.py --produce
+        env:
+          C5_APPROVED_ONCE: C5-SYNTHETIC-RECEIPT-TRANSFER-ONCE-20261126
+      - id: upload
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: c5-wheel-receipts-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ steps.produce.outputs.bundle }}
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
+          overwrite: false
+  retrieve-once:
+    if: ${{ false }}
+    needs: upload-once
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Independent exact artifact ZIP replay
+        run: |
+          test "$(git hash-object qa/c5_wheel_metadata/synthetic_receipt_transfer.py)" = "48d3b2aefd5bf6cf850ea3bcf3ba6272cb3646c1"
+          python3 -I -B qa/c5_wheel_metadata/synthetic_receipt_transfer.py --retrieve
+        env:
+          C5_APPROVED_ONCE: C5-SYNTHETIC-RECEIPT-TRANSFER-ONCE-20261126
+          C5_BUNDLE_RECORD: ${{ needs.upload-once.outputs.record }}
+          C5_ARTIFACT_ID: ${{ needs.upload-once.outputs.artifact-id }}
+          C5_UPLOAD_DIGEST: ${{ needs.upload-once.outputs.digest }}
+          GH_TOKEN: ${{ github.token }}
