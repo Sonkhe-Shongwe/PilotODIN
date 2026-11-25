@@ -17,6 +17,7 @@ on:
       - backend/request_auth.py
       - qa/p4_research/n12_backend_bytecode.py
       - tools/Verify_P2_Real_API_Integration_Local.py
+      - tools/Verify_Local_Analytics_Windows_Native.py
       - tests/test_owned_server.py
       - tests/test_workspace_boundary.py
       - frontend/src-tauri/src/storage_boundary.rs

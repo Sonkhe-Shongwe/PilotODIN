@@ -374,6 +374,29 @@ class C3RequestTrustTests(unittest.TestCase):
                                   capture_output=True,text=True,timeout=30)
             self.assertEqual(result.returncode,0,result.stderr)
 
+    def test_c3_historical_owner_r03_approval_cannot_be_replayed(self):
+        # The script must refuse before git, Windows checks, sockets, temp
+        # allocation or any executable. Neither old CLI mode grants authority.
+        from unittest.mock import patch
+        script = ROOT / "tools" / "Verify_Local_Analytics_Windows_Native.py"
+        for args in (["--run-approved"], ["--relaunch-approved","pilotodin-r03-native-1v829nh2"]):
+            with self.subTest(args=args):
+                result = subprocess.run([sys.executable,"-B",str(script),*args],
+                    cwd=ROOT,capture_output=True,text=True,timeout=10)
+                self.assertEqual(result.returncode,2,result.stderr)
+                self.assertIn("Historical R03 native approval consumed",result.stderr)
+        # Import the same module without running its command entrypoint.
+        import importlib.util
+        with patch.object(sys,"path",[str(script.parent),*sys.path]):
+            spec=importlib.util.spec_from_file_location("retired_r03_native",script)
+            retired=importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(retired)
+        with patch.object(retired,"plain",side_effect=AssertionError("Unexpected git/tool inspection")), \
+             patch.object(retired.socket,"socket",side_effect=AssertionError("Unexpected socket allocation")):
+            for reuse in (False,True):
+                with self.assertRaisesRegex(ValueError,"Historical R03 native approval consumed"):
+                    retired.preflight(reuse=reuse)
+
     def test_c3_transport_and_exact_origin(self):
         from backend.request_auth import authorize
         for origin in (None, "http://tauri.localhost", "https://tauri.localhost", "tauri://localhost"):

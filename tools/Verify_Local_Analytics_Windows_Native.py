@@ -1,4 +1,4 @@
-"""Build and run the owner-approved, unpackaged Windows Local analytics check."""
+"""Archived R03 owner-native check; the source-pinned approval has been consumed."""
 
 from __future__ import annotations
 
@@ -44,45 +44,11 @@ def plain(command, **kwargs):
 
 
 def preflight(reuse=False):
-    insist(sys.platform == 'win32', 'This check runs on the owner Windows laptop.')
-    sha = plain(['git','rev-parse','HEAD'], cwd=ROOT)
-    approval = plain(['git','show',f'{sha}:{APPROVAL}'], cwd=ROOT,encoding='utf-8').splitlines()
-    source = next((line.partition('=')[2] for line in approval if line.startswith('reviewed_application_source=')), '')
-    insist(APPROVED_SCOPE in approval,
-           'Native session approval record does not match the test scope.')
-    insist(re.fullmatch(r'[0-9a-f]{40}',source), 'The approval record needs the reviewed source SHA.')
-    ancestry = subprocess.run(['git','merge-base','--is-ancestor',source,sha],cwd=ROOT,timeout=20)
-    insist(ancestry.returncode == 0, 'Pull the reviewed Native QA source from the development branch.')
-    python = ROOT / '.venv-live/Scripts/python.exe'
-    insist(python.is_file() and (FRONTEND / 'node_modules/@playwright/test/package.json').is_file()
-           and (FRONTEND / 'node_modules/vite/bin/vite.js').is_file(),
-           'The existing Live Dev Python and frontend dependencies are required.')
-    required = ('node','powershell.exe') if reuse else ('cargo','rustc','node','powershell.exe')
-    tools = {program:shutil.which(program) for program in required}
-    missing = [program for program,path in tools.items() if not path]
-    insist(not missing, 'Missing Windows build tools: '+', '.join(missing))
-    if not reuse:
-        insist(f'host: {TARGET}' in plain([tools['rustc'],'-vV']), 'Rust must use the Windows x64 MSVC toolchain.')
-    insist(int(plain([tools['node'],'--version']).lstrip('v').split('.')[0]) >= 20,
-           'Node.js 20 or newer is required.')
-    if not reuse and not shutil.which('link.exe'):
-        x86 = Path(os.environ.get('ProgramFiles(x86)', r'C:\Program Files (x86)'))
-        vswhere = x86 / 'Microsoft Visual Studio/Installer/vswhere.exe'
-        insist(vswhere.is_file() and plain([str(vswhere),'-latest','-products','*','-requires',
-            'Microsoft.VisualStudio.Component.VC.Tools.x86.x64','-property','installationPath']),
-            'The Microsoft C++ x64 build tools and Windows SDK are required.')
-    powershell = tools['powershell.exe']
-    insist(plain([powershell,'-NoProfile','-NonInteractive','-Command',
-                  '[bool](Get-Command Get-NetTCPConnection -ErrorAction SilentlyContinue)']) == 'True',
-           'Windows TCP listener attribution is unavailable.')
-    for port in (PORTS[:2] if reuse else PORTS):
-        with socket.socket() as check:
-            check.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
-            try:
-                check.bind(('127.0.0.1', port))
-            except OSError as exc:
-                raise ValueError(f'Loopback port {port} is in use. Close the running Live Dev or QA consoles first.') from exc
-    return python, tools, sha, source
+    # The historical build and relaunch both occurred. The approval pins an
+    # older application revision; its bare API cannot be made current merely
+    # by changing this harness. Preserve the historical code and receipts in
+    # Git, but never allow the old flags or ancestry check to authorize reuse.
+    raise ValueError('Historical R03 native approval consumed; fresh source-pinned owner approval and authenticated launcher review required.')
 
 
 def digest(path):
@@ -417,8 +383,8 @@ def main():
                       help='Explicitly approve and perform one relaunch of the verified executable')
     args = parser.parse_args()
     try:
-        insist(not args.relaunch_approved or sys.stdin.isatty(), 'The relaunch requires an interactive owner terminal.')
         python,tools,sha,source = preflight(reuse=bool(args.relaunch_approved))
+        insist(not args.relaunch_approved or sys.stdin.isatty(), 'The relaunch requires an interactive owner terminal.')
         temp = Path(tempfile.gettempdir()).absolute()
         insist(re.fullmatch(r'[A-Za-z]:\\',temp.anchor) and not any(
             path.lstat().st_file_attributes & stat.FILE_ATTRIBUTE_REPARSE_POINT for path in (temp,*temp.parents)

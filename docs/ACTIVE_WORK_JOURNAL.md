@@ -7,13 +7,13 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | PREPARED |
+| State | PUBLISHED |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 987f3b39a84f736cc90696d84c20d35b8cdf2981 |
 | Product baseline | db80cc71d82fb3a7d062694d7cabd59bc3438f1b, all three exact routine workflows SUCCESS. |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
 | Operation ID | C3-HISTORICAL-R03-DISARM-20261125-source |
-| Operation state | PREPARED |
+| Operation state | ISSUED |
 | Intended files | tools/Verify_Local_Analytics_Windows_Native.py, tests/test_owned_server.py, .github/workflows/p4-target-ranking.yml (source trigger), journal. R03 historical owner approval pinned to 6381203, original build and relaunch already exercised. Do not silently repin, migrate historical executable or accept old switches/approval as fresh. Fail closed at preflight before platform/git/port/tool checks, preserve historical implementation and evidence; synthetic refusal test. P4-71 private capability confinement separate source batch after this verification. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | db80cc7 P1 frontend #45571024763, P1 HTTP #45571025324 and P4 #45571024667 terminal SUCCESS; P4 jobs p4-r03-windows-local-answers 139057409408 success; p4-synthetic-source-and-frontend 139057409812 success; p4-disposable-real-http-browser 139057410170 success; Exercise preservation/hash collector on synthetic Windows fixture ONLY 139057411234 skipped. R03 approval record explicitly confirms build and relaunch exercised. Script stages historical backend/frontend pinned to 6381203, so changing current source cannot authenticate that binary. Historical direct API is not an eligible live caller. Source retirement, not a new approval or acceptance method. Existing owner evidence retained. |
