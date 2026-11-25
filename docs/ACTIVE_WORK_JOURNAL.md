@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 36b88e4d98cfc47658342d12a8275b0242cfc66a |
+| Observed starting HEAD | cc613b78a43b41e1ab1736a23189df845c24dbfc |
 | Product baseline | e0f944d2a9c14c4ae470c38c929bae249f35373c (frontend delta); native/backend runtime 388b35750316b9c5a060d603c35c7d728d5c0890; test-only native fixture 1d23ea139762d94d25e689c4c3489b72fb34acc9 |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
-| Operation ID | C3-LIVE-DEV-CAPABILITY-20261125-source |
-| Operation state | ISSUED |
-| Intended files | request_auth, server_entry, Live Dev paired launcher and smoke caller, Vite private local proxy, frontend API bootstrap, focused tests and continuity. Dev mode only; hosted and local-devqa migration pending. |
+| Operation ID | C3-HOSTED-BROWSER-CAPABILITY-20261125-source |
+| Operation state | PREPARED |
+| Intended files | Hosted browser contract and Vite proxy, Playwright configs/shared helper and 11 real HTTP specs, P2 alternate mount, owned-server tests, Vite fixture copy, continuity. No native or local-devqa activation. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | C1/C2 SOURCE CLOSED, unchanged. C3 kernel exact 5fc531e source job 138854868629 SUCCESS: all five named C3 cases passed, workspace/owned-server 48 tests, 1058 Python + 544 subtests (6 skipped), 112 Node, Vite; disposable browser job 138854868635 SUCCESS. Windows job SUCCESS 53 passed, 66 subtests; restricted 138854871137 SKIPPED. No live auth integration. |
-| Pending runs | Exact Live Dev capability source `aa3cd9c6973106be79b662baff278a14cf3f0c7b`: #45512716374 P4 Target Review Queue and Transparent Ranking IN_PROGRESS; #45512716006 P1 Isolated Frontend Verification IN_PROGRESS; #45512715867 P3 Real HTTP Semantic Context Browser Acceptance IN_PROGRESS. Reconcile source/Node/Windows/browser results before overlapping push; actual authenticated hosted browser integration still pending. |
+| Pending runs | None. aa3cd9c P1 #45512716006 and P3 #45512715867 SUCCESS; P4 #45512716374 FAILURE only Node copied Vite config missing new module (113/114); 54 unittest, 1059 pytest + 552 subtests, Windows 59 + 80 subtests, browser SUCCESS, restricted SKIPPED. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Reconcile exact Live Dev source CI, then migrate hosted real-HTTP and local-devqa callers with explicit private capability and trace-safe fixture bootstrap; exercise actual proxy and backend together using disposable hosted fixture, not owner Live Dev. Remove bare app no-secret runtime fallback only after exact direct-call/in-process adapter inventory. No native operation or production activation. |
+| Recovery action | Copy exact proxy module into existing isolated Vite fixture; migrate all 11 hosted real-HTTP browser/API specs to same-origin :5178 proxy, preserve path-specific allowlists, nonsecret request marker only in traces, private capability inherited by Vite/Uvicorn and direct readiness only. Backend exact hosted browser workspace requires capability; remaining P4-71 native and local-devqa not migrated yet. Exercise real authenticated disposable HTTP negative probes and exact routine CI. No native operation. |
 | Resume after closure | C4, C5 in order; D separately approved. |
 
 ## Prior operation
