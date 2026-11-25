@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | ad547c96a6f0020f094e786b03f02db96280f05c |
-| Product baseline | C4 B6 support refinement 0aafb61fccd874ee6e44810229804791f09bfa8f; P4 exact scoped SUCCESS, P1 fixture FAILURE. |
+| Observed starting HEAD | 5a599dfc814e1c9302aed6e647024e7198ab690a |
+| Product baseline | B6 support refinement 0aafb61, test correction 7e3df06; exact P1 45655159516 SUCCESS; prior exact P4 45636512838 SUCCESS. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
-| Operation ID | C4-B6-FIXTURE-NAME-20261125 |
-| Operation state | RECONCILED; test-only correction published at [7e3df06](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/7e3df0631499aa46c9d6131abac9b3cf5abdea35), prepared at 05c317b; exact verification outstanding. |
-| Intended files | tests/test_c4_cloud_intent.py and canonical records only. No product, workflow or policy changes. |
+| Operation ID | C4-B7-COMMON-BOUNDARY-20261125 |
+| Operation state | PREPARED; source change not yet issued |
+| Intended files | backend/ai_provider.py, tests/test_c4_cloud_intent.py and canonical records only. No workflow or persistent schema change. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | P1 exact 0aafb61 failed (118 passed, 1 failed): `valid` matched identifier suffix filter. P4 three routine jobs passed, restricted collector skipped. Corrected fixture uses `balanced` for positive support and `valid` for negative name screen. No acceptance credit. |
-| Pending runs | Expected P1 isolated backend push-triggered CI at 7e3df06; run ID and outcome unverified. Connector commit-run listing is PR-only; empty status is not evidence of no run. Check [P1 Actions](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/workflows/p1-isolated-backend.yml) for exact SHA. |
+| Verification | Exact B6 P1 119 focused tests passed and downstream stages passed. B7 pending synthetic admission/revocation tests and exact CI. |
+| Pending runs | None from B6. Expected P1 isolated backend and P4 routine CI for ai_provider.py source change. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Reconcile exact test-only 7e3df06 P1 run/jobs/logs; do not replay or claim pass. If green proceed B7 shared revocation/admission lifecycle; otherwise preserve failure and correct evidenced defect. |
+| Recovery action | Implement process-wide single-flight cloud slot, capture revision before projection (no key on malformed payload), one-use dispatch fence, retain slot until transport returns, generation/current recheck on publication and health. Tests use inert barriers only. Route-level pre-context generation and frontend stale-response fences remain separate follow-up; do not claim full B7 closure. |
 | Resume after closure | C5 then D with separately approved scope. |
 
 ## Prior operation
