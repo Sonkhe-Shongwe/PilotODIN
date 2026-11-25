@@ -12,14 +12,14 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Observed starting HEAD | 800b18a5aed181791e53af2a2b88724b6dc27f4f |
 | Product baseline | C4 source closed at verified product 76e9d0f; C5 not implemented. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
-| Operation ID | C4-SOURCE-CLOSURE-20261125 |
-| Operation state | RECONCILED; C4 source closure recorded, C5 inventory next. |
+| Operation ID | C5-INITIAL-READONLY-INVENTORY-20261125 |
+| Operation state | RECONCILED; initial inventory recorded; no product edit or new CI. |
 | Intended files | Canonical records only for C4 closure. C5 inventory read-only before any prepared source edit. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | Exact desktop gate `76e9d0fb5f7a060ca0a89a937b8a21eb64e4b062`: P1 #45673926641 SUCCESS (206 Node, TypeScript/Vite, 11/11 Chromium; job 139416287673); P3 #45673926651 SUCCESS (3 real HTTP browser; job 139416288188); P4 #45673926563 SUCCESS (1086 Python, 6 skipped, 552 subtests, 15 Rust, 146 Node/Vite including all three new confirmed POST regressions; job 139416288324; 13 HTTP browser job 139416288348; 68 Windows/133 subtests and five simulated scenarios job 139416287756; restricted collector 139416289955 skipped). C-D06/07 matrix in C ledger. |
 | Pending runs | None for 76e9d0f. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Inventory exact dependency locks, all packaging/preflight entrypoints, existing CI resolution evidence and asset/license/toolchain provenance. Identify unsafe fallback and missing complete Windows x64 hashes. Prepare next bounded C5 source operation; no actual acquisition/build or invented hashes. |
+| Recovery action | Finish entrypoint/trigger audit and prepare source batch to remove npm/Cargo missing-lock fallbacks, enforce early installer freeze and add fail-closed regressions. Continue exact Windows production/test lock and asset provenance separately; no fabricated hashes or acquisition. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
