@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | VERIFYING |
+| State | READY |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | a931ff9775af8d32d391f2490cbaa15f2527aef6 |
-| Product baseline | C4 C3 frontend witness/fence 35d2bd2 + test-only a931ff9 exact P1/P4 SUCCESS. |
+| Product baseline | Exact mounted correction c206063 and backend pin d16cfd6 verified at respective scopes. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
 | Operation ID | C4-C3-SERVER-DATASET-VERSION-PIN-20261125 |
-| Operation state | ISSUED from prepared parent 28c3f28317e91a8604854248e5becc523873d08a; backend version pin and direct synthetic cases. Real frontend cloud send held. |
+| Operation state | RECONCILED; all nine exact workflow outcomes successful; no real frontend cloud activation. |
 | Intended files | backend/main.py, tests/test_c4_cloud_intent.py, C specification and canonical records. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Exact 222084c: P4 #45670110565 SUCCESS (1086 Python/6 skipped/552 subtests, 15 Rust, 143 Node/Vite, 13 browser, 68 Windows/133 subtests; collector skipped); P1 #45670110570 FAILURE (206 Node and Vite passed, seven existing browser cases passed, both new C4 cases timed out at UI navigation). 97817ee P1 cancelled by supersession. |
-| Pending runs | c206063 P1 #45670823357 job 139405285723 in progress at preparation; plus eight expected backend workflows; discover exact IDs. |
+| Verification | Exact mounted correction `c206063`: P1 #45670823357 SUCCESS (206 Node, TypeScript/Vite, 9/9 Chromium including both C4 mounted cases). Exact server pin `d16cfd6`: all eight workflows SUCCESS; P1 backend #45671101097 C4 selected group 252 passed; P4 #45671101346 1086 Python/6 skipped/552 subtests, 15 Rust, 143 Node/Vite, 13 disposable HTTP browser, 68 Windows/133 subtests; restricted collector skipped. |
+| Pending runs | None for c206063 or d16cfd6. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Reconcile navigation P1 and server pin CI separately; bind witnessed explicit cloud requests to reviewed dataset version in legacy and owned paths before snapshot/context; reject missing/stale/mismatched pins, retain legacy no-witness compatibility. Then wire frontend pin and busy draft preservation; verify mounted tests and missed notification handling, only then consider actual source enablement. OpenRouter held. C4 source closure then C5. |
+| Recovery action | Wire expected_dataset_version into both frontend confirmed send paths; preserve Assistant draft while busy; add mounted regression cases for stale version, witness/provider/scope, missed renderer notifications and changed draft. Keep real send held until exact verification and narrow enablement; OpenRouter held. C4 closure then C5. |
 | Resume after closure | C5 then D with separately approved scope. |
 
 ## Prior operation
@@ -28,4 +28,4 @@ C4-RESEARCH-AND-IMPLEMENTATION-PLAN-20261125: [`bd7c163`](https://github.com/Son
 
 ## Unresolved or interrupted operations
 
-C1–C3 source closed; C4 frontend witness foundation verified at a931ff9; mounted consent fixture code issued at 59cb7a1 with test-only corrections 97817ee and 222084c; exact reconciliation pending. No actual application/production or physical hardware acceptance. G2 proof blocker and physical D evidence remain outstanding. Earlier B5 approvals consumed; preserve local work. [Pre-audit journal](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/bcd3a979b1bbd30ab8cd2f60ad16b9c9e25c40cf/docs/ACTIVE_WORK_JOURNAL.md) retains prior operation detail.
+C1–C3 source closed; C4 frontend witness foundation verified at a931ff9; mounted consent and server version pin exact verification reconciled at c206063 and d16cfd6; frontend pin wiring and busy draft protection outstanding. No actual application/production or physical hardware acceptance. G2 proof blocker and physical D evidence remain outstanding. Earlier B5 approvals consumed; preserve local work. [Pre-audit journal](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/bcd3a979b1bbd30ab8cd2f60ad16b9c9e25c40cf/docs/ACTIVE_WORK_JOURNAL.md) retains prior operation detail.
