@@ -7,13 +7,13 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | PREPARED |
+| State | PUBLISHED |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 70e9309529206cb7f930aabdf503ba9f85a67614 |
 | Product baseline | 76dbc0c654eacb86a86261b6e6944b3918ea9adb exact routine P4 SUCCESS. |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
 | Operation ID | C3-P4-71-CREDENTIAL-CONFINEMENT-20261125-source |
-| Operation state | PREPARED |
+| Operation state | ISSUED |
 | Intended files | qa/p4_native/Run_P4_71_Disposable_Windows.ps1, frontend/scripts/native-dev-plan.mjs, new frontend/scripts/verify-hosted-native-frontdoor.mjs and fixed frontend/src-tauri/tauri.p4-hosted-prestarted.conf.json, frontend/tests/p4-native-dev-isolation.test.cjs, frontend/tests/p1-playwright-pilot-contract.test.cjs as needed, .github/workflows/p4-target-ranking.yml (source triggers only), journal. Start Vite independently under private env, verify exact loopback ownership and authenticated health, clear private serving inputs before any npm/Tauri/native/driver/relaunch; pure fixed overlay selection under hosted exact context and existing consent, no new authority. Preserve same app identity/config except predev hook verifies existing service; no foreign reuse or restart. No native run or evidence-method changes. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | 76dbc0c P4 #45571748642 terminal SUCCESS; jobs p4-r03-windows-local-answers 139059824101 success; p4-synthetic-source-and-frontend 139059824458 success; p4-disposable-real-http-browser 139059824842 success; Exercise preservation/hash collector on synthetic Windows fixture ONLY 139059825771 skipped. Historical R03 CLI refusal verified only. P4-71 source audit: backend capability inherited by npm/Tauri, probe and relaunch; default overlay launches Vite through npm, hence separate owned Vite required. All marker-triggered native workflows remain disabled; legacy native compile targets build-e only. Existing public hosted flags retained; private capability must not reach app/driver. |

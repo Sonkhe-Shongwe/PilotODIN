@@ -146,6 +146,8 @@ on:
       - frontend/package.json
       - frontend/scripts/p4-isolated-native-dev.mjs
       - frontend/scripts/native-dev-plan.mjs
+      - frontend/scripts/verify-hosted-native-frontdoor.mjs
+      - frontend/src-tauri/tauri.p4-hosted-prestarted.conf.json
       - frontend/tests/a4-native-smoke-runner.test.cjs
       - tools/Verify_A4_Native_Windows.ps1
       - frontend/scripts/deny-unsafe-default-tauri-dev.mjs

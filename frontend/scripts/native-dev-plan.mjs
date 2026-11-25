@@ -1,14 +1,53 @@
 // Pure source-only launch planning; never spawns, reads environment or touches disk.
+import {win32} from "node:path";
 const P4 = "src-tauri/tauri.p4-isolated-native-dev.conf.json";
+const HOSTED = "src-tauri/tauri.p4-hosted-prestarted.conf.json";
+const HOSTED_HOOK = Object.freeze({script:"node scripts/verify-hosted-native-frontdoor.mjs",wait:true});
 const A4 = "src-tauri/tauri.native-a4-smoke.conf.json";
 const CONSENT = "I_APPROVE_UNPACKAGED_P4_NATIVE_DEV";
+
+export function assertNoPrivateServingEnvironment(env) {
+  if (Object.entries(env).some(([key,value]) => value &&
+      !(key.toUpperCase()==="PILOTODIN_DESKTOP_ALLOW_DEV" && value==="0") &&
+      (/^PILOTODIN_(?:DEV_|DESKTOP_|CONTROL_)/i.test(key) ||
+       key.toUpperCase()==="PILOTODIN_SERVER_MODE")))
+    throw new Error("Native process must not inherit private serving configuration.");
+}
+
+export function assertHostedFrontdoorContext(env) {
+  if (env.PILOTODIN_P4_UNPACKAGED_NATIVE_DEV_CONSENT !== CONSENT)
+    throw new Error("Native compilation is frozen pending separate explicit owner approval.");
+  assertNoPrivateServingEnvironment(env);
+  const required = {CI:"true",GITHUB_ACTIONS:"true",RUNNER_OS:"Windows",
+    RUNNER_ENVIRONMENT:"github-hosted",GITHUB_EVENT_NAME:"push",GITHUB_RUN_ATTEMPT:"1",
+    GITHUB_REF_NAME:"feature/live-dev-workspace-20261023",PILOTODIN_HOSTED_NATIVE_AUTH:"1",
+    VITE_PILOTODIN_AUTH_DEV:"1",VITE_PILOTODIN_NATIVE_SMOKE:"1",
+    PILOTODIN_P4_PRESTARTED_FRONTDOOR:"1"};
+  const root=env.RUNNER_TEMP??"",home=env.PILOTODIN_HOME??"";
+  if (Object.entries(required).some(([key,value])=>env[key]!==value) ||
+      !/^[0-9]+$/.test(env.GITHUB_RUN_ID??"") ||
+      !win32.isAbsolute(root)||!win32.isAbsolute(home)||
+      !/^[A-Za-z]:[\\/]/.test(root)||!(/^[A-Za-z]:[\\/]/.test(home))||
+      root.split(/[\\/]/).includes("..")||home.split(/[\\/]/).includes("..")||
+      win32.normalize(home)!==win32.join(root,"P4-71-only-home-"+env.GITHUB_RUN_ID)||
+      env.P1_REAL_HTTP_E2E||env.PILOTODIN_A4_RELAY!==undefined||
+      env.VITE_PILOTODIN_P2_FULL_STACK!==undefined)
+    throw new Error("Invalid hosted prestarted native frontdoor configuration.");
+}
 
 export function nativeDevPlan(args, env, read) {
   if (env.PILOTODIN_P4_UNPACKAGED_NATIVE_DEV_CONSENT !== CONSENT)
     throw new Error("Native compilation is frozen pending separate explicit owner approval. Use the isolated browser-only Live Dev launcher instead.");
   if (env.TAURI_CONFIG || env.TAURI_CONFIG_PATH)
     throw new Error("Inherited Tauri configuration is not permitted.");
+  assertNoPrivateServingEnvironment(env);
   const a4 = args.length === 2 && args[0] === "--config" && args[1] === A4;
+  const hosted = env.PILOTODIN_P4_PRESTARTED_FRONTDOOR !== undefined ||
+    env.PILOTODIN_HOSTED_NATIVE_AUTH !== undefined;
+  if (hosted) {
+    if (a4 || args.length !== 0) throw new Error("Hosted frontdoor requires the fixed P4 launch.");
+    assertHostedFrontdoorContext(env);
+  }
   if (args.length !== 0 && !a4)
     throw new Error("Only the fixed isolated P4 default or exact A4 overlay is permitted.");
   if (a4) {
@@ -52,6 +91,14 @@ export function nativeDevPlan(args, env, read) {
       smoke.build?.devUrl !== "http://127.0.0.1:5174" ||
       Object.keys(smoke.build).length !== 2)
     throw new Error("Native dev hooks or fixed origins differ from reviewed source.");
+  if (hosted) {
+    const prestarted = read(HOSTED);
+    const expected = {...isolated,build:{beforeDevCommand:HOSTED_HOOK}};
+    // Same app identity, window, bundle and all other keys. The sole
+    // intentional difference is a synchronous verification-only dev hook.
+    if (JSON.stringify(prestarted)!==JSON.stringify(expected))
+      throw new Error("Hosted prestarted overlay differs from the isolated P4 profile.");
+  }
   // Never forward caller arguments: select one immutable repository path.
-  return Object.freeze(["exec","--","tauri","dev","--config",a4 ? A4 : P4]);
+  return Object.freeze(["exec","--","tauri","dev","--config",a4 ? A4 : hosted ? HOSTED : P4]);
 }
