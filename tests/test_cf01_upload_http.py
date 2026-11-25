@@ -9,7 +9,7 @@ from __future__ import annotations
 from io import BytesIO
 from pathlib import Path
 
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
 from openpyxl import Workbook
 
 from backend import quality, storage
@@ -49,7 +49,7 @@ def _assert_no_projects_or_uploads(home):
 def test_oversize_csv_http_rejected_without_any_published_file(monkeypatch, tmp_path):
     home = _isolated(monkeypatch, tmp_path)
     source = ("OrderNumber,Revenue\n" + "0007,1\n" * 100_001).encode("utf-8")
-    with TestClient(app) as client:
+    with fixture_client(app) as client:
         result = client.post("/api/projects", files={"file": ("oversize.csv", source, "text/csv")})
         assert result.status_code == 422, result.text
         assert "100,000 rows" in result.json()["detail"]
@@ -60,7 +60,7 @@ def test_oversize_csv_http_rejected_without_any_published_file(monkeypatch, tmp_
 def test_oversize_xlsx_http_rejected_without_any_published_file(monkeypatch, tmp_path):
     home = _isolated(monkeypatch, tmp_path)
     source = _xlsx_bytes(101)
-    with TestClient(app) as client:
+    with fixture_client(app) as client:
         result = client.post("/api/projects", files={"file": ("wide.xlsx", source, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")})
         assert result.status_code == 422, result.text
         assert "100 columns" in result.json()["detail"]
@@ -71,7 +71,7 @@ def test_oversize_xlsx_http_rejected_without_any_published_file(monkeypatch, tmp
 def test_rejected_xlsx_does_not_modify_an_existing_project(monkeypatch, tmp_path):
     home = _isolated(monkeypatch, tmp_path)
     original = b"SKU,Revenue\n0007,12\n0008,13\n"
-    with TestClient(app) as client:
+    with fixture_client(app) as client:
         initial = client.post("/api/projects", files={"file": ("good.csv", original, "text/csv")})
         assert initial.status_code == 201, initial.text
         pid = initial.json()["id"]
@@ -92,7 +92,7 @@ def test_valid_long_text_and_identifier_http_import_survive(monkeypatch, tmp_pat
     home = _isolated(monkeypatch, tmp_path)
     long_note = "A" * 160_000
     original = ('SKU,Notes,Revenue\n0007,"' + long_note + '\",12\n').encode("utf-8")
-    with TestClient(app) as client:
+    with fixture_client(app) as client:
         uploaded = client.post("/api/projects", files={"file": ("long-text.csv", original, "text/csv")})
         assert uploaded.status_code == 201, uploaded.text
         pid = uploaded.json()["id"]

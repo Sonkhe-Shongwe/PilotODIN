@@ -9,7 +9,7 @@ from pathlib import Path
 import hashlib
 
 import pandas as pd
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
 from openpyxl import Workbook
 
 from backend import engine, main, quality, storage
@@ -69,7 +69,7 @@ def test_reader_and_quality_preserve_xlsx_text_ids(tmp_path):
 def test_xlsx_http_import_quality_and_original_sha(monkeypatch, tmp_path):
     home = _store(monkeypatch, tmp_path)
     raw = _workbook()
-    with TestClient(main.app) as client:
+    with fixture_client(main.app) as client:
         result = client.post(
             "/api/projects",
             files={"file": ("ids.xlsx", raw,

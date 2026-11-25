@@ -44,6 +44,9 @@ on:
       - desktop/verify_packaged_engine.py
       - tests/test_c3_local_verifier_trust.py
       - tests/test_p2_legacy_pdf_visual_source.py
+      - tests/test_desktop_foundation.py
+      - tests/test_cf01_upload_http.py
+      - tests/test_cf02_xlsx_identifier_parity.py
       - tests/test_p2_mixed_report_devqa.py
       - tests/test_p2_mixed_runner_contract.py
       - tools/p2_mixed_report_devqa.py
@@ -165,6 +168,15 @@ jobs:
                   print(f"Mixed-report {kind}: {status['tests_run']}/{EXPECTED[kind]} PASS")
               assert not any((run / "workspace" / "models").iterdir())
           PY
+
+      - name: Verify historical desktop trust and CSV/XLSX HTTP fixture compatibility
+        env:
+          PILOTODIN_HOME: ${{ runner.temp }}/pilotodin-c3-desktop-import-${{ github.run_id }}-${{ github.run_attempt }}
+        run: >-
+          python -m pytest -q
+          tests/test_desktop_foundation.py
+          tests/test_cf01_upload_http.py
+          tests/test_cf02_xlsx_identifier_parity.py
 
       - name: Exercise nine isolated authenticated P2 PDF export route cases
         run: |

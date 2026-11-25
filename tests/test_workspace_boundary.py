@@ -407,12 +407,12 @@ from backend.workspace_boundary import hold_process_workspace
 home = hold_process_workspace(sys.argv[1])
 os.environ["PILOTODIN_HOME"] = str(home)
 from backend import main, storage
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
 uid = "a" * 32
 target = home / "datasets" / (uid + ".csv")
 target.write_bytes(b"original")
 with patch.object(storage, "uid", return_value=uid):
-    response = TestClient(main.app).post("/api/projects", files={"file": ("new.csv", b"A,B\n1,2\n", "text/csv")})
+    response = fixture_client(main.app).post("/api/projects", files={"file": ("new.csv", b"A,B\n1,2\n", "text/csv")})
 assert response.status_code == 422, response.text
 assert target.read_bytes() == b"original"
 assert not target.with_name(target.name + ".uploading").exists()
@@ -434,7 +434,7 @@ from backend.workspace_boundary import hold_process_workspace
 home = hold_process_workspace(sys.argv[1])
 os.environ["PILOTODIN_HOME"] = str(home)
 from backend import main, storage, dataset_publication
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
 raw = b"A,B\n1,2\n"
 boundary = sys.argv[2]
 original = dataset_publication._write_exclusive
@@ -450,7 +450,7 @@ def stop(path, payload, owned, verify):
     return original(path, payload, owned, verify)
 if boundary != "recover":
     with patch.object(dataset_publication, "_write_exclusive", stop):
-        response = TestClient(main.app).post("/api/projects", files={"file": ("new.csv",raw,"text/csv")})
+        response = fixture_client(main.app).post("/api/projects", files={"file": ("new.csv",raw,"text/csv")})
         raise AssertionError(response.text)
 else:
     paths = list((home/"datasets").iterdir())
@@ -538,13 +538,13 @@ home = hold_process_workspace(sys.argv[1])
 os.environ["PILOTODIN_HOME"] = str(home)
 configure_process_scratch(home)
 from backend import main, storage
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
 scratch = home / "backend-temp"
 assert Path(tempfile.gettempdir()) == scratch
 assert all(os.environ[key] == str(scratch) for key in ("TEMP","TMP","TMPDIR","JOBLIB_TEMP_FOLDER"))
 with tempfile.NamedTemporaryFile() as handle:
     assert Path(handle.name).parent == scratch
-client = TestClient(main.app)
+client = fixture_client(main.app)
 assert client.get("/api/health").status_code == 200
 os.environ["TMP"] = str(home.parent)
 assert client.get("/api/health").status_code == 503
