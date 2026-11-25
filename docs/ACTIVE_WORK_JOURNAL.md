@@ -7,17 +7,17 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 6d33774852db0b4c1891d0c7a74ea61a7373e4d0 |
 | Product baseline | C3 source exit supported at 78c8672, latest product ebd01f4 and verified fixture/historical changes c329e0d/83c83f8. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
 | Operation ID | C4-A-HISTORICAL-REGRESSION-INVENTORY-20261125 |
-| Operation state | PREPARED; prior foundation publication and failed CI reconciled; new operation not yet issued |
+| Operation state | ISSUED; identify source publication by parent f20dc88 and operation marker before retry |
 | Intended files | tests/test_desktop_foundation.py (retarget obsolete URL assertion to exact shared authenticated transport); tools/c4_settings_inventory.py, tests/test_c4_settings_inventory.py, existing P1 isolated workflow wiring; canonical records. No product source or live settings changes. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Exact 89b2631 P1 #45619321655 completed FAILURE; direct C4 48/48 PASS, historical desktop/import 15 pass/1 fail, three downstream steps skipped. Failure is obsolete inline upload URL assertion after C3 shared fetchLocal transport. New verification pending. |
-| Pending runs | None; prior run terminal FAILURE, retained in evidence ledger. |
+| Verification | Historical authentication assertion retargeted and committed-source C4 candidate inventory plus five inert tests added; no live source changes. Exact P1 CI pending. |
+| Pending runs | Exact P1 Ubuntu source CI expected; prior failed run preserved. Resolve run ID before any retry. |
 | Unpublished work | Owner-local tree not inspected. |
 | Recovery action | Correct historical assertion without weakening authenticated method/destination/redirect checks; run static settings candidate inventory on exact committed source via existing P1 Ubuntu workflow. Confirm non-force publication and exact run; review inventory candidates and strict production lease/fixture and API redaction before integrating live settings. No native, actual DPAPI/provider or owner data. |
 | Resume after closure | C5 then D with separately approved scope. |

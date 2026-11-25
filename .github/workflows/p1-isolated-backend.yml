@@ -78,6 +78,8 @@ on:
       - tests/test_p1_resource_policy.py
       - backend/settings_storage.py
       - tests/test_c4_settings_storage.py
+      - tools/c4_settings_inventory.py
+      - tests/test_c4_settings_inventory.py
       - tests/test_p1_resource_admission.py
 
 permissions:
@@ -109,6 +111,10 @@ jobs:
         run: python -B -m unittest -v tests.test_c3_source_caller_inventory
       - name: Inventory committed C3 routes and caller candidates (read-only)
         run: python -B tools/c3_source_caller_inventory.py
+      - name: Verify C4 settings inventory using inert fixtures
+        run: python -B -m unittest -v tests.test_c4_settings_inventory
+      - name: Inventory exact committed C4 settings candidates (read-only)
+        run: python -B -m tools.c4_settings_inventory
       - name: Install existing test dependencies
         run: python -m pip install -r backend/requirements-test.txt
       - name: Compile backend modules

@@ -135,10 +135,27 @@ def test_suspended_migration_preserves_existing_destination(tmp_path):
 
 def test_frontend_all_fetch_methods_include_session_header():
     source = (Path(__file__).resolve().parents[1]/'frontend'/'src'/'api.ts').read_text()
-    assert 'headers:authHeaders()' in source # GET and upload
-    assert '...authHeaders()' in source # POST and PUT
-    assert '`${apiBase()}/projects`' in source
-    assert 'const form=new FormData()' in source
+    # C3 centralizes every HTTP operation in the confined transport. Check
+    # each method, not just a global substring or an obsolete inline URL.
+    get = source[source.index('export async function get<'):source.index('export async function post<')]
+    post = source[source.index('export async function post<'):source.index('export async function put<')]
+    put = source[source.index('export async function put<'):source.index('export async function upload(')]
+    upload = source[source.index('export async function upload('):source.index('/** Read-only download:')]
+    transport = source[source.index('async function fetchLocal('):source.index('// Passive health checks')]
+    target = source[source.index('function localTarget('):source.index('async function fetchLocal(')]
+    assert 'fetchLocal(path,{headers:authHeaders()' in get
+    assert "fetchLocal(path,{method:'POST',headers:{...authHeaders()," in post
+    assert "fetchLocal(path,{method:'PUT',headers:{...authHeaders()," in put
+    assert 'const form=new FormData()' in upload
+    assert "form.append('file',file)" in upload
+    assert "fetchLocal('/projects',{method:'POST',headers:authHeaders(),body:form})" in upload
+    assert 'const target=localTarget(path)' in transport
+    assert "fetch(target.href,{...options,redirect:'error'})" in transport
+    assert 'response.redirected' in transport
+    assert 'target.origin!==new URL(base).origin' in target
+    assert "target.pathname.startsWith('/api/')" in target
+    # Actual method/header/destination and redirect behavior remains exercised
+    # by frontend/tests/desktop-ai-boundaries.test.cjs.
 
 
 def test_tauri_shell_permissions_do_not_expose_arbitrary_executables():
