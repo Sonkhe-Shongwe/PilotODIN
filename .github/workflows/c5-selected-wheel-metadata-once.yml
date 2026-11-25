@@ -23,7 +23,7 @@ jobs:
           persist-credentials: false
       - run: python3 -I -B qa/c5_wheel_metadata/collect.py --self-test
   collect-once:
-    if: ${{ false }} # Not armed; owner approval recorded, offline preflight first.
+    if: ${{ github.run_attempt == 1 && github.event.head_commit.message == 'C5-SELECTED-WHEEL-METADATA-ONCE-20261125 activate' }} # One exact push only.
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -32,6 +32,8 @@ jobs:
           ref: ${{ github.sha }}
           persist-credentials: false
       - run: python3 -I -B qa/c5_wheel_metadata/collect.py --self-test
+      - name: Verify exact preflight-tested collector
+        run: test "$(git hash-object qa/c5_wheel_metadata/collect.py)" = e617dcfa2fd5fadc2a75789e39d655bf4a770afa
       - name: Collect only reviewed hash-advertised metadata
         env:
           C5_APPROVED_ONCE: C5-SELECTED-WHEEL-METADATA-ONCE-20261125
