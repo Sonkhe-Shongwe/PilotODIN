@@ -6,6 +6,7 @@ import urllib.error
 from pathlib import Path
 import pytest
 from tests.fixture_http import fixture_client
+from tests.settings_fixture import isolate_ai_store
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from backend import ai_provider
 from backend.main import app
@@ -13,8 +14,7 @@ client=fixture_client(app)
 
 @pytest.fixture(autouse=True)
 def config(tmp_path, monkeypatch):
-    monkeypatch.setattr(ai_provider,'CONFIG_PATH',tmp_path/'settings.json')
-    monkeypatch.setattr(ai_provider,'SECRETS_PATH',tmp_path/'keys.dpapi')
+    isolate_ai_store(monkeypatch, ai_provider, tmp_path)
     ai_provider._memory_keys.clear();ai_provider._cooldowns.clear()
     for env in ai_provider.ENV_KEYS.values():monkeypatch.delenv(env,raising=False)
     yield

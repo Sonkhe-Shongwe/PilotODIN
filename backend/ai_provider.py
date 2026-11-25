@@ -14,19 +14,16 @@ import json
 import math
 import os
 import sys
-import threading
 import time
 import urllib.error
 import urllib.request
 from ctypes import wintypes
-from pathlib import Path
-import re
 from typing import Protocol
 
 try:
-    from . import storage, bundled_inference, resource_policy
+    from . import storage, bundled_inference, resource_policy, settings_storage
 except ImportError:
-    import storage, bundled_inference, resource_policy
+    import storage, bundled_inference, resource_policy, settings_storage
 
 PROVIDERS = ('gemini', 'groq', 'openrouter')
 MODELS = {
@@ -35,23 +32,18 @@ MODELS = {
     'openrouter': {'routine':'openrouter/free', 'deep':'openrouter/free'},
 }
 ENV_KEYS = {'gemini':'GEMINI_API_KEY','groq':'GROQ_API_KEY','openrouter':'OPENROUTER_API_KEY'}
-CONFIG_PATH = storage.HOME / 'ai_settings.json'
-SECRETS_PATH = storage.HOME / 'ai_secrets.dpapi'
-_lock = threading.RLock()
+_lock = settings_storage.SETTINGS_LOCK
 _memory_keys:dict[str,str] = {}
 _cooldowns:dict[str,float] = {}
 _health:dict[str,dict] = {}
 _last_background_check:float = 0.0
 _consent_revision = 0
-DEFAULTS = {'cloud_enabled':False,'share_aggregates':False,'auto_insights':False,
-            'provider_order':['gemini','groq','openrouter'],'timeout_seconds':20,
-            'preferred_provider':'auto','workspace_preferences':{},
-            'intelligence_mode':'hybrid','local_model':'qwen3:1.7b',
-            'local_model_enabled':True,'local_timeout_seconds':60}
+DEFAULTS = settings_storage.ai_defaults()  # compatibility for synthetic callers
+_config_inhibited = False
+_keys_inhibited = False
 # Ollama is local-only. Never accept a URL from a request or configuration file.
 OLLAMA_URL = 'http://127.0.0.1:11434'
 CLOUD_PROMPT_LIMIT = 11000
-MODEL_NAME = re.compile(r'^[A-Za-z0-9][A-Za-z0-9_.-]*(?:/[A-Za-z0-9][A-Za-z0-9_.-]*)*(?::[A-Za-z0-9][A-Za-z0-9_.-]*)?$')
 _local_health:dict = {'status':'not_tested'}
 
 class InterpretationProvider(Protocol):
@@ -70,6 +62,10 @@ def _dpapi(data:bytes, decrypt:bool=False)->bytes:
     """Windows user-bound DPAPI; never persist unencrypted API credentials."""
     if sys.platform!='win32':
         raise RuntimeError('Persistent key storage requires Windows DPAPI')
+    input_limit = settings_storage.SECRET_CIPHERTEXT_LIMIT if decrypt else settings_storage.SECRET_PLAINTEXT_LIMIT
+    output_limit = settings_storage.SECRET_PLAINTEXT_LIMIT if decrypt else settings_storage.SECRET_CIPHERTEXT_LIMIT
+    if type(data) is not bytes or not 0 < len(data) <= input_limit:
+        raise OSError('Credential protection input unavailable or oversized')
     class DATA_BLOB(ctypes.Structure):
         _fields_=[('cbData',wintypes.DWORD),('pbData',ctypes.POINTER(ctypes.c_ubyte))]
     buf=ctypes.create_string_buffer(data)
@@ -86,61 +82,106 @@ def _dpapi(data:bytes, decrypt:bool=False)->bytes:
         call.argtypes=[ctypes.POINTER(DATA_BLOB),ctypes.c_wchar_p,ctypes.c_void_p,ctypes.c_void_p,ctypes.c_void_p,wintypes.DWORD,ctypes.POINTER(DATA_BLOB)]
         args=(ctypes.byref(source),'PilotODIN API credentials',None,None,None,0x01,ctypes.byref(output))
     call.restype=wintypes.BOOL
-    if not call(*args):
-        raise OSError('Windows could not protect or unlock credentials')
     try:
+        if not call(*args):
+            raise OSError('Windows could not protect or unlock credentials')
+        if not output.pbData or not 0 < output.cbData <= output_limit:
+            raise OSError('Credential protection output unavailable or oversized')
         return ctypes.string_at(output.pbData, output.cbData)
     finally:
-        kernel.LocalFree.argtypes=[ctypes.c_void_p]
-        kernel.LocalFree.restype=ctypes.c_void_p
-        kernel.LocalFree(ctypes.cast(output.pbData,ctypes.c_void_p))
+        ctypes.memset(buf, 0, ctypes.sizeof(buf))
+        if output.pbData:
+            if decrypt and 0 < output.cbData <= output_limit:
+                ctypes.memset(output.pbData, 0, output.cbData)
+            kernel.LocalFree.argtypes=[ctypes.c_void_p]
+            kernel.LocalFree.restype=ctypes.c_void_p
+            kernel.LocalFree(ctypes.cast(output.pbData,ctypes.c_void_p))
+
+
+def _settings_store():
+    return settings_storage.owned_store(storage.HOME)
+
+
+def _persistent_secrets():
+    return sys.platform == 'win32'
+
+
+def _decrypt(blob):
+    return _dpapi(blob, True)
 
 
 def _stored_keys()->dict[str,str]:
-    if sys.platform!='win32': return dict(_memory_keys)
-    if not SECRETS_PATH.exists(): return {}
-    return json.loads(_dpapi(base64.b64decode(SECRETS_PATH.read_bytes()),True).decode('utf-8'))
+    with _lock:
+        store = _settings_store()
+        if not _persistent_secrets():
+            store.check_target(settings_storage.Kind.AI)
+            return settings_storage.validate_keys(_memory_keys)
+        return store.read(settings_storage.Kind.SECRET, decrypt=_decrypt) or {}
 
 
 def _save_keys(keys:dict[str,str])->None:
-    if sys.platform!='win32':
-        _memory_keys.clear();_memory_keys.update(keys)
-        return
-    import tempfile
-    protected=base64.b64encode(_dpapi(json.dumps(keys).encode('utf-8')))
-    storage.check_write_path(SECRETS_PATH, missing=True)
-    fd,temporary=tempfile.mkstemp(dir=SECRETS_PATH.parent,prefix='.secrets-',suffix='.tmp')
-    identity=None
-    try:
-        with os.fdopen(fd,'wb') as fp:
-            identity=os.fstat(fp.fileno())
-            fp.write(protected)
-        storage.check_write_path(Path(temporary), expected=identity)
-        storage.check_write_path(SECRETS_PATH, missing=True)
-        os.replace(temporary,SECRETS_PATH)
-    finally:
-        storage.guarded_unlink(Path(temporary), expected=identity)
+    with _lock:
+        keys = settings_storage.validate_keys(keys)
+        store = _settings_store()
+        if not _persistent_secrets():
+            store.check_target(settings_storage.Kind.AI)
+            _memory_keys.clear()
+            _memory_keys.update(keys)
+            return
+        try:
+            plain = json.dumps(keys, separators=(',', ':')).encode('utf-8')
+            if len(plain) > settings_storage.SECRET_PLAINTEXT_LIMIT:
+                raise ValueError('Credential map oversized')
+            encrypted = _dpapi(plain)
+            if type(encrypted) is not bytes or not 0 < len(encrypted) <= settings_storage.SECRET_CIPHERTEXT_LIMIT:
+                raise ValueError('Credential protection output invalid')
+            protected = base64.b64encode(encrypted)
+        except Exception:
+            raise settings_storage.SettingsIOError('Secure credential protection unavailable') from None
+        store.replace(settings_storage.Kind.SECRET, protected, decrypt=_decrypt)
+
+
+def _safe_config(warning):
+    return {**settings_storage.ai_defaults(), 'intelligence_mode':'local',
+            'settings_warning':warning}
 
 
 def _read_config()->dict:
     with _lock:
-        if not CONFIG_PATH.is_file():return dict(DEFAULTS)
-        raw=json.loads(CONFIG_PATH.read_text(encoding='utf-8'))
-        return {**DEFAULTS,**{k:v for k,v in raw.items() if k in DEFAULTS}}
+        if _config_inhibited:
+            return _safe_config('AI settings save was not confirmed. Cloud remains disabled for this session until an explicit confirmed save.')
+        try:
+            cfg = _settings_store().read(settings_storage.Kind.AI)
+        except (ValueError, OSError):
+            return _safe_config('AI preferences unavailable or invalid. Original settings were not rewritten.')
+        return settings_storage.ai_defaults() if cfg is None else cfg
 
 
 def config_status()->dict:
-    cfg=_read_config()
     with _lock:
-        available=_stored_keys()
-        providers=[{'id':p,'connected':bool(available.get(p) or os.environ.get(ENV_KEYS[p])),
-                    'verified':_health.get(p,{}).get('status')=='connected',
-                    'health':_health.get(p,{'status':'unverified' if available.get(p) or os.environ.get(ENV_KEYS[p]) else 'not_configured'}),
+        cfg=_read_config()
+        warning=None
+        try:
+            available=_stored_keys()
+        except (ValueError, OSError):
+            available={}
+            warning='Credential storage unavailable or invalid. No credentials were rewritten.'
+        if _keys_inhibited:
+            available={}
+            warning='Credential save was not confirmed. Cloud remains disabled for this session until an explicit confirmed credential save.'
+        if warning:
+            cfg={**cfg,'cloud_enabled':False,'share_aggregates':False,'intelligence_mode':'local'}
+        providers=[{'id':p,'connected':bool(available.get(p)),
+                    'verified':bool(available.get(p)) and _health.get(p,{}).get('status')=='connected',
+                    'health':_health.get(p,{'status':'unverified'}) if available.get(p) else {'status':'not_configured'},
                     'routine_model':MODELS[p]['routine'],'deep_model':MODELS[p]['deep']}
                    for p in PROVIDERS]
-    return {**cfg,'providers':providers,'local_ai':{**_local_health, 'model':cfg['local_model'],
-            'url':'bundled-local-runtime' if os.environ.get('PILOTODIN_DESKTOP_SESSION') else 'http://127.0.0.1:11434', 'probe_required':_local_health.get('status')=='not_tested'},'secret_storage': 'windows_dpapi' if sys.platform=='win32' else 'session_only',
-            'privacy_note':'Cloud requires explicit opt-in. Bounded computed statistics, column names and the typed question may be sent. Uploaded rows and local file paths are not automatically shared.'}
+        return {**cfg,'credential_warning':warning,'providers':providers,
+                'local_ai':{**_local_health, 'model':cfg['local_model'],
+                'url':'bundled-local-runtime' if os.environ.get('PILOTODIN_DESKTOP_SESSION') else 'http://127.0.0.1:11434',
+                'probe_required':_local_health.get('status')=='not_tested'},
+                'secret_storage':'windows_dpapi' if _persistent_secrets() else 'session_only',
+                'privacy_note':'Cloud requires explicit opt-in. Bounded computed statistics, column names and the typed question may be sent. Uploaded rows and local file paths are not automatically shared.'}
 
 
 def update_settings(*,cloud_enabled:bool,share_aggregates:bool,auto_insights:bool,
@@ -148,59 +189,65 @@ def update_settings(*,cloud_enabled:bool,share_aggregates:bool,auto_insights:boo
                     preferred_provider:str='auto',workspace_preferences:dict|None=None,
                     intelligence_mode:str='hybrid',local_model:str='qwen3:1.7b',
                     local_model_enabled:bool=True,local_timeout_seconds:int=60)->dict:
-    if sorted(provider_order)!=sorted(PROVIDERS) or len(provider_order)!=len(PROVIDERS):
-        raise ValueError('Specify each of Gemini, Groq and OpenRouter exactly once')
-    if not 3<=timeout_seconds<=45:raise ValueError('Timeout must be between 3 and 45 seconds')
-    if preferred_provider not in (*PROVIDERS,'auto','local','ollama'):raise ValueError('Unknown preferred AI provider')
-    if intelligence_mode not in ('hybrid','local','cloud'):raise ValueError('Unknown intelligence mode')
-    if not isinstance(local_model,str) or len(local_model)>80 or not MODEL_NAME.fullmatch(local_model):raise ValueError('Invalid local model name')
-    if not isinstance(local_model_enabled,bool):raise ValueError('Local model enabled must be a boolean')
-    if not 5<=local_timeout_seconds<=180:raise ValueError('Local timeout must be 5-180 seconds')
-    workspace_preferences=workspace_preferences or {}
-    if not isinstance(workspace_preferences,dict) or len(workspace_preferences)>12 or any(not isinstance(k,str) or len(k)>40 or v not in (*PROVIDERS,'auto','local','ollama') for k,v in workspace_preferences.items()):
-        raise ValueError('Invalid workspace preferences')
-    if cloud_enabled and not share_aggregates:
-        raise ValueError('Consent to share bounded aggregate context before enabling cloud AI')
-    cfg={'cloud_enabled':cloud_enabled,'share_aggregates':share_aggregates,
-         'auto_insights':auto_insights,'provider_order':provider_order,'timeout_seconds':timeout_seconds,
-         'preferred_provider':preferred_provider,'workspace_preferences':workspace_preferences,
-         'intelligence_mode':intelligence_mode,'local_model':local_model,
-         'local_model_enabled':local_model_enabled,'local_timeout_seconds':local_timeout_seconds}
-    global _consent_revision
+    cfg=settings_storage.validate_ai({
+        'cloud_enabled':cloud_enabled,'share_aggregates':share_aggregates,
+        'auto_insights':auto_insights,'provider_order':provider_order,'timeout_seconds':timeout_seconds,
+        'preferred_provider':preferred_provider,
+        'workspace_preferences':{} if workspace_preferences is None else workspace_preferences,
+        'intelligence_mode':intelligence_mode,'local_model':local_model,
+        'local_model_enabled':local_model_enabled,'local_timeout_seconds':local_timeout_seconds})
+    raw=json.dumps(cfg,indent=2).encode('utf-8')
+    global _consent_revision, _config_inhibited, _last_background_check
     with _lock:
-        _consent_revision += 1  # even an ambiguous write invalidates pending consent
-        temporary=CONFIG_PATH.with_suffix('.tmp')
-        storage.check_write_path(CONFIG_PATH, missing=True)
-        storage.check_write_path(temporary, missing=True)
-        temporary.write_text(json.dumps(cfg,indent=2),encoding='utf-8')
-        identity=storage.check_write_path(temporary)
-        storage.check_write_path(temporary, expected=identity)
-        storage.check_write_path(CONFIG_PATH, missing=True)
-        os.replace(temporary,CONFIG_PATH)
-    return config_status()
+        _consent_revision += 1
+        _config_inhibited = True
+        _health.clear()
+        _cooldowns.clear()
+        _last_background_check=0.0
+        try:
+            _settings_store().replace(settings_storage.Kind.AI, raw)
+        except settings_storage.InvalidSettings:
+            raise settings_storage.SettingsIOError('Existing AI preferences require recovery') from None
+        _config_inhibited = False
+        return config_status()
 
 
 def set_key(provider:str,key:str|None=None,remove:bool=False)->dict:
-    global _last_background_check, _consent_revision
-    if provider not in PROVIDERS:raise ValueError('Unknown AI provider')
+    global _last_background_check, _consent_revision, _keys_inhibited
+    if type(provider) is not str or provider not in PROVIDERS:
+        raise ValueError('Unknown AI provider')
+    if type(remove) is not bool or (remove and key is not None):
+        raise ValueError('Invalid credential operation')
     if not remove:
-        if not key or len(key.strip())<12 or len(key)>512 or any(c.isspace() for c in key):
-            raise ValueError('Enter a valid API key without whitespace')
+        settings_storage.validate_keys({provider:key})
     with _lock:
         _consent_revision += 1
-        current=_stored_keys()
-        if remove: current.pop(provider,None)
-        else:current[provider]=key.strip()
-        _save_keys(current)
-        _cooldowns.pop(provider,None)
-        _health.pop(provider,None)
+        _keys_inhibited = True
+        _cooldowns.clear()
+        _health.clear()
         _last_background_check=0.0
-    return config_status()
+        try:
+            current=_stored_keys()
+            if remove:
+                current.pop(provider,None)
+            else:
+                current[provider]=key
+            _save_keys(current)
+        except settings_storage.InvalidSettings:
+            raise settings_storage.SettingsIOError('Existing credentials require recovery') from None
+        _keys_inhibited = False
+        return config_status()
 
 
 def _get_key(provider:str)->str|None:
     with _lock:
-        return os.getenv(ENV_KEYS[provider]) or _stored_keys().get(provider)
+        if provider not in PROVIDERS or _keys_inhibited or _read_config().get('settings_warning'):
+            return None
+        try:
+            # No ambient key fallback after local credential removal.
+            return _stored_keys().get(provider)
+        except (ValueError,OSError):
+            return None
 
 
 class ProviderText(str):

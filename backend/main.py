@@ -16,6 +16,8 @@ from typing import Literal
 import joblib
 from fastapi import BackgroundTasks, FastAPI, File, HTTPException, UploadFile, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.exceptions import RequestValidationError
+from fastapi.exception_handlers import request_validation_exception_handler
 from pydantic import BaseModel, Field, ConfigDict
 
 try:
@@ -70,6 +72,18 @@ app.add_middleware(CORSMiddleware,
                                    "X-PilotODIN-Export-SHA256","X-PilotODIN-Export-Project",
                                    "X-PilotODIN-Export-Operation","X-PilotODIN-Export-MAC"])
 MAX_BYTES = 40 * 1024 * 1024
+
+
+@app.exception_handler(RequestValidationError)
+async def _redact_settings_validation(request: Request, exc: RequestValidationError):
+    # FastAPI's default validation response includes input values. Never echo
+    # a submitted key (including malformed JSON or unknown field names).
+    if request.method == "PUT" and request.url.path in (
+        "/api/ai/settings", "/api/ai/key", "/api/resource/policy",
+    ):
+        return JSONResponse({"detail":"Invalid settings request"},status_code=422,
+                            headers={"Cache-Control":"no-store"})
+    return await request_validation_exception_handler(request, exc)
 
 # Runtime trust is captured by the outer RequestGuard at serving startup.
 # No environment-based or header-only authorization is accepted here.
@@ -1061,6 +1075,7 @@ def ask_assistant(project_id: str, body: AskRequest):
 # v0.4: opt-in multi-provider intelligence. Keys never returned by API.
 # These routes are exclusively for the localhost user interface.
 class AISettingsRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True)
     cloud_enabled: bool = False
     share_aggregates: bool = False
     auto_insights: bool = False
@@ -1074,6 +1089,7 @@ class AISettingsRequest(BaseModel):
     local_timeout_seconds: int = Field(default=60,ge=5,le=180)
 
 class AIKeyRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True)
     provider: str
     key: str | None = Field(default=None, max_length=512)
     remove: bool = False
@@ -1106,7 +1122,7 @@ def _local_request(request:Request):
 
 
 class ResourcePolicyRequest(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", strict=True)
     mode: Literal["adaptive", "low_memory", "performance"]
 
 
@@ -1173,19 +1189,32 @@ def ai_settings(request:Request):
     return ai_provider.config_status()
 
 
+def _settings_mutation_error(exc):
+    code=exc.code if isinstance(exc,ai_provider.settings_storage.SettingsWriteError) else "settings_unavailable"
+    message={
+        "settings_commit_uncertain":"Save outcome uncertain. Cloud is inhibited for this session. Review status before further changes.",
+        "settings_not_committed":"Settings were not committed. Cloud is inhibited for this session.",
+        "settings_not_committed_stage_retained":"Settings were not committed. Temporary file requires recovery. Cloud is inhibited for this session.",
+        "settings_unavailable":"Settings or credential storage unavailable or unsafe. Review existing settings."
+    }.get(code,"Settings unavailable")
+    return HTTPException(status_code=503,detail={"code":code,"message":message},
+                         headers={"Cache-Control":"no-store"})
+
+
 @app.put('/api/ai/settings')
 def save_ai_settings(body:AISettingsRequest,request:Request):
     _local_request(request)
     try:return ai_provider.update_settings(**body.model_dump())
-    except ValueError as e:raise HTTPException(status_code=422,detail=str(e)) from e
+    except ValueError:raise HTTPException(status_code=422,detail='Invalid AI settings') from None
+    except OSError as exc:raise _settings_mutation_error(exc) from None
 
 
 @app.put('/api/ai/key')
 def save_ai_key(body:AIKeyRequest,request:Request):
     _local_request(request)
     try:return ai_provider.set_key(body.provider,body.key,body.remove)
-    except ValueError as e:raise HTTPException(status_code=422,detail=str(e)) from e
-    except OSError as e:raise HTTPException(status_code=500,detail='Secure credential storage unavailable') from e
+    except ValueError:raise HTTPException(status_code=422,detail='Invalid credential operation') from None
+    except OSError as exc:raise _settings_mutation_error(exc) from None
 
 
 @app.post('/api/projects/{project_id}/ai/insight')

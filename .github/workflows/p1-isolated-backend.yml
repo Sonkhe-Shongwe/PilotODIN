@@ -78,6 +78,8 @@ on:
       - tests/test_p1_resource_policy.py
       - backend/settings_storage.py
       - backend/resource_policy.py
+      - backend/ai_provider.py
+      - tests/test_c4_ai_settings.py
       - tests/settings_fixture.py
       - tests/test_c4_settings_storage.py
       - tools/c4_settings_inventory.py
@@ -136,6 +138,24 @@ jobs:
 
       - name: Verify C4 bounded settings foundation on disposable files
         run: python -m pytest -q tests/test_c4_settings_storage.py
+
+      - name: Verify C4 AI settings and credential boundary using inert adapters
+        env:
+          PILOTODIN_HOME: ${{ runner.temp }}/pilotodin-c4-ai-settings-${{ github.run_id }}
+        run: >-
+          python -m pytest -q
+          tests/test_c4_ai_settings.py
+          tests/test_multi_ai.py::test_disabled_by_default_and_no_credentials_leaked
+          tests/test_multi_ai.py::test_keys_stored_and_never_returned
+          tests/test_multi_ai.py::test_remove_key
+          tests/test_multi_ai.py::test_key_validation
+          tests/test_multi_ai.py::test_cloud_cannot_enable_without_opt_in
+          tests/test_multi_ai.py::test_settings_persist_without_creds
+          tests/test_multi_ai.py::test_invalid_orders_rejected
+          tests/test_multi_ai.py::test_invalid_timeouts_rejected
+          tests/test_hybrid_local_ai.py::test_default_is_hybrid_and_cloud_opt_in
+          tests/test_hybrid_local_ai.py::test_bad_model_settings_rejected
+          tests/test_v05_release.py::test_global_provider_validation_rejects_untrusted_selections
 
       - name: Exercise C1 pure coordinator and exact route inventory
         run: python -m pytest -q tests/test_c1_resource_admission.py tests/test_c1_resource_http.py tests/test_c1_resource_upload.py tests/test_c1_resource_training.py

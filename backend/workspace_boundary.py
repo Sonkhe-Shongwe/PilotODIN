@@ -709,7 +709,7 @@ def validate_process_write(home, path, *, directory=False, missing=False,
     root_file = (len(parts) == 1 and not directory and
                  (root in ("ai_settings.json", "ai_settings.tmp", "ai_secrets.dpapi",
                            "resource_preferences.json", "r03-benchmark.jsonl")
-                  or re.fullmatch(r"\.(?:secrets|resource-policy)-[A-Za-z0-9_-]+\.tmp", root)))
+                  or re.fullmatch(r"\.(?:secrets|resource-policy|ai-settings)-[A-Za-z0-9_-]+\.tmp", root)))
     if not root_file and root not in ("datasets", "models", "export_tmp", "backend-temp"):
         raise WorkspaceBoundaryError("Unexpected workspace write path")
     if not root_file and len(parts) == 1 and not directory:

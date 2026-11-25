@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from tests.fixture_http import fixture_client
+from tests.settings_fixture import isolate_ai_store
 from tests.quality_compat_client import LegacyQualityClient
 from backend import ai_provider, analytics, quality, storage
 from backend.main import app
@@ -146,7 +147,7 @@ def test_gemini_stop_reason_is_not_marked_truncated(monkeypatch):
 
 
 def test_respond_propagates_completion_status_and_safe_continuation(monkeypatch,tmp_path):
-    monkeypatch.setattr(ai_provider,'CONFIG_PATH',tmp_path/'ai.json')
+    isolate_ai_store(monkeypatch, ai_provider, tmp_path)
     ai_provider._memory_keys.clear();ai_provider._cooldowns.clear()
     monkeypatch.setattr(ai_provider,'_get_key',lambda p:'token' if p=='groq' else None)
     monkeypatch.setattr(ai_provider,'_call_provider',lambda *args:ai_provider.ProviderText('Useful paragraph','length',True))
@@ -170,7 +171,7 @@ def test_investigation_planner_does_not_execute_arbitrary_code():
 
 def test_cloud_investigation_uses_only_redacted_aggregates(monkeypatch,tmp_path):
     pid,_=upload()
-    monkeypatch.setattr(ai_provider,'CONFIG_PATH',tmp_path/'config.json')
+    isolate_ai_store(monkeypatch, ai_provider, tmp_path)
     monkeypatch.setattr(ai_provider,'_get_key',lambda p:'fake-token' if p=='groq' else None)
     ai_provider._cooldowns.clear()
     ai_provider.update_settings(cloud_enabled=True,share_aggregates=True,auto_insights=False,

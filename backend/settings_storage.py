@@ -3,12 +3,11 @@
 The service must supply its trusted workspace path checker. Production wiring
 must require the owned lease; disposable tests supply an explicit adapter.
 Observed identity checks and fsync are not hostile-race or power-loss proof.
-This module is not yet wired to the three existing settings services.
+All three existing settings services use the fixed-target store.
 """
 from __future__ import annotations
 
 import base64
-import binascii
 from dataclasses import dataclass
 from enum import Enum
 import json
@@ -32,6 +31,7 @@ MODEL_NAME = re.compile(
 # Preserve that syntactically valid legacy envelope; actual DPAPI output
 # capacity remains a distinct Windows verification boundary.
 SECRET_PLAINTEXT_LIMIT = 24 * 1024
+SECRET_CIPHERTEXT_LIMIT = 48 * 1024
 
 
 class Kind(Enum):
@@ -186,11 +186,11 @@ def decode(kind, raw, *, decrypt=None):
         raise _invalid()
     try:
         encrypted = base64.b64decode(raw, validate=True)
-        if not encrypted:
+        if not 0 < len(encrypted) <= SECRET_CIPHERTEXT_LIMIT:
             raise _invalid()
         plain = decrypt(encrypted)
         return validate_keys(strict_object(plain, SECRET_PLAINTEXT_LIMIT))
-    except (Exception, binascii.Error):
+    except Exception:
         # Do not expose adapter errors, ciphertext, plaintext or paths.
         raise _invalid() from None
 
@@ -319,6 +319,13 @@ class Store:
             raise
         except Exception:
             raise SettingsIOError("Settings read unavailable or unsafe") from None
+
+    def check_target(self, kind):
+        """Check the admitted root/target without reading or creating bytes."""
+        if not isinstance(kind, Kind):
+            raise _invalid()
+        with SETTINGS_LOCK:
+            self._admit(self.home / kind.filename, missing=True)
 
     def read(self, kind, *, decrypt=None):
         if not isinstance(kind, Kind):

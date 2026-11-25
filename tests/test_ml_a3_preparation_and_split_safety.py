@@ -64,8 +64,8 @@ def test_fitted_experiment_reopens_with_original_preprocessing_and_quality_versi
     (home / "models").mkdir()
     monkeypatch.setattr(storage, "HOME", home)
     monkeypatch.setattr(storage, "DB_PATH", home / "pilotodin.sqlite3")
-    monkeypatch.setattr(main.ai_provider, "CONFIG_PATH", home / "ai_settings.json")
-    monkeypatch.setattr(main.ai_provider, "SECRETS_PATH", home / "ai_secrets.dpapi")
+    from tests.settings_fixture import isolate_ai_store
+    isolate_ai_store(monkeypatch, main.ai_provider, home)
     monkeypatch.delenv("PILOTODIN_DESKTOP_SESSION", raising=False)
     storage.init()
     main.quality._init_tables()

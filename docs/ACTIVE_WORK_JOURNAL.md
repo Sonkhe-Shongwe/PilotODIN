@@ -7,17 +7,17 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 5a92f89793204b7fbdfe37110ffd5a4d767896b4 |
 | Product baseline | C3 source exit supported at 78c8672, latest product ebd01f4 and verified fixture/historical changes c329e0d/83c83f8. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
 | Operation ID | C4-A-AI-PREFERENCES-CREDENTIALS-20261125 |
-| Operation state | PREPARED; eight resource CI runs reconciled SUCCESS; new source operation not issued |
+| Operation state | ISSUED; reconcile source publication by parent a4b67a8 and operation marker before retry |
 | Intended files | backend/ai_provider.py, settings_storage.py, workspace_boundary.py, main.py; disposable AI fixture adapter, direct mocked settings/credential and strict API validation tests, migrated historical path fixtures, P1 workflow and continuity records. Raw request bounds and common consent transport follow separately. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Exact a6e4b3b eight workflows SUCCESS; P1 206 recovery + 2 subtests, 48 foundation; P4 63 workspace, 1086 pass/6 skip/552 subtests, Windows 68 pass/133 subtests; restricted collector skipped. |
-| Pending runs | None; all eight prior resource runs terminal. |
+| Verification | AI and credential service integration, shared lock and mandatory lease, strict API models and fixed validation responses, synthetic DPAPI and migrated fixture adapters. Exact CI pending; raw body cap and common cloud routing remain open. |
+| Pending runs | Eight exact-source workflows expected; reconcile actual IDs and terminal outcomes before credit. |
 | Unpublished work | Owner-local tree not inspected. |
 | Recovery action | Integrate AI and credential fixed targets with shared lock/lease, invalid original preservation, bounded DPAPI, no ambient credential fallback, inhibit cloud after failed mutations, strict API models and fixed errors. Reconcile exact CI; raw request bounds and common consent transport follow. |
 | Resume after closure | C5 then D with separately approved scope. |

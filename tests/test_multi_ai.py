@@ -15,6 +15,7 @@ from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 import pytest
 from tests.fixture_http import fixture_client
+from tests.settings_fixture import isolate_ai_store
 from backend import ai_provider,ai_context,quality,storage
 from backend.main import app
 
@@ -22,8 +23,7 @@ client=fixture_client(app)
 
 @pytest.fixture(autouse=True)
 def clean_ai_config(tmp_path,monkeypatch):
-    monkeypatch.setattr(ai_provider,'CONFIG_PATH',tmp_path/'ai_settings.json')
-    monkeypatch.setattr(ai_provider,'SECRETS_PATH',tmp_path/'ai_secrets.dpapi')
+    isolate_ai_store(monkeypatch, ai_provider, tmp_path)
     ai_provider._memory_keys.clear();ai_provider._cooldowns.clear()
     for env in ai_provider.ENV_KEYS.values():monkeypatch.delenv(env,raising=False)
     yield
@@ -58,14 +58,14 @@ def test_disabled_by_default_and_no_credentials_leaked():
     assert all(not x['connected'] for x in r.json()['providers'])
 
 
-def test_keys_stored_and_never_returned():
+def test_keys_stored_and_never_returned(tmp_path):
     key='MY_SENSITIVE_TEST_KEY_1234567'
     r=client.put('/api/ai/key',json={'provider':'gemini','key':key})
     assert r.status_code==200 and r.json()['providers'][0]['connected']
     assert key not in r.text and key not in client.get('/api/ai/settings').text
     assert ai_provider._get_key('gemini')==key
-    assert not ai_provider.CONFIG_PATH.exists()
-    assert not ai_provider.SECRETS_PATH.exists() if sys.platform!='win32' else ai_provider.SECRETS_PATH.exists()
+    assert not (tmp_path/'ai_settings.json').exists()
+    assert (tmp_path/'ai_secrets.dpapi').exists() == (sys.platform=='win32')
 
 
 def test_remove_key():
@@ -84,13 +84,13 @@ def test_cloud_cannot_enable_without_opt_in():
     assert client.get('/api/ai/settings').json()['cloud_enabled'] is False
 
 
-def test_settings_persist_without_creds():
+def test_settings_persist_without_creds(tmp_path):
     r=client.put('/api/ai/settings',json={'cloud_enabled':True,'share_aggregates':True,
                     'provider_order':['groq','gemini','openrouter'],'timeout_seconds':12,'auto_insights':True})
     assert r.status_code==200,r.text
     assert client.get('/api/ai/settings').json()['provider_order'][0]=='groq'
-    assert json.loads(ai_provider.CONFIG_PATH.read_text())['auto_insights']
-    assert 'API_KEY' not in ai_provider.CONFIG_PATH.read_text()
+    assert json.loads((tmp_path/'ai_settings.json').read_text())['auto_insights']
+    assert 'API_KEY' not in (tmp_path/'ai_settings.json').read_text()
 
 @pytest.mark.parametrize('order', [[],['gemini','groq'],['gemini','gemini','groq'],['groq','openrouter','random']])
 def test_invalid_orders_rejected(order):

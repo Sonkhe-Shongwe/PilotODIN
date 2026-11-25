@@ -9,6 +9,7 @@ import urllib.error
 from pathlib import Path
 import pytest
 from tests.fixture_http import fixture_client
+from tests.settings_fixture import isolate_ai_store
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from backend.main import app
 from backend import ai_provider
@@ -17,8 +18,7 @@ client=fixture_client(app)
 
 @pytest.fixture(autouse=True)
 def isolate(tmp_path,monkeypatch):
-    monkeypatch.setattr(ai_provider,'CONFIG_PATH',tmp_path/'settings.json')
-    monkeypatch.setattr(ai_provider,'SECRETS_PATH',tmp_path/'secrets.dpapi')
+    isolate_ai_store(monkeypatch, ai_provider, tmp_path)
     ai_provider._memory_keys.clear();ai_provider._cooldowns.clear();ai_provider._health.clear()
     monkeypatch.setattr(ai_provider,'_last_background_check',0.0)
     for env in ai_provider.ENV_KEYS.values():monkeypatch.delenv(env,raising=False)
