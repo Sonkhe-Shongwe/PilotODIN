@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | VERIFYING |
+| State | READY |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | e87daff22bf17e9d3541392eda7d5ba9c5681df3 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
 | Operation ID | C5-WHEEL-ONE-USE-ASSERTION-FIX-20261126 |
-| Operation state | PUBLISHED/VERIFYING if live HEAD confirmed: corrected literal YAML test assertion; initial failure preserved. Workflow and live gates unchanged. |
+| Operation state | RECONCILED: exact corrected QA 5bebbdccb2ae0d12b96b6cc71ff2a3adc253ea14 run 45724856304 attempt 1 SUCCESS, offline job 139592006652 27/27 + CLI refusal PASS, restricted collect-once 139592008022 SKIPPED. Initial failed assertion retained. No upload, live requests or actual wheels. |
 | Intended files | qa/c5_wheel_metadata/test_wheel_one_use_review.py only, plus journal/handoff/ledger; dedicated one-use offline-review trigger unchanged. |
 | Approval | Twelve restricted approvals consumed/disarmed (six native, six metadata). No additional registry/metadata requests, artifacts, installs, native/model, owner device/data or installer authorized. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | Inspect exact correction push (parent 705dfd64e999acb07ea86349933aecd49e975aaf), new dedicated offline review only; collect-once must skip. |
+| Pending runs | None for this operation. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
-| Recovery action | Reconcile exact source/CI, no restricted job or upload. Independent connector artifact bytes access not established; review mechanism offline and require fresh approval for one synthetic hosted evidence transfer or actual collection separately. Remaining checksum proposal separately gated. |
+| Recovery action | Next independent source work: integrate reviewed actual Git/event and armed-source preflight driver while keeping all activation gates false; before real acquisition, prove hosted evidence publication/retrieval separately. Connector can list artifact metadata and download a ZIP file reference, but independently reading ZIP bytes via available tools is not established. Fresh approval proposal: one synthetic receipt-only artifact upload and one retrieval (max bundle 68550656 bytes, ZIP 69599232 bytes; seven-day retention, no real wheels, native, owner data, installs or retries); no live collection until verified. Remaining checksum collector 17df008 remains independently gated. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
