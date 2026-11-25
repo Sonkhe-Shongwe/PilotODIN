@@ -4,8 +4,6 @@ on:
   push:
     branches: [feature/live-dev-workspace-20261023]
     paths:
-      - .github/workflows/c5-selected-wheel-metadata-once.yml
-      - qa/c5_wheel_metadata/collect.py
       - qa/c5_wheel_metadata/APPROVAL_20261125.txt
 
 permissions:
@@ -13,7 +11,7 @@ permissions:
 
 jobs:
   offline-preflight:
-    if: ${{ github.run_attempt == 1 && github.event.head_commit.message != 'C5-SELECTED-WHEEL-METADATA-ONCE-20261125 activate' }}
+    if: ${{ false }} # Historical preflight 45695518509.
     runs-on: ubuntu-24.04
     timeout-minutes: 3
     steps:
@@ -23,7 +21,7 @@ jobs:
           persist-credentials: false
       - run: python3 -I -B qa/c5_wheel_metadata/collect.py --self-test
   collect-once:
-    if: ${{ github.run_attempt == 1 && github.event.head_commit.message == 'C5-SELECTED-WHEEL-METADATA-ONCE-20261125 activate' }} # One exact push only.
+    if: ${{ false }} # Approval issued to exact run 45695626291 attempt 1; never replay.
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:

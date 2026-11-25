@@ -342,7 +342,7 @@ if __name__ == "__main__":
             self_test()
             raise SystemExit(0)
         require(sys.argv[1:] == ["--collect"], "EXPLICIT_MODE_REQUIRED")
-        raise SystemExit(collect())
+        raise Blocked("APPROVAL_CONSUMED_RUN_45695626291")
     except (Blocked, OSError, ValueError, KeyError, TypeError) as exc:
         emit("REFUSAL", {"reason": str(exc) if type(exc) is Blocked else type(exc).__name__})
         raise SystemExit(2)
