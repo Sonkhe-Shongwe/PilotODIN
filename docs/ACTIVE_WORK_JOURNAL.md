@@ -7,13 +7,13 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | ffe6e58b1a99c1e37971ef8a71ec380d652b02b3 |
 | Product baseline | B8 deadline 5db2032 exact P1/P4 SUCCESS; final worker/test compatibility review. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
 | Operation ID | C4-B8-WORKER-REGRESSION-INTEGRITY-20261125 |
-| Operation state | PREPARED; final B8 correction not yet issued. |
+| Operation state | ISSUED; reconcile exact source commit from prepared parent 182d9d5; do not replay |
 | Intended files | backend/ai_provider.py, tests/test_c4_cloud_intent.py, five historical AI test modules (multi_ai, hybrid_local_ai, v05_release, v06_experience, v08_intelligence), existing P1 isolated backend test selection and canonical records. No schema, approval or activation change. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | Exact 5db2032 P1 180 focused cases and downstream SUCCESS; P4 1086 backend/6 skipped/552 subtests, Windows 68/133 subtests, browser 13, Node 133/Vite SUCCESS. |

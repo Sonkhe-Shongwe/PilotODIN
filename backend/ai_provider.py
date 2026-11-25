@@ -482,6 +482,8 @@ def _call_provider(provider:str,model:str,system:str,user:str,key:str,timeout:in
         opener = urllib.request.build_opener(urllib.request.ProxyHandler({}),_CloudNoRedirects(),
                                              _CloudHTTPSHandler(destination,deadline,current))
         _cloud_remaining(deadline)
+    except AssertionError:
+        raise
     except Exception:
         raise ValueError("Invalid bounded cloud request") from None
     if still_authorized() is not True:
@@ -497,6 +499,8 @@ def _call_provider(provider:str,model:str,system:str,user:str,key:str,timeout:in
             exc.close()
         finally:
             raise RuntimeError("Selected cloud provider unavailable") from None
+    except AssertionError:
+        raise
     except Exception:
         raise RuntimeError("Selected cloud provider unavailable") from None
 
@@ -1137,6 +1141,10 @@ class _CloudPermit:
         return self._check(dispatch=False)
 
 
+class _CloudWorkerFault(BaseException):
+    """Fixed internal fault, not an ordinary provider/network failure."""
+
+
 def _wait_cloud_completion(done, deadline):
     return done.wait(max(0.0, deadline-time.monotonic()))
 
@@ -1155,20 +1163,35 @@ def _run_cloud_transport(ticket,provider,consent,current,model,system,user):
     def run():
         global _cloud_slot
         answer = None
+        fault = False
+        late_fault = False
         try:
             answer = _call_provider(provider,model,system,user,consent[2],consent[1],
                                     strict=True,still_authorized=permit)
-        except BaseException:
-            # Fixed outcome; never retain raw provider exceptions or bodies.
+        except AssertionError:
+            fault = True
+        except Exception:
+            # Ordinary provider errors have a fixed deterministic fallback.
             pass
+        except BaseException:
+            # Never convert a fatal/interrupted worker or a test fail sentinel
+            # into an apparently successful negative test. Retain no raw error.
+            fault = True
         finally:
             with _lock:
                 if not ticket["cancelled"]:
                     outcome["answer"] = answer
+                    outcome["fault"] = fault
+                else:
+                    late_fault = fault
                 ticket["worker_active"] = False
                 if ticket["owner_done"] and _cloud_slot is ticket:
                     _cloud_slot = None
                 done.set()
+        if late_fault:
+            # The caller has already returned. The thread exception hook sees
+            # only a fixed diagnostic, not the original exception or payload.
+            raise _CloudWorkerFault("Cloud transport worker interrupted") from None
 
     worker = Thread(target=run,name="pilotodin-cloud-transport",daemon=True)
     with _lock:
@@ -1179,15 +1202,20 @@ def _run_cloud_transport(ticket,provider,consent,current,model,system,user):
         ticket["worker_active"] = True
     try:
         worker.start()
-    except BaseException:
+    except BaseException as exc:
         # Ambiguous start is not a completion witness. Fail closed; if a
         # worker actually started it will reconcile the slot on return.
         with _lock:
             ticket["cancelled"] = True
-        raise RuntimeError("Selected cloud provider unavailable") from None
+        if isinstance(exc, Exception) and not isinstance(exc, AssertionError):
+            raise RuntimeError("Selected cloud provider unavailable") from None
+        raise _CloudWorkerFault("Cloud transport worker start interrupted") from None
 
     completed = _wait_cloud_completion(done,permit.deadline)
     with _lock:
+        if outcome.pop("fault", False):
+            outcome.clear()
+            raise _CloudWorkerFault("Cloud transport worker interrupted") from None
         if not completed or time.monotonic() >= permit.deadline:
             ticket["cancelled"] = True
             outcome.clear()

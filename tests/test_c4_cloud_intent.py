@@ -796,3 +796,100 @@ def test_cloud_https_response_closes_when_headers_arrive_after_deadline(monkeypa
 
 def test_cloud_wait_already_expired_does_not_block():
     assert ai._wait_cloud_completion(Event(),ai.time.monotonic()-1) is False
+
+
+@pytest.mark.parametrize("kind",["insight","probe"])
+@pytest.mark.parametrize("fault",["assertion","fatal"])
+def test_cloud_worker_fault_is_not_normal_fallback(dispatch,monkeypatch,kind,fault):
+    def transport(*args,**kwargs):
+        assert kwargs["still_authorized"]()
+        if fault=="assertion":
+            raise AssertionError("PRIVATE_FIXTURE_MARKER")
+        pytest.fail("PRIVATE_FIXTURE_MARKER")
+    monkeypatch.setattr(ai,"_call_provider",transport)
+    with pytest.raises(ai._CloudWorkerFault,match="Cloud transport worker interrupted") as raised:
+        if kind=="probe":
+            ai.owned_test_connection("groq")
+        else:
+            ai.respond({},"assistant","Question","Rules",selected_provider="gemini",cloud_intent=True)
+    assert "PRIVATE_FIXTURE_MARKER" not in str(raised.value)
+    assert ai._cloud_slot is None and not ai._health
+
+
+def test_cloud_late_worker_fault_reports_fixed_diagnostic(dispatch,monkeypatch):
+    import threading
+    entered=Event()
+    release=Event()
+    failures=[]
+    worker=None
+    def transport(*args,**kwargs):
+        assert kwargs["still_authorized"]()
+        entered.set()
+        assert release.wait(5)
+        pytest.fail("PRIVATE_LATE_MARKER")
+    def expire(done,deadline):
+        assert entered.wait(5)
+        return False
+    monkeypatch.setattr(threading,"excepthook",lambda args:failures.append((args.exc_type,str(args.exc_value))))
+    monkeypatch.setattr(ai,"_call_provider",transport)
+    monkeypatch.setattr(ai,"_wait_cloud_completion",expire)
+    try:
+        result=ai.respond({},"assistant","Question","Rules",selected_provider="gemini",cloud_intent=True)
+        assert result["fallback"]
+        with ai._lock:
+            worker=ai._cloud_slot["worker"]
+            assert ai._cloud_slot["worker_active"] and ai._cloud_slot["cancelled"]
+        release.set()
+        worker.join(5)
+        assert not worker.is_alive() and ai._cloud_slot is None
+        assert failures==[(ai._CloudWorkerFault,"Cloud transport worker interrupted")]
+    finally:
+        release.set()
+        if worker is not None:
+            worker.join(5)
+
+
+def test_cloud_ambiguous_worker_start_retains_exact_slot(dispatch,monkeypatch):
+    from threading import Thread
+    entered=Event()
+    release=Event()
+    original=ai._call_provider
+    workers=[]
+    def transport(*args,**kwargs):
+        entered.set()
+        assert release.wait(5)
+        assert kwargs["still_authorized"]() is False
+        return ai.ProviderText("Discarded","stop",False)
+    class AmbiguousStart(Thread):
+        def start(self):
+            workers.append(self)
+            super().start()
+            assert entered.wait(5)
+            raise RuntimeError("Uncertain start")
+    try:
+        with monkeypatch.context() as fault:
+            fault.setattr(ai,"Thread",AmbiguousStart)
+            fault.setattr(ai,"_call_provider",transport)
+            assert ai.owned_test_connection("gemini")["status"]=="unavailable"
+            assert ai.owned_test_connection("groq")["status"]=="busy"
+            with ai._lock:
+                assert ai._cloud_slot["worker"] is workers[0]
+                assert ai._cloud_slot["worker_active"] and ai._cloud_slot["cancelled"]
+            release.set()
+            workers[0].join(5)
+            assert ai._cloud_slot is None and not workers[0].is_alive()
+    finally:
+        release.set()
+        for worker in workers:
+            worker.join(5)
+    assert ai._call_provider is original
+    assert ai.owned_test_connection("groq")["status"]=="connected"
+
+
+def test_cloud_wire_assertion_is_not_sanitized_as_provider_failure(monkeypatch):
+    def fail(*args,**kwargs):
+        raise AssertionError("fixture contract violated")
+    monkeypatch.setattr(ai.urllib.request,"build_opener",fail)
+    with pytest.raises(AssertionError,match="fixture contract violated"):
+        ai._call_provider("groq",ai.MODELS["groq"]["routine"],"System","Question",
+                          "fixture-secret-key",10,strict=True,still_authorized=lambda:True)

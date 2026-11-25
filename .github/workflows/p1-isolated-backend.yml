@@ -161,6 +161,40 @@ jobs:
           tests/test_hybrid_local_ai.py::test_default_is_hybrid_and_cloud_opt_in
           tests/test_hybrid_local_ai.py::test_bad_model_settings_rejected
           tests/test_v05_release.py::test_global_provider_validation_rejects_untrusted_selections
+          tests/test_multi_ai.py::test_primary_gemini_cloud_result
+          tests/test_multi_ai.py::test_deeper_model_route
+          tests/test_multi_ai.py::test_gemini_rate_limit_never_fails_over_to_groq
+          tests/test_multi_ai.py::test_selected_failure_with_three_saved_keys_is_local
+          tests/test_multi_ai.py::test_new_explicit_request_does_not_inherit_alternate_provider
+          tests/test_multi_ai.py::test_prompt_never_contains_secret
+          tests/test_multi_ai.py::test_real_gemini_wire_format_without_network
+          tests/test_multi_ai.py::test_openai_compatible_wire_format_without_network
+          tests/test_multi_ai.py::test_corrupt_response_triggers_safe_local_fallback
+          tests/test_hybrid_local_ai.py::test_local_model_before_cloud_even_when_cloud_enabled
+          tests/test_hybrid_local_ai.py::test_hybrid_local_failure_never_escalates_to_cloud
+          tests/test_hybrid_local_ai.py::test_hybrid_refuses_cloud_without_consent
+          tests/test_hybrid_local_ai.py::test_offline_mode_overrides_cloud_preference
+          tests/test_hybrid_local_ai.py::test_cloud_mode_without_explicit_intent_uses_deterministic_rules
+          tests/test_hybrid_local_ai.py::test_explicit_local_rules_bypasses_models
+          tests/test_hybrid_local_ai.py::test_explicit_ollama_does_not_escalate
+          tests/test_v05_release.py::test_explicit_handshake_requires_consent_and_redacts_key
+          tests/test_v05_release.py::test_handshake_bad_key_safely_reports_unavailable
+          tests/test_v05_release.py::test_manual_provider_requires_explicit_intent_and_no_fanout
+          tests/test_v05_release.py::test_local_preference_never_uses_cloud
+          tests/test_v05_release.py::test_saved_workspace_cloud_selection_never_authorizes_dispatch
+          tests/test_v06_experience.py::test_cloud_stays_opt_in_startup
+          tests/test_v06_experience.py::test_startup_never_probes_even_configured_keys
+          tests/test_v06_experience.py::test_passive_status_reuses_explicit_check_without_extra_calls
+          tests/test_v06_experience.py::test_new_key_invalidates_cached_explicit_status_without_probe
+          tests/test_v06_experience.py::test_gemini_503_does_not_retry_secondary_model
+          tests/test_v06_experience.py::test_gemini_failure_never_dispatches_to_saved_groq
+          tests/test_v06_experience.py::test_429_does_not_retry_same_provider
+          tests/test_v06_experience.py::test_cloud_status_contains_no_credentials
+          tests/test_v06_experience.py::test_reject_cross_site_health_checks
+          tests/test_v08_intelligence.py::test_output_finish_reason_openai_length_is_visible
+          tests/test_v08_intelligence.py::test_gemini_stop_reason_is_not_marked_truncated
+          tests/test_v08_intelligence.py::test_respond_propagates_completion_status_and_refuses_cloud_continuation
+          tests/test_v08_intelligence.py::test_cloud_investigation_uses_only_redacted_aggregates
 
       - name: Exercise C1 pure coordinator and exact route inventory
         run: python -m pytest -q tests/test_c1_resource_admission.py tests/test_c1_resource_http.py tests/test_c1_resource_upload.py tests/test_c1_resource_training.py

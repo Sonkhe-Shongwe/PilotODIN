@@ -27,90 +27,107 @@ def isolate(tmp_path,monkeypatch):
 
 def allow():
     ai_provider.update_settings(cloud_enabled=True,share_aggregates=True,auto_insights=True,
-        provider_order=list(ai_provider.PROVIDERS),timeout_seconds=9)
+        provider_order=list(ai_provider.PROVIDERS),timeout_seconds=9,local_model_enabled=False)
 
 def unavailable(status):
     return urllib.error.HTTPError('https://provider.invalid',status,'unavailable',None,None)
 
 def test_cloud_stays_opt_in_startup(monkeypatch):
     ai_provider.set_key('gemini','TEST_SECRET_12345678')
-    monkeypatch.setattr(ai_provider,'test_connection',lambda _: (_ for _ in ()).throw(AssertionError('must not send request')))
+    monkeypatch.setattr(ai_provider,'_call_provider',lambda *a,**k:pytest.fail('must not send request'))
     response=client.post('/api/ai/verify-connected')
-    assert response.status_code==200
-    assert response.json()['status']=='disabled'
+    assert response.status_code==200 and response.json()['status']=='cached'
+    assert all(p['status']=='unverified' for p in response.json()['providers'])
 
-def test_startup_verifies_only_configured_keys(monkeypatch):
+
+def test_startup_never_probes_even_configured_keys(monkeypatch):
+    allow();ai_provider.set_key('gemini','TEST_SECRET_12345678')
+    monkeypatch.setattr(ai_provider,'_call_provider',lambda *a,**k:pytest.fail('must not send request'))
+    response=client.post('/api/ai/verify-connected')
+    assert response.status_code==200 and response.json()['status']=='cached'
+    assert all(p['status']=='unverified' for p in response.json()['providers'])
+
+
+def test_passive_status_reuses_explicit_check_without_extra_calls(monkeypatch):
     allow();ai_provider.set_key('gemini','TEST_SECRET_12345678')
     seen=[]
-    def fake(p):
+    def fake(p,*args,**kwargs):
+        assert kwargs['strict'] is True and kwargs['still_authorized']()
         seen.append(p)
-        ai_provider._health[p]={'status':'connected'}
-        return {'provider':p,'status':'connected'}
-    monkeypatch.setattr(ai_provider,'test_connection',fake)
-    response=client.post('/api/ai/verify-connected')
-    assert response.status_code==200 and response.json()['status']=='checked'
-    assert seen==['gemini']
-    assert response.json()['providers']==[{'provider':'gemini','status':'connected'}]
-
-def test_startup_reuses_recent_verification_without_extra_api_calls(monkeypatch):
-    allow();ai_provider.set_key('gemini','TEST_SECRET_12345678')
-    seen=[]
-    monkeypatch.setattr(ai_provider,'test_connection',lambda p: seen.append(p) or {'provider':p,'status':'connected'})
-    assert client.post('/api/ai/verify-connected').json()['status']=='checked'
-    assert client.post('/api/ai/verify-connected').json()['status']=='cached'
-    assert seen==['gemini']
-
-def test_new_key_invalidates_cached_startup_results(monkeypatch):
-    allow();ai_provider.set_key('gemini','TEST_SECRET_12345678')
-    seen=[]
-    monkeypatch.setattr(ai_provider,'test_connection',lambda p: seen.append(p) or {'provider':p,'status':'connected'})
-    client.post('/api/ai/verify-connected')
-    ai_provider.set_key('groq','TEST_SECRET_12345678')
-    assert client.post('/api/ai/verify-connected').json()['status']=='checked'
-    assert seen.count('gemini')==2 and seen.count('groq')==1
-
-def test_gemini_503_retries_secondary_model(monkeypatch):
-    allow();ai_provider.set_key('gemini','TEST_SECRET_12345678')
-    seen=[]
-    def fake(p,model,*_):
-        seen.append((p,model))
-        if model=='gemini-3.1-flash-lite':raise unavailable(503)
-        return 'Grounded summary from alternate Gemini model.'
+        return 'READY'
     monkeypatch.setattr(ai_provider,'_call_provider',fake)
-    response=ai_provider.respond({'row_count':12},'overview','Analyse','Local only')
-    assert response['provider']=='gemini' and response['model']=='gemini-2.5-flash-lite'
-    assert response['attempts'][0]['status']=='http_503_retry_alternate'
-    assert len(seen)==2
+    assert client.post('/api/ai/verify-connected').json()['status']=='cached' and not seen
+    assert client.post('/api/ai/test/gemini',json={'cloud_intent':True}).json()['status']=='connected'
+    for _ in range(2):
+        result=client.post('/api/ai/verify-connected').json()
+        assert result['status']=='cached'
+        assert next(p for p in result['providers'] if p['provider']=='gemini')['status']=='connected'
+    assert seen==['gemini']
 
-def test_secondary_gemini_failure_then_groq(monkeypatch):
+
+def test_new_key_invalidates_cached_explicit_status_without_probe(monkeypatch):
+    allow();ai_provider.set_key('gemini','TEST_SECRET_12345678')
+    seen=[]
+    def fake(p,*args,**kwargs):
+        assert kwargs['strict'] is True and kwargs['still_authorized']()
+        seen.append(p)
+        return 'READY'
+    monkeypatch.setattr(ai_provider,'_call_provider',fake)
+    assert client.post('/api/ai/test/gemini',json={'cloud_intent':True}).json()['status']=='connected'
+    ai_provider.set_key('groq','TEST_SECRET_12345678')
+    result=client.post('/api/ai/verify-connected').json()
+    assert result['status']=='cached' and all(p['status']=='unverified' for p in result['providers'])
+    assert seen==['gemini']
+
+
+def test_gemini_503_does_not_retry_secondary_model(monkeypatch):
+    allow();ai_provider.set_key('gemini','TEST_SECRET_12345678')
+    seen=[]
+    def fake(p,model,*args,**kwargs):
+        assert kwargs['strict'] is True and kwargs['still_authorized']()
+        seen.append((p,model))
+        raise unavailable(503)
+    monkeypatch.setattr(ai_provider,'_call_provider',fake)
+    response=ai_provider.respond({'row_count':12},'overview','Analyse','Local only',selected_provider='gemini',cloud_intent=True)
+    assert response['provider']=='local' and response['fallback']
+    assert response['attempts']==[{'provider':'gemini','status':'unavailable'}]
+    assert seen==[('gemini','gemini-3.1-flash-lite')]
+
+
+def test_gemini_failure_never_dispatches_to_saved_groq(monkeypatch):
     allow()
     for p in ('gemini','groq'):ai_provider.set_key(p,'TEST_SECRET_12345678')
     seen=[]
-    def fake(p,model,*_):
+    def fake(p,model,*args,**kwargs):
+        assert kwargs['strict'] is True and kwargs['still_authorized']()
         seen.append((p,model))
-        if p=='gemini':raise unavailable(503)
-        return 'Recovered by independent provider'
+        raise unavailable(503)
     monkeypatch.setattr(ai_provider,'_call_provider',fake)
-    response=ai_provider.respond({},'quality','Advice','local fallback')
-    assert response['provider']=='groq'
-    assert seen[-1]==('groq','openai/gpt-oss-120b')
-    assert len(seen)==3
+    response=ai_provider.respond({},'quality','Advice','local fallback',selected_provider='gemini',cloud_intent=True)
+    assert response['provider']=='local' and response['fallback']
+    assert seen==[('gemini','gemini-3.1-flash-lite')]
+
 
 def test_429_does_not_retry_same_provider(monkeypatch):
     allow();ai_provider.set_key('gemini','TEST_SECRET_12345678')
     calls=[]
-    def fake(p,*_):calls.append(p);raise unavailable(429)
+    def fake(p,*args,**kwargs):
+        assert kwargs['strict'] is True and kwargs['still_authorized']()
+        calls.append(p)
+        raise unavailable(429)
     monkeypatch.setattr(ai_provider,'_call_provider',fake)
-    response=ai_provider.respond({},'quality','Advice','local fallback')
+    response=ai_provider.respond({},'quality','Advice','local fallback',selected_provider='gemini',cloud_intent=True)
     assert response['provider']=='local' and calls==['gemini']
-    assert response['attempts']==[{'provider':'gemini','status':'http_429'}]
+    assert response['attempts']==[{'provider':'gemini','status':'unavailable'}]
+
 
 def test_cloud_status_contains_no_credentials(monkeypatch):
     allow();ai_provider.set_key('gemini','A_SECRET_THAT_MUST_NEVER_LEAK_123')
-    monkeypatch.setattr(ai_provider,'test_connection',lambda p:{'provider':p,'status':'unavailable','message':'Overloaded'})
+    monkeypatch.setattr(ai_provider,'_call_provider',lambda *a,**k:pytest.fail('Unexpected probe'))
     result=client.post('/api/ai/verify-connected')
-    assert result.status_code==200
+    assert result.status_code==200 and result.json()['status']=='cached'
     assert 'A_SECRET_THAT_MUST_NEVER_LEAK_123' not in result.text
+
 
 def test_reject_cross_site_health_checks():
     response=client.post('/api/ai/verify-connected',headers={'Origin':'https://malicious.example'})
