@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 55fdb5d175b2fac22b2ca15169d071984fab85b3 |
-| Product baseline | 6cfb8375df68bd714b28bbd12b4c62ac9e933eb2; Cargo and P4 exact matching CI SUCCESS; C5 open. |
+| Observed starting HEAD | d629840949c3f907b0fe84377d94aa3bc395d90d |
+| Product baseline | Exact 898230f116266e064f6925c03d538c8e3b863f7e, matching P4 CI SUCCESS; C5 open. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
-| Operation ID | C5-WHEEL-METADATA-20261125 |
-| Operation state | RECONCILED publication at 898230f116266e064f6925c03d538c8e3b863f7e; exact CI result recorded as observed. No restricted dispatch. |
-| Intended files | tools/build_input_preflight.py, contracts/build_inputs_v1.schema.json, tests/test_c5_build_input_preflight.py, C5 observed metadata inventory under contracts, P4 source workflow only if needed, canonical documentation. No locks, approvals, native markers or artifact acquisition. |
+| Operation ID | C5-SIDECAR-ASSET-GUARDS-20261125 |
+| Operation state | PREPARED; unconditional refusal of three legacy mutating entrypoints, independent expected inference inventory verifier with synthetic fixtures. No production profile approval or artifact acquisition. |
+| Intended files | desktop/Build_Python_Sidecar.ps1, Stage_Pinned_Offline_AI.ps1, Stage_Bundled_Inference.ps1, verify_inference_assets.py; tools/build_input_preflight.py; C5 tests and existing bundle preflight tests, P4 synthetic workflow, canonical documentation. No lock or native markers. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Exact 6cfb837: Cargo #45682825147 SUCCESS, job 139447529632; P4 #45682825061 SUCCESS, 1131 Python/6 skipped/552 subtests, 15 Rust, 160 Node/Vite, 13 HTTP browser, Windows 44 C5/1 skipped, 68/133 subtests and parser, restricted collector skipped. |
-| Pending runs | P4 #45683594044 IN_PROGRESS, source 139450216568, Windows 139450216876, HTTP 139450217118, restricted collector 139450218819 skipped. Reconcile exact outcomes before further source changes. |
+| Verification | Exact 898230f: P4 #45683594044 SUCCESS, source 139450216568 (1139 Python/6 skipped/1 warning/552 subtests, 15 Rust, 160 Node/Vite), HTTP 139450217118 (13 passed), Windows 139450216876 (52 C5/1 skipped, parser, 68/133 subtests), collector 139450218819 skipped. |
+| Pending runs | None at exact 898230f. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Reconcile exact CI at 898230f116266e064f6925c03d538c8e3b863f7e. Continue independent wheel metadata and complete graph/marker validation from 49+49 CI-observed rows. Public exact JSON availability partial; 12 upstream source declarations inspected, not artifact metadata. If direct access insufficient, prepare reviewed metadata-only collection/validation scope; no wheel download/install. Prioritize fail-closed sidecar and asset acquisition/staging guards while provenance unresolved. No executable placeholder locks or new approvals. |
+| Recovery action | Before source publication verify actual workflow filters and job scope. Keep legacy scripts fail-closed at first executable action, preserve historical bodies via Git. Candidate independent inventory validates inert fixture bytes only; production verify remains BLOCKED before touching assets. No real staging, acquisition, native execution or installer. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
