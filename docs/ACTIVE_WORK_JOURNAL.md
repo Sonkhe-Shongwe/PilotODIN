@@ -13,13 +13,13 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Product baseline | C3 source exit supported at 78c8672, latest product ebd01f4 and verified fixture/historical changes c329e0d/83c83f8. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
 | Operation ID | C4-B6-POSITIVE-CLOUD-PROJECTION-20261125 |
-| Operation state | ISSUED; reconcile exact B6 source by parent 56ec69b and operation marker before retry |
+| Operation state | RECONCILED: exact B6 source [1a1799d](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/1a1799d6cc6cdc01173a9fe700c2f8b41128f136); no replay |
 | Intended files | backend/ai_provider.py, tests/test_c4_cloud_intent.py, tests/test_p4_r03_verified_answers.py, canonical records. No workflow changes. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | B6 positive typed nested projection, support threshold and suppressed sensitive-looking names/paths, no arbitrary cloud stringification, local unchanged; eight new projection cases plus updated prior serializer and P4 fixtures; exact CI pending. |
-| Pending runs | P1 isolated backend and P4 expected, exact run IDs pending. |
+| Pending runs | [P4 Target Review Queue and Transparent Ranking #45634055287](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45634055287) IN_PROGRESS; [P1 Isolated Backend Source Recovery #45634055861](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45634055861) IN_PROGRESS. Both at exact 1a1799d. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | B6 positive nested projection from inspected ai_context/analytics/quality/engine shapes: fixed typed fields/enums, names bounded and path/contact/identifier-like names suppressed, no arbitrary nested dict/stringification, no raw rows/category labels/group counts/prediction/history or free report prose. Numeric stats minimum 5 present and 5 distinct observations (omit extrema; require numeric kind and counts), investigation comparison each group >=5, evaluation scores sample_count >=5; cv scores withheld without aggregate sample witness. Structural counts retained, not anonymity. Typed question remains explicit disclosed text. Keep local unchanged and 11000-byte cap; adjust previous synthetic arbitrary-context fixtures to strict new contract with negative witnesses. No actual provider/model/native work. |
+| Recovery action | Reconcile both exact B6 CI runs, preserve failures, verify positive typed nested projection and small-support negatives. Then B7 generation/revocation/single-slot cloud dispatch and B8 mandatory strict transport registry/deadline/whole wire bounds; remaining historical test migration, disclosure and frontend. No actual provider/model/native/owner-data operation. |
 | Resume after closure | C5 then D with separately approved scope. |
 
 ## Prior operation
