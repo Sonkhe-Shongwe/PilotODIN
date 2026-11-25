@@ -1,0 +1,41 @@
+name: C5 remaining toolchain checksums offline review
+on:
+  push:
+    branches: [feature/live-dev-workspace-20261023]
+    paths:
+      - .github/workflows/c5-remaining-checksum-review.yml
+      - qa/c5_wheel_metadata/collect_remaining_checksums.py
+permissions:
+  contents: read
+jobs:
+  offline-review:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - run: python3 -I -B qa/c5_wheel_metadata/collect_remaining_checksums.py --self-test
+      - name: Assert collection refusal
+        run: |
+          set +e
+          python3 -I -B qa/c5_wheel_metadata/collect_remaining_checksums.py --collect
+          code=$?
+          set -e
+          test "$code" = 2
+  collect-once:
+    if: ${{ false }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      # Future activation requires marker-only trigger, exact commit message, attempt 1 and exact collector blob pin.
+      - run: python3 -I -B qa/c5_wheel_metadata/collect_remaining_checksums.py --self-test
+      - run: python3 -I -B qa/c5_wheel_metadata/collect_remaining_checksums.py --collect
+        env:
+          C5_APPROVED_ONCE: C5-TOOLCHAIN-CHECKSUMS-REMAINING-ONCE-20261126
+          C5_EXPECTED_SOURCE_SHA: ${{ github.sha }}
