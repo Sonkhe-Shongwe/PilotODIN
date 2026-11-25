@@ -553,7 +553,9 @@ test('explicit hosted native proxy uses private capability, exact runner allocat
    {PILOTODIN_HOME:path.resolve(runner,'..','P4-71-only-home-123')}])
    assert.throws(()=>liveDevProxyTrust({...env,...change}));
  const probe=fs.readFileSync(path.resolve(__dirname,'../e2e/p4-71-native-webview-qa.mjs'),'utf8');
- assert.match(probe,/!hostedProxy&&!n12Journey/);
+ assert.match(probe,/PILOTODIN_HOSTED_NATIVE_AUTH!=='1'\|\|process\.env\.VITE_PILOTODIN_AUTH_DEV!=='1'/);
+ assert.doesNotMatch(probe,/http:\/\/127\.0\.0\.1:8000\/api/);
+ assert.match(probe,/const API=SITE\+'\/api'/);
  assert.match(probe,/redirect:'error'/);
  assert.match(probe,/!u\.pathname\.startsWith\('\/api\/'\)/);
  assert.match(probe,/apiRequest&&\(method==='GET'/);

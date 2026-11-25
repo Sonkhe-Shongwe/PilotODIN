@@ -69,9 +69,9 @@ def preflight(source, expected_hash, *, storage=False):
     else:
         trace.require(os.environ.get("PILOTODIN_N12_APP_LIFETIME_CONSENT") == CONSENT,
                       "separate one-run N12 app lifetime consent is required")
-    trace.require(not any(value and (key.upper().startswith("WEBVIEW2_") or key.upper() in {
-        "PILOTODIN_HOME", "PILOTODIN_DESKTOP_SESSION", "PILOTODIN_DESKTOP_TOKEN", "TAURI_CONFIG",
-    }) for key, value in os.environ.items()), "inherited application configuration is present")
+    trace.require(not any(value and (key.upper().startswith("WEBVIEW2_") or key.upper() in (journey.SERVING_INPUTS | {
+        "PILOTODIN_HOME", "PILOTODIN_DESKTOP_TOKEN", "TAURI_CONFIG",
+    })) for key, value in os.environ.items()), "inherited application configuration is present")
     staged = build.stage_root(source)
     provenance = build.verify(staged, source, expected_hash)
     trace.require(not any(map(journey.listening, journey.PORTS)), "a required loopback port is in use")
@@ -102,24 +102,30 @@ def launch_and_close(root, staged, node, source, expected_hash, *, storage_manif
                            "PILOTODIN_N12_CHILD_HANDLE_CONSENT")},
            "CI": "true", "PILOTODIN_HOME": str(home),
            "VITE_PILOTODIN_NATIVE_SMOKE": "1", "PYTHONDONTWRITEBYTECODE": "1"}
+    env, service_env = journey.native_auth_environments(env)
     manifest = {"processes": [], "markers": {}} if storage_manifest is None else storage_manifest
     if no_cdp:
         vite_env, no_cdp_app_env = no_cdp_path.no_cdp_environments(env, profile)
     else:
         vite_env = env
+    # No-CDP app settings stay public; merge the capability only into Vite.
+    vite_env = {**vite_env, **{key: service_env[key] for key in (
+        "PILOTODIN_SERVER_MODE", "PILOTODIN_DEV_PORT", "PILOTODIN_DEV_ORIGIN",
+        "PILOTODIN_DEV_CAPABILITY")}}
     with journey.journey_processes(source, expected_hash) as stack:
         with journey.checkpoint_stage("app-lifetime-services", source, expected_hash):
-            backend_env, backend_cwd = backend_launch_context(env, home)
+            backend_env, backend_cwd = backend_launch_context(service_env, home)
             backend = journey.spawn(stack, manifest, "backend", [
                 sys.executable, "-B", "-m", "uvicorn", "backend.server_entry:owned_app", "--factory",
-                "--host", "127.0.0.1", "--port", "8000", "--no-access-log",
+                "--host", "127.0.0.1", "--port", "8000", "--no-access-log", "--no-proxy-headers",
             ], backend_env, backend_cwd, root / "backend.log")
             vite = journey.spawn(stack, manifest, "driver", [
                 node, str(journey.FRONTEND / "node_modules/vite/bin/vite.js"),
                 "--host", "127.0.0.1", "--port", "5173", "--strictPort",
             ], vite_env, journey.FRONTEND, root / "vite.log")
             journey.wait_for(lambda: journey.http_ready(8000, "/api/health", lambda status:
-                            status.get("status") == "ok" and status.get("cloud_ai") is False),
+                            status.get("status") == "ok" and status.get("cloud_ai") is False,
+                            service_env["PILOTODIN_DEV_CAPABILITY"]),
                             60, "isolated backend did not become ready with cloud AI off", backend)
             journey.wait_for(lambda: journey.http_ready(5173, "/"), 60, "Vite did not become ready", vite)
 

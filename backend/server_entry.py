@@ -168,9 +168,7 @@ def admitted_home(env):
             raise WorkspaceBoundaryError("Unexpected hosted fixture workspace")
         relative = home.relative_to(runner)
         browser = relative.parts == ("pilotodin-p1-real-http-" + run_id,)
-        native = (len(relative.parts) >= 2
-                  and relative.parts[-1] == "P4-71-only-home-" + run_id
-                  and home.is_dir())
+        native = False
         if env.get("PILOTODIN_HOSTED_NATIVE_AUTH") is not None:
             from backend.request_auth import hosted_native_trust_from_environ
             hosted_native_trust_from_environ(env)
@@ -185,8 +183,8 @@ def admitted_home(env):
 
 
 def owned_app():
-    # All local DevQA and browser paths require explicit capabilities.
-    # Hosted native QA and in-process compatibility remain pending C3.
+    # Every owned runtime factory requires immutable serving trust before
+    # workspace admission. Bare in-process callers remain a separate C3 task.
     from backend.request_auth import (RequestGuard, live_dev_trust_from_environ,
                                       hosted_browser_trust_from_environ,
                                       hosted_native_trust_from_environ,
@@ -211,9 +209,8 @@ def owned_app():
         phase = next((key for key in LOCAL_FIXTURES
                       if re.fullmatch(re.escape(key) + r"-[0-9]{8}T[0-9]{6}Z-[a-f0-9]{10}", run_name)), None)
         trust = local_fixed_qa_trust_from_environ(os.environ, phase)
-    if trust is None and any(os.environ.get(key) for key in (
-            "PILOTODIN_DEV_CAPABILITY", "PILOTODIN_DEV_ORIGIN", "PILOTODIN_DEV_PORT")):
-        raise WorkspaceBoundaryError("Mixed non-desktop serving configuration")
+    if trust is None:
+        raise WorkspaceBoundaryError("Explicit non-desktop serving trust required")
     home = admitted_home(os.environ)
     owned = hold_process_workspace(str(home))
     if os.environ.get("PILOTODIN_SERVER_MODE") == "local-devqa":
@@ -222,4 +219,4 @@ def owned_app():
     os.environ["PILOTODIN_HOME"] = str(owned)
     configure_process_scratch(owned)
     from backend.main import app
-    return RequestGuard(app, trust) if trust is not None else app
+    return RequestGuard(app, trust)

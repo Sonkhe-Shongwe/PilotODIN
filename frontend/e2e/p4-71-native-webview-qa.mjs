@@ -19,29 +19,22 @@ for(const [key,value] of Object.entries(required)) {
 }
 if(!process.env.PILOTODIN_HOME?.includes('P4-71-only-home-'))throw Error('P4-71 BLOCKED: no disposable isolated test home');
 const SITE='http://127.0.0.1:5173';
-const hostedProxy=process.env.PILOTODIN_HOSTED_NATIVE_AUTH==='1';
-if(process.env.PILOTODIN_HOSTED_NATIVE_AUTH!==undefined&&!hostedProxy)
- throw Error('P4-71 BLOCKED: invalid native serving mode');
-if(hostedProxy&&process.env.VITE_PILOTODIN_AUTH_DEV!=='1')
- throw Error('P4-71 BLOCKED: authenticated frontdoor required');
-// Temporary N12-only compatibility until its independent launchers migrate.
-const API=hostedProxy?SITE+'/api':'http://127.0.0.1:8000/api';
+if(process.env.PILOTODIN_HOSTED_NATIVE_AUTH!=='1'||process.env.VITE_PILOTODIN_AUTH_DEV!=='1')
+ throw Error('P4-71 BLOCKED: explicit hosted native authentication required');
+const API=SITE+'/api';
 async function nativeQaFetch(url,options={}){
  const target=new URL(url);
  if(typeof url!=='string'||!url.startsWith(API+'/')||target.origin!==new URL(API).origin||
     !target.pathname.startsWith('/api/')||target.hash||target.username||target.password)
   throw Error('P4-71 BLOCKED: out-of-scope API destination');
  const headers=new Headers(options.headers);
- if(hostedProxy){
-  headers.set('X-PilotODIN-Dev-Request','1');
-  headers.set('Origin',SITE);
- }
+ headers.set('X-PilotODIN-Dev-Request','1');
+ headers.set('Origin',SITE);
  return globalThis.fetch(url,{...options,headers,redirect:'error'});
 }
 const mode=process.argv[2];
 const relaunch=mode==='--verify-relaunch';
 const n12Journey=process.env.PILOTODIN_N12_APP_JOURNEY_CONSENT==='I_APPROVE_ONE_N12_APP_JOURNEY';
-if(!hostedProxy&&!n12Journey)throw Error('P4-71 BLOCKED: explicit hosted native authentication required');
 const dockingOnly=mode==='--verify-docking';
 const acceptance=mode==='--verify-acceptance';
 const fittedPrepare=mode==='--verify-fitted-prepare';
@@ -407,7 +400,7 @@ async function runNativeProbe(browser) {
   }
   const apiRequest=u.origin===new URL(API).origin&&u.pathname.startsWith('/api/');
   const allowed=(u.origin===SITE&&!u.pathname.startsWith('/api/')&&['GET','HEAD'].includes(method))
-   ||(apiRequest&&(method==='GET'||(!hostedProxy&&method==='OPTIONS')||qualityWrite||lifecycleWrite))
+   ||(apiRequest&&(method==='GET'||qualityWrite||lifecycleWrite))
    ||u.hostname==='ipc.localhost'||['tauri:','data:','blob:'].includes(u.protocol);
   if(qualityWrite)writes.push(u.pathname.split('/').at(-1));
   if(allowed)await route.continue();
@@ -568,7 +561,7 @@ async function runNativeProbe(browser) {
   await verifyP4QualityTransition(page,API,ids.quality,url=>nativeQaFetch(url),
    peer?{reviewApproval:approveCompactQuality}:undefined);
   if(peer){
-   await verifyN12ArchiveDraft(page,peer,API,ids.quality,nativeQaFetch,permitLifecycleOnce,{hostedProxy});
+   await verifyN12ArchiveDraft(page,peer,API,ids.quality,nativeQaFetch,permitLifecycleOnce,{hostedProxy:true});
    await closeN12Peer(peer);
   }
   console.log('N11 Quality approval, 409 for the previous version, Prepare refresh and WebView reload: PASS');

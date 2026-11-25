@@ -776,6 +776,8 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
         events.append(log.stem)
         process = Process(len(events))
         if role == "app":
+            assert "PILOTODIN_DEV_CAPABILITY" not in env
+            assert env["PILOTODIN_HOSTED_NATIVE_AUTH"] == env["VITE_PILOTODIN_AUTH_DEV"] == "1"
             assert env["WEBVIEW2_USER_DATA_FOLDER"] == str(profile)
             assert f"netlog-{log.stem.removeprefix('app-')}.json" in env["WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS"]
             assert env["TEMP"] == env["TMP"] == env["TMPDIR"] == str(profile / journey.APP_TEMP_DIR)
@@ -786,6 +788,8 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
             assert cwd == home and cwd != journey.build.REPO
             assert env["PYTHONPATH"].split(os.pathsep)[0] == str(journey.build.REPO)
             assert env["PILOTODIN_HOME"] == str(home)
+            assert len(env["PILOTODIN_DEV_CAPABILITY"]) == 64
+            assert "--no-proxy-headers" in command
             assert env["PYTHONDONTWRITEBYTECODE"] == "1"
             assert env["TEMP"] == env["TMP"] == env["TMPDIR"] == str(home / "backend-temp")
             assert env["PSMODULEANALYSISCACHEPATH"] == user_cache
@@ -797,8 +801,11 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
             assert env["TEMP"] == env["TMP"] == user_temp
             assert env["PSMODULEANALYSISCACHEPATH"] == user_cache
         if log.stem == "vite":
+            assert len(env["PILOTODIN_DEV_CAPABILITY"]) == 64
             assert command[-2:] == ["--configLoader", "runner"]
         if log.stem.startswith("driver-"):
+            assert "PILOTODIN_DEV_CAPABILITY" not in env
+            assert env["PILOTODIN_HOSTED_NATIVE_AUTH"] == env["VITE_PILOTODIN_AUTH_DEV"] == "1"
             assert env["PILOTODIN_N12_QUALITY_FIXTURE"] == str(fixture)
             assert (command[-1] == "--verify-relaunch") == (log.stem == "driver-relaunch")
             log.write_text("earlier probe output\n" if fault == "driver-readiness-missing"
@@ -1122,3 +1129,39 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
         "unexpected_snapshot_changes": ["protected:local-original"] if fault == "changed-protected" else [],
         "snapshot_issues": ["immutable-fixture-missing-at-baseline"] if fault == "absent-fixture" else [],
     }
+
+
+def test_native_auth_pair_keeps_private_capability_out_of_public_environment():
+    base = {"PILOTODIN_HOME": "fixture", "VITE_PILOTODIN_NATIVE_SMOKE": "1"}
+    public, private = journey.native_auth_environments(base)
+    assert base == {"PILOTODIN_HOME": "fixture", "VITE_PILOTODIN_NATIVE_SMOKE": "1"}
+    assert public["PILOTODIN_HOSTED_NATIVE_AUTH"] == public["VITE_PILOTODIN_AUTH_DEV"] == "1"
+    assert not any(key in public for key in ("PILOTODIN_DEV_CAPABILITY", "PILOTODIN_SERVER_MODE",
+                                              "PILOTODIN_DEV_PORT", "PILOTODIN_DEV_ORIGIN"))
+    assert private["PILOTODIN_DEV_ORIGIN"] == "http://127.0.0.1:5173"
+    assert len(private["PILOTODIN_DEV_CAPABILITY"]) == 64
+    assert journey.native_auth_environments(base)[1]["PILOTODIN_DEV_CAPABILITY"] != private["PILOTODIN_DEV_CAPABILITY"]
+    for key in journey.SERVING_INPUTS:
+        with pytest.raises(journey.trace.EvidenceValidationError, match="inherited-serving-configuration-present"):
+            journey.native_auth_environments({**base, key: "inherited"})
+
+
+def test_private_health_uses_only_exact_loopback_and_never_follows_redirect(monkeypatch):
+    import io
+    calls = []
+    class Response(io.BytesIO):
+        status = 200
+    class Opener:
+        def open(self, request, timeout):
+            calls.append((request.full_url, request.get_header("X-pilotodin-dev-capability"), timeout))
+            return Response(b'{"status":"ok"}')
+    monkeypatch.setattr(journey, "PRIVATE_HEALTH_HTTP", Opener())
+    cap = "a" * 64
+    assert not journey.http_ready(8000, "/api/health")
+    assert not journey.http_ready(8000, "/api/projects", None, cap)
+    assert not journey.http_ready(5173, "/", None, cap)
+    assert not journey.http_ready(8000, "/api/health", None, "invalid")
+    assert not calls
+    assert journey.http_ready(8000, "/api/health", lambda status: status["status"] == "ok", cap)
+    assert calls == [("http://127.0.0.1:8000/api/health", cap, 1)]
+    assert journey._NoRedirect().redirect_request(None, None, 302, "", {}, "https://example.invalid") is None

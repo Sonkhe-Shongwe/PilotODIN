@@ -7,13 +7,13 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | PREPARED |
+| State | PUBLISHED |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 6c40aed6a1d1701b95837a57d311424b7719627c |
 | Product baseline | 45bc0d445aa62ce2b57d3ae26cff84a1f3a58d01, all three exact routine workflows SUCCESS. |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
 | Operation ID | C3-N12-OWNED-SERVING-20261125-source |
-| Operation state | PREPARED |
+| Operation state | ISSUED |
 | Intended files | qa/p4_research/n12_app_journey.py, qa/p4_research/n12_app_lifetime.py, backend/server_entry.py, frontend/e2e/p4-71-native-webview-qa.mjs, frontend/tests/p1-playwright-pilot-contract.test.cjs, tests/test_p4_n12_app_journey.py, tests/test_owned_server.py, journal. N12 paired backend/Vite private per-launch capability, public app/driver flags only, exact health direct capability with no redirect/proxy, no forwarded headers. Preserve existing no-CDP/peer/process/trace and one-use approval gates. Remove temporary legacy N12 shared-probe and owned factory bare fallback, not bare main app yet. Bytecode diagnostic uses separate bare dynamic-port entrypoint, defer to explicit diagnostic/in-process inventory. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | 45bc0d4 P1 frontend 45567496154, P1 HTTP 45567496149, P4 45567496258 terminal SUCCESS. P4 jobs p4-r03-windows-local-answers 139045764462 success; p4-synthetic-source-and-frontend 139045764749 success; p4-disposable-real-http-browser 139045764793 success; Exercise preservation/hash collector on synthetic Windows fixture ONLY 139045767130 skipped. A4 wrapper/overlay compatibility still outstanding. N12 journey/lifetime share hosted-owned home and startup; WebView storage probe delegates lifetime. No-CDP public and Vite environments remain distinct. Independent n12_backend_bytecode uses bare dynamic port and separate diagnostic workspace, not these launchers; needs separate scoped migration. No trace evidence method changed. |

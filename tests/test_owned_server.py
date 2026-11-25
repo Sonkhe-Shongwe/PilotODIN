@@ -498,6 +498,15 @@ class C3RequestTrustTests(unittest.TestCase):
                         with self.assertRaises(ValueError):
                             owned_app()
             self.assertFalse((home/"pilotodin.sqlite3").exists())
+            legacy = {k:v for k,v in env.items() if k not in (
+                "PILOTODIN_HOSTED_NATIVE_AUTH", "PILOTODIN_DEV_CAPABILITY",
+                "PILOTODIN_DEV_ORIGIN", "PILOTODIN_DEV_PORT")}
+            with self.assertRaises(WorkspaceBoundaryError):
+                admitted_home({**legacy,"PILOTODIN_HOME":str(nested)})
+            with patch.dict(os.environ,legacy,clear=True), \
+                 patch("backend.server_entry.admitted_home",side_effect=AssertionError("Workspace inspected")):
+                with self.assertRaises(WorkspaceBoundaryError):
+                    owned_app()
 
     def test_c3_fixed_local_qa_phase_contracts(self):
         from backend.request_auth import local_fixed_qa_trust_from_environ, authorize

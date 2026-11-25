@@ -9,13 +9,14 @@ import ntpath
 import os
 from pathlib import Path
 import re
+import secrets
 import shutil
 import socket
 import subprocess
 import sys
 import time
 from urllib.error import URLError
-from urllib.request import ProxyHandler, build_opener
+from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_opener
 from uuid import uuid4
 
 from qa.p4_native.n12_calibration import calibration_failure_stages
@@ -39,6 +40,23 @@ HELPER = Path(__file__).with_name("Invoke_N12_Journey_Evidence.ps1")
 PROBE = FRONTEND / "e2e" / "p4-71-native-webview-qa.mjs"
 PORTS = (5173, 8000, 9331)
 HTTP = build_opener(ProxyHandler({}))
+
+
+class _NoRedirect(HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+PRIVATE_HEALTH_HTTP = build_opener(ProxyHandler({}), _NoRedirect())
+# Keep newly generated serving credentials in the service pair only.
+SERVING_INPUTS = frozenset((
+    "PILOTODIN_SERVER_MODE", "PILOTODIN_HOSTED_NATIVE_AUTH",
+    "PILOTODIN_DEV_CAPABILITY", "PILOTODIN_DEV_PORT", "PILOTODIN_DEV_ORIGIN",
+    "PILOTODIN_A4_RELAY", "P1_REAL_HTTP_E2E", "VITE_PILOTODIN_AUTH_DEV",
+    "PILOTODIN_DESKTOP_SESSION", "PILOTODIN_DESKTOP_PORT",
+    "PILOTODIN_DESKTOP_WATCH_STDIN", "PILOTODIN_CONTROL_MODE",
+    "PILOTODIN_CONTROL_GENERATION", "PILOTODIN_CONTROL_CAPABILITY",
+))
 CAPTURE_CONSENT = "I_APPROVE_ONE_N12_APP_JOURNEY"
 SAME_CAPTURE_RESTORE = "PILOTODIN_N12_SAME_CAPTURE_RESTORE"
 DRIVER_TEMP_DIR = "driver-temp"
@@ -225,12 +243,45 @@ def spawn(stack, manifest, role, command, env, cwd, log, *, prelaunch_log_hook=N
     return process
 
 
-def http_ready(port, route, check=None):
+def http_ready(port, route, check=None, capability=None):
+    # The private capability is used solely for the exact owned health route.
+    # Static Vite/CDP readiness retains its original independent observation.
+    if port == 8000:
+        if (route != "/api/health" or not isinstance(capability, str)
+                or re.fullmatch(r"[0-9a-f]{64}", capability) is None):
+            return False
+        request = Request("http://127.0.0.1:8000/api/health",
+                          headers={"X-PilotODIN-Dev-Capability": capability})
+        opener = PRIVATE_HEALTH_HTTP
+    else:
+        if capability is not None:
+            return False
+        request = f"http://127.0.0.1:{port}{route}"
+        opener = HTTP
     try:
-        with HTTP.open(f"http://127.0.0.1:{port}{route}", timeout=1) as response:
+        with opener.open(request, timeout=1) as response:
             return response.status == 200 and (check is None or check(json.load(response)))
     except (URLError, OSError, ValueError):
         return False
+
+
+def native_auth_environments(base):
+    """After existing one-use gates, construct one private service pair.
+
+    Do not mutate the parent environment or send a private capability to
+    native app, browser children, probe drivers or diagnostic receipts.
+    """
+    trace.require(not any(value and key.upper() in SERVING_INPUTS
+                          for key, value in base.items())
+                  and base.get("PILOTODIN_DESKTOP_ALLOW_DEV", "0") in ("", "0"),
+                  "inherited-serving-configuration-present")
+    public = {key: value for key, value in base.items()
+              if key.upper() not in SERVING_INPUTS}
+    public.update(PILOTODIN_HOSTED_NATIVE_AUTH="1", VITE_PILOTODIN_AUTH_DEV="1")
+    private = {**public, "PILOTODIN_SERVER_MODE": "hosted-fixture",
+               "PILOTODIN_DEV_PORT": "8000", "PILOTODIN_DEV_ORIGIN": "http://127.0.0.1:5173",
+               "PILOTODIN_DEV_CAPABILITY": secrets.token_hex(32)}
+    return public, private
 
 
 def listening(port):
@@ -864,6 +915,7 @@ def capture(root, staged, source, expected_hash, node, egress_programs=None):
         ambient_local.public_receipt(os.environ)), flush=True)
     env = {**os.environ, "CI": "true", "PILOTODIN_HOME": str(home), "PYTHONDONTWRITEBYTECODE": "1",
            "VITE_PILOTODIN_NATIVE_SMOKE": "1", "PILOTODIN_N12_QUALITY_FIXTURE": str(fixture)}
+    env, service_env = native_auth_environments(env)
     restore_path = None
     if env.get(SAME_CAPTURE_RESTORE) == "1":
         restore_path = trace.local_disposable_path(root / "write-restore-control.bin", runner_temp_only=True)
@@ -909,14 +961,15 @@ def capture(root, staged, source, expected_hash, node, egress_programs=None):
         with driver_handles, journey_processes(source, expected_hash) as stack:
             python = sys.executable if egress_programs is None else egress_programs["backend"]
             backend = spawn(stack, manifest, "backend", [python, "-B", "-m", "uvicorn",
-                "qa.p4_research.n12_backend_wakeup:owned_wakeup_app", "--factory", "--host", "127.0.0.1", "--port", "8000", "--no-access-log"],
-                backend_environment(env, home), home, root / "backend.log")
+                "qa.p4_research.n12_backend_wakeup:owned_wakeup_app", "--factory", "--host", "127.0.0.1", "--port", "8000", "--no-access-log", "--no-proxy-headers"],
+                backend_environment(service_env, home), home, root / "backend.log")
             vite = spawn(stack, manifest, "driver", [node, str(FRONTEND / "node_modules/vite/bin/vite.js"),
                 "--host", "127.0.0.1", "--port", "5173", "--strictPort", "--configLoader", "runner"],
-                driver_environment(env, root), FRONTEND, root / "vite.log")
+                driver_environment(service_env, root), FRONTEND, root / "vite.log")
             driver_handles.watch(vite, "vite")
             wait_for(lambda: http_ready(8000, "/api/health", lambda status:
-                                       status.get("status") == "ok" and status.get("cloud_ai") is False),
+                                       status.get("status") == "ok" and status.get("cloud_ai") is False,
+                                       service_env["PILOTODIN_DEV_CAPABILITY"]),
                      60, "loopback backend did not become ready with cloud AI off", backend)
             backend_snapshot = backend_socket_snapshot(backend)
             try:
@@ -1225,9 +1278,9 @@ def main():
             staged = build.stage_root(args.source)
             trace.require(os.environ.get("PILOTODIN_N12_APP_JOURNEY_CONSENT") == CAPTURE_CONSENT,
                           "separate one-run N12 journey consent is required")
-            trace.require(not any(value and (key.upper().startswith("WEBVIEW2_") or key.upper() in {
-                "PILOTODIN_HOME", "PILOTODIN_DESKTOP_SESSION", "PILOTODIN_DESKTOP_TOKEN", "TAURI_CONFIG",
-            }) for key, value in os.environ.items()), "inherited application configuration is present")
+            trace.require(not any(value and (key.upper().startswith("WEBVIEW2_") or key.upper() in (SERVING_INPUTS | {
+                "PILOTODIN_HOME", "PILOTODIN_DESKTOP_TOKEN", "TAURI_CONFIG",
+            })) for key, value in os.environ.items()), "inherited application configuration is present")
             build.verify(staged, args.source, args.expected_exe_sha256)
             trace.require(not any(map(listening, PORTS)), "a required loopback port is in use")
             node = shutil.which("node.exe")
