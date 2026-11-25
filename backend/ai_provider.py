@@ -8,6 +8,8 @@ from __future__ import annotations
 import base64
 from contextlib import contextmanager
 import ctypes
+import http.client
+from threading import Event, Thread
 from itertools import zip_longest
 import json
 import math
@@ -287,6 +289,64 @@ def _cloud_remaining(deadline):
     return remaining
 
 
+class _CloudHTTPSConnection(http.client.HTTPSConnection):
+    """Fence the actual HTTP write even if DNS/TLS returned after expiry."""
+    def __init__(self, *args, deadline, current, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._cloud_deadline = deadline
+        self._cloud_current = current
+
+    def _check(self):
+        _cloud_remaining(self._cloud_deadline)
+        if self._cloud_current() is not True:
+            raise RuntimeError("Cloud request no longer authorized")
+        return _cloud_remaining(self._cloud_deadline)
+
+    def connect(self):
+        self.timeout = self._check()
+        try:
+            super().connect()
+            self.sock.settimeout(self._check())
+        except BaseException:
+            self.close()
+            raise
+
+    def send(self, data):
+        self._check()
+        if self.sock is None:
+            self.connect()
+        self.sock.settimeout(self._check())
+        return super().send(data)
+
+    def getresponse(self):
+        self.sock.settimeout(self._check())
+        response = super().getresponse()
+        try:
+            self._check()
+        except BaseException:
+            response.close()
+            raise
+        return response
+
+
+class _CloudHTTPSHandler(urllib.request.HTTPSHandler):
+    def __init__(self, destination, deadline, current):
+        super().__init__()
+        self._destination = destination
+        self._deadline = deadline
+        self._current = current
+
+    def https_open(self, request):
+        if request.full_url != self._destination:
+            raise RuntimeError("Unsupported cloud destination")
+
+        def connection(host, **kwargs):
+            return _CloudHTTPSConnection(host, deadline=self._deadline,
+                                         current=self._current, **kwargs)
+
+        return self.do_open(connection, request, context=self._context)
+
+
 def _cloud_read_response(response, destination, deadline):
     _cloud_remaining(deadline)
     if response.status != 200 or response.geturl() != destination:
@@ -315,9 +375,8 @@ def _cloud_read_response(response, destination, deadline):
         if not 0 < expected <= _CLOUD_RESPONSE_LIMIT:
             raise ValueError("Cloud response exceeds limit")
     body = bytearray()
-    # read1 avoids requesting a single large multi-read buffer. The absolute
-    # elapsed fence rejects late bytes/results, but stdlib DNS, headers and
-    # individual blocking reads still depend on the OS/socket timeout.
+    # read1 bounds individual buffer requests. The shared caller deadline
+    # expires independently; the slot remains owned until blocking I/O returns.
     while True:
         _cloud_remaining(deadline)
         size = min(8192, _CLOUD_RESPONSE_LIMIT + 1 - len(body))
@@ -394,6 +453,14 @@ def _call_provider(provider:str,model:str,system:str,user:str,key:str,timeout:in
             any(not 33 <= ord(c) <= 126 for c in key)):
         raise ValueError("Invalid cloud request settings")
     deadline = time.monotonic() + timeout
+    # Production callers carry the same absolute deadline and a non-consuming
+    # authorization check. Plain callable fixtures may mock open, but cannot
+    # authorize a real HTTPS connection.
+    if isinstance(still_authorized, _CloudPermit):
+        deadline = min(deadline, still_authorized.deadline)
+        current = still_authorized.current
+    else:
+        current = lambda:False
     try:
         if type(system) is not str or type(user) is not str or len(user.encode("utf-8")) > CLOUD_PROMPT_LIMIT:
             raise ValueError("Cloud prompt exceeds limit")
@@ -412,7 +479,8 @@ def _call_provider(provider:str,model:str,system:str,user:str,key:str,timeout:in
         request = urllib.request.Request(destination,data=wire,
             headers={**headers,"Content-Type":"application/json","Accept":"application/json",
                      "Accept-Encoding":"identity","User-Agent":"PilotODIN/0.8"},method="POST")
-        opener = urllib.request.build_opener(urllib.request.ProxyHandler({}),_CloudNoRedirects())
+        opener = urllib.request.build_opener(urllib.request.ProxyHandler({}),_CloudNoRedirects(),
+                                             _CloudHTTPSHandler(destination,deadline,current))
         _cloud_remaining(deadline)
     except Exception:
         raise ValueError("Invalid bounded cloud request") from None
@@ -1000,21 +1068,28 @@ def _cloud_admission(expected_revision=None):
         ticket = None
         if (_cloud_slot is None and
                 (expected_revision is None or cloud_consent_current(expected_revision))):
-            ticket = {"revision": _consent_revision, "dispatched": False}
+            ticket = {"revision": _consent_revision, "dispatched": False,
+                      "cancelled": False, "worker_active": False, "owner_done": False,
+                      "worker": None}
             _cloud_slot = ticket
     try:
         yield ticket
     finally:
         if ticket is not None:
             with _lock:
-                if _cloud_slot is ticket:
+                ticket["owner_done"] = True
+                if ticket["worker_active"]:
+                    # The caller has unwound; transport still owns the slot.
+                    ticket["cancelled"] = True
+                elif _cloud_slot is ticket:
                     _cloud_slot = None
 
 
 def _cloud_ticket_consent(ticket, provider):
     # Check generation before reading credentials, including revoke/re-enable.
     with _lock:
-        if _cloud_slot is not ticket or ticket["revision"] != _consent_revision:
+        if (_cloud_slot is not ticket or ticket["cancelled"]
+                or ticket["revision"] != _consent_revision):
             return None
         return _owned_consent(provider)
 
@@ -1034,6 +1109,93 @@ def _cloud_ticket_valid(ticket, provider, consent, *, dispatch=False):
             ticket["dispatched"] = True
             return True
         return ticket["dispatched"]
+
+
+class _CloudPermit:
+    def __init__(self, ticket, provider, consent, current):
+        self.ticket = ticket
+        self.provider = provider
+        self.consent = consent
+        self.context_current = current
+        self.deadline = time.monotonic() + consent[1]
+
+    def _check(self, *, dispatch):
+        if time.monotonic() >= self.deadline:
+            return False
+        try:
+            if self.context_current() is not True:
+                return False
+        except Exception:
+            return False
+        return (time.monotonic() < self.deadline and
+                _cloud_ticket_valid(self.ticket,self.provider,self.consent,dispatch=dispatch))
+
+    def __call__(self):
+        return self._check(dispatch=True)
+
+    def current(self):
+        return self._check(dispatch=False)
+
+
+def _wait_cloud_completion(done, deadline):
+    return done.wait(max(0.0, deadline-time.monotonic()))
+
+
+def _run_cloud_transport(ticket,provider,consent,current,model,system,user):
+    """Bound the caller's wait, without pretending blocked OS I/O is cancelled.
+
+    One worker only, no queue. The exact slot remains occupied until worker
+    I/O and caller ownership have both finished. A late answer is discarded.
+    """
+    global _cloud_slot
+    permit = _CloudPermit(ticket,provider,consent,current)
+    done = Event()
+    outcome = {}
+
+    def run():
+        global _cloud_slot
+        answer = None
+        try:
+            answer = _call_provider(provider,model,system,user,consent[2],consent[1],
+                                    strict=True,still_authorized=permit)
+        except BaseException:
+            # Fixed outcome; never retain raw provider exceptions or bodies.
+            pass
+        finally:
+            with _lock:
+                if not ticket["cancelled"]:
+                    outcome["answer"] = answer
+                ticket["worker_active"] = False
+                if ticket["owner_done"] and _cloud_slot is ticket:
+                    _cloud_slot = None
+                done.set()
+
+    worker = Thread(target=run,name="pilotodin-cloud-transport",daemon=True)
+    with _lock:
+        if (_cloud_slot is not ticket or ticket["cancelled"]
+                or ticket["worker"] is not None):
+            raise RuntimeError("Cloud request no longer authorized")
+        ticket["worker"] = worker
+        ticket["worker_active"] = True
+    try:
+        worker.start()
+    except BaseException:
+        # Ambiguous start is not a completion witness. Fail closed; if a
+        # worker actually started it will reconcile the slot on return.
+        with _lock:
+            ticket["cancelled"] = True
+        raise RuntimeError("Selected cloud provider unavailable") from None
+
+    completed = _wait_cloud_completion(done,permit.deadline)
+    with _lock:
+        if not completed or time.monotonic() >= permit.deadline:
+            ticket["cancelled"] = True
+            outcome.clear()
+            raise TimeoutError("Cloud request deadline exceeded")
+        answer = outcome.pop("answer",None)
+    if answer is None:
+        raise RuntimeError("Selected cloud provider unavailable")
+    return answer
 
 
 def owned_cloud_insight(context,task,question,local_answer,deep,selected_provider,
@@ -1086,8 +1248,7 @@ def owned_cloud_insight(context,task,question,local_answer,deep,selected_provide
         if consent is None or not current() or _cloud_ticket_consent(ticket,provider)!=consent:
             return fallback
         try:
-            answer=_call_provider(provider,model,system,user,consent[2],consent[1],strict=True,
-                                  still_authorized=lambda:current() and _cloud_ticket_valid(ticket,provider,consent,dispatch=True))
+            answer=_run_cloud_transport(ticket,provider,consent,current,model,system,user)
             if not isinstance(answer,str) or not answer.strip():
                 raise ValueError("Empty provider response")
         except Exception:
@@ -1123,10 +1284,8 @@ def owned_test_connection(provider):
         if consent is None:
             return {"provider":provider,"status":"not_configured"}
         try:
-            answer=_call_provider(provider,MODELS[provider]["routine"],
-                                  "You are testing an API connection. Reply READY.","Say READY",
-                                  consent[2],consent[1],strict=True,
-                                  still_authorized=lambda:_cloud_ticket_valid(ticket,provider,consent,dispatch=True))
+            answer=_run_cloud_transport(ticket,provider,consent,lambda:True,MODELS[provider]["routine"],
+                                        "You are testing an API connection. Reply READY.","Say READY")
             status="connected" if isinstance(answer,str) and answer.strip() else "unavailable"
         except Exception:
             status="unavailable"

@@ -683,3 +683,116 @@ def test_cloud_wire_preserves_incomplete_metadata(monkeypatch):
     answer=ai._call_provider("groq",ai.MODELS["groq"]["routine"],"System","Question",
                              "fixture-secret-key",10,strict=True,still_authorized=lambda:True)
     assert answer.incomplete and answer.finish_reason=="length" and reply.closed
+
+
+# B8 deadline and lifetime fixtures. No DNS, sockets, model or provider calls.
+@pytest.mark.parametrize("kind",["insight","probe"])
+@pytest.mark.parametrize("phase",["before_dispatch","after_dispatch"])
+def test_cloud_deadline_retains_slot_until_transport_returns(dispatch,monkeypatch,kind,phase):
+    cfg,calls=dispatch
+    entered=Event()
+    release=Event()
+    original=ai._call_provider
+    observed=[]
+    def transport(*args,**kwargs):
+        permit=kwargs["still_authorized"]
+        if phase=="after_dispatch":
+            assert permit()
+            observed.append("sent")
+        entered.set()
+        assert release.wait(5)
+        if phase=="before_dispatch":
+            observed.append(permit())
+        else:
+            observed.append(permit.current())
+        return ai.ProviderText("Late private response","stop",False)
+    def expire(done,deadline):
+        assert entered.wait(5)
+        return False
+    def insight():
+        return ai.respond({},"assistant","Question","Rules",selected_provider="gemini",cloud_intent=True)
+    def probe():
+        return ai.owned_test_connection("groq")
+    worker=None
+    try:
+        with monkeypatch.context() as fault:
+            fault.setattr(ai,"_call_provider",transport)
+            fault.setattr(ai,"_wait_cloud_completion",expire)
+            result=(insight if kind=="insight" else probe)()
+            if kind=="insight":
+                assert result["fallback"] and result["answer"]=="Rules"
+            else:
+                assert result["status"]=="unavailable" and not ai._health
+            with ai._lock:
+                ticket=ai._cloud_slot
+                assert ticket["cancelled"] and ticket["owner_done"] and ticket["worker_active"]
+                worker=ticket["worker"]
+            assert insight()["fallback"]
+            assert probe()["status"]=="busy"
+            assert not calls
+            release.set()
+            worker.join(5)
+            assert not worker.is_alive() and ai._cloud_slot is None
+            assert observed==([False] if phase=="before_dispatch" else ["sent",False])
+            assert not ai._health
+    finally:
+        release.set()
+        if worker is not None:
+            worker.join(5)
+    assert ai._call_provider is original
+    assert insight()["provider"]=="gemini"
+    assert probe()["status"]=="connected"
+
+
+@pytest.mark.parametrize("fault",["expired_connect","revoked_connect","timely"])
+def test_cloud_https_connection_fences_actual_write(monkeypatch,fault):
+    now=[0.0]
+    current=[True]
+    writes=[]
+    closed=[]
+    timeouts=[]
+    sock=SimpleNamespace(settimeout=timeouts.append,close=lambda:closed.append(True))
+    monkeypatch.setattr(ai.time,"monotonic",lambda:now[0])
+    def connect(self):
+        self.sock=sock
+        if fault=="expired_connect":
+            now[0]=11.0
+        elif fault=="revoked_connect":
+            current[0]=False
+        else:
+            now[0]=2.0
+    monkeypatch.setattr(ai.http.client.HTTPSConnection,"connect",connect)
+    monkeypatch.setattr(ai.http.client.HTTPSConnection,"send",lambda self,data:writes.append(data))
+    connection=ai._CloudHTTPSConnection("api.groq.com",deadline=10.0,current=lambda:current[0])
+    try:
+        if fault=="timely":
+            connection.send(b"fixture")
+            assert writes==[b"fixture"] and timeouts==[8.0,8.0]
+        else:
+            with pytest.raises((RuntimeError,TimeoutError)):
+                connection.send(b"fixture")
+            assert not writes and closed
+    finally:
+        connection.close()
+
+
+def test_cloud_https_response_closes_when_headers_arrive_after_deadline(monkeypatch):
+    now=[0.0]
+    closed=[]
+    monkeypatch.setattr(ai.time,"monotonic",lambda:now[0])
+    def getresponse(self):
+        now[0]=11.0
+        return SimpleNamespace(close=lambda:closed.append(True))
+    monkeypatch.setattr(ai.http.client.HTTPSConnection,"getresponse",getresponse)
+    connection=ai._CloudHTTPSConnection("api.groq.com",deadline=10.0,current=lambda:True)
+    connection.sock=SimpleNamespace(settimeout=lambda _:None,close=lambda:None)
+    try:
+        with pytest.raises(TimeoutError):
+            connection.getresponse()
+        assert closed
+    finally:
+        connection.close()
+
+
+def test_cloud_wait_already_expired_does_not_block():
+    assert ai._wait_cloud_completion(Event(),ai.time.monotonic()-1) is False
