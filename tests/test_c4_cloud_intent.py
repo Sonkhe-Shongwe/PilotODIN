@@ -502,7 +502,7 @@ def test_cloud_http_route_generation_fence(product_composition,dispatch,monkeypa
         witness=saved.json()["cloud_consent_witness"]
         response=client.post(path,json={"context":"overview","selected_provider":"gemini",
                                         "cloud_intent":True,"cloud_consent_witness":witness,
-                                        "consent_revision":-1})
+                                        "expected_dataset_version":0,"consent_revision":-1})
         if phase=="preparation":
             assert response.status_code==200,response.text
             assert response.json()["fallback"] and not calls
@@ -515,6 +515,7 @@ def test_cloud_http_route_generation_fence(product_composition,dispatch,monkeypa
             assert "consent_revision" not in calls[0][2]
             assert "consent_revision" not in response.json()
             assert "cloud_consent_witness" not in calls[0][2]
+            assert "expected_dataset_version" not in calls[0][2]
             assert witness not in calls[0][2] and witness not in response.text
         assert ai._cloud_slot is None
 
@@ -965,3 +966,47 @@ def test_connection_admission_refuses_revision_changed_after_status_resolution(d
     monkeypatch.setattr(ai,"_get_key",lambda *_:pytest.fail("Stale admission read key"))
     assert ai.owned_test_connection("gemini",expected_revision=revision)["status"]=="unavailable"
     assert not dispatch[1] and ai._cloud_slot is None
+
+
+# A reviewed dataset version is a separate fence from permission generation.
+# Both HTTP compositions must refuse before context projection or credential use.
+@pytest.mark.parametrize("composition",["legacy","owned"])
+@pytest.mark.parametrize("case",["missing","stale","snapshot_changed","version_changed_after_snapshot",
+                                 "boolean","negative","string","float"])
+def test_witnessed_project_cloud_requires_reviewed_version(
+        product_composition,dispatch,monkeypatch,composition,case):
+    app=main.app if composition=="legacy" else product_composition[0]
+    _,calls=dispatch
+    _,coordinator,_,host_calls=product_composition
+    with fixture_client(app) as client:
+        seed=client.post("/api/projects",files={"file":("fixture.csv",b"amount,group\n1,A\n2,B\n3,A\n","text/csv")})
+        assert seed.status_code==201,seed.text
+        pid=seed.json()["id"]
+        witness=client.get("/api/ai/settings").json()["cloud_consent_witness"]
+        payload={"context":"overview","selected_provider":"gemini",
+                 "cloud_intent":True,"cloud_consent_witness":witness}
+        pins={"stale":1,"snapshot_changed":0,"version_changed_after_snapshot":0,
+              "boolean":True,"negative":-1,"string":"0","float":0.0}
+        if case!="missing":
+            payload["expected_dataset_version"]=pins[case]
+        original=main.quality.current_data_with_findings
+        if case=="snapshot_changed":
+            def changed(*args):
+                df,version,findings=original(*args)
+                return df,version+1,findings
+            monkeypatch.setattr(main.quality,"current_data_with_findings",changed)
+        elif case=="version_changed_after_snapshot":
+            def changed(*args):
+                snapshot=original(*args)
+                monkeypatch.setattr(main.quality,"current_version",lambda *_:snapshot[1]+1)
+                return snapshot
+            monkeypatch.setattr(main.quality,"current_data_with_findings",changed)
+        else:
+            monkeypatch.setattr(main.quality,"current_data_with_findings",
+                                lambda *_:pytest.fail("Refused version reached data allocation"))
+        monkeypatch.setattr(main.ai_context,"build",lambda *a,**k:pytest.fail("Refused version reached context"))
+        monkeypatch.setattr(ai,"_get_key",lambda *_:pytest.fail("Refused version read key"))
+        response=client.post(f"/api/projects/{pid}/ai/insight",json=payload)
+        assert response.status_code==(409 if case in {"stale","snapshot_changed","version_changed_after_snapshot"} else 422),response.text
+        assert not calls and not host_calls and ai._cloud_slot is None
+        assert not coordinator.status()["active"]

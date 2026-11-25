@@ -1100,6 +1100,7 @@ class AIInsightRequest(BaseModel):
     selected_provider: str | None = None
     cloud_intent: StrictBool = False
     cloud_consent_witness: StrictStr | None = Field(default=None, max_length=80)
+    expected_dataset_version: int | None = Field(default=None, ge=0, strict=True)
     continuation_text: str | None = Field(default=None, max_length=16000)
     local_follow_up: LocalAnalysisFollowUp | None = None
 
@@ -1223,6 +1224,23 @@ def _insight_context_current(project_id, version):
         return False
 
 
+def _require_reviewed_cloud_version(project_id, body, snapshot_version=None):
+    """Fence explicit named cloud requests to the reviewed working version.
+
+    Legacy no-witness callers retain compatibility; a supplied version is
+    always enforced for explicit named cloud. Never use client data as the
+    authoritative snapshot. Call within the existing DATA boundary.
+    """
+    expected = body.expected_dataset_version
+    if (body.cloud_intent is not True or body.selected_provider not in ai_provider.PROVIDERS
+            or expected is None):
+        return
+    if ((snapshot_version is not None and snapshot_version != expected)
+            or not _insight_context_current(project_id, expected)):
+        raise HTTPException(status_code=409, detail='Dataset version changed; review and confirm a new cloud request',
+                            headers={"Cache-Control":"no-store"})
+
+
 @app.post('/api/projects/{project_id}/ai/insight')
 def ai_insight(project_id:str,body:AIInsightRequest,request:Request):
     _local_request(request)
@@ -1234,6 +1252,9 @@ def ai_insight(project_id:str,body:AIInsightRequest,request:Request):
         consent_revision=ai_provider.resolve_cloud_consent_revision(body.cloud_consent_witness)
         if consent_revision is None:
             raise HTTPException(status_code=409,detail='Cloud permission changed; review saved settings and confirm a new request',
+                                headers={"Cache-Control":"no-store"})
+        if body.cloud_consent_witness is not None and body.expected_dataset_version is None:
+            raise HTTPException(status_code=422,detail='Reviewed dataset version required for witnessed cloud request',
                                 headers={"Cache-Control":"no-store"})
     owned = request.scope.get('pilotodin.owned_session')
     if owned is not None:
@@ -1252,8 +1273,10 @@ def ai_insight(project_id:str,body:AIInsightRequest,request:Request):
                     **verified, 'dataset_version':version, 'privacy':'summary_only_no_rows',
                     'scope':body.context, 'investigation':None, 'investigation_steps':[],
                     'limitations':'Facts describe the current working dataset or saved experiment evidence.'}
+        _require_reviewed_cloud_version(project_id, body)
         working_data = quality.current_data_with_findings(project_id)
         df, version, _ = working_data
+        _require_reviewed_cloud_version(project_id, body, version)
         context=ai_context.build(project_id,body.context,question,body.target,body.experiment_id,body.prediction,
                                  working_data=working_data)
         local=analytics.answer(df,version,question[:350])['answer'] if body.context=='assistant' else ai_context.local_advice(context,body.context)
@@ -1556,8 +1579,10 @@ def _owned_ai_insight(project_id, body, owned, consent_revision):
                         'dataset_version':version, 'privacy':'summary_only_no_rows',
                         'scope':body.context,'investigation':None,'investigation_steps':[],
                         'limitations':'Facts describe the current working dataset or saved experiment evidence.'}}, None
+            _require_reviewed_cloud_version(project_id, body)
             working = quality.current_data_with_findings(project_id)
             df,version,_ = working
+            _require_reviewed_cloud_version(project_id, body, version)
             context = ai_context.build(project_id,body.context,question,body.target,
                         body.experiment_id,body.prediction,working_data=working)
             local = (analytics.answer(df,version,question[:350])['answer']
