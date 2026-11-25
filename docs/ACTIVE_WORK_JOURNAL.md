@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | READY |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 82262af7e2c08b87fe65e3a11543977448c845bf |
+| Observed starting HEAD | e87daff22bf17e9d3541392eda7d5ba9c5681df3 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
-| Operation ID | C5-WHEEL-HOSTED-GATE-HARDENING-20261126 |
-| Operation state | RECONCILED: exact QA a7f30c275f7e6158376603dd578942714f6de0ef run 45724319018 attempt 1 SUCCESS; Ubuntu 139590183697 118 PASS, Windows 139590184101 116 PASS/2 POSIX skips; all four CLI refusals, large receipt replay and direct HTTPS factory refusal PASS. No actual network or external upload. |
-| Intended files | qa/c5_wheel_metadata/wheel_hosted_proposal.py and test_wheel_hosted_proposal.py only plus journal/handoff/ledger; dedicated synthetic workflow unchanged. No live workflow/marker. |
+| Operation ID | C5-WHEEL-ONE-USE-WORKFLOW-20261126 |
+| Operation state | PREPARED: disarmed hosted one-use workflow, source pins and direct-child marker event review, bounded receipt artifact ZIP replay with independent digest; generated fixtures only. No upload, activation, real wheel or live request. Prior 45724319018 SUCCESS. |
+| Intended files | New .github/workflows/c5-wheel-hosted-one-use.yml, qa/c5_wheel_metadata/wheel_one_use_review.py and test_wheel_one_use_review.py, journal/handoff/ledger. Existing 98 trigger declarations unchanged, new scoped offline workflow only expected match; restricted job literal false. |
 | Approval | Twelve restricted approvals consumed/disarmed (six native, six metadata). No additional registry/metadata requests, artifacts, installs, native/model, owner device/data or installer authorized. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | None for this operation. |
+| Pending runs | None issued; expect new Ubuntu offline-review job only; collect-once job skipped. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
-| Recovery action | Next: prepare a disabled source-pinned one-use workflow and review actual hosted receipt publication/retrieval mechanism with synthetic evidence, no activation marker or live requests; independently retained run/manifest/bundle digests and exact retrieval must be established. Fresh explicit owner approval required for 68 exact wheel GETs/225699980 body bytes/zero redirects or retries, disposable acquisition only; no install, execution or legal clearance. Remaining checksum proposal 17df008 remains independently approval-gated. |
+| Recovery action | Reconcile exact source/CI, no restricted job or upload. Independent connector artifact bytes access not established; review mechanism offline and require fresh approval for one synthetic hosted evidence transfer or actual collection separately. Remaining checksum proposal separately gated. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
