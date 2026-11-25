@@ -13,13 +13,13 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Product baseline | C4 C1 frontend e576ccd; P1/P2 SUCCESS, P4 one obsolete assertion FAILURE. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
 | Operation ID | C4-C1-PANE-GUARD-CONTRACT-20261125 |
-| Operation state | ISSUED; reconcile source commit from prepared parent 2ef1736; do not replay |
+| Operation state | RECONCILED; test-only correction published at [3b2c5f3](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/3b2c5f30e72596684ae72bcf8bde9645d07828ba), prepared at 2ef1736; exact CI outstanding. |
 | Intended files | frontend/tests/desktop-ai-boundaries.test.cjs and canonical records only. No product or workflow change. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Exact e576ccd P1 206 Node and 7 browser passed, P2 100 Node and 5 standalone Rust passed; P4 backend 1086 passed/6 skipped/552 subtests, Node 135 passed/1 failed, Windows 68/133 subtests and browser 13 passed. Collector skipped. |
-| Pending runs | None from e576ccd. Expected P1 frontend and P4 routine CI for test-only change. |
+| Verification | Original C1 P1/P2 passed, P4 one obsolete assertion failed. Corrected assertion verifies actual stronger embedded/pending guard, passive GET, generation and cleanup. Other assertions retained; production unchanged. Corrected CI not yet verified. |
+| Pending runs | [P4 Target Review Queue and Transparent Ranking #45664365693](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45664365693) QUEUED; [P1 Isolated Frontend Verification #45664365697](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45664365697) IN_PROGRESS |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Update exact secondary-pane source contract to assert existing stronger embedded OR pending consent guard preceding passive GET; retain other primary control assertions, add generation and cleanup check. No product change. Reconcile new exact CI before C2. |
+| Recovery action | Reconcile exact 3b2c5f3 P1 frontend/P4 terminal jobs and logs. If green, continue C2 manual workspace intent/disclosure and C3 generation-aware cache and cross-renderer review. No project cloud enablement until panel safeguards; OpenRouter project sharing held. No score increment. |
 | Resume after closure | C5 then D with separately approved scope. |
 
 ## Prior operation
