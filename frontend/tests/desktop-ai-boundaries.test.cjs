@@ -461,3 +461,73 @@ test('C3 archived hosted desktop driver source confines direct session requests 
  assert.equal((driver.match(/redirect:'error'/g)||[]).length,3);
  assert.match(driver,/PILOTODIN_R03_HOSTED_DESKTOP !== 'approved'/);
 });
+
+
+// C4 C1: execute the actual renderer-local mutation fence and saved permission
+// policy. No fetch, provider, IPC, native or model is invoked.
+function loadCloudConsentSession(){
+ const source=fs.readFileSync(path.join(__dirname,'../src/cloudConsentSession.ts'),'utf8');
+ const output=ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2021,module:ts.ModuleKind.CommonJS}}).outputText;
+ const mod={exports:{}};
+ new Function('module','exports',output)(mod,mod.exports);
+ return mod.exports;
+}
+test('C4 settings operations synchronously invalidate stale status and keep exact ownership',()=>{
+ const session=loadCloudConsentSession();
+ const first=session.cloudConsentSnapshot();
+ const seen=[];
+ const unsubscribe=session.subscribeCloudConsent(()=>seen.push(session.cloudConsentSnapshot()));
+ assert.ok(Object.isFrozen(first));
+ const ticket=session.beginCloudSettingsOperation(first.generation);
+ assert.ok(ticket);
+ assert.equal(session.cloudConsentIsCurrent(first.generation),false);
+ assert.equal(session.cloudConsentSnapshot().pending,true);
+ assert.equal(session.beginCloudSettingsOperation(session.cloudConsentSnapshot().generation),null);
+ assert.equal(session.finishCloudSettingsOperation({...ticket}),null);
+ const settled=session.finishCloudSettingsOperation(ticket);
+ assert.equal(settled.pending,false);
+ assert.equal(session.cloudConsentIsCurrent(settled.generation),true);
+ assert.equal(session.beginCloudSettingsOperation(first.generation),null);
+ const next=session.beginCloudSettingsOperation(settled.generation);
+ assert.ok(next);
+ assert.equal(session.finishCloudSettingsOperation(ticket),null);
+ assert.equal(session.cloudConsentSnapshot().pending,true);
+ assert.ok(session.finishCloudSettingsOperation(next));
+ assert.equal(seen.length,4);
+ unsubscribe();
+});
+test('C4 explicit handshake needs confirmed saved consent and configured key, not verified status',()=>{
+ const session=loadCloudConsentSession();
+ const saved={cloud_enabled:true,share_aggregates:true,intelligence_mode:'hybrid',
+   providers:[{id:'gemini',connected:true,verified:false},{id:'groq',connected:false,verified:true}]};
+ assert.equal(session.canTestCloud(saved,'gemini'),true);
+ assert.equal(session.savedCloudStatus(saved),'unverified');
+ assert.equal(session.canTestCloud(saved,'groq'),false);
+ assert.equal(session.canTestCloud(saved,'invalid'),false);
+ for(const invalid of [null,{...saved,cloud_enabled:'true'},{...saved,share_aggregates:false},
+  {...saved,intelligence_mode:'local'},{...saved,intelligence_mode:'invalid'},
+  {...saved,credential_warning:'uncertain'},{...saved,settings_warning:'uncertain'},
+  {...saved,providers:[{id:'gemini',connected:'true'}]}]){
+   assert.equal(session.canTestCloud(invalid,'gemini'),false);
+ }
+ const verified={...saved,providers:[{id:'gemini',connected:true,verified:true}]};
+ assert.equal(session.savedCloudStatus(verified),'connected');
+ assert.equal(session.savedCloudStatus({...verified,cloud_enabled:false}),'local');
+});
+test('C4 settings and startup only use manual handshake, never key-save or startup cloud probes',()=>{
+ const source=fs.readFileSync(path.join(__dirname,'../src/AIWorkspace.tsx'),'utf8');
+ const settings=source.slice(source.indexOf('export function AISettings'),source.indexOf('const labels'));
+ const shell=fs.readFileSync(path.join(__dirname,'../src/App.tsx'),'utf8');
+ const testBody=settings.slice(settings.indexOf('async function testProvider'),settings.indexOf('async function testLocal'));
+ const keyBody=settings.slice(settings.indexOf('async function saveKey'),settings.indexOf('function move'));
+ assert.match(testBody,/!fresh\|\|dirty\|\|!canTestCloud\(confirmed,provider\)/);
+ assert.match(testBody,/await get<Settings>\('\/ai\/settings'\)/);
+ assert.match(testBody,/if\(!canTestCloud\(saved,provider\)\)return/);
+ assert.match(testBody,/\{cloud_intent:true\}/);
+ assert.doesNotMatch(keyBody,/testProvider\(|\/ai\/test\//);
+ assert.match(keyBody,/Connection not tested/);
+ assert.doesNotMatch(shell,/\/ai\/verify-connected|\/ai\/test\//);
+ assert.match(shell,/cloudConsentIsCurrent\(generation\)/);
+ assert.match(settings,/OpenRouter may route this handshake downstream; project-data sharing through OpenRouter is disabled/);
+ assert.doesNotMatch(source.slice(source.indexOf('export function AIInsight')), /cloud_intent:true/);
+});

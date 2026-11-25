@@ -7,13 +7,13 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | d111c6030c922132b8b8a7e7666098a3ef44a7db |
 | Product baseline | B8 final review 1eb5e13 exact P1/P4 SUCCESS (222 focused cases); Batch C frontend begins. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
 | Operation ID | C4-C1-FRONTEND-SETTINGS-STATUS-20261125 |
-| Operation state | PREPARED; frontend source not yet issued. |
+| Operation state | ISSUED; reconcile exact source commit from prepared parent e287607; do not replay |
 | Intended files | frontend/src/AIWorkspace.tsx, frontend/src/App.tsx, new cloudConsentSession.ts, frontend/tests/desktop-ai-boundaries.test.cjs and canonical records. No backend/schema/workflow changes. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | Exact 1eb5e13 P1 222 focused cases and downstream SUCCESS; P4 1086 backend/6 skipped/552 subtests, Windows 68/133 subtests, browser 13, Node 133/Vite SUCCESS. |

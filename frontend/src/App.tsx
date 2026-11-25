@@ -1,4 +1,6 @@
-import {useEffect, useId, useMemo, useRef, useState} from 'react';
+import {useEffect, useId, useMemo, useRef, useState, useSyncExternalStore} from 'react';
+import {cloudConsentSnapshot,subscribeCloudConsent,cloudConsentIsCurrent,savedCloudStatus} from './cloudConsentSession';
+import type {SavedCloudPermission} from './cloudConsentSession';
 import type {ReactNode} from 'react';
 import {Activity, AlertCircle, ArrowDownRight, ArrowRight, BarChart3, BrainCircuit, Check, CheckCircle2, ChevronRight, CircleHelp, ClipboardCheck, Database, FileSpreadsheet, FlaskConical, FolderOpen, Layers, LoaderCircle, LockKeyhole, Play, Plus, RefreshCw, ShieldCheck, Sparkles, PanelLeftClose, PanelLeftOpen, Target, UploadCloud, WandSparkles, Search, Menu, X, Keyboard, Wifi, WifiOff, ChevronDown, Settings2, House, MessageSquareText} from 'lucide-react';
 import {Experiment, Prep, Profile, Project, Field, get, post, upload} from './api';
@@ -166,7 +168,9 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
   const [paletteQuery,setPaletteQuery]=useState('');
   const [mobileOpen,setMobileOpen]=useState(false);
   const [notice,setNotice]=useState('');
-  const [cloudStatus,setCloudStatus]=useState<'checking'|'connected'|'local'>('local');
+  const consentSession=useSyncExternalStore(subscribeCloudConsent,cloudConsentSnapshot);
+  const [savedStatus,setSavedStatus]=useState<{generation:number;status:'connected'|'local'|'unverified'}>({generation:-1,status:'local'});
+  const cloudStatus=consentSession.pending||savedStatus.generation!==consentSession.generation?'checking':savedStatus.status;
   const [odinOpen,setOdinOpen]=useState(false);
   const [visitedStages,setVisitedStages]=useState<Stage[]>(['overview']);
   const scrollRef=useRef<Record<string,number>>({});
@@ -238,19 +242,15 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
   },[embedded]);
   useEffect(()=>{if(!notice)return;const t=window.setTimeout(()=>setNotice(''),4500);return()=>window.clearTimeout(t)},[notice]);
   useEffect(()=>{
-    // Docked views should not repeat potentially expensive cloud checks.
-    if(embedded)return;
+    // Saved status is passive; no startup handshake or cloud request.
+    if(embedded||consentSession.pending)return;
     let live=true;
-    get<{cloud_enabled:boolean;share_aggregates:boolean;providers:{verified?:boolean}[]}>('/ai/settings').then(async cfg=>{
-      if(!live)return;
-      if(!cfg.cloud_enabled||!cfg.share_aggregates){setCloudStatus('local');return}
-      setCloudStatus(cfg.providers.some(p=>p.verified)?'connected':'checking');
-      try{const result=await post<{providers:{status:string}[]}>('/ai/verify-connected',{});
-        if(live)setCloudStatus(result.providers.some(p=>p.status==='connected')?'connected':'local')
-      }catch{if(live)setCloudStatus('local')}
-    }).catch(()=>{if(live)setCloudStatus('local')});
+    const generation=consentSession.generation;
+    get<SavedCloudPermission>('/ai/settings').then(cfg=>{
+      if(live&&cloudConsentIsCurrent(generation))setSavedStatus({generation,status:savedCloudStatus(cfg)});
+    }).catch(()=>{if(live&&cloudConsentIsCurrent(generation))setSavedStatus({generation,status:'local'})});
     return()=>{live=false};
-  },[embedded]);
+  },[embedded,consentSession]);
   const availableCommands=NAV.filter(n=>!(!project&&n.id!=='ai_settings')&&`${n.name} ${n.sub}`.toLowerCase().includes(paletteQuery.toLowerCase()));
 
   async function refreshProjects(){try{setProjects(await get<{id:string;name:string;filename:string}[]>('/projects'))}catch{/* backend may not be running */}}
@@ -590,12 +590,12 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
           {NAV.filter(n=>['assistant','ai_settings'].includes(n.id)).map(n=>{const Icon=n.icon;return <button key={n.id} className={cls('nav-item',page===n.id&&'active')} title={n.name} aria-label={n.name} aria-current={page===n.id?'page':undefined} disabled={!hasProject&&n.id!=='ai_settings'} onClick={()=>go(n.id)}><Icon size={18}/><span>{n.id==='assistant'?'Ask ODIN':'AI connections'}</span>{page===n.id&&<span className="studio-active-pin"/>}</button>})}
         </nav>
       </div>
-      <button className="studio-sidebar-odin" onClick={()=>{if(project)setOdinOpen(true);else go('ai_settings')}}><span className="studio-side-orb"><Sparkles size={19}/></span><span><b>ODIN companion</b><small>{cloudStatus==='connected'?'Cloud intelligence online':cloudStatus==='checking'?'Verifying providers…':'Local analysis available'}</small></span><ArrowRight size={15}/></button>
+      <button className="studio-sidebar-odin" onClick={()=>{if(project)setOdinOpen(true);else go('ai_settings')}}><span className="studio-side-orb"><Sparkles size={19}/></span><span><b>ODIN companion</b><small>{cloudStatus==='connected'?'Cloud connection previously verified':cloudStatus==='checking'?'Reading saved status…':cloudStatus==='unverified'?'Cloud permission enabled; not verified':'Local analysis available'}</small></span><ArrowRight size={15}/></button>
     </aside>
     <main className="main studio-main" ref={mainRef}>
       <header className="topbar studio-topbar">
         <div className="topbar-leading"><button className="icon-btn mobile-menu-btn" aria-label="Open navigation" onClick={()=>setMobileOpen(true)}><Menu size={19}/></button><span className="studio-topcrumb">Workspace</span><ChevronRight size={14}/><span className="studio-top-location">{page==='overview'?'Home':NAV.find(n=>n.id===page)?.name}</span></div>
-        <div className="top-right studio-top-right"><button className="studio-odin-trigger" title="Explore the new investigation canvas" onClick={()=>{if(!embedded)location.hash='#/canvas'}}>New Canvas <ArrowRight size={15}/></button><button className="global-search" onClick={()=>setPaletteOpen(true)} title="Search workspaces (Ctrl+K)"><Search size={17}/><span>Search or jump to…</span><kbd>Ctrl K</kbd></button><span className={cls('connection-pill',cloudStatus)}><span className="status-orb"/>{cloudStatus==='connected'?'AI ready':cloudStatus==='checking'?'Connecting…':'Local ready'}</span><button className="studio-icon-action" aria-label="AI settings" title="AI settings" onClick={()=>go('ai_settings')}><Settings2 size={18}/></button><button className={cls('studio-odin-trigger',odinOpen&&'engaged')} aria-label="Open ODIN companion" disabled={!project} onClick={()=>setOdinOpen(true)}><Sparkles size={17}/><span>Ask ODIN</span></button></div>
+        <div className="top-right studio-top-right"><button className="studio-odin-trigger" title="Explore the new investigation canvas" onClick={()=>{if(!embedded)location.hash='#/canvas'}}>New Canvas <ArrowRight size={15}/></button><button className="global-search" onClick={()=>setPaletteOpen(true)} title="Search workspaces (Ctrl+K)"><Search size={17}/><span>Search or jump to…</span><kbd>Ctrl K</kbd></button><span className={cls('connection-pill',cloudStatus)}><span className="status-orb"/>{cloudStatus==='connected'?'Cloud previously verified':cloudStatus==='checking'?'Reading settings…':cloudStatus==='unverified'?'Cloud unverified':'Local ready'}</span><button className="studio-icon-action" aria-label="AI settings" title="AI settings" onClick={()=>go('ai_settings')}><Settings2 size={18}/></button><button className={cls('studio-odin-trigger',odinOpen&&'engaged')} aria-label="Open ODIN companion" disabled={!project} onClick={()=>setOdinOpen(true)}><Sparkles size={17}/><span>Ask ODIN</span></button></div>
       </header>
       <div className="content po-motion-stage" id="workspace-content" key={`${project?.id??'none'}-${page}`} onChangeCapture={event=>{
         // Project chooser is outside this stage: it must never mark a draft.
