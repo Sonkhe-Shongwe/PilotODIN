@@ -7,14 +7,14 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | READY |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 216624223d16beae02275228f098654804f2586a |
+| Observed starting HEAD | ccdbf4b3fca677dfb6afd83266a3f1d41783e3cc |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
-| Operation ID | C5-TOOLCHAIN-CHECKSUMS-ONCE-20261125 |
-| Operation state | RECONCILED: run 45715282364 attempt 1 on 56d0129, job 139559651464 FAILURE exit 2; 2 requests, 991 response bytes, 0/4 live parser verified, 0 artifacts. Disarmed e193b4f; receipt 30f1115 independently hash-verified. Windows manifest uses uppercase SHA256 and one separator space; offline interpretation recovered candidate archive hash, not actual archive verification. Remaining three documents not requested. |
-| Intended files | Isolated qa/c5_wheel_metadata/collect_toolchain_checksums.py and dedicated offline workflow; no product or prior receipt changes. Archive inspector remains independent. |
+| Operation ID | C5-CHECKSUM-REMAINING-REVIEW-20261126 |
+| Operation state | PREPARED: publisher-specific parser correction, pinned historical Windows receipt replay, remaining-three-only disabled collector and offline controls. Preserve original failure/collector/marker. |
+| Intended files | New qa/c5_wheel_metadata/collect_remaining_checksums.py and dedicated offline workflow; no product or prior receipt changes. Wheel inspector remains independent. |
 | Approval | Twelve restricted approvals consumed/disarmed (six native, six metadata). No additional registry/metadata requests, artifacts, installs, native/model, owner device/data or installer authorized. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
 | Pending runs | None for this operation. |
