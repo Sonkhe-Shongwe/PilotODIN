@@ -7,6 +7,9 @@ consistency, not the original wheel again, legal clearance or approval.
 """
 from __future__ import annotations
 
+if __name__ == '__main__':
+    raise SystemExit('OFFLINE_LIBRARY_ONLY: no acquisition or evidence publication CLI')
+
 import base64
 import binascii
 import copy
@@ -240,6 +243,3 @@ class PinnedBatch(_EvidenceBatch):
     def __init__(self):
         super().__init__(load_pinned_rows(), PLAN_BLOB)
 
-
-if __name__ == '__main__':
-    raise SystemExit('OFFLINE_LIBRARY_ONLY: no acquisition or evidence publication CLI')

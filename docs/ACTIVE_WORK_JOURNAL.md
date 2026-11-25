@@ -7,17 +7,17 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 244ddc9e49c0a9c8c524b6dc51518c0febc42217 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
 | Operation ID | C5-WHEEL-NOTICE-CLI-REFUSAL-20261126 |
-| Operation state | PREPARED correction: exact 4cfd1f4 run 45723184121 FAILURE, both jobs 40 archive + 26 notice tests PASS and original CLI refusal PASS; new direct evidence CLI failed ModuleNotFoundError under -I. Move existing unconditional refusal before sibling imports; no test or workflow relaxation. |
+| Operation state | PUBLISHED/VERIFYING if live HEAD confirmed: unconditional evidence CLI refusal moved before sibling imports, unchanged test expectations; exact corrected synthetic matrix pending. |
 | Intended files | qa/c5_wheel_metadata/wheel_notice_evidence.py only plus journal/handoff/ledger; same dedicated synthetic CI trigger. No acquisition or production changes. |
 | Approval | Twelve restricted approvals consumed/disarmed (six native, six metadata). No additional registry/metadata requests, artifacts, installs, native/model, owner device/data or installer authorized. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | Failed initial run reconciled; correction not issued. |
+| Pending runs | Inspect exact correction push (parent fd0b2e9dfd302e3ba0a2d08b41f88a55fd7ba08f), dedicated synthetic archive workflow only. |
 | Unpublished work | Owner-local tree not inspected; all three tested QA blobs published and exact CI reconciled. |
 | Recovery action | Reconcile actual HEAD, intended source and exact CI before closing; prior checksum review 17df008 run 45718196315 SUCCESS, fresh approval still needed for remaining three documents/four GETs maximum, 4260661 body bytes, no Windows replay. No wheel acquisition approved. Notice evidence encoding is not transport, production consumption, legal clearance or physical publication proof. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
