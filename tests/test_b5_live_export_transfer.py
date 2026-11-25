@@ -4,10 +4,12 @@ import errno
 from concurrent.futures import ThreadPoolExecutor
 import os
 from pathlib import Path
+from secrets import token_hex
 
 import anyio
 import pytest
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
+from backend.request_auth import RequestTrust
 from backend import data_exports, export_publication as ledger, export_transfer, main, quality, storage
 
 
@@ -37,7 +39,8 @@ def receipts():
 @pytest.mark.parametrize("fmt",["csv","xlsx"])
 def test_live_route_binds_exact_bytes_and_releases_scratch(project,fmt):
     pid,home,path,raw=project
-    with TestClient(main.app) as client:
+    trust=RequestTrust("desktop",8000,token_hex(32))
+    with fixture_client(main.app,trust=trust) as client:
         response=client.post(f"/api/projects/{pid}/quality/export",
                              json={"version":0,"format":fmt},
                              headers={"Origin":"https://tauri.localhost"})
@@ -99,7 +102,7 @@ def test_commit_ack_failure_preserves_owned_bytes(project,monkeypatch):
             raise OSError("synthetic lost commit acknowledgement")
         return actual
     monkeypatch.setattr(storage,"advance_export_publication",uncertain)
-    response=TestClient(main.app).post(f"/api/projects/{pid}/quality/export",json={"version":0})
+    response=fixture_client(main.app).post(f"/api/projects/{pid}/quality/export",json={"version":0})
     assert response.status_code==503
     r,=receipts()
     assert r.state=="staged"
@@ -119,7 +122,7 @@ def test_name_collision_never_unlinks_foreign_file(project,monkeypatch):
         (home/"export_tmp"/r.filename).write_bytes(b"foreign")
         return r
     monkeypatch.setattr(storage,"begin_export_publication",collide)
-    response=TestClient(main.app).post(f"/api/projects/{pid}/quality/export",json={"version":0})
+    response=fixture_client(main.app).post(f"/api/projects/{pid}/quality/export",json={"version":0})
     assert response.status_code==409
     r,=receipts()
     assert r.state=="blocked" and r.reason_code=="collision"
@@ -145,7 +148,7 @@ def test_foreign_replacement_at_transfer_preserved(project):
 
 def test_invalid_version_no_receipt_or_scratch(project):
     pid,home,path,raw=project
-    response=TestClient(main.app).post(f"/api/projects/{pid}/quality/export",json={"version":99})
+    response=fixture_client(main.app).post(f"/api/projects/{pid}/quality/export",json={"version":99})
     assert response.status_code==404
     assert receipts()==[] and not (home/"export_tmp").exists()
     assert path.read_bytes()==raw
@@ -159,7 +162,7 @@ def test_archive_after_stage_refuses_transfer_and_releases_scratch(project,monke
             main.project_lifecycle.change(pid,"archive",0)
         return actual
     monkeypatch.setattr(storage,"advance_export_publication",archive_after_stage)
-    response=TestClient(main.app).post(f"/api/projects/{pid}/quality/export",json={"version":0})
+    response=fixture_client(main.app).post(f"/api/projects/{pid}/quality/export",json={"version":0})
     assert response.status_code==409
     r,=receipts()
     assert r.state=="interrupted" and r.reason_code=="validation_failed"
@@ -178,7 +181,7 @@ def test_write_failure_settles_without_deleting_foreign_scratch(project,monkeypa
         output.write(b"partial")
         raise OSError(error,"synthetic write refusal")
     monkeypatch.setattr(data_exports,"_write_csv",fail)
-    response=TestClient(main.app).post(f"/api/projects/{pid}/quality/export",json={"version":0})
+    response=fixture_client(main.app).post(f"/api/projects/{pid}/quality/export",json={"version":0})
     assert response.status_code==503
     r,=receipts()
     assert r.state=="blocked" and r.reason_code=="storage_unavailable"
@@ -208,7 +211,7 @@ def test_unlink_failure_does_not_certify_release(project,monkeypatch):
     def refuse(*args,**kwargs):
         raise PermissionError("synthetic unlink refusal")
     monkeypatch.setattr(storage,"guarded_unlink",refuse)
-    response=TestClient(main.app).post(f"/api/projects/{pid}/quality/export",json={"version":0})
+    response=fixture_client(main.app).post(f"/api/projects/{pid}/quality/export",json={"version":0})
     assert response.status_code==200
     r,=receipts()
     assert r.state=="blocked" and r.reason_code=="storage_unavailable"
@@ -241,7 +244,7 @@ def test_concurrent_live_exports_independent_receipts(project):
     pid,home,path,raw=project
     # Startup recovery must never run concurrently with live requests.
     def request(fmt):
-        client=TestClient(main.app)
+        client=fixture_client(main.app)
         try:
             result=client.post(f"/api/projects/{pid}/quality/export",json={"version":0,"format":fmt})
             assert result.status_code==200,result.text
@@ -294,15 +297,17 @@ def test_unconfirmed_close_preserves_scratch_and_blocks_release(project):
         original.close()
 
 
-def test_export_metadata_requires_desktop_session_and_allowed_origin(project,monkeypatch):
+def test_export_metadata_requires_desktop_session_and_allowed_origin(project):
     pid,home,path,raw=project
-    secret="synthetic-export-session"
-    monkeypatch.setenv("PILOTODIN_DESKTOP_SESSION",secret)
-    monkeypatch.delenv("PILOTODIN_DESKTOP_ALLOW_DEV",raising=False)
+    secret=token_hex(32)
+    trust=RequestTrust("desktop",8000,secret)
     endpoint=f"/api/projects/{pid}/quality/export"
-    with TestClient(main.app) as client:
+    with fixture_client(main.app,trust=trust,authenticated=False) as client:
         for headers,version,status in (
             ({"Origin":"https://tauri.localhost"},0,401),
+            ({"Origin":"https://tauri.localhost","X-PilotODIN-Session":"invalid"},0,401),
+            ({"Origin":"https://tauri.localhost","X-PilotODIN-Session":secret,
+              "X-PilotODIN-Dev-Capability":token_hex(32)},0,401),
             ({"Origin":"https://untrusted.invalid","X-PilotODIN-Session":secret},0,403),
             ({"Origin":"https://tauri.localhost","X-PilotODIN-Session":secret},99,404),
         ):
@@ -350,7 +355,8 @@ def test_live_attestation_binds_receipt_and_response(project, monkeypatch, fmt):
     key="1"*64
     monkeypatch.setenv("PILOTODIN_DESKTOP_SESSION",secret)
     monkeypatch.setenv("PILOTODIN_DATASET_EXPORT_KEY",key)
-    with TestClient(main.app) as client:
+    trust=RequestTrust("desktop",8000,secret)
+    with fixture_client(main.app,trust=trust) as client:
         response=client.post(f"/api/projects/{pid}/quality/export",
                              json={"version":0,"format":fmt},
                              headers={"Origin":"https://tauri.localhost","X-PilotODIN-Session":secret})
@@ -377,7 +383,7 @@ def test_actual_backend_workbook_native_zip_contract(project):
     from zipfile import ZipFile
     from openpyxl import load_workbook
     pid,home,path,raw=project
-    with TestClient(main.app) as client:
+    with fixture_client(main.app) as client:
         result=client.post(f"/api/projects/{pid}/quality/export",
                            json={"version":0,"format":"xlsx"})
     assert result.status_code==200

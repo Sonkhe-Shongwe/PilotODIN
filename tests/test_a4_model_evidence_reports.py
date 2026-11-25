@@ -8,13 +8,13 @@ from __future__ import annotations
 
 import json
 
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
 import fitz
 
 from backend.main import app
 from backend import storage
 
-client = TestClient(app)
+client = fixture_client(app)
 SECRET = "ROW_PRIVATE_CANARY_NEVER_REPORT"
 
 

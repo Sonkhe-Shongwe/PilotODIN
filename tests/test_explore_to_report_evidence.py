@@ -2,11 +2,11 @@
 from __future__ import annotations
 
 import fitz
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
 
 from backend import main, quality, reports, saved_analyses, storage
 
-client=TestClient(main.app)
+client=fixture_client(main.app)
 
 
 def make_project(name):

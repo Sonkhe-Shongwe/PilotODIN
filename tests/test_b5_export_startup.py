@@ -4,7 +4,7 @@ import sqlite3
 from pathlib import Path
 
 import pytest
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
 from backend import export_publication as ledger, main, maintenance_backup, quality, storage, sqlite_fk_gate
 from backend.artifact_publication import PublicationError
 
@@ -60,7 +60,7 @@ def test_startup_classifies_pending_without_touching_any_scratch(fixture):
              "pilotodin-unknown.csv":b"foreign"}
     for name,data in entries.items():
         (scratch/name).write_bytes(data)
-    with TestClient(main.app) as client:
+    with fixture_client(main.app) as client:
         with storage.connect() as con:
             for old in (intent,active):
                 actual=ledger.read(con,old.operation_id)

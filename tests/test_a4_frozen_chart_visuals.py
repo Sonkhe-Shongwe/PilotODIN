@@ -9,12 +9,12 @@ import json
 
 import fitz
 import pytest
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
 
 from backend.main import app
 from backend import quality, report_charts, storage
 
-client = TestClient(app)
+client = fixture_client(app)
 
 
 def project():

@@ -15,12 +15,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import numpy as np
 import pandas as pd
 import pytest
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
 from tests.quality_compat_client import LegacyQualityClient
 from backend.main import app
 from backend import storage
 
-client = LegacyQualityClient(TestClient(app))
+client = LegacyQualityClient(fixture_client(app))
 
 
 def sample_frame():
@@ -235,8 +235,8 @@ def test_source_tampering_blocks_replay():
 def test_restart_persists_versions_and_decisions():
     pid,_=upload()
     assert autopilot(pid,0).json()["version"]==1
-    from fastapi.testclient import TestClient
-    with TestClient(app) as fresh:
+    from tests.fixture_http import fixture_client
+    with fixture_client(app) as fresh:
         assert fresh.get(f"/api/projects/{pid}/quality").json()["version"]==1
         assert len(fresh.get(f"/api/projects/{pid}/quality/history").json()["actions"])==1
 

@@ -5,11 +5,11 @@ os.environ.setdefault('PILOTODIN_HOME',tempfile.mkdtemp(prefix='pilotodin-approv
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 import pandas as pd
 import pytest
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
 from backend.main import app
 from backend import quality,storage
 
-client=TestClient(app)
+client=fixture_client(app)
 
 def make_project():
     n=36

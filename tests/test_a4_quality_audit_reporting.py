@@ -5,12 +5,12 @@ import hashlib
 from pathlib import Path
 
 import fitz
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
 
 from backend.main import app
 from backend import quality, storage
 
-client=TestClient(app)
+client=fixture_client(app)
 PRIVATE_CATEGORY="CobaltSecret"
 
 

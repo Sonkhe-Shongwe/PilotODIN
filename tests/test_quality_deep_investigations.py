@@ -2,12 +2,12 @@
 from pathlib import Path
 
 import pandas as pd
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
 
 from backend.main import app
 from backend import quality, storage
 
-client=TestClient(app)
+client=fixture_client(app)
 
 
 def make_project(name="quality_deep.csv"):
