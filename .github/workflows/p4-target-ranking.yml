@@ -12,6 +12,8 @@ on:
       - tools/build_input_preflight.py
       - tools/c5_archive_preflight.py
       - qa/c5_metadata/synthetic_staging.py
+      - qa/c5_metadata/input_inventory.py
+      - qa/c5_metadata/input_provenance_20261125.json
       - contracts/build_input_policy_v1.json
       - contracts/build_inputs_v1.schema.json
       - contracts/c5_observed_python_wheels_2026-11-25.json
@@ -236,6 +238,8 @@ jobs:
           npm ci --prefix frontend --no-audit --no-fund
       - name: Review pinned Python release graphs offline (candidate only)
         run: python -B -m qa.c5_metadata.graph_review
+      - name: Review non-executable candidate input inventory offline
+        run: python -B -m qa.c5_metadata.input_inventory --summary
       - name: Exercise standalone Rust storage policy on disposable Linux paths
         run: |
           rustc --edition=2021 --test frontend/src-tauri/src/storage_profile_tests.rs -o "$RUNNER_TEMP/pilotodin-storage-policy-tests"

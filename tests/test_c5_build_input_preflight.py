@@ -866,3 +866,53 @@ def test_c5_stage_refuses_tampered_prior_receipt(tmp_path):
     with pytest.raises(preflight.Blocked, match="STAGE_BLOCKED_BEFORE_PUBLICATION"):
         stage.stage_fixture(root, source, expected, first)
     assert stage.pointer_bytes(root) == prior
+
+
+def test_c5_candidate_inventory_exact_source_and_graphs():
+    from qa.c5_metadata import input_inventory as inventory
+    report = inventory.review(ROOT)
+    assert inventory.summary(report) == {
+        "status": "BLOCKED", "profiles_blocked": 4, "python_distinct_files": 62,
+        "python_platform_selections": 98, "npm_entries": 90, "npm_edges": 108,
+        "npm_absent_optional_peers": 11, "cargo_entries": 457, "cargo_edges": 1428,
+        "cargo_registry_checksums": 455, "vendored_source_files": 37,
+        "actual_artifact_verification": False, "production_activation": False,
+    }
+    assert report["not_a_lock_or_release_sbom"]
+    assert all(p["status"] == "BLOCKED" for p in report["profiles"])
+    assert report["vendored_shell"]["unchanged_upstream_blobs"] == 33
+    assert len(report["vendored_shell"]["modified_files"]) == 3
+    assert all(not x["artifact_bytes_verified"] and x["redistribution"] == "UNREVIEWED"
+               for x in report["python"]["distinct_files"] + report["npm"]["rows"] + report["cargo"]["rows"])
+    assert {x["path"] for x in report["npm"]["rows"] if x["has_install_script"]} == {
+        "node_modules/esbuild", "node_modules/fsevents",
+    }
+    assert all(x["declared_licence"] is None for x in report["cargo"]["rows"])
+    assert next(x for x in report["assets"] if x["id"] == "pdf-release-fonts")["identity_scope"] == "EXCLUDED_NOT_APPROVED"
+
+
+def test_c5_candidate_inventory_rejects_vendor_pin_tamper():
+    from qa.c5_metadata import input_inventory as inventory
+    doc = preflight.strict_json(inventory.graph.canonical_source(ROOT, inventory.CATALOG))
+    rows = doc["vendored_shell"]["files"]
+    assert inventory.tree_digest(rows) == inventory.VENDOR_TREE
+    rows[0]["git_blob"] = "0" * 40
+    with pytest.raises(preflight.Blocked, match="VENDOR_TREE_PIN"):
+        inventory.audit_vendor(ROOT, doc["vendored_shell"], preflight.audit_policy(ROOT))
+
+
+def test_c5_candidate_inventory_rejects_missing_required_npm_edge():
+    from qa.c5_metadata import input_inventory as inventory
+    lock = preflight.strict_json(inventory.graph.canonical_source(ROOT, "frontend/package-lock.json"))
+    lock["packages"][""]["dependencies"]["fixture-missing"] = "1.0.0"
+    with pytest.raises(preflight.Blocked, match="NPM_DECLARATION_UNRESOLVED"):
+        inventory.npm_inventory(lock)
+
+
+def test_c5_candidate_inventory_rejects_missing_cargo_edge():
+    import tomllib
+    from qa.c5_metadata import input_inventory as inventory
+    lock = tomllib.loads(inventory.graph.canonical_source(ROOT, "frontend/src-tauri/Cargo.lock").decode())
+    lock["package"][0]["dependencies"] = ["fixture-missing"]
+    with pytest.raises(preflight.Blocked, match="CARGO_DEPENDENCY_UNRESOLVED"):
+        inventory.cargo_inventory(lock)
