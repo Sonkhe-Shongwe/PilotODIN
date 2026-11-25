@@ -7,13 +7,13 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | PREPARED |
+| State | PUBLISHED |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | fd0b5400a6dcd85a9151ecca8be22515e43306ca |
 | Product baseline | 1fb15af2fcb7fe519d454e1d9c1f00d2ce630277, both exact routine workflows SUCCESS. |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
 | Operation ID | C3-BYTECODE-DIRECT-TRUST-20261125-source |
-| Operation state | PREPARED |
+| Operation state | ISSUED |
 | Intended files | backend/request_auth.py, qa/p4_research/n12_backend_bytecode.py, tests/test_owned_server.py, .github/workflows/p4-target-ranking.yml (source triggers only), journal. Explicit origin-free diagnostic-direct immutable trust, existing one-use hosted bytecode environment + exact runner-temp allocation and case name, guarded QA-only factory, dynamic port and private per-case credential, no redirect or proxy; no change to hosted native approvals, case workload, observation/reducer or diagnostic workflow. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | 1fb15af P1 frontend #45569446683 and P4 #45569446599 terminal SUCCESS; P4 jobs p4-disposable-real-http-browser 139052183720 success; p4-synthetic-source-and-frontend 139052184322 success; p4-r03-windows-local-answers 139052184690 success; Exercise preservation/hash collector on synthetic Windows fixture ONLY 139052186507 skipped. A4 launch plan source verified only. Bytecode workflow job literal false, approval marker consumed by #44268706863, no new diagnostic execution. Existing direct HTTP callers confirmed in bytecode, P2 real API and local analytics native; broader inventory incomplete. |

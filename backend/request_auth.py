@@ -14,6 +14,7 @@ _DESKTOP_MODES = frozenset(("desktop", "desktop-debug"))
 _DEBUG_ORIGINS = frozenset(f"http://{host}:{port}" for host in ("127.0.0.1", "localhost")
                            for port in range(5173, 5180))
 _DEV_MODES = frozenset(("dev", "hosted-fixture", "local-devqa"))
+_DIRECT_MODES = frozenset(("diagnostic-direct",))
 _DESKTOP_HEADER = b"x-pilotodin-session"
 _DEV_HEADER = b"x-pilotodin-dev-capability"
 _METHODS = frozenset(("GET", "POST", "PUT", "PATCH", "DELETE", "HEAD"))
@@ -30,12 +31,12 @@ class RequestTrust:
 
     def __post_init__(self):
         if (type(self.mode) is not str or
-                self.mode not in _DEV_MODES | _DESKTOP_MODES or
+                self.mode not in _DEV_MODES | _DESKTOP_MODES | _DIRECT_MODES or
                 type(self.port) is not int or not 1024 <= self.port <= 65535 or
                 type(self.secret) is not str or
                 re.fullmatch(r"[0-9a-f]{64}", self.secret) is None):
             raise ValueError("Invalid serving trust configuration")
-        if self.mode in _DESKTOP_MODES:
+        if self.mode in _DESKTOP_MODES | _DIRECT_MODES:
             if self.dev_origin is not None:
                 raise ValueError("Mixed serving trust configuration")
         elif (type(self.dev_origin) is not str or re.fullmatch(
@@ -48,6 +49,8 @@ class RequestTrust:
 
     @property
     def origins(self):
+        if self.mode in _DIRECT_MODES:
+            return frozenset()
         if self.mode == "desktop-debug":
             return _DESKTOP | _DEBUG_ORIGINS
         return _DESKTOP if self.mode == "desktop" else frozenset((self.dev_origin,))

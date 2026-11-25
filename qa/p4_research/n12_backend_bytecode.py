@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import re
+import secrets
 import socket
 import subprocess
 import sys
@@ -12,10 +13,15 @@ import tempfile
 from threading import Lock
 import time
 from urllib.error import HTTPError, URLError
-from urllib.request import ProxyHandler, Request, build_opener
+from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_opener
 
 
-HTTP = build_opener(ProxyHandler({}))
+class _NoRedirect(HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+HTTP = build_opener(ProxyHandler({}), _NoRedirect())
 REPO = Path(__file__).resolve().parents[2]
 BYTECODE = re.compile(r"\.pyc(?:\.\d+)?$", re.I)
 MODULE = re.compile(r"[a-zA-Z_][a-zA-Z_0-9]{0,63}")
@@ -93,11 +99,69 @@ def child(mode, observation, value):
 
 
 def uvicorn_args(port):
-    return ["backend.main:app", "--host", "127.0.0.1", "--port", str(port), "--no-access-log"]
+    return ["qa.p4_research.n12_backend_bytecode:owned_diagnostic_app", "--factory",
+            "--host", "127.0.0.1", "--port", str(port), "--no-access-log", "--no-proxy-headers"]
 
 
-def request(base, path, body=None, *, status=200, upload=False):
-    headers = {}
+def require_hosted_context(env):
+    # The archived workflow's independent source-pinned one-use approval
+    # remains required. These environment checks do not grant approval.
+    expected = {"CI": "true", "GITHUB_ACTIONS": "true", "RUNNER_OS": "Windows",
+                "RUNNER_ENVIRONMENT": "github-hosted", "GITHUB_EVENT_NAME": "push",
+                "GITHUB_RUN_ATTEMPT": "1",
+                "GITHUB_REF_NAME": "feature/live-dev-workspace-20261023"}
+    require(all(env.get(key) == value for key, value in expected.items())
+            and re.fullmatch(r"[0-9]+", env.get("GITHUB_RUN_ID", "")) is not None
+            and bool(env.get("RUNNER_TEMP")), "bytecode hosted context refused")
+
+
+def diagnostic_contract(env):
+    # QA-only factory; no product startup mode or browser frontdoor is added.
+    from backend.request_auth import RequestTrust
+    require_hosted_context(env)
+    require(env.get("PILOTODIN_SERVER_MODE") == "bytecode-control"
+            and env.get("PYTHONDONTWRITEBYTECODE") == "1"
+            and not any(value for key, value in env.items()
+                        if key.upper().startswith(("PILOTODIN_DESKTOP_", "PILOTODIN_CONTROL_", "VITE_"))
+                        and key.upper() != "PILOTODIN_DESKTOP_ALLOW_DEV")
+            and env.get("PILOTODIN_DESKTOP_ALLOW_DEV", "0") == "0"
+            and not any(env.get(key) for key in (
+                "PILOTODIN_DEV_ORIGIN", "PILOTODIN_HOSTED_NATIVE_AUTH",
+                "PILOTODIN_A4_RELAY", "P1_REAL_HTTP_E2E")),
+            "bytecode serving configuration refused")
+    raw_port = env.get("PILOTODIN_DEV_PORT", "")
+    require(re.fullmatch(r"[1-9][0-9]{3,4}", raw_port) is not None,
+            "bytecode port refused")
+    trust = RequestTrust("diagnostic-direct", int(raw_port), env.get("PILOTODIN_DEV_CAPABILITY", ""))
+    home = Path(env.get("PILOTODIN_HOME", ""))
+    runner = Path(env["RUNNER_TEMP"])
+    require(home.is_absolute() and runner.is_absolute()
+            and ".." not in home.parts and ".." not in runner.parts
+            and home.name in ("observed", "baseline")
+            and re.fullmatch(r"pilotodin-bytecode-[a-z0-9_]{8}", home.parent.name) is not None
+            and home.parent.parent == runner, "bytecode workspace refused")
+    return trust, home
+
+
+def owned_diagnostic_app():
+    from backend.request_auth import RequestGuard
+    from backend.workspace_boundary import existing_fixture_home, hold_process_workspace, configure_process_scratch
+    trust, home = diagnostic_contract(os.environ)
+    checked = existing_fixture_home(str(home))
+    owned = hold_process_workspace(str(checked))
+    os.environ["PILOTODIN_HOME"] = str(owned)
+    configure_process_scratch(owned)
+    from backend.main import app
+    return RequestGuard(app, trust)
+
+
+def request(trust, path, body=None, *, status=200, upload=False):
+    from backend.request_auth import RequestTrust
+    require(isinstance(trust, RequestTrust) and trust.mode == "diagnostic-direct"
+            and path.startswith("/api/") and not any(ch in path for ch in ("#", "\\", "\r", "\n")),
+            "bytecode HTTP destination or credential refused")
+    base = f"http://127.0.0.1:{trust.port}"
+    headers = {"X-PilotODIN-Dev-Capability": trust.secret}
     if upload:
         headers["Content-Type"] = "multipart/form-data; boundary=fixture"
     elif body is not None:
@@ -113,38 +177,41 @@ def request(base, path, body=None, *, status=200, upload=False):
             return None
 
 
-def exercise(base, process):
+def exercise(trust, process):
+    def call(path, body=None, **options):
+        return request(trust, path, body, **options)
+
     deadline = time.monotonic() + 40
     while True:
         require(process.poll() is None and time.monotonic() < deadline, "backend startup")
         try:
-            health = request(base, "/api/health")
+            health = call("/api/health")
         except URLError:
             time.sleep(0.25)
         else:
             break
     require(health["status"] == "ok" and health["cloud_ai"] is False, "isolated backend health")
-    require(request(base, "/api/projects") == [], "expected a fresh synthetic workspace")
+    require(call("/api/projects") == [], "expected a fresh synthetic workspace")
     rows = [f'{"Y" if i % 2 else "N"},{" retail " if not i else "retail" if i % 3 else "service"},{100 + i}'
             for i in range(80)]
     body = ('--fixture\r\nContent-Disposition: form-data; name="file"; filename="quality.csv"\r\n'
             'Content-Type: text/csv\r\n\r\nchurn,segment,amount\n' + '\n'.join(rows)
             + '\n\r\n--fixture--\r\n').encode()
-    project = "/api/projects/" + request(base, "/api/projects", body, status=201, upload=True)["id"]
+    project = "/api/projects/" + call("/api/projects", body, status=201, upload=True)["id"]
     prepare = project + "/preparation?target=churn&expected_version="
-    require(request(base, prepare + "0")["quality_version"] == 0, "version zero preparation")
+    require(call(prepare + "0")["quality_version"] == 0, "version zero preparation")
 
     def apply(operation, version, **fields):
-        receipt = request(base, project + "/quality/proposals",
+        receipt = call(project + "/quality/proposals",
                           {"operation": operation, "expected_version": version, **fields})
-        return request(base, project + "/quality/commit",
+        return call(project + "/quality/commit",
                        {key: receipt[key] for key in ("proposal_id", "proposal_hash")})
 
     require(apply("autopilot", 0)["version"] == 1, "apply synthetic quality change")
-    request(base, prepare + "0", status=409)
-    require(request(base, prepare + "1")["quality_version"] == 1, "version one preparation")
+    call(prepare + "0", status=409)
+    require(call(prepare + "1")["quality_version"] == 1, "version one preparation")
     require(apply("restore", 1, target_version=0)["version"] == 2, "restore synthetic quality version")
-    require(request(base, project)["experiments"] == [], "zero training runs")
+    require(call(project)["experiments"] == [], "zero training runs")
 
 
 def observation_summary(observation, changed):
@@ -170,13 +237,17 @@ def run_backend(mode, root):
     observation = root / f"{mode}.jsonl"
     arguments = (["-m", __spec__.name, "observed", str(observation), str(port)] if mode == "observed"
                  else ["-m", "uvicorn", *uvicorn_args(port)])
-    env = {**os.environ, "CI": "true", "PYTHONDONTWRITEBYTECODE": "1",
-           "PILOTODIN_HOME": str(root / mode)}
+    capability = secrets.token_hex(32)
+    env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1",
+           "PILOTODIN_SERVER_MODE": "bytecode-control", "PILOTODIN_DEV_PORT": str(port),
+           "PILOTODIN_DEV_CAPABILITY": capability, "PILOTODIN_HOME": str(root / mode)}
+    trust, home = diagnostic_contract(env)
+    home.mkdir()
     with (root / f"{mode}.log").open("xb") as log, subprocess.Popen(
         [sys.executable, "-B", *arguments], cwd=REPO, env=env, stdout=log, stderr=subprocess.STDOUT,
     ) as process:
         try:
-            exercise(f"http://127.0.0.1:{port}", process)
+            exercise(trust, process)
         finally:
             if process.poll() is None:
                 process.kill()
@@ -188,7 +259,11 @@ def run_backend(mode, root):
 
 
 def main():
-    with tempfile.TemporaryDirectory(prefix="pilotodin-bytecode-", dir=os.environ.get("RUNNER_TEMP")) as directory:
+    require_hosted_context(os.environ)
+    require(not any(value for key, value in os.environ.items()
+                    if key.upper().startswith(("PILOTODIN_", "VITE_"))),
+            "inherited bytecode serving configuration refused")
+    with tempfile.TemporaryDirectory(prefix="pilotodin-bytecode-", dir=os.environ["RUNNER_TEMP"]) as directory:
         root = Path(directory)
         source, observation = root / "control.py", root / "control.jsonl"
         source.write_text("value = 1\n", encoding="utf-8")

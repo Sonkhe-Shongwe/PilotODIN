@@ -270,6 +270,68 @@ class C3RequestTrustTests(unittest.TestCase):
                     RequestTrust(mode, port, secret, origin)
         self.assertEqual(authorize(self.scope(), None).status, 503)
 
+    def test_c3_direct_bytecode_diagnostic_contract(self):
+        from backend.request_auth import RequestTrust, authorize
+        from qa.p4_research import n12_backend_bytecode as diagnostic
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp).resolve()
+            home = root / "pilotodin-bytecode-a1b2c3d4" / "observed"
+            env = {"CI":"true","GITHUB_ACTIONS":"true","RUNNER_OS":"Windows",
+                   "RUNNER_ENVIRONMENT":"github-hosted","GITHUB_EVENT_NAME":"push",
+                   "GITHUB_RUN_ATTEMPT":"1","GITHUB_REF_NAME":"feature/live-dev-workspace-20261023",
+                   "GITHUB_RUN_ID":"123","RUNNER_TEMP":str(root),
+                   "PILOTODIN_SERVER_MODE":"bytecode-control","PYTHONDONTWRITEBYTECODE":"1",
+                   "PILOTODIN_HOME":str(home),"PILOTODIN_DEV_PORT":"19482",
+                   "PILOTODIN_DEV_CAPABILITY":self.secret}
+            trust, admitted = diagnostic.diagnostic_contract(env)
+            self.assertEqual(admitted, home)
+            self.assertEqual(trust.origins, frozenset())
+            self.assertEqual(trust.header, b"x-pilotodin-dev-capability")
+            self.assertTrue(authorize(self.scope(trust), trust).allowed)
+            self.assertEqual(authorize(self.scope(trust, origin="http://127.0.0.1:5173"), trust).status, 403)
+            self.assertEqual(authorize(self.scope(trust, method="OPTIONS"), trust).status, 403)
+            missing = self.scope(trust)
+            missing["headers"] = missing["headers"][:1]
+            self.assertEqual(authorize(missing, trust).status, 401)
+            with self.assertRaises(ValueError):
+                RequestTrust("diagnostic-direct", 19482, self.secret, "http://127.0.0.1:5173")
+            for change in ({"PILOTODIN_DEV_CAPABILITY":""},{"GITHUB_RUN_ATTEMPT":"2"},
+                           {"PILOTODIN_HOME":str(root/"owner")},{"PILOTODIN_DEV_ORIGIN":"http://127.0.0.1:5173"},
+                           {"PILOTODIN_DESKTOP_SESSION":self.secret},{"PILOTODIN_DEV_PORT":"65536"}):
+                with self.subTest(changes=tuple(change)):
+                    with patch.dict(os.environ,{**env,**change},clear=True), \
+                         patch("backend.workspace_boundary.existing_fixture_home",side_effect=AssertionError("Workspace inspected")):
+                        with self.assertRaises((ValueError,RuntimeError)):
+                            diagnostic.owned_diagnostic_app()
+            self.assertFalse(home.exists())
+            self.assertEqual(diagnostic.uvicorn_args(19482),
+                ["qa.p4_research.n12_backend_bytecode:owned_diagnostic_app","--factory",
+                 "--host","127.0.0.1","--port","19482","--no-access-log","--no-proxy-headers"])
+            self.assertIsNone(diagnostic._NoRedirect().redirect_request(None,None,302,"",{},"https://example.invalid"))
+            with patch.object(diagnostic.HTTP,"open",side_effect=AssertionError("Network accessed")):
+                for candidate,path in ((None,"/api/health"), (self.desktop,"/api/health"),
+                                       (trust,"/other"), (trust,"/api/health#wrong")):
+                    with self.assertRaises(RuntimeError):
+                        diagnostic.request(candidate,path)
+            # Actual guarded ASGI app in an isolated Python child, no diagnostic
+            # capture, native app or network listener.
+            home.mkdir(parents=True)
+            child_env = {key:value for key,value in os.environ.items()
+                         if not key.upper().startswith(("PILOTODIN_","VITE_"))}
+            child_env.update(env)
+            code = ("from qa.p4_research.n12_backend_bytecode import owned_diagnostic_app; "
+                    "from fastapi.testclient import TestClient; "
+                    "import os; client=TestClient(owned_diagnostic_app(),"
+                    "base_url='http://127.0.0.1:19482',client=('127.0.0.1',50000)); "
+                    "assert client.get('/api/health').status_code==401; "
+                    "h={'X-PilotODIN-Dev-Capability':os.environ['PILOTODIN_DEV_CAPABILITY']}; "
+                    "assert client.get('/api/projects',headers=h).json()==[]; "
+                    "assert client.get('/api/health',headers={**h,'Origin':'http://127.0.0.1:5173'}).status_code==403")
+            result = subprocess.run([sys.executable,"-B","-c",code], cwd=ROOT, env=child_env,
+                                    capture_output=True,text=True,timeout=30)
+            self.assertEqual(result.returncode,0,result.stderr)
+
     def test_c3_transport_and_exact_origin(self):
         from backend.request_auth import authorize
         for origin in (None, "http://tauri.localhost", "https://tauri.localhost", "tauri://localhost"):

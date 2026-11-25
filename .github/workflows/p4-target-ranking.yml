@@ -14,6 +14,8 @@ on:
       - backend/desktop_runner.py
       - backend/workspace_boundary.py
       - backend/server_entry.py
+      - backend/request_auth.py
+      - qa/p4_research/n12_backend_bytecode.py
       - tests/test_owned_server.py
       - tests/test_workspace_boundary.py
       - frontend/src-tauri/src/storage_boundary.rs
