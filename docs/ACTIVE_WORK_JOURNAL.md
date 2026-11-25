@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | PREPARED |
+| State | READY |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | afb56f91ebe9bfde50da5acf1e9b172d2139bc63 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
 | Operation ID | C5-PRODUCTION-CANDIDATE-GRAPH-20261125 |
-| Operation state | PREPARED: offline production graph and candidate inventory; revalidate all 68 persisted sidecars, fixed runtime and freezer roots, target-specific markers/extras/version/tags, independent source comparison. No executable lock or acquisition. |
+| Operation state | RECONCILED: exact 7ed8a47, run 45705552265 job 139526478605 SUCCESS; 68 persisted sidecars revalidated, 12 controls, Windows CP311.9 production candidate 43 reachable nodes, 48 active and 303 inactive declarations, no issues, 87904549 expected wheel bytes. Two absent Requires-Python declarations (altgraph/pytz). No executable lock, actual wheel bytes, install or live requests. |
 | Intended files | Isolated qa/c5_wheel_metadata/production_graph.py, dedicated offline-only workflow, evidence-only receipt and canonical records; preserve all prior evidence, collectors and product. |
 | Approval | Eleven restricted approvals consumed/disarmed (six native, five metadata). No additional registry requests, artifacts, installs, native/model, owner device/data or installer authorized. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
 | Pending runs | None for this operation. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Revalidate persisted freezer receipt and original 62 sidecars, derive combined Windows production/freezer candidate graph with exact ten runtime roots plus freezer candidate pins, evaluate marker/extras/version/tag closure and identify any missing or conflicting declarations. Record altgraph and pytz absent Requires-Python; distinguish candidate graph from production selection. Then continue exact toolchain/distribution and actual wheel/asset/licence provenance and safe consumption. No new registry requests, wheel downloads, install, resolver, native/model, owner device or installer authorized. Four profiles remain BLOCKED. |
+| Recovery action | Review exact toolchain and distribution provenance gaps (Windows/Linux CPython patch distributions, pip, Node/npm, Rust/Cargo, MSVC/SDK/redist) using pinned source/CI evidence; build a non-installable expected-input matrix and identify exact read-only metadata research or bounded acquisition prerequisites. Preserve 43-node production candidate, 49/49 test candidates and unknown Requires-Python for altgraph/pytz; actual archive bytes, licence/notice clearance, installed graph/native inventory, offline bundler route and safe consumption remain blocked. No live registry/asset acquisition, installer, native/model or owner device authority. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
