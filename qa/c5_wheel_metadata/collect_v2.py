@@ -6,6 +6,7 @@ import hashlib
 import http.client
 import json
 import io
+import os
 from pathlib import Path
 import re
 import ssl
@@ -26,7 +27,12 @@ FILENAME = re.compile(r"[A-Za-z0-9_.+!-]{1,235}\.whl")
 MIB = 1024 * 1024
 TOTAL = 128 * MIB
 LIMITS = {"index": (50, 8 * MIB), "metadata": (62, MIB)}
-LIVE_ENABLED = False  # No fresh approval or activation marker.
+LIVE_ENABLED = False  # Change only in a separately approved exact activation commit.
+OPERATION = "C5-SELECTED-WHEEL-METADATA-V2-ONCE-20261125"
+MARKER = ROOT / "qa/c5_wheel_metadata/APPROVAL_V2_20261125.txt"
+MARKER_BYTES = (OPERATION + "\nOne hosted attempt; 50 index and 62 hash-advertised sidecars maximum.\n").encode("ascii")
+WORKFLOW = "C5 selected-wheel metadata v2 offline integration"
+_LIVE_CAPABILITY = object()
 
 
 class Blocked(ValueError):
@@ -221,11 +227,12 @@ def singleton_header(response, key):
 
 
 class Client:
-    def __init__(self, groups, connection):
+    def __init__(self, groups, connection, capability=None):
         self.allowed = {"index": {"https://pypi.org/simple/" + n + "/" for n in groups},
                         "metadata": {w["url"] + ".metadata" for g in groups.values() for w in g}}
         require(connection in (FixtureConnection, ReplayConnection, Never) or
-                (LIVE_ENABLED and connection is http.client.HTTPSConnection), "OFFLINE_FIXTURE_ONLY")
+                (LIVE_ENABLED and capability is _LIVE_CAPABILITY and
+                 connection is http.client.HTTPSConnection), "OFFLINE_FIXTURE_ONLY")
         self.connection = connection
         self.fixture = connection is not http.client.HTTPSConnection
         self.counts = {"index": 0, "metadata": 0}
@@ -508,11 +515,35 @@ def collect_all(groups, client, record=emit):
     return result
 
 
-def live_collect():
+def authorize_live():
     require(LIVE_ENABLED, "FRESH_APPROVAL_REQUIRED")
-    # A future distinct approved change must also bind a new marker, workflow,
-    # exact source SHA, push event and attempt number before enabling this path.
-    raise Blocked("LIVE_ACTIVATION_NOT_IMPLEMENTED")
+    require(os.environ.get("GITHUB_ACTIONS") == "true"
+            and os.environ.get("GITHUB_EVENT_NAME") == "push"
+            and os.environ.get("GITHUB_REF") == "refs/heads/feature/live-dev-workspace-20261023"
+            and os.environ.get("GITHUB_RUN_ATTEMPT") == "1"
+            and os.environ.get("GITHUB_WORKFLOW") == WORKFLOW
+            and os.environ.get("C5_APPROVED_ONCE") == OPERATION
+            and re.fullmatch(r"[0-9a-f]{40}", os.environ.get("GITHUB_SHA", ""))
+            and os.environ.get("GITHUB_SHA") == os.environ.get("C5_EXPECTED_SOURCE_SHA")
+            and re.fullmatch(r"[0-9]{1,20}", os.environ.get("GITHUB_RUN_ID", "")),
+            "ONE_USE_CONTEXT_REQUIRED")
+    require(MARKER.is_file() and not MARKER.is_symlink() and
+            MARKER.stat().st_size == len(MARKER_BYTES) and MARKER.read_bytes() == MARKER_BYTES,
+            "APPROVAL_MARKER_MISMATCH")
+    return _LIVE_CAPABILITY
+
+
+def live_collect():
+    capability = authorize_live()
+    groups = inventory()
+    client = Client(groups, http.client.HTTPSConnection, capability=capability)
+    def record(kind, row):
+        if kind == "RESULT":
+            row = {**row, "source_sha": os.environ["GITHUB_SHA"],
+                   "run_id": os.environ["GITHUB_RUN_ID"], "run_attempt": 1,
+                   "operation": OPERATION}
+        emit(kind, row)
+    return 0 if collect_all(groups, client, record)["status"] == "METADATA_ONLY_COMPLETE" else 2
 
 
 def wire(body, headers=(), status="200 OK", length=True):
@@ -603,12 +634,20 @@ def integration_test():
     chunked = ("%x\r\n" % len(raw)).encode() + raw + b"\r\n0\r\n\r\n"
     result, _, reqs = run({**replies, url: wire(chunked, (("Transfer-Encoding","chunked"),), length=False)})
     check(result["status"] == "METADATA_ONLY_COMPLETE" and len(reqs) == 112, "CHUNKED")
+    # Exercise the live gate without any real transport, including when the
+    # separately approved activation source has LIVE_ENABLED set to True.
+    prior = os.environ.pop("C5_APPROVED_ONCE", None)
     try:
-        live_collect()
-    except Blocked as exc:
-        check(str(exc) == "FRESH_APPROVAL_REQUIRED", "DISARM")
-    else:
-        raise Blocked("INTEGRATION_LIVE_ENABLED")
+        try:
+            authorize_live()
+        except Blocked as exc:
+            check(str(exc) == ("ONE_USE_CONTEXT_REQUIRED" if LIVE_ENABLED else "FRESH_APPROVAL_REQUIRED"),
+                  "DISARM")
+        else:
+            raise Blocked("INTEGRATION_LIVE_ENABLED")
+    finally:
+        if prior is not None:
+            os.environ["C5_APPROVED_ONCE"] = prior
     check(signal.getitimer(signal.ITIMER_REAL) == (0.0,0.0), "TIMER_CLEANUP")
     emit("V2_INTEGRATION", {"status": "PASS", "checks": tests, "synthetic_projects": 50,
                              "synthetic_wheels": 62, "synthetic_complete_requests": 112,
@@ -621,7 +660,7 @@ if __name__ == "__main__":
         integration_test()
     elif sys.argv[1:] == ["--collect"]:
         try:
-            live_collect()
+            raise SystemExit(live_collect())
         except Blocked as exc:
             emit("REFUSAL", {"reason": str(exc)})
             raise SystemExit(2)

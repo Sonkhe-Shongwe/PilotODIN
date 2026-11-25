@@ -27,5 +27,17 @@ jobs:
   collect-once:
     if: ${{ false }} # No new owner approval, no live activation.
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     steps:
-      - run: exit 2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - run: python3 -I -B qa/c5_wheel_metadata/collect_v2.py --self-test
+      # Before activation, add exact tested collector blob assertion and
+      # marker-only trigger, exact commit message and attempt-1 condition.
+      - name: Metadata only (currently unreachable)
+        env:
+          C5_APPROVED_ONCE: C5-SELECTED-WHEEL-METADATA-V2-ONCE-20261125
+          C5_EXPECTED_SOURCE_SHA: ${{ github.sha }}
+        run: python3 -I -B qa/c5_wheel_metadata/collect_v2.py --collect
