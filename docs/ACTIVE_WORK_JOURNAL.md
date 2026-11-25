@@ -7,19 +7,37 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | f3cd114551a47cfe73d7cf86cfb77e96f393ce0e |
+| Observed starting HEAD | ad547c96a6f0020f094e786b03f02db96280f05c |
 | Product baseline | C3 source exit supported at 78c8672, latest product ebd01f4 and verified fixture/historical changes c329e0d/83c83f8. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
-| Operation ID | C4-B6-FINITE-CV-SUPPORT-20261125 |
-| Operation state | RECONCILED; source published at [`0aafb61`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/0aafb61fccd874ee6e44810229804791f09bfa8f); exact CI still running |
-| Intended files | backend/ai_context.py, backend/ai_provider.py, tests/test_c4_cloud_intent.py, tests/test_p4_r03_verified_answers.py and canonical records. No model training/schema/workflow changes. |
+| Operation ID | C4-B6-FIXTURE-NAME-20261125 |
+| Operation state | PREPARED; exact 0aafb61 CI reconciled; test-only fixture correction not yet published |
+| Intended files | tests/test_c4_cloud_intent.py and canonical records only. No product, workflow or policy changes. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Finite-support provenance, pattern matching and separate CV withholding implemented. Eleven new inert cases; existing cloud tests now assert CV withheld and local retention. Exact CI pending. |
-| Pending runs | [P1 Isolated Backend Source Recovery #45636506978](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45636506978) IN PROGRESS; [P4 Target Review Queue and Transparent Ranking #45636512838](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45636512838) IN PROGRESS |
+| Verification | Exact P1 failed 118 passed/1 failed: `valid` matches conservative `id# PilotODIN | Active work journal
+
+Replace this record in place. It owns in-flight task recovery, not project progress or historical receipts. Read [live handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md) and [protocol](./CONTINUATION_PROTOCOL_CURRENT.md).
+
+## Active task
+
+| Field | Value |
+| --- | --- |
+| Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
+| State | PREPARED |
+| Branch | feature/live-dev-workspace-20261023 |
+| Observed starting HEAD | ad547c96a6f0020f094e786b03f02db96280f05c |
+| Product baseline | C3 source exit supported at 78c8672, latest product ebd01f4 and verified fixture/historical changes c329e0d/83c83f8. |
+| Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
+| Operation ID | C4-B6-FIXTURE-NAME-20261125 |
+| Operation state | PREPARED; exact 0aafb61 CI reconciled; test-only fixture correction not yet published |
+| Intended files | tests/test_c4_cloud_intent.py and canonical records only. No product, workflow or policy changes. |
+| Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
+ name refusal. P4 three routine jobs passed; restricted collector skipped. Preserve product screening. |
+| Pending runs | None from 0aafb61. Expected P1 isolated backend CI after test-only publication; confirm exact SHA and run. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Reconcile exact 0aafb61 run jobs/logs; preserve any failures and correct only evidenced defects. If both pass, B6 support refinement source verification complete; then B7 shared revocation/admission lifecycle. No score increment or cloud/native operation. |
+| Recovery action | Rename positive synthetic `valid` column to `balanced`; keep identical finite population and exact positive assertions, add `valid` identifier-suffix negative to verify suppression. Check HEAD and publish non-force; reconcile exact P1 CI before B7. No source/official score change. |
 | Resume after closure | C5 then D with separately approved scope. |
 
 ## Prior operation
