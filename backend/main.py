@@ -18,7 +18,7 @@ from fastapi import BackgroundTasks, FastAPI, File, HTTPException, UploadFile, Q
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from fastapi.exception_handlers import request_validation_exception_handler
-from pydantic import BaseModel, Field, ConfigDict, StrictBool
+from pydantic import BaseModel, Field, ConfigDict, StrictBool, StrictStr
 
 try:
     from .request_auth import request_authorized
@@ -1099,6 +1099,7 @@ class AIInsightRequest(BaseModel):
     deep: bool = False
     selected_provider: str | None = None
     cloud_intent: StrictBool = False
+    cloud_consent_witness: StrictStr | None = Field(default=None, max_length=80)
     continuation_text: str | None = Field(default=None, max_length=16000)
     local_follow_up: LocalAnalysisFollowUp | None = None
 
@@ -1106,6 +1107,7 @@ class AIInsightRequest(BaseModel):
 class AIConnectionRequest(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True)
     cloud_intent: StrictBool = False
+    cloud_consent_witness: StrictStr | None = Field(default=None, max_length=80)
 
 
 def _local_request(request:Request):
@@ -1179,8 +1181,9 @@ def update_resource_policy(body: ResourcePolicyRequest, request: Request):
 
 
 @app.get('/api/ai/settings')
-def ai_settings(request:Request):
+def ai_settings(request:Request,response:Response):
     _local_request(request)
+    response.headers["Cache-Control"]="no-store"
     return ai_provider.config_status()
 
 
@@ -1223,11 +1226,15 @@ def _insight_context_current(project_id, version):
 @app.post('/api/projects/{project_id}/ai/insight')
 def ai_insight(project_id:str,body:AIInsightRequest,request:Request):
     _local_request(request)
-    # Capture before either composition prepares project data. Never trust a
-    # revision supplied by the browser or a provider response.
-    consent_revision=(ai_provider.cloud_consent_revision()
-                      if body.cloud_intent is True and body.selected_provider in ai_provider.PROVIDERS
-                      else None)
+    # Bind observed saved consent before either composition prepares project
+    # data. Compare under the settings lock; never accept a client revision as
+    # authoritative. Older explicit API clients may omit the witness.
+    consent_revision=None
+    if body.cloud_intent is True and body.selected_provider in ai_provider.PROVIDERS:
+        consent_revision=ai_provider.resolve_cloud_consent_revision(body.cloud_consent_witness)
+        if consent_revision is None:
+            raise HTTPException(status_code=409,detail='Cloud permission changed; review saved settings and confirm a new request',
+                                headers={"Cache-Control":"no-store"})
     owned = request.scope.get('pilotodin.owned_session')
     if owned is not None:
         return _owned_ai_insight(project_id, body, owned, consent_revision)
@@ -1303,7 +1310,11 @@ def test_ai_provider(provider:str,request:Request,body:AIConnectionRequest|None=
         raise HTTPException(status_code=422,detail='Unknown AI provider')
     if body is None or body.cloud_intent is not True:
         return {'provider':provider,'status':'explicit_intent_required'}
-    return ai_provider.owned_test_connection(provider)
+    revision=ai_provider.resolve_cloud_consent_revision(body.cloud_consent_witness)
+    if revision is None:
+        raise HTTPException(status_code=409,detail='Cloud permission changed; review saved settings and confirm a new request',
+                            headers={"Cache-Control":"no-store"})
+    return ai_provider.owned_test_connection(provider,expected_revision=revision)
 
 @app.get('/api/projects/{project_id}/live-profile')
 def live_profile(project_id:str):

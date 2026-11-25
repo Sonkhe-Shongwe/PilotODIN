@@ -497,8 +497,12 @@ def test_cloud_http_route_generation_fence(product_composition,dispatch,monkeypa
         seed=client.post("/api/projects",files={"file":("fixture.csv",b"amount,group\n1,A\n2,B\n3,A\n","text/csv")})
         assert seed.status_code==201,seed.text
         path="/api/projects/"+seed.json()["id"]+"/ai/insight"
+        saved=client.get("/api/ai/settings")
+        assert saved.status_code==200 and saved.headers["cache-control"]=="no-store"
+        witness=saved.json()["cloud_consent_witness"]
         response=client.post(path,json={"context":"overview","selected_provider":"gemini",
-                                        "cloud_intent":True,"consent_revision":-1})
+                                        "cloud_intent":True,"cloud_consent_witness":witness,
+                                        "consent_revision":-1})
         if phase=="preparation":
             assert response.status_code==200,response.text
             assert response.json()["fallback"] and not calls
@@ -510,6 +514,8 @@ def test_cloud_http_route_generation_fence(product_composition,dispatch,monkeypa
             assert response.json()["provider"]=="gemini" and len(calls)==1
             assert "consent_revision" not in calls[0][2]
             assert "consent_revision" not in response.json()
+            assert "cloud_consent_witness" not in calls[0][2]
+            assert witness not in calls[0][2] and witness not in response.text
         assert ai._cloud_slot is None
 
 
@@ -893,3 +899,69 @@ def test_cloud_wire_assertion_is_not_sanitized_as_provider_failure(monkeypatch):
     with pytest.raises(AssertionError,match="fixture contract violated"):
         ai._call_provider("groq",ai.MODELS["groq"]["routine"],"System","Question",
                           "fixture-secret-key",10,strict=True,still_authorized=lambda:True)
+
+
+# C4 C3: a fresh status witness binds a new explicit request to the saved
+# process/generation it observed. No provider, model or native operation.
+@pytest.mark.parametrize("composition",["legacy","owned"])
+@pytest.mark.parametrize("change",["revision","epoch","invalid"])
+def test_cloud_status_witness_refuses_stale_before_project_or_key(
+        product_composition,dispatch,monkeypatch,composition,change):
+    app=main.app if composition=="legacy" else product_composition[0]
+    _,calls=dispatch
+    monkeypatch.setattr(ai,"_consent_revision",ai.cloud_consent_revision())
+    with fixture_client(app) as client:
+        saved=client.get("/api/ai/settings")
+        assert saved.status_code==200 and saved.headers["cache-control"]=="no-store"
+        witness=saved.json()["cloud_consent_witness"]
+        assert ai.resolve_cloud_consent_revision(witness)==ai.cloud_consent_revision()
+        if change=="revision":
+            with ai._lock:
+                ai._consent_revision+=2
+        elif change=="epoch":
+            monkeypatch.setattr(ai,"_consent_epoch","f"*32 if not witness.startswith("f"*32) else "e"*32)
+        else:
+            witness="invalid"
+        assert ai.resolve_cloud_consent_revision(witness) is None
+        monkeypatch.setattr(main,"project_or_404",lambda *_:pytest.fail("Stale witness reached project"))
+        monkeypatch.setattr(ai,"_get_key",lambda *_:pytest.fail("Stale witness reached key"))
+        payload={"cloud_intent":True,"cloud_consent_witness":witness}
+        response=client.post("/api/projects/stale-fixture/ai/insight",json={
+            **payload,"context":"overview","selected_provider":"gemini"})
+        assert response.status_code==409 and "Cloud permission changed" in response.text
+        probe=client.post("/api/ai/test/gemini",json=payload)
+        assert probe.status_code==409 and not calls
+        assert witness not in response.text and witness not in probe.text
+        assert ai._cloud_slot is None
+
+
+@pytest.mark.parametrize("composition",["legacy","owned"])
+def test_connection_accepts_current_status_witness_without_project_payload(product_composition,dispatch,composition):
+    app=main.app if composition=="legacy" else product_composition[0]
+    _,calls=dispatch
+    with fixture_client(app) as client:
+        witness=client.get("/api/ai/settings").json()["cloud_consent_witness"]
+        payload={"cloud_intent":True,"cloud_consent_witness":witness}
+        response=client.post("/api/ai/test/gemini",json=payload)
+        assert response.status_code==200 and response.json()["status"]=="connected"
+        assert len(calls)==1 and calls[0][2]=="Say READY"
+        assert witness not in response.text
+        assert ai._cloud_slot is None
+
+
+@pytest.mark.parametrize("invalid",[True,1,{},["bad"],"x"*81])
+def test_cloud_witness_is_strict_and_bounded(product_composition,dispatch,invalid):
+    with fixture_client(main.app) as client:
+        payload={"cloud_intent":True,"cloud_consent_witness":invalid}
+        assert client.post("/api/ai/test/gemini",json=payload).status_code==422
+        assert client.post("/api/projects/fixture/ai/insight",json={
+            **payload,"selected_provider":"gemini"}).status_code==422
+        assert not dispatch[1]
+
+
+def test_connection_admission_refuses_revision_changed_after_status_resolution(dispatch,monkeypatch):
+    revision=ai.cloud_consent_revision()
+    monkeypatch.setattr(ai,"_consent_revision",revision+1)
+    monkeypatch.setattr(ai,"_get_key",lambda *_:pytest.fail("Stale admission read key"))
+    assert ai.owned_test_connection("gemini",expected_revision=revision)["status"]=="unavailable"
+    assert not dispatch[1] and ai._cloud_slot is None

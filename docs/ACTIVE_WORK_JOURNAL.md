@@ -7,13 +7,13 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | c6ffd7939c12aeedc093cb4565506b6a2e260701 |
 | Product baseline | C4 C2 panel controls fb97119 exact P1/P4 SUCCESS. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
 | Operation ID | C4-C3-SERVER-CONSENT-WITNESS-20261125 |
-| Operation state | PREPARED; server witness source not issued. |
+| Operation state | ISSUED; reconcile source commit from prepared parent a9d83b6; do not replay |
 | Intended files | backend/ai_provider.py, backend/main.py, tests/test_c4_cloud_intent.py and canonical records only. No new route, persistent schema, workflow or activation. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | Exact fb97119 P1 206 Node/7 browser/Vite; P4 1086 backend/6 skipped/552 subtests, 139 Node/Vite, Windows 68/133 subtests, browser 13 SUCCESS. |

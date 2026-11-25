@@ -15,6 +15,7 @@ import json
 import math
 import os
 import re
+import secrets
 import sys
 import time
 import urllib.error
@@ -40,6 +41,8 @@ _cooldowns:dict[str,float] = {}
 _health:dict[str,dict] = {}
 _last_background_check:float = 0.0
 _consent_revision = 0
+# Nonpersistent freshness epoch, not an authentication credential.
+_consent_epoch = secrets.token_hex(16)
 _cloud_slot = None  # one process-wide cloud operation, including connection checks
 DEFAULTS = settings_storage.ai_defaults()  # compatibility for synthetic callers
 _config_inhibited = False
@@ -180,6 +183,7 @@ def config_status()->dict:
                     'routine_model':MODELS[p]['routine'],'deep_model':MODELS[p]['deep']}
                    for p in PROVIDERS]
         return {**cfg,'credential_warning':warning,'providers':providers,
+                'cloud_consent_witness':_cloud_consent_witness_locked(),
                 'local_ai':{**_local_health, 'model':cfg['local_model'],
                 'url':'bundled-local-runtime' if os.environ.get('PILOTODIN_DESKTOP_SESSION') else 'http://127.0.0.1:11434',
                 'probe_required':_local_health.get('status')=='not_tested'},
@@ -1052,6 +1056,24 @@ def _owned_consent(provider):
         return None
 
 
+def _cloud_consent_witness_locked():
+    return f"{_consent_epoch}:{_consent_revision}"
+
+
+def resolve_cloud_consent_revision(witness):
+    """Compare a renderer's saved-status witness with the current process.
+
+    Missing witness preserves older explicit API clients; new UI must supply
+    the freshly observed witness. Neither form replaces saved permission,
+    explicit intent, credential checks or authenticated local request scope.
+    """
+    with _lock:
+        if witness is not None and (
+                type(witness) is not str or witness != _cloud_consent_witness_locked()):
+            return None
+        return _consent_revision
+
+
 def cloud_consent_revision():
     """Server-only generation witness; no credential read or persistent change."""
     with _lock:
@@ -1302,12 +1324,14 @@ def owned_provider_status():
                 for p in PROVIDERS]}
 
 
-def owned_test_connection(provider):
+def owned_test_connection(provider, *, expected_revision=None):
     if provider not in PROVIDERS:
         raise ValueError("Unknown AI provider")
-    with _cloud_admission() as ticket:
+    with _cloud_admission(expected_revision) as ticket:
         if ticket is None:
-            return {"provider":provider,"status":"busy"}
+            status = ("unavailable" if expected_revision is not None and
+                      not cloud_consent_current(expected_revision) else "busy")
+            return {"provider":provider,"status":status}
         consent=_cloud_ticket_consent(ticket,provider)
         if consent is None:
             return {"provider":provider,"status":"not_configured"}
