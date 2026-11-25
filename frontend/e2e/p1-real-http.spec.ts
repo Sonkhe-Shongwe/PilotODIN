@@ -146,12 +146,24 @@ test('real HTTP import, Quality, rejected switch and restored source retain prim
   await page.locator('.po-primary-pane input[type="file"]').setInputFiles({
     name:B_FILENAME,mimeType:'text/csv',buffer:Buffer.from(sourceB),
   });
+  // A click completes before the asynchronous upload handler. Observe the
+  // actual committed POST response before independently reading the catalogue.
+  const imported=page.waitForResponse(response=>{
+    const url=new URL(response.url());
+    return response.request().method()==='POST'&&url.origin===API
+      &&url.pathname==='/api/projects'&&url.search==='';
+  });
   await page.getByRole('button',{name:'Analyse dataset'}).click();
+  const importReply=await imported;
+  expect(importReply.status()).toBe(201);
+  const importedProject=(await importReply.json()) as {id:string;name:string};
+  expect(importedProject.id).toMatch(/^[a-f0-9]{32}$/);
   const catalogue=await request.get(API+'/api/projects');
   expect(catalogue.status()).toBe(200);
   const entries=await catalogue.json() as {id:string;filename:string}[];
   expect(entries).toHaveLength(2);
   const bid=entries.find(x=>x.filename===B_FILENAME)?.id;
+  expect(bid).toBe(importedProject.id);
   expect(bid).toMatch(/^[a-f0-9]{32}$/);
   await expect(switcher).toHaveValue(bid!);
   const primary=page.locator('.po-primary-pane');

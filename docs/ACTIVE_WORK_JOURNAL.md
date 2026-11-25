@@ -7,17 +7,17 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 45d284b685124009d2fd4d9fc735fbe2d6410a16 |
 | Product baseline | C3 source exit supported at 78c8672, latest product ebd01f4 and verified fixture/historical changes c329e0d/83c83f8. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
 | Operation ID | C4-A-IMPORT-HTTP-WITNESS-CORRECTION-20261125 |
-| Operation state | PREPARED; prior e94d87f 7/8 SUCCESS; [P1 HTTP #45627663897](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45627663897) FAILURE; test-only correction not issued |
+| Operation state | ISSUED; reconcile test-only source by parent 301dd82 and operation marker before retry |
 | Intended files | frontend/e2e/p1-real-http.spec.ts and canonical records only; exact POST response synchronization, no product, authority, workflow or fixture allowlist changes. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | e94d87f P1 backend 50 foundation, 73 AI/HTTP combined, 206 recovery + 2 subtests; six other workflows passed, P1 HTTP failed on catalogue length before awaiting import. Three downstream stages skipped. |
-| Pending runs | None; all eight e94d87f runs terminal, one failure preserved. |
+| Verification | Added exact import response witness before independent catalogue read. Retains 201, ID, count, switcher and all prior safety/recovery assertions. Exact CI pending. |
+| Pending runs | P1 real HTTP and isolated frontend expected; reconcile exact IDs. |
 | Unpublished work | Owner-local tree not inspected. |
 | Recovery action | Correct observed test race by registering exact same-origin POST /api/projects response waiter before Analyse click; require 201 and exact committed ID in independently read catalogue, retain all counts and isolation checks. Reconcile exact P1 HTTP and P1 frontend workflows; if failure persists inspect actual response. Then C4 Batch B. |
 | Resume after closure | C5 then D with separately approved scope. |
