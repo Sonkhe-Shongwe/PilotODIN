@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | PREPARED |
+| State | BLOCKED |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | d1a83dfd9f5af79369b60e0db159c5c8cdc0c210 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
 | Operation ID | C5-MISSING-METADATA-RECONCILIATION-20261125 |
-| Operation state | PREPARED: revalidate immutable partial v2 receipt from repository, derive exact missing-only inventory and test a disarmed candidate. No registry acquisition approved. Proposed per-index budget increase subject to explicit future approval only; unchanged aggregate and sidecar caps. |
+| Operation state | RECONCILED: Exact 786c980988cfa40e7b82338b4bad0f493ed3a438, collector blob 2885eba964dc7f993b38571f22e3a9686312a0cb, run 45700864424 job 139510281011 SUCCESS: 7 positive/27 negative response controls and 23 missing-only integration checks; persisted 33 sidecars independently revalidated, 22 remaining projects/29 sidecars, 51 synthetic requests, >8 MiB synthetic index and 32 MiB cap refusal, old URL refusal, CLI FRESH_APPROVAL_REQUIRED; restricted job 139510283548 skipped. New candidate disabled, prior approvals consumed/disarmed. |
 | Intended files | New isolated qa/c5_wheel_metadata/collect_missing.py and dedicated offline-only workflow, canonical records. Preserve all prior source, markers, receipts, product and locks. |
 | Approval | Nine restricted approvals consumed/disarmed (six native, three metadata). No additional registry requests, artifacts, installs, native/model, owner data or installer authorized. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | None for this operation. |
+| Pending runs | None. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Verify persisted receipt shards and match their selected identities against pinned inputs; use the 33 verified sidecars as partial candidate evidence, do not fetch them again. Review 29 missing sidecars and 22 remaining project indexes (pydantic-core plus 21 not attempted); exact refused Content-Length was not logged, so reason is length policy refusal, not proven oversize. Research bounded version-specific Simple API alternatives and index sizing offline; prepare narrowly scoped new missing-only collection proposal and explicit approval if necessary. No cap change or replay without distinct authority. Complete selected graph, platform/production locks, toolchain, artifact/licence provenance, actual bytes and safe consumption thereafter. Four profiles BLOCKED. |
+| Recovery action | Fresh explicit approval needed for one missing-only attempt: at most 22 project-index GETs and 29 exact hash-advertised metadata GETs (51 total); proposed revised 32 MiB/index cap only for those 22, unchanged 1 MiB/sidecar, 128 MiB aggregate, 15 s/request and 15 min/job. No fallback, redirects, artifact bytes, installations, native/model, owner device or automatic retry. After approval, bind exact activated blob/new marker/marker-only trigger/exact message/attempt 1, journal before issuance, reconcile and disarm. No re-fetch of the 33 verified sidecars. Real index size remains unknown and 32 MiB is not guaranteed sufficient. Then complete graph, platform/production locks, toolchain, artifact/licence provenance, actual-byte verification and safe consumption. Four profiles BLOCKED. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
