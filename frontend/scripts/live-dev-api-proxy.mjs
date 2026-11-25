@@ -2,7 +2,7 @@
 // A local dev frontdoor, not authentication against a hostile process running
 // as the developer. Browser cross-site/DNS rebinding requests are refused.
 import http from 'node:http';
-import {isAbsolute, basename, dirname, resolve} from 'node:path';
+import {isAbsolute, basename, dirname, resolve, relative} from 'node:path';
 
 const LIVE_ORIGIN='http://127.0.0.1:5173';
 const A4_ORIGIN='http://127.0.0.1:5174';
@@ -22,7 +22,7 @@ export function liveDevProxyTrust(env){
   if(env.PILOTODIN_A4_RELAY!==undefined){
     if(env.PILOTODIN_A4_RELAY!=='1'||env.VITE_PILOTODIN_AUTH_DEV!=='1'||
        env.VITE_PILOTODIN_NATIVE_SMOKE!=='1'||env.PILOTODIN_HOME||
-       env.PILOTODIN_SERVER_MODE||env.PILOTODIN_DEV_ORIGIN||
+       env.PILOTODIN_HOSTED_NATIVE_AUTH||env.PILOTODIN_SERVER_MODE||env.PILOTODIN_DEV_ORIGIN||
        env.PILOTODIN_DEV_PORT||env.PILOTODIN_DEV_CAPABILITY||
        env.PILOTODIN_DESKTOP_SESSION||env.PILOTODIN_DESKTOP_PORT||
        env.PILOTODIN_DESKTOP_WATCH_STDIN||env.PILOTODIN_CONTROL_MODE||
@@ -38,6 +38,19 @@ export function liveDevProxyTrust(env){
     /^\d+$/.test(env.GITHUB_RUN_ID??'')&&
     !!env.RUNNER_TEMP&&env.PILOTODIN_HOME===`${env.RUNNER_TEMP}/pilotodin-p1-real-http-${env.GITHUB_RUN_ID}`;
   const home=env.PILOTODIN_HOME??'',localAppData=env.LOCALAPPDATA??'';
+  const runner=env.RUNNER_TEMP??'';
+  const child=relative(runner,home);
+  const native=env.PILOTODIN_SERVER_MODE==='hosted-fixture'&&env.PILOTODIN_HOSTED_NATIVE_AUTH==='1'&&
+    env.PILOTODIN_DEV_ORIGIN===LIVE_ORIGIN&&env.CI==='true'&&env.GITHUB_ACTIONS==='true'&&
+    env.RUNNER_OS==='Windows'&&env.RUNNER_ENVIRONMENT==='github-hosted'&&env.GITHUB_EVENT_NAME==='push'&&
+    env.GITHUB_RUN_ATTEMPT==='1'&&env.GITHUB_REF_NAME==='feature/live-dev-workspace-20261023'&&
+    env.VITE_PILOTODIN_NATIVE_SMOKE==='1'&&!env.P1_REAL_HTTP_E2E&&
+    /^[0-9]+$/.test(env.GITHUB_RUN_ID??'')&&isAbsolute(home)&&isAbsolute(runner)&&
+    !home.split(/[\\/]/).includes('..')&&!runner.split(/[\\/]/).includes('..')&&
+    !!child&&!isAbsolute(child)&&child.split(/[\\/]/)[0]!=='..'&&
+    basename(home)==='P4-71-only-home-'+env.GITHUB_RUN_ID;
+  if(env.PILOTODIN_HOSTED_NATIVE_AUTH!==undefined&&!native)
+    throw new Error('Invalid hosted native proxy configuration');
   const rawPort=env.PILOTODIN_DEV_PORT??'',backendPort=Number(rawPort);
   const phasePorts={'P2-NATIVE-DELIVER-CONSENT':5177,'P2-NATIVE-TWO-WINDOW-DELIVER':5177,
     'P3-NATIVE-SEMANTIC-CONTEXT':5178,'P3-NATIVE-QUALITY-W5':5178};
@@ -54,7 +67,7 @@ export function liveDevProxyTrust(env){
     basename(home)==='workspace'&&/^P2-NATIVE-CHAIN-[0-9]{8}T[0-9]{6}Z-[a-f0-9]{10}$/.test(basename(dirname(home)))&&
     resolve(dirname(dirname(home)))===resolve(localAppData,'PilotODIN','DevQA','runs')&&
     /^[1-9][0-9]{3,4}$/.test(rawPort)&&backendPort>=1024&&backendPort<=65535&&backendPort!==5176;
-  if((!live&&!hosted&&!chain&&!fixed)||env.VITE_PILOTODIN_AUTH_DEV!=='1'||
+  if((!live&&!hosted&&!native&&!chain&&!fixed)||env.VITE_PILOTODIN_AUTH_DEV!=='1'||
      (!chain&&env.PILOTODIN_DEV_PORT!=='8000')||
      !/^[0-9a-f]{64}$/.test(env.PILOTODIN_DEV_CAPABILITY??'')||
      env.PILOTODIN_DESKTOP_SESSION||env.PILOTODIN_DESKTOP_PORT||
@@ -63,6 +76,7 @@ export function liveDevProxyTrust(env){
      (env.PILOTODIN_DESKTOP_ALLOW_DEV??'0')!=='0'){
     throw new Error('Invalid isolated Live Dev proxy configuration');
   }
+  if(native)return Object.freeze({capability:env.PILOTODIN_DEV_CAPABILITY,origin:LIVE_ORIGIN,host:'127.0.0.1:5173',port:5173});
   if(fixed)return Object.freeze({capability:env.PILOTODIN_DEV_CAPABILITY,origin:env.PILOTODIN_DEV_ORIGIN,
     host:'127.0.0.1:'+phasePorts[phase],port:phasePorts[phase]});
   if(chain)return Object.freeze({capability:env.PILOTODIN_DEV_CAPABILITY,origin:REPORT_CHAIN_ORIGIN,

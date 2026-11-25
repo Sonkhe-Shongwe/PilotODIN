@@ -62,6 +62,13 @@ if ($production.identifier -ne 'com.pilotodin.studio' -or
 if (-not (Select-String -Path (Join-Path $frontend 'src-tauri/src/lib.rs') -Pattern 'app_local_data_dir' -SimpleMatch -Quiet)) { Fail 'Native backend storage derivation changed' }
 if (-not (Test-Path -LiteralPath (Join-Path $root $approvalMarker) -PathType Leaf)) { Fail 'One-shot owner approval marker absent' }
 if ($env:PILOTODIN_HOME) { Fail 'Inherited PILOTODIN_HOME is not permitted' }
+foreach ($name in @('PILOTODIN_SERVER_MODE','PILOTODIN_HOSTED_NATIVE_AUTH','PILOTODIN_DEV_CAPABILITY',
+  'PILOTODIN_DEV_PORT','PILOTODIN_DEV_ORIGIN','PILOTODIN_A4_RELAY','P1_REAL_HTTP_E2E','VITE_PILOTODIN_AUTH_DEV',
+  'PILOTODIN_DESKTOP_SESSION','PILOTODIN_DESKTOP_PORT','PILOTODIN_DESKTOP_WATCH_STDIN',
+  'PILOTODIN_CONTROL_MODE','PILOTODIN_CONTROL_GENERATION','PILOTODIN_CONTROL_CAPABILITY')){
+ if([Environment]::GetEnvironmentVariable($name,'Process')){ Fail 'Inherited serving configuration is not permitted' }
+}
+if($env:PILOTODIN_DESKTOP_ALLOW_DEV -and $env:PILOTODIN_DESKTOP_ALLOW_DEV -ne '0'){ Fail 'Mixed desktop mode is not permitted' }
 foreach ($item in @('com.pilotodin.studio','com.pilotodin.p4nativeqa')) {
  foreach($appdata in @($env:LOCALAPPDATA,$env:APPDATA)) {
    if (Test-Path -LiteralPath (Join-Path $appdata $item)) { Fail 'Protected production or old-QA appdata unexpectedly present on disposable runner' }
@@ -126,13 +133,36 @@ function Write-ScopedNetworkSnapshot([string]$stage) {
  }
 }
 try {
- $backend = Start-Process -FilePath 'python.exe' -ArgumentList @('-m','uvicorn','backend.main:app','--host','127.0.0.1','--port','8000','--no-access-log') -WorkingDirectory $root -PassThru
+ # Existing one-shot gate above remains the sole native execution authority.
+ $random=[Security.Cryptography.RandomNumberGenerator]::Create()
+ try {
+   $capabilityBytes=New-Object byte[] 32
+   $random.GetBytes($capabilityBytes)
+   $env:PILOTODIN_DEV_CAPABILITY=([BitConverter]::ToString($capabilityBytes)).Replace('-','').ToLowerInvariant()
+ } finally {$random.Dispose()}
+ $env:PILOTODIN_SERVER_MODE='hosted-fixture'
+ $env:PILOTODIN_HOSTED_NATIVE_AUTH='1'
+ $env:PILOTODIN_DEV_PORT='8000'
+ $env:PILOTODIN_DEV_ORIGIN='http://127.0.0.1:5173'
+ $env:VITE_PILOTODIN_AUTH_DEV='1'
+ $backend = Start-Process -FilePath 'python.exe' -ArgumentList @('-m','uvicorn','backend.server_entry:owned_app','--factory','--host','127.0.0.1','--port','8000','--no-access-log','--no-proxy-headers') -WorkingDirectory $root -PassThru
  $ready = $false
  for ($i=0; $i -lt 60; $i++) {
    Start-Sleep -Seconds 2
    if ($backend.HasExited) { Fail 'Disposable Python backend exited before health check' }
    try {
-     $status = Invoke-RestMethod -Uri 'http://127.0.0.1:8000/api/health' -TimeoutSec 2
+     $request=[Net.HttpWebRequest]::Create('http://127.0.0.1:8000/api/health')
+     $request.Proxy=$null
+     $request.AllowAutoRedirect=$false
+     $request.Timeout=2000
+     $request.ReadWriteTimeout=2000
+     $request.Headers.Add('X-PilotODIN-Dev-Capability',$env:PILOTODIN_DEV_CAPABILITY)
+     $reply=$request.GetResponse()
+     try {
+       if([int]$reply.StatusCode -ne 200){Fail 'Authenticated health refused'}
+       $reader=[IO.StreamReader]::new($reply.GetResponseStream())
+       try {$status=($reader.ReadToEnd() | ConvertFrom-Json)} finally {$reader.Dispose()}
+     } finally {$reply.Dispose()}
      if ($status.status -eq 'ok') { $ready = $true; break }
    } catch { }
  }
@@ -245,6 +275,9 @@ try {
  if ($devServer -and -not $devServer.HasExited) { Stop-Process -Id $devServer.Id -Force -ErrorAction SilentlyContinue }
  if ($native -and -not $native.HasExited) { & taskkill.exe /PID $native.Id /T /F 2>$null | Out-Null }
  if ($backend -and -not $backend.HasExited) { Stop-Process -Id $backend.Id -Force -ErrorAction SilentlyContinue }
+ foreach($name in @('PILOTODIN_SERVER_MODE','PILOTODIN_HOSTED_NATIVE_AUTH','PILOTODIN_DEV_CAPABILITY','PILOTODIN_DEV_PORT','PILOTODIN_DEV_ORIGIN','VITE_PILOTODIN_AUTH_DEV')){
+   [Environment]::SetEnvironmentVariable($name,$null,'Process')
+ }
  foreach($name in @('com.pilotodin.studio','com.pilotodin.p4nativeqa')) {
   foreach($baseDir in @($env:LOCALAPPDATA,$env:APPDATA)) {
    if (Test-Path -LiteralPath (Join-Path $baseDir $name)) { Fail 'Unexpected protected profile path created: STOP/FAIL' }

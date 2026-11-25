@@ -6,6 +6,7 @@ The desktop runner installs this boundary outside both product compositions.
 """
 from dataclasses import dataclass, field
 from hmac import compare_digest
+from pathlib import Path
 import re
 
 _DESKTOP = frozenset(("http://tauri.localhost", "https://tauri.localhost", "tauri://localhost"))
@@ -187,6 +188,41 @@ def hosted_browser_trust_from_environ(environ):
         raise ValueError("Invalid hosted browser serving configuration")
     return RequestTrust("hosted-fixture", 8000, environ.get("PILOTODIN_DEV_CAPABILITY", ""),
                         "http://127.0.0.1:5178")
+
+
+def hosted_native_trust_from_environ(environ):
+    """One explicit disposable Windows native QA serving contract, not approval."""
+    home = Path(environ.get("PILOTODIN_HOME", ""))
+    runner = Path(environ.get("RUNNER_TEMP", ""))
+    run_id = environ.get("GITHUB_RUN_ID", "")
+    if (environ.get("PILOTODIN_SERVER_MODE") != "hosted-fixture"
+            or environ.get("PILOTODIN_HOSTED_NATIVE_AUTH") != "1"
+            or environ.get("CI") != "true"
+            or environ.get("GITHUB_ACTIONS") != "true"
+            or environ.get("RUNNER_OS") != "Windows"
+            or environ.get("RUNNER_ENVIRONMENT") != "github-hosted"
+            or environ.get("GITHUB_EVENT_NAME") != "push"
+            or environ.get("GITHUB_RUN_ATTEMPT") != "1"
+            or environ.get("GITHUB_REF_NAME") != "feature/live-dev-workspace-20261023"
+            or not re.fullmatch(r"[0-9]+", run_id)
+            or not home.is_absolute() or not runner.is_absolute()
+            or ".." in home.parts or ".." in runner.parts
+            or not home.is_relative_to(runner) or home == runner
+            or home.name != "P4-71-only-home-" + run_id
+            or environ.get("PILOTODIN_DEV_PORT") != "8000"
+            or environ.get("PILOTODIN_DEV_ORIGIN") != "http://127.0.0.1:5173"
+            or environ.get("VITE_PILOTODIN_AUTH_DEV") != "1"
+            or environ.get("VITE_PILOTODIN_NATIVE_SMOKE") != "1"
+            or environ.get("PILOTODIN_DESKTOP_ALLOW_DEV", "0") != "0"
+            or any(environ.get(key) for key in (
+                "P1_REAL_HTTP_E2E", "PILOTODIN_A4_RELAY",
+                "PILOTODIN_DESKTOP_SESSION", "PILOTODIN_DESKTOP_PORT",
+                "PILOTODIN_DESKTOP_WATCH_STDIN", "PILOTODIN_CONTROL_MODE",
+                "PILOTODIN_CONTROL_GENERATION", "PILOTODIN_CONTROL_CAPABILITY"))):
+        raise ValueError("Invalid hosted native serving configuration")
+    return RequestTrust("hosted-fixture", 8000,
+                        environ.get("PILOTODIN_DEV_CAPABILITY", ""),
+                        "http://127.0.0.1:5173")
 
 
 def local_report_chain_trust_from_environ(environ):

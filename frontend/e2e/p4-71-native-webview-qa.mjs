@@ -18,11 +18,30 @@ for(const [key,value] of Object.entries(required)) {
  if(process.env[key]!==value)throw Error('P4-71 BLOCKED: wrong hosted Windows QA environment: '+key);
 }
 if(!process.env.PILOTODIN_HOME?.includes('P4-71-only-home-'))throw Error('P4-71 BLOCKED: no disposable isolated test home');
-const API='http://127.0.0.1:8000/api';
 const SITE='http://127.0.0.1:5173';
+const hostedProxy=process.env.PILOTODIN_HOSTED_NATIVE_AUTH==='1';
+if(process.env.PILOTODIN_HOSTED_NATIVE_AUTH!==undefined&&!hostedProxy)
+ throw Error('P4-71 BLOCKED: invalid native serving mode');
+if(hostedProxy&&process.env.VITE_PILOTODIN_AUTH_DEV!=='1')
+ throw Error('P4-71 BLOCKED: authenticated frontdoor required');
+// Temporary N12-only compatibility until its independent launchers migrate.
+const API=hostedProxy?SITE+'/api':'http://127.0.0.1:8000/api';
+async function nativeQaFetch(url,options={}){
+ const target=new URL(url);
+ if(typeof url!=='string'||!url.startsWith(API+'/')||target.origin!==new URL(API).origin||
+    !target.pathname.startsWith('/api/')||target.hash||target.username||target.password)
+  throw Error('P4-71 BLOCKED: out-of-scope API destination');
+ const headers=new Headers(options.headers);
+ if(hostedProxy){
+  headers.set('X-PilotODIN-Dev-Request','1');
+  headers.set('Origin',SITE);
+ }
+ return globalThis.fetch(url,{...options,headers,redirect:'error'});
+}
 const mode=process.argv[2];
 const relaunch=mode==='--verify-relaunch';
 const n12Journey=process.env.PILOTODIN_N12_APP_JOURNEY_CONSENT==='I_APPROVE_ONE_N12_APP_JOURNEY';
+if(!hostedProxy&&!n12Journey)throw Error('P4-71 BLOCKED: explicit hosted native authentication required');
 const dockingOnly=mode==='--verify-docking';
 const acceptance=mode==='--verify-acceptance';
 const fittedPrepare=mode==='--verify-fitted-prepare';
@@ -81,13 +100,13 @@ async function create(kind){
   if(csv!==p4QualityFixture)throw Error('N12 Quality input differs from the generated fixture');
  }
  form.append('file',new Blob([csv],{type:'text/csv'}),'p4-71-'+kind+'-synthetic.csv');
- const resp=await fetch(API+'/projects',{method:'POST',body:form});
+ const resp=await nativeQaFetch(API+'/projects',{method:'POST',body:form});
  if(resp.status!==201)throw Error('Synthetic project '+kind+' failed, HTTP '+resp.status);
  return (await resp.json()).id;
 }
 async function noTraining(ids){
  for(const id of ids){
-  const resp=await fetch(API+'/projects/'+id);
+  const resp=await nativeQaFetch(API+'/projects/'+id);
   if(!resp.ok)throw Error('Cannot inspect a disposable QA project');
   if((await resp.json()).experiments?.length!==0)throw Error('STOP: unexpected model experiment in disposable project');
  }
@@ -222,8 +241,8 @@ async function verifyWindowsPrepare(page,projectId){
  await expect(risk).toBeChecked();
  await expect(page.locator('.mini-info').filter({hasText:'candidate predictors'})).toContainText('1 currently included');
  await expect(category).toContainText('Excluded by user');
- const plan=await fetch(p4PreparationRequestUrl(API,projectId,'churn',0));
- const advice=await fetch(`${API}/projects/${projectId}/features?target=churn&expected_version=0`);
+ const plan=await nativeQaFetch(p4PreparationRequestUrl(API,projectId,'churn',0));
+ const advice=await nativeQaFetch(`${API}/projects/${projectId}/features?target=churn&expected_version=0`);
  expect(plan.status).toBe(200);
  expect(advice.status).toBe(200);
  expect(await plan.json()).toMatchObject({quality_version:0,target:'churn'});
@@ -283,7 +302,7 @@ async function verifySavedStrategyDisplay(page,context,projectId){
    input_schema:[{name:'amount',kind:'number',required:false}],warning:'Synthetic display fixture only'},
   error:null,final_results:null,is_stale:false,
  };
- const project=await fetch(projectUrl);
+ const project=await nativeQaFetch(projectUrl);
  expect(project.status).toBe(200);
  const genuine=await project.json();
  expect(genuine.experiments).toEqual([]);
@@ -328,7 +347,7 @@ async function runRemainingAcceptance(page,context,ids,writes){
  await check('R05 project switch',()=>verifyProjectStrategyReset(page,ids.prepare,ids.quality));
  await check('R05 Quality change',async()=>{
   await openP4FixtureWorkspace(page,SITE,ids.quality);
-  await verifyP4QualityTransition(page,API,ids.quality,url=>fetch(url),{
+  await verifyP4QualityTransition(page,API,ids.quality,url=>nativeQaFetch(url),{
    beforeEdit:()=>setPrepareOverrides(page),
    afterEdit:async()=>{
     await expectPrepareDefaults(page);
@@ -386,8 +405,9 @@ async function runNativeProbe(browser) {
    writes.push(lifecyclePermit.action);
    lifecyclePermit=null;
   }
-  const allowed=(u.origin===SITE&&['GET','HEAD'].includes(method))
-   ||(u.origin==='http://127.0.0.1:8000'&&(['GET','OPTIONS'].includes(method)||qualityWrite||lifecycleWrite))
+  const apiRequest=u.origin===new URL(API).origin&&u.pathname.startsWith('/api/');
+  const allowed=(u.origin===SITE&&!u.pathname.startsWith('/api/')&&['GET','HEAD'].includes(method))
+   ||(apiRequest&&(method==='GET'||(!hostedProxy&&method==='OPTIONS')||qualityWrite||lifecycleWrite))
    ||u.hostname==='ipc.localhost'||['tauri:','data:','blob:'].includes(u.protocol);
   if(qualityWrite)writes.push(u.pathname.split('/').at(-1));
   if(allowed)await route.continue();
@@ -401,7 +421,7 @@ async function runNativeProbe(browser) {
  console.log('ACTUAL Tauri WebView2 reached, local URL only');
  if(fittedPrepare){
   try{
-   await verifyPrepareFittedAcceptance(page,{site:SITE,api:API,request:fetch});
+   await verifyPrepareFittedAcceptance(page,{site:SITE,api:API,request:nativeQaFetch});
   }finally{
    expect(writes).toEqual([]);
    reportTraffic();
@@ -439,7 +459,7 @@ async function runNativeProbe(browser) {
   const failures=[];
   try{
    if(peer)await closeN12Peer(peer);
-   if(n12Journey)await verifyN12ReopenedUndo(url=>fetch(url),API,saved.quality);
+   if(n12Journey)await verifyN12ReopenedUndo(url=>nativeQaFetch(url),API,saved.quality);
    await verifyP4QualityAfterRelaunch(page,API,saved.quality,n12Journey?2:1);
    console.log('N11 native process relaunch restores the synthetic project and Prepare version '+(n12Journey?2:1)+': PASS');
    try{await verifyWindowsLayout(page)}catch(error){failures.push('R04');console.error('R04 check stopped:',error.message)}
@@ -545,14 +565,14 @@ async function runNativeProbe(browser) {
   await expect(blockers).toContainText('Structurally blocked target');
   console.log('N10 unnamed outcome abstains and explains a blocked manual selection: PASS');
   if(!(await chooseNativeDialogAction(chooser,ids.quality,'Switch project')))return;
-  await verifyP4QualityTransition(page,API,ids.quality,url=>fetch(url),
+  await verifyP4QualityTransition(page,API,ids.quality,url=>nativeQaFetch(url),
    peer?{reviewApproval:approveCompactQuality}:undefined);
   if(peer){
-   await verifyN12ArchiveDraft(page,peer,API,ids.quality,fetch,permitLifecycleOnce);
+   await verifyN12ArchiveDraft(page,peer,API,ids.quality,nativeQaFetch,permitLifecycleOnce,{hostedProxy});
    await closeN12Peer(peer);
   }
   console.log('N11 Quality approval, 409 for the previous version, Prepare refresh and WebView reload: PASS');
-  if(n12Journey)await verifyN12ReviewedUndo(page,API,ids.quality,url=>fetch(url),reloadP4SyntheticWorkspace);
+  if(n12Journey)await verifyN12ReviewedUndo(page,API,ids.quality,url=>nativeQaFetch(url),reloadP4SyntheticWorkspace);
   await noTraining(all);
   console.log('N12 disposable projects contain no model experiments: PASS for experiment count');
   // Reopen the same WebView with the verified version and no edited draft

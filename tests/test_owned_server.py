@@ -466,6 +466,39 @@ class C3RequestTrustTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     hosted_browser_trust_from_environ({**env,**change})
 
+    def test_c3_hosted_native_contract_before_workspace_admission(self):
+        from backend.request_auth import hosted_native_trust_from_environ, authorize
+        from backend.server_entry import owned_app
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as tmp:
+            runner = Path(tmp).resolve()
+            home = runner / "P4-71-only-home-123"
+            home.mkdir()
+            env = {"PILOTODIN_SERVER_MODE":"hosted-fixture", "PILOTODIN_HOSTED_NATIVE_AUTH":"1",
+                   "CI":"true", "GITHUB_ACTIONS":"true", "RUNNER_OS":"Windows",
+                   "RUNNER_ENVIRONMENT":"github-hosted", "GITHUB_EVENT_NAME":"push",
+                   "GITHUB_RUN_ATTEMPT":"1", "GITHUB_REF_NAME":"feature/live-dev-workspace-20261023",
+                   "RUNNER_TEMP":str(runner), "GITHUB_RUN_ID":"123", "PILOTODIN_HOME":str(home),
+                   "PILOTODIN_DEV_CAPABILITY":self.secret, "PILOTODIN_DEV_PORT":"8000",
+                   "PILOTODIN_DEV_ORIGIN":"http://127.0.0.1:5173",
+                   "VITE_PILOTODIN_AUTH_DEV":"1", "VITE_PILOTODIN_NATIVE_SMOKE":"1"}
+            trust = hosted_native_trust_from_environ(env)
+            self.assertEqual(admitted_home(env), home)
+            self.assertTrue(authorize(self.scope(trust, origin=trust.dev_origin), trust).allowed)
+            nested = runner / "journey" / home.name
+            nested.mkdir(parents=True)
+            self.assertEqual(admitted_home({**env,"PILOTODIN_HOME":str(nested)}), nested)
+            for changes in ({"PILOTODIN_DEV_CAPABILITY":""},{"PILOTODIN_DEV_ORIGIN":"http://127.0.0.1:5178"},
+                            {"GITHUB_RUN_ATTEMPT":"2"},{"RUNNER_OS":"Linux"},
+                            {"PILOTODIN_HOME":str(runner/"wrong")},{"P1_REAL_HTTP_E2E":"1"},
+                            {"PILOTODIN_DESKTOP_SESSION":self.secret},{"PILOTODIN_HOSTED_NATIVE_AUTH":"0"}):
+                with self.subTest(changes=tuple(changes)):
+                    with patch.dict(os.environ,{**env,**changes},clear=True), \
+                         patch("backend.server_entry.admitted_home",side_effect=AssertionError("Workspace inspected")):
+                        with self.assertRaises(ValueError):
+                            owned_app()
+            self.assertFalse((home/"pilotodin.sqlite3").exists())
+
     def test_c3_fixed_local_qa_phase_contracts(self):
         from backend.request_auth import local_fixed_qa_trust_from_environ, authorize
         from backend.server_entry import LOCAL_FIXTURES, owned_app

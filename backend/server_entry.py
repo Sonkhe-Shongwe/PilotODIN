@@ -171,6 +171,10 @@ def admitted_home(env):
         native = (len(relative.parts) >= 2
                   and relative.parts[-1] == "P4-71-only-home-" + run_id
                   and home.is_dir())
+        if env.get("PILOTODIN_HOSTED_NATIVE_AUTH") is not None:
+            from backend.request_auth import hosted_native_trust_from_environ
+            hosted_native_trust_from_environ(env)
+            native = (home.name == "P4-71-only-home-" + run_id and home.is_dir())
         if not (browser or native):
             raise WorkspaceBoundaryError("Unexpected hosted fixture workspace")
     elif mode == "local-devqa":
@@ -185,11 +189,14 @@ def owned_app():
     # Hosted native QA and in-process compatibility remain pending C3.
     from backend.request_auth import (RequestGuard, live_dev_trust_from_environ,
                                       hosted_browser_trust_from_environ,
+                                      hosted_native_trust_from_environ,
                                       local_report_chain_trust_from_environ,
                                       local_fixed_qa_trust_from_environ)
     mode = os.environ.get("PILOTODIN_SERVER_MODE")
     trust = None
-    if mode == "dev":
+    if os.environ.get("PILOTODIN_HOSTED_NATIVE_AUTH") is not None:
+        trust = hosted_native_trust_from_environ(os.environ)
+    elif mode == "dev":
         trust = live_dev_trust_from_environ(os.environ)
     elif mode == "hosted-fixture" and (
             os.environ.get("P1_REAL_HTTP_E2E") == "1" or

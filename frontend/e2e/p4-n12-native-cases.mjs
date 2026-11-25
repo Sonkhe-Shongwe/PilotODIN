@@ -60,10 +60,10 @@ export function matchesN12LifecycleRequest(request, api, permit) {
 }
 
 export async function verifyN12ArchiveDraft(page, peer, api, projectId, read, permitOnce, options={}) {
-  // Only the explicitly migrated hosted browser fixture needs the proxy
-  // marker. Keep the existing native QA default untouched.
+  // Both explicit hosted browser and native fixtures use the marker.
   const hostedProxy=options.hostedProxy===true;
-  if(hostedProxy&&api!=='http://127.0.0.1:5178/api')throw Error('Unexpected hosted lifecycle fixture API');
+  if(hostedProxy&&!['http://127.0.0.1:5173/api','http://127.0.0.1:5178/api'].includes(api))
+    throw Error('Unexpected hosted lifecycle fixture API');
   const primary = page.locator('.po-primary-pane .po-pane-content');
   const target = page.getByLabel('TARGET VARIABLE');
   const chooser = page.getByRole('combobox', { name: 'Switch project' });
@@ -87,7 +87,8 @@ export async function verifyN12ArchiveDraft(page, peer, api, projectId, read, pe
       expect(await peer.evaluate(async ({ projectUrl, action, revision, hostedProxy }) => {
         const headers={'Content-Type':'application/json'};
         if(hostedProxy){
-          if(location.origin!=='http://127.0.0.1:5178')throw Error('Unexpected hosted lifecycle peer');
+          if(!['http://127.0.0.1:5173','http://127.0.0.1:5178'].includes(location.origin)||
+             new URL(projectUrl).origin!==location.origin)throw Error('Unexpected hosted lifecycle peer');
           headers['X-PilotODIN-Dev-Request']='1';
         }
         const response = await fetch(`${projectUrl}/lifecycle`, {

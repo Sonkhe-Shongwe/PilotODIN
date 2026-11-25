@@ -7,13 +7,13 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | PREPARED |
+| State | PUBLISHED |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | c3fb3a47c3bb133ecb7338f846204ef6856ff90d |
 | Product baseline | d0818430bf1ad760fdc5fe97fbb5701624dafba2, four exact routine workflows SUCCESS. |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
 | Operation ID | C3-HOSTED-P4-NATIVE-TRUST-20261125-source |
-| Operation state | PREPARED |
+| Operation state | ISSUED |
 | Intended files | backend/request_auth.py, backend/server_entry.py, frontend/scripts/live-dev-api-proxy.mjs, qa/p4_native/Run_P4_71_Disposable_Windows.ps1, frontend/e2e/p4-71-native-webview-qa.mjs, frontend/e2e/p4-n12-native-cases.mjs, tests/test_owned_server.py, frontend/tests/p1-playwright-pilot-contract.test.cjs, journal. First hosted-native slice: explicit P4-71 opt-in startup, exact existing runner home, private capability, same-origin frontdoor 5173, no proxy/redirect readiness or probe; keep shared N12 legacy mode temporarily until its launchers migrate. Preserve native approval guards and mutation limits, no evidence-method changes. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | A4 d081843 P1 frontend 45565819480, P1 HTTP 45565819443, P3 HTTP 45565819471, P4 45565819496 terminal SUCCESS; P4 jobs p4-disposable-real-http-browser 139040214023 success; p4-synthetic-source-and-frontend 139040214329 success; p4-r03-windows-local-answers 139040214411 success; Exercise preservation/hash collector on synthetic Windows fixture ONLY 139040215646 skipped. A4 actual native overlay/wrapper compatibility remains outstanding. |

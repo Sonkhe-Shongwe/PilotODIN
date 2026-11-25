@@ -528,3 +528,41 @@ test('A4 relay preserves separate origin without inheriting or sending a private
  assert.match(boot,/configureDevelopmentAPI\(window\.location\.origin\)/);
  assert.match(boot,/A4 requires the authenticated Live Dev relay/);
 });
+
+
+test('explicit hosted native proxy uses private capability, exact runner allocation and same-origin transport',async()=>{
+ const {liveDevProxyTrust,liveDevProxyPlan}=await import('../scripts/live-dev-api-proxy.mjs');
+ const runner=path.resolve(__dirname,'synthetic-hosted-native');
+ const env={PILOTODIN_SERVER_MODE:'hosted-fixture',PILOTODIN_HOSTED_NATIVE_AUTH:'1',CI:'true',
+   GITHUB_ACTIONS:'true',RUNNER_OS:'Windows',RUNNER_ENVIRONMENT:'github-hosted',GITHUB_EVENT_NAME:'push',
+   GITHUB_RUN_ATTEMPT:'1',GITHUB_REF_NAME:'feature/live-dev-workspace-20261023',GITHUB_RUN_ID:'123',
+   RUNNER_TEMP:runner,PILOTODIN_HOME:path.join(runner,'P4-71-only-home-123'),PILOTODIN_DEV_PORT:'8000',
+   PILOTODIN_DEV_ORIGIN:'http://127.0.0.1:5173',PILOTODIN_DEV_CAPABILITY:'c'.repeat(64),
+   VITE_PILOTODIN_AUTH_DEV:'1',VITE_PILOTODIN_NATIVE_SMOKE:'1'};
+ const trust=liveDevProxyTrust(env);
+ assert.equal(trust.port,5173);
+ assert.equal(liveDevProxyTrust({...env,PILOTODIN_HOME:path.join(runner,'journey','P4-71-only-home-123')}).port,5173);
+ const req={url:'/api/projects',method:'GET',socket:{remoteAddress:'127.0.0.1'},
+  rawHeaders:['Host','127.0.0.1:5173','Origin','http://127.0.0.1:5173','X-PilotODIN-Dev-Request','1']};
+ const plan=liveDevProxyPlan(req,trust);
+ assert.equal(plan.options.port,8000);
+ assert.equal(plan.options.headers['x-pilotodin-dev-capability'],'c'.repeat(64));
+ assert.equal(liveDevProxyPlan({...req,rawHeaders:req.rawHeaders.slice(0,-2)},trust).status,403);
+ for(const change of [{GITHUB_RUN_ATTEMPT:'2'},{RUNNER_ENVIRONMENT:'self-hosted'},{P1_REAL_HTTP_E2E:'1'},
+   {PILOTODIN_DEV_ORIGIN:'http://127.0.0.1:5178'},{PILOTODIN_DEV_CAPABILITY:''},{PILOTODIN_HOSTED_NATIVE_AUTH:'0'},
+   {PILOTODIN_HOME:path.resolve(runner,'..','P4-71-only-home-123')}])
+   assert.throws(()=>liveDevProxyTrust({...env,...change}));
+ const probe=fs.readFileSync(path.resolve(__dirname,'../e2e/p4-71-native-webview-qa.mjs'),'utf8');
+ assert.match(probe,/!hostedProxy&&!n12Journey/);
+ assert.match(probe,/redirect:'error'/);
+ assert.match(probe,/!u\.pathname\.startsWith\('\/api\/'\)/);
+ assert.match(probe,/apiRequest&&\(method==='GET'/);
+ assert.doesNotMatch(probe,/PILOTODIN_DEV_CAPABILITY/);
+ const runnerSrc=fs.readFileSync(path.resolve(__dirname,'../../qa/p4_native/Run_P4_71_Disposable_Windows.ps1'),'utf8');
+ assert.match(runnerSrc,/backend\.server_entry:owned_app','--factory'/);
+ assert.match(runnerSrc,/'--no-proxy-headers'/);
+ assert.match(runnerSrc,/\$request\.AllowAutoRedirect=\$false/);
+ assert.match(runnerSrc,/\$request\.Proxy=\$null/);
+ assert.doesNotMatch(runnerSrc,/backend\.main:app/);
+ assert.ok(runnerSrc.indexOf('One-shot approval excludes re-runs')<runnerSrc.indexOf('RandomNumberGenerator'));
+});
