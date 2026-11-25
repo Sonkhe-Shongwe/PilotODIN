@@ -1,6 +1,6 @@
 # PilotODIN 1.0 | Current tab migration handoff
 
-**CURRENT | 25 November 2026.** P4 active. A/B and C1–C4 SOURCE CLOSED. **C5 wheel inventory verified; sidecar and asset guard batch published, exact CI outstanding (C-D08).** C5 not source closed. Source remediation **14/17 (82.4%)**; official P4 **14/20 (70%)**. G2 BLOCKED; D pending; P5 unauthorized; P8 installer frozen. All six native approvals consumed/disarmed; no new restricted operation authorized.
+**CURRENT | 25 November 2026.** P4 active. A/B and C1–C4 SOURCE CLOSED. **C5 sidecar/asset guard CI failure identified; compatibility correction published, exact CI outstanding (C-D08).** C5 not source closed. Source remediation **14/17 (82.4%)**; official P4 **14/20 (70%)**. G2 BLOCKED; D pending; P5 unauthorized; P8 installer frozen. All six native approvals consumed/disarmed; no new restricted operation authorized.
 
 ## 1. Identity and reading order
 
@@ -14,7 +14,7 @@
 | --- | ---: | --- |
 | A storage/lifecycle | 5/5 | Source closed; production evidence deferred |
 | B durable data integrity | 5/5 | Source closed; B5 library 7/7; [closure audit](./DOCUMENTATION_AUDIT_PACKAGE_B_SOURCE_CLOSURE_2026-11-24.md) |
-| C resource/trust | 4/5 | C1–C4 source closed; C5 active, wheel inventory verified; sidecar/asset guards published, exact inputs unresolved |
+| C resource/trust | 4/5 | C1–C4 source closed; C5 active, sidecar/asset guard compatibility correction published; exact provenance unresolved |
 | D consolidated verification | 0/2 | C readiness, G2 method resolution and fresh approval required |
 | Total | 14/17 | 82.4%; independent of P4 acceptance |
 
@@ -22,21 +22,23 @@ C1/C2 source closed: shared admission, owned host bridge, asynchronous inference
 
 ### Latest source checkpoint (25 November)
 
-[C5 wheel inventory hardening](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/898230f116266e064f6925c03d538c8e3b863f7e): exact P4 #45683594044 SUCCESS. [C5 sidecar/asset guard batch](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/40d0e13aca6d89f1e958513ab177f9bd5d4e9dc7) published: three legacy mutating routes unconditionally refuse; independent candidate model/server/DLL/notice byte verification, v1 receipt consistency and bounded header/flat inventory checks. Production verification still BLOCKED. Exact P4 #45684550154 IN_PROGRESS; source policy audit passed, restricted collector skipped. Both locks, source policy, observed inventory, Tauri config and vendored shell tree unchanged. Latest fully verified product remains 898230f pending reconciliation; see journal.
+[C5 sidecar/asset guard batch](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/40d0e13aca6d89f1e958513ab177f9bd5d4e9dc7): P4 #45684550154 FAILURE, Linux collection and Windows headroom job both missing legacy sha256 import; 78 Windows C5 tests/1 skipped and 3 bundle-refusal tests passed, HTTP 13 passed, collector skipped. [Correction](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/9163e6c6a4c55dae3b021aa8be90205c8fa6250d) restores read-only sha256 API and adds import regression; production verification and three mutation denials remain. Exact P4 #45684953141 IN_PROGRESS; no native dispatch. Latest fully verified product remains 898230f. Upstream metadata independently confirms pinned llama archive size/digest and candidate Linux CI Python archive identity; Windows CI Python archive lacks published digest. Wheel JSON research remains blocked; see ledger.
 
 ## 3. Product-source CI and historical failure
 
-| Exact latest fully verified source (898230f) | Result |
+| Exact source | Result |
 | --- | --- |
-| [P4 #45683594044](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45683594044) | SUCCESS: 1139 Python/6 skipped/552 subtests, 15 standalone Rust, 160 Node/Vite, 13 HTTP browser, 52 Windows C5 tests/1 skipped and parser, 68 Windows/133 subtests; restricted collector skipped |
-| [Cargo #45682825147](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45682825147) (prior 6cfb837, lock unchanged) | SUCCESS: explicit manifest path, 457 locked packages, no build/lock drift |
+| [P4 #45683594044](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45683594044) (898230f) | SUCCESS: 1139 Python/6 skipped/552 subtests, 15 Rust, 160 Node/Vite, 13 HTTP browser, 52 Windows C5/1 skipped and parser, 68 Windows/133 subtests |
+| [P4 #45684550154](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45684550154) (40d0e13) | FAILURE: removed compatibility import; Windows C5 and historical refusal passed, HTTP 13 passed |
+| [P4 #45684953141](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45684953141) (9163e6c) | IN_PROGRESS: narrow correction; reconcile exact logs |
+| [Cargo #45682825147](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45682825147) (prior 6cfb837, lock unchanged) | SUCCESS: 457 locked packages, no build/lock drift |
 
 Earlier exact successes, failures, cancellations and corrective runs are preserved in the [C ledger](./PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md) and [immutable pre-cleanup handoff](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/6ed19e9ff55e20a71f505c46903ffd9112abc1cd/docs/TAB_MIGRATION_HANDOFF_CURRENT.md). Prior backend pin `d16cfd6`: eight exact workflows SUCCESS, 252 selected C4 tests and 50 settings foundation. Evidence is scoped to exact source and tests, not native production acceptance.
 
 ## 4. Immediate next work (in order)
 
 1. **C5.0 design/readiness recorded.** [C5.0 implementation-readiness specification](./PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md) maps the inspected build/DevQA entrypoints, 85 workflow triggers, existing npm/Cargo pins, platform locks, toolchain, independent assets/licenses, failure and test plan. Exact Tauri CLI 2.12.4 source performs a Microsoft HEAD even for cached offlineInstaller input; later offline-build consumption unresolved. Full provenance and complete implementation inventory validation remain outstanding. No source or acceptance credit.
-2. **C5 implementation (next):** reconcile exact sidecar/asset guard CI. Three legacy mutating routes frozen; independent candidate verifier source only, no approved asset inventory, archive validation/extraction or atomic staging implemented. [Observed Windows/Linux wheel selections](../contracts/c5_observed_python_wheels_2026-11-25.json) and tagged-source metadata provide partial provenance. Continue precise metadata-only collection for complete wheel graphs/markers/hashes, exact toolchain and vendored crate provenance; independent runtime member/license inventory and remaining historical entrypoint coverage. Use separately scoped approval only if actual acquisition necessary. No executable fake locks, acquisition, native/installer build or activation.
+2. **C5 implementation (next):** reconcile corrective CI. Complete exact wheel metadata from [observed selections](../contracts/c5_observed_python_wheels_2026-11-25.json); direct PyPI exact JSON inaccessible. A narrowly bounded hosted metadata-only collection is proposed, not authorised or dispatched; request owner approval before any such new network operation. Independent archive member validation source work may continue. Upstream archive metadata for llama and candidate Linux Python distribution confirmed; no artifact bytes or local environment verified. Complete graph/markers, artifact hashes, toolchain and license provenance, safe archive/atomic staging and remaining entrypoint coverage. No executable fake locks, acquisition, native/installer build or activation.
 3. **C5 closure then D:** exact scoped synthetic checks and complete verified input provenance before C5 credit; 15/17 (88.2%) only once earned. D requires separate G2 proof-method decision and fresh required approvals. No P5 progression.
 
 Five unsupported historical P2/P3 native overlays remain frozen and refuse before setup. No native launch, model execution, activation, migration or release authority is created by planning or cleanup.
