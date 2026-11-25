@@ -7,14 +7,14 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | READY |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 9f75ee9436ff7d49fc74fb9fc6bc2815d6a1ba5e |
+| Observed starting HEAD | ce5e3bd2ffd3376b5eae25df43cb868af481ea54 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
-| Operation ID | C5-TOOLCHAIN-RELEASE-METADATA-20261125 |
-| Operation state | RECONCILED: exact hosted Python archive candidates (2), Linux published SHA256/size, Windows published size only; exact five upstream source references, ensurepip 24.0 source declarations and identical Node/npm package manifest; official text checksum manifests inaccessible. No actual distribution verification, production selection or acquisition. |
-| Intended files | Evidence-only qa/c5_wheel_metadata/toolchain_release_metadata_20261125.json and canonical journal/handoff/ledger; no product, policy, lock or workflow changes. |
+| Operation ID | C5-INPUT-VERIFICATION-PROPOSALS-20261125 |
+| Operation state | PREPARED: exact 68-wheel acquisition/notice plan and four-document checksum metadata proposal, synthetic scope and parser review only; no live requests or bytes acquired. |
+| Intended files | Isolated qa/c5_wheel_metadata input verification plans/reviewer, dedicated offline workflow, canonical records; preserve product, policy, collectors, locks and receipts. |
 | Approval | Eleven restricted approvals consumed/disarmed (six native, five metadata). No additional registry requests, artifacts, installs, native/model, owner device/data or installer authorized. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
 | Pending runs | None for this operation. |
