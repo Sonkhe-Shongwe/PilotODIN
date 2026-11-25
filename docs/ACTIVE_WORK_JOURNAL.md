@@ -7,17 +7,17 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | a931ff9775af8d32d391f2490cbaa15f2527aef6 |
 | Product baseline | C4 C3 frontend witness/fence 35d2bd2 + test-only a931ff9 exact P1/P4 SUCCESS. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
-| Operation ID | C4-C3-P4-FENCE-CONTRACT-CORRECTION-20261125 |
-| Operation state | ISSUED from prepared parent b87be9bd9dfc5073c0d9ed43bc44df269f8fbdfc; P4 test-only correction. Reconcile exact runs and mounted browser before enabling real cloud. |
-| Intended files | frontend/tests/desktop-ai-boundaries.test.cjs and canonical records only. |
+| Operation ID | C4-C3-MOUNTED-NAVIGATION-CORRECTION-20261125 |
+| Operation state | PREPARED; test-only use actual unified shell Home and Settings navigation; no product send activation. |
+| Intended files | frontend/e2e/isolated-workspace.spec.ts and canonical records only. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Fixture product source 59cb7a1; P1 failure #45669505045 (204/206), P4 failure #45669505080 (142/143 Node; backend, Rust, browser and simulated Windows passed; collector skipped); P2 #45669505058 and P3 #45669505140 SUCCESS. Test-only corrections 97817ee (#45669943515 P1 Isolated Frontend Verification completed/cancelled) and 222084c (#45670110570 P1 Isolated Frontend Verification pending/pending; #45670110565 P4 Target Review Queue and Transparent Ranking in_progress/pending). Latest corrected exact P1/P4 expected; discover any not yet visible by exact SHA. No mounted consent pass claimed. Last fully reconciled source a931ff9 exact P1/P4 SUCCESS. |
-| Pending runs | #45669943515 P1 Isolated Frontend Verification completed/cancelled; #45670110570 P1 Isolated Frontend Verification pending/pending; #45670110565 P4 Target Review Queue and Transparent Ranking in_progress/pending. Reconcile terminal outcomes, including cancellation; query both exact SHAs before re-execution. |
+| Verification | Exact 222084c: P4 #45670110565 SUCCESS (1086 Python/6 skipped/552 subtests, 15 Rust, 143 Node/Vite, 13 browser, 68 Windows/133 subtests; collector skipped); P1 #45670110570 FAILURE (206 Node and Vite passed, seven existing browser cases passed, both new C4 cases timed out at UI navigation). 97817ee P1 cancelled by supersession. |
+| Pending runs | None from 222084c or 97817ee; next exact P1 expected. |
 | Unpublished work | Owner-local tree not inspected. |
 | Recovery action | First reconcile exact test-only corrections and actual mounted consent cases. Fix any concrete failures without weakening audit. Before real sends, bind reviewed dataset version at request entry in both HTTP compositions and check Assistant draft preservation during busy cloud request; verify stale witness/version/provider/scope, revocation and missed renderer notifications. Keep real cloud send held and OpenRouter disabled until evidence permits narrow source enablement. Then exact CI, formal C4 closure and C5. |
 | Resume after closure | C5 then D with separately approved scope. |
