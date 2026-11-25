@@ -6,21 +6,21 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 
 | Field | Value |
 | --- | --- |
-| Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | PREPARED |
+| Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
+| State | READY |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 78c86721de75fcfcfba1c80bd5fb258039ff162b |
-| Product baseline | ebd01f4 product frontend transport verified; c329e0d hosted fixtures 5/5 SUCCESS; 83c83f8 historical QA refusal 4/4 SUCCESS. |
-| Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
+| Observed starting HEAD | 2dde2894218f0de3b0cf004edba833b7d4359dd7 |
+| Product baseline | C3 source exit supported at 78c8672, latest product ebd01f4 and verified fixture/historical changes c329e0d/83c83f8. |
+| Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
 | Operation ID | C3-SOURCE-EXIT-MATRIX-20261125 |
-| Operation state | PREPARED (documentation-only closure decision; identify by parent and operation marker) |
-| Intended files | docs/ACTIVE_WORK_JOURNAL.md; docs/TAB_MIGRATION_HANDOFF_CURRENT.md; docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md; docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md; docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md. No source/workflow/official acceptance change. |
+| Operation state | RECONCILED (C3 source closure receipt; docs-only publication identified by prepared parent 2dde289 and operation marker; verify live SHA) |
+| Intended files | C3 closure journal/handoff/ledger/directive/policy only. Next C4 source inventory before preparing a concrete write. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Reconciled exact 83c83f8 four workflows all SUCCESS; 206 frontend Node, 7 browser, 100 report Node, 5 standalone Rust report, P2 PowerShell syntax/preflight zero findings, 89 P3 Python, 16 Node, P3 Windows parser and independent evidence synthetic check. Read all baseline 93 credential-boundary candidates over audit batches and 28 additional non-test desktop-session/development-capability references; grouped semantic dispositions, 67 main app references, 11 direct endpoint modules, seven transport construction paths, 16 non-test Python HTTP paths, serving launcher and indirect/dynamic paths. Exact post-scanner delta limited to reviewed frontend/fixture/historical QA changes and docs. C-D05 and section 10 source exit supported by 76 route matrix and scoped exact CI; no claim arbitrary dynamic/OS credential/egress proof. Historical five overlays remain unavailable; existing local dev marker not a same-user hostile process security boundary. C4 provider consent/settings, C5 provenance and D native/physical evidence remain open. Three C1/C2 native workflows literal false, activation false, 85 workflow definitions unchanged. No matching docs-only trigger found in prior full review. |
-| Pending runs | None; all four last workflows terminal SUCCESS. |
+| Verification | C3 scoped source exit matrix PASS, exact relevant CI terminal success; 13/17 source, C 3/5, official P4 14/20 unchanged. No native acceptance; all six native approvals consumed/disarmed; historical overlays frozen. |
+| Pending runs | None; no product or workflow changes in closure. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Publish one C3 source exit receipt and update handoff/directive/policy to 13/17, C 3/5; official P4 14/20 unchanged. C4 next, no native/phase authority. |
-| Resume after closure | C4, C5 in order; D separately approved. |
+| Recovery action | Start C4 reader/writer/secret-store and provider consent inventory; write-ahead concrete scoped batch after exact source review. No actual cloud request, owner data, native activation or migration. |
+| Resume after closure | C5 then D with separately approved scope. |
 
 ## Prior operation
 
@@ -46,4 +46,4 @@ C-DOCUMENTATION-AUDIT-20261125-clean: owner-requested documentation audit prepar
 
 ## Unresolved or interrupted operations
 
-C1/C2 source closed; C3 explicit authentication work next. No actual application/production or physical hardware acceptance. G2 proof blocker and physical D evidence remain outstanding. Earlier B5 approvals consumed; preserve local work. [Pre-audit journal](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/bcd3a979b1bbd30ab8cd2f60ad16b9c9e25c40cf/docs/ACTIVE_WORK_JOURNAL.md) retains prior operation detail.
+C1–C3 source closed; C4 durable settings/consent next. No actual application/production or physical hardware acceptance. G2 proof blocker and physical D evidence remain outstanding. Earlier B5 approvals consumed; preserve local work. [Pre-audit journal](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/bcd3a979b1bbd30ab8cd2f60ad16b9c9e25c40cf/docs/ACTIVE_WORK_JOURNAL.md) retains prior operation detail.
