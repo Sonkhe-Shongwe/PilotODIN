@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 79506210ddec3633f20160c08459ae07ba0cafc1 |
+| Observed starting HEAD | 6d33774852db0b4c1891d0c7a74ea61a7373e4d0 |
 | Product baseline | C3 source exit supported at 78c8672, latest product ebd01f4 and verified fixture/historical changes c329e0d/83c83f8. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
-| Operation ID | C4-A-SETTINGS-FOUNDATION-20261125 |
-| Operation state | RECONCILED (published exact source [89b2631](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/89b2631a57ca6bfc11d658283229436463d7c469); no replay) |
-| Intended files | Bounded settings validation/publication helper, direct inert synthetic tests, reviewed P1 source-only CI wiring; journal/handoff and C ledger at checkpoint. No live integration until remaining exact caller/fixture compatibility and platform boundaries are reconciled. |
+| Operation ID | C4-A-HISTORICAL-REGRESSION-INVENTORY-20261125 |
+| Operation state | PREPARED; prior foundation publication and failed CI reconciled; new operation not yet issued |
+| Intended files | tests/test_desktop_foundation.py (retarget obsolete URL assertion to exact shared authenticated transport); tools/c4_settings_inventory.py, tests/test_c4_settings_inventory.py, existing P1 isolated workflow wiring; canonical records. No product source or live settings changes. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Dormant fixed-target bounded settings foundation and direct synthetic fault tests; no live writer changes. P1 isolated Ubuntu backend workflow extended to run these tests. Exact CI pending; no C4 closure. |
-| Pending runs | [P1 #45619321655](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45619321655), job 139222933616 at exact 89b2631: IN_PROGRESS; no terminal result. |
+| Verification | Exact 89b2631 P1 #45619321655 completed FAILURE; direct C4 48/48 PASS, historical desktop/import 15 pass/1 fail, three downstream steps skipped. Failure is obsolete inline upload URL assertion after C3 shared fetchLocal transport. New verification pending. |
+| Pending runs | None; prior run terminal FAILURE, retained in evidence ledger. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Published HEAD/diff verified at 89b2631. Reconcile exact P1 CI #45619321655 and its C4 test step; preserve any failure and do not claim closure from a pending run. Complete exhaustive settings/caller/fixture inventory, verify request redaction and production lease integration, then wire resource/AI/DPAPI services with direct regression tests. No actual DPAPI, cloud calls, owner data, native or installer. |
+| Recovery action | Correct historical assertion without weakening authenticated method/destination/redirect checks; run static settings candidate inventory on exact committed source via existing P1 Ubuntu workflow. Confirm non-force publication and exact run; review inventory candidates and strict production lease/fixture and API redaction before integrating live settings. No native, actual DPAPI/provider or owner data. |
 | Resume after closure | C5 then D with separately approved scope. |
 
 ## Prior operation
