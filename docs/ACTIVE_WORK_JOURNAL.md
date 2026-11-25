@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 03553c68b6988d36c62e9114779718f2e42f9873 |
 | Product baseline | a949684360d99ea052ace639afa11aa2222e4d83; exact P1/P4 terminal SUCCESS independently rechecked. |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
 | Operation ID | C3-INDIRECT-CALLER-SCANNER-20261125 |
-| Operation state | PREPARED (source-audit tooling only; identify publication by parent and operation marker) |
+| Operation state | ISSUED (source publication identified by prepared parent f1fe41e and operation marker; independently resolve SHA/run status) |
 | Intended files | tools/c3_source_caller_inventory.py; new tests/test_c3_source_caller_inventory.py; .github/workflows/p1-isolated-backend.yml (register pure scanner tests only); canonical journal, handoff and one evidence receipt. No product guard, route, approval, dependency or native workflow changes. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Prior direct-reference subset remains recorded. Reviewed all 85 workflow trigger definitions at starting HEAD in bounded batches; only P1 isolated backend matches intended source/test/workflow and documentation paths. Existing P1 job scope reviewed: disposable/synthetic, model-free historical selection, no native run. Expected new tests: lexical indirect transport, aliases, assigned clients, dynamic imports, launchers, credential references, no execution/excerpts; exact scanner and existing P1 CI. No new results yet. |
-| Pending runs | None at observed HEAD; prior exact P1/P4 terminal SUCCESS; restricted collector SKIPPED. Documentation HEAD had zero Actions runs. |
+| Verification | Scanner now retains prior categories and adds indirect HTTP/process/credential/dynamic-import lexical indicators plus conservative Python alias/instance/launcher/app/endpoint tracking. Nine inert unittest fixtures registered before exact committed scanner in existing P1 job. Full 85 workflow triggers reviewed; only existing P1 isolated backend expected. No product route or guard change. Results pending; no claim of semantic completeness. |
+| Pending runs | Expected P1 Isolated Backend Source Recovery push run at exact scanner commit; resolve from live GitHub and reconcile job/log results before further source edits. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Verify prepared journal and expected HEAD; publish bounded scanner expansion and pure fixture tests, then reconcile exact CI and use new candidate output for semantic classification. Retain bare main guard unchanged until compatibility audit complete. |
+| Recovery action | Resolve exact source/QA commit by prepared parent and operation marker; confirm P1 job conclusion and inspect expanded candidate output. Classify remaining actual indirect transports, launchers, app references and credential boundaries; then mandatory bare-main guard and full 76-route matrix. No native/model execution. |
 | Resume after closure | C4, C5 in order; D separately approved. |
 
 ## Prior operation

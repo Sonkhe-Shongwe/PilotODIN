@@ -36,6 +36,10 @@ PATTERNS = {
     "loopback-address": r"(?:localhost|127\.0\.0\.1):(?:8000|517[3-9])\b|tauri(?:\.localhost|://localhost)",
     "http-client": r"\b(?:urlopen|urlretrieve|Invoke-WebRequest|Invoke-RestMethod|HttpWebRequest|WebClient|AsyncClient|HTTPConnection|HTTPSConnection|fetch|axios)\b|\b(?:requests|httpx)\.(?:get|post|put|patch|delete|request|Client)\b",
     "api-path": r"/api(?:/|[\"'])",
+    "indirect-http": r"\b(?:build_opener|install_opener|OpenerDirector|ProxyHandler|HTTPRedirectHandler|createConnection|XMLHttpRequest|Invoke-WebRequest|Invoke-RestMethod|curl(?:\.exe)?)\b|\b(?:opener|http_opener|url_opener)\s*\.\s*open\s*\(",
+    "process-launch": r"\b(?:Popen|Start-Process|Start-Job|spawnSync|execFileSync|execFile|spawn|Command::new|Command\.new|create_subprocess_exec|create_subprocess_shell)\b|\b(?:subprocess\.(?:run|call|check_call|check_output)|uvicorn\.(?:run|Server|Config))\b",
+    "credential-boundary": r"PILOTODIN_(?:HOSTED_NATIVE_AUTH|CONTROL_(?:MODE|GENERATION|CAPABILITY)|BUNDLED_LLM_(?:TOKEN|PORT)|DATASET_EXPORT_KEY|DESKTOP_WATCH_STDIN)|VITE_PILOTODIN_(?:AUTH_DEV|NATIVE_SMOKE)|x-pilotodin-(?:session|dev-capability|export-mac)|\bAuthorization\b|\bBearer\b",
+    "dynamic-import": r"\b(?:import_module|__import__|spec_from_file_location|exec_module|runpy\.run_module|runpy\.run_path)\s*\(",
     "frontend-bootstrap": r"\b(?:apiBase|authHeaders|configureDevelopmentAPI|configureDesktopAPI|desktopBootstrap)\b|VITE_PILOTODIN_(?:AUTH_DEV|NATIVE_SMOKE)",
 }
 COMPILED = {key: re.compile(value, re.IGNORECASE) for key, value in PATTERNS.items()}
@@ -178,6 +182,133 @@ def python_references(tree: ast.AST, endpoints: set[str], found: dict[str, set[i
                 found["dynamic-main-reference"].add(node.lineno)
 
 
+# Candidate-only alias tracking, intentionally not a Python interpreter or
+# scope/data-flow proof. Keep old lexical/AST categories unchanged.
+_HTTP_FACTORIES = {
+    "urllib.request.build_opener": "@opener",
+    "urllib.request.OpenerDirector": "@opener",
+    "http.client.HTTPConnection": "@connection",
+    "http.client.HTTPSConnection": "@connection",
+    "httpx.Client": "@http-client",
+    "httpx.AsyncClient": "@http-client",
+    "requests.Session": "@http-client",
+    "requests.sessions.Session": "@http-client",
+    "fastapi.testclient.TestClient": "@http-client",
+    "starlette.testclient.TestClient": "@http-client",
+    "httpx.ASGITransport": "@transport",
+}
+_HTTP_FUNCTIONS = frozenset((
+    "urllib.request.urlopen", "urllib.request.urlretrieve",
+    "urllib.request.build_opener", "urllib.request.install_opener",
+    "urllib.request.Request",
+)) | frozenset(_HTTP_FACTORIES)
+_LAUNCH_FUNCTIONS = frozenset((
+    "subprocess.Popen", "subprocess.run", "subprocess.call",
+    "subprocess.check_call", "subprocess.check_output",
+    "asyncio.create_subprocess_exec", "asyncio.create_subprocess_shell",
+    "uvicorn.run", "uvicorn.Config", "uvicorn.Server",
+))
+_DYNAMIC_FUNCTIONS = frozenset((
+    "importlib.import_module", "__import__", "importlib.util.spec_from_file_location",
+    "runpy.run_module", "runpy.run_path",
+))
+_HTTP_METHODS = METHODS | {"open", "request", "send", "stream", "getresponse",
+                           "urlopen", "connect", "open_local_file"}
+_RELEVANT_ROOTS = frozenset(("backend", "main", "urllib", "http", "httpx",
+                             "requests", "fastapi", "starlette", "subprocess",
+                             "asyncio", "uvicorn", "importlib", "runpy"))
+
+
+def python_indirect_references(tree: ast.AST, endpoints: set[str],
+                               found: dict[str, set[int]]) -> None:
+    nodes = tuple(ast.walk(tree))
+    aliases: dict[str, set[str]] = defaultdict(set)
+
+    def relevant(value: str) -> bool:
+        return value.startswith("@") or value.split(".", 1)[0] in _RELEVANT_ROOTS
+
+    def resolve(node: ast.AST) -> set[str]:
+        # Preserve raw spelling as a conservative candidate, even if shadowed.
+        if isinstance(node, ast.Name):
+            return {node.id} | aliases.get(node.id, set())
+        if isinstance(node, ast.Attribute):
+            return {base + "." + node.attr for base in resolve(node.value)}
+        if isinstance(node, ast.Call):
+            names = resolve(node.func)
+            result = {_HTTP_FACTORIES[name] for name in names if name in _HTTP_FACTORIES}
+            if (names & _DYNAMIC_FUNCTIONS and node.args and
+                    isinstance(node.args[0], ast.Constant) and
+                    node.args[0].value in ("backend.main", "main")):
+                result.add("backend.main")
+            return result
+        return set()
+
+    for node in nodes:
+        if isinstance(node, ast.Import):
+            for item in node.names:
+                if relevant(item.name):
+                    bound = item.asname or item.name.split(".", 1)[0]
+                    aliases[bound].add(item.name if item.asname else bound)
+        elif isinstance(node, ast.ImportFrom):
+            module = node.module or ("backend" if node.level else "")
+            for item in node.names:
+                full = module + "." + item.name if module else item.name
+                if relevant(full):
+                    aliases[item.asname or item.name].add(full)
+
+    # A finite conservative propagation pass for ordinary assignment aliases,
+    # including aliased constructors and bound methods. Bound rounds explicitly:
+    # arbitrary dynamic expressions and longer chains still require review.
+    for _ in range(4):
+        changed = False
+        for node in nodes:
+            if isinstance(node, ast.Assign):
+                targets, value = node.targets, node.value
+            elif isinstance(node, ast.AnnAssign) and node.value is not None:
+                targets, value = [node.target], node.value
+            elif isinstance(node, ast.NamedExpr):
+                targets, value = [node.target], node.value
+            else:
+                continue
+            values = {name for name in resolve(value) if relevant(name)}
+            for target in targets:
+                if not isinstance(target, ast.Name) or not values:
+                    continue
+                known = aliases[target.id]
+                if not values <= known:
+                    known.update(values)
+                    changed = True
+        if not changed:
+            break
+
+    for node in nodes:
+        if isinstance(node, (ast.Name, ast.Attribute)) and isinstance(node.ctx, ast.Load):
+            for name in resolve(node):
+                if name in ("backend.main.app", "main.app"):
+                    found["python-main-app-reference"].add(node.lineno)
+                if name.rsplit(".", 1)[0] in ("backend.main", "main") and name.rsplit(".", 1)[-1] in endpoints:
+                    found["python-route-alias-reference"].add(node.lineno)
+        if not isinstance(node, ast.Call):
+            continue
+        names = resolve(node.func)
+        if any(
+            name in _HTTP_FUNCTIONS or
+            (name.rsplit(".", 1)[0] in ("httpx", "requests", "@opener", "@connection", "@http-client")
+             and name.rsplit(".", 1)[-1] in _HTTP_METHODS)
+            for name in names
+        ):
+            found["python-http-call"].add(node.lineno)
+        if names & _LAUNCH_FUNCTIONS:
+            found["python-launch-call"].add(node.lineno)
+        if names & _DYNAMIC_FUNCTIONS:
+            found["python-dynamic-import-call"].add(node.lineno)
+        if any(name.rsplit(".", 1)[0] in ("backend.main", "main")
+               and name.rsplit(".", 1)[-1] in endpoints for name in names):
+            found["python-route-alias-call"].add(node.lineno)
+        if "getattr" in names and node.args and resolve(node.args[0]) & {"backend.main", "main"}:
+            found["python-dynamic-main-reference"].add(node.lineno)
+
+
 def classify(path: str, source: str, endpoints: set[str]) -> tuple[dict[str, set[int]], bool]:
     found: dict[str, set[int]] = defaultdict(set)
     for key, pattern in COMPILED.items():
@@ -197,6 +328,7 @@ def classify(path: str, source: str, endpoints: set[str]) -> tuple[dict[str, set
             parse_failed = True
         else:
             python_references(tree, endpoints, found)
+            python_indirect_references(tree, endpoints, found)
     return dict(found), parse_failed
 
 
@@ -238,6 +370,7 @@ def main() -> None:
                      "candidate_paths": candidate_paths, "category_path_counts": dict(category_counts),
                      "ast_unparsed": len(parse_failed), "self_excluded": SELF,
                      "scope": "first-party committed code/config; candidates only, not semantic closure",
+                     "alias_propagation_round_limit": 4,
                      "line_preview_limit_per_category": 12})
 
 
