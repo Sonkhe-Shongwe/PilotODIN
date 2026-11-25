@@ -440,18 +440,28 @@ def _prompt_value(value):
 
 
 def _encode_insight_prompt(context: dict, task: str, question: str, continuation_text: str | None,
-                           *, limit: int) -> str | None:
+                           *, limit: int, cloud: bool = False) -> str | None:
+    # Local adapters keep their existing character budget. Cloud counts the
+    # actual serialized UTF-8 bytes, including JSON escaping and field names.
+    if cloud and continuation_text:
+        return None
+
     def encode(value) -> str:
         return json.dumps(value, ensure_ascii=False, default=str, allow_nan=False, separators=(',', ':'))
+
+    def size(serialized: str) -> int:
+        return len(serialized.encode('utf-8')) if cloud else len(serialized)
 
     evidence = _prompt_value(context)
     continuation = None
     if continuation_text:
         continuation = {'previous_answer_tail': continuation_text[-5500:],
                         'instruction': 'Continue without repeating earlier text.'}
-    prompt = {'task': task, 'question': question[:900], 'verified_context': evidence, 'continuation': continuation}
+    prompt = {'task': task, 'question': question[:900], 'verified_context': evidence}
+    if not cloud:
+        prompt['continuation'] = continuation
     full = encode(prompt)
-    if len(full) <= limit:
+    if size(full) <= limit:
         return full
 
     experiment = evidence.get('experiment') or {}
@@ -471,16 +481,16 @@ def _encode_insight_prompt(context: dict, task: str, question: str, continuation
     tail = continuation['previous_answer_tail'] if continuation else ''
     if continuation:
         continuation['previous_answer_tail'] = ''
-    remaining = limit - len(encode(prompt))
+    remaining = limit - size(encode(prompt))
     if remaining < 0:
         return None
     if continuation:
         # Reserve most of the prompt for current facts when history competes with evidence.
         tail_limit = min(remaining, limit // 3) if collections else remaining
-        while len(encode(tail)) - 2 > tail_limit:
+        while size(encode(tail)) - 2 > tail_limit:
             tail = tail[max(1, len(tail) // 2):]
         continuation['previous_answer_tail'] = tail
-        remaining -= len(encode(tail)) - 2
+        remaining -= size(encode(tail)) - 2
 
     # Keep prefixes of whole records, alternating sections so wide column lists
     # cannot crowd out comparisons and other findings. Count omitted records for the model.
@@ -489,7 +499,7 @@ def _encode_insight_prompt(context: dict, task: str, question: str, continuation
             kept = parent[key]
             if item is None or len(kept) != index:
                 continue
-            cost = len(encode(item)) + (1 if kept else 0)
+            cost = size(encode(item)) + (1 if kept else 0)
             if cost <= remaining:
                 kept.append(item)
                 omitted[label] -= 1
@@ -498,7 +508,8 @@ def _encode_insight_prompt(context: dict, task: str, question: str, continuation
         prompt['omitted_context_items'] = {label: count for label, count in omitted.items() if count}
         if not prompt['omitted_context_items']:
             del prompt['omitted_context_items']
-    return encode(prompt)
+    fitted = encode(prompt)
+    return fitted if size(fitted) <= limit else None
 
 
 def respond(context:dict,task:str,question:str,local_answer:str,deep:bool=False,selected_provider:str|None=None,
@@ -653,8 +664,14 @@ def owned_cloud_insight(context,task,question,local_answer,deep,selected_provide
     # Positive nested payload projection follows in B; retain the existing
     # bounded prompt and individual prediction exclusion at this step.
     cloud_context={k:v for k,v in context.items() if k!="prediction"}
-    user=_encode_insight_prompt(cloud_context,task,question,None,limit=CLOUD_PROMPT_LIMIT)
-    if user is None or len(user.encode("utf-8"))>CLOUD_PROMPT_LIMIT:
+    try:
+        user=_encode_insight_prompt(cloud_context,task,question,None,
+                                   limit=CLOUD_PROMPT_LIMIT,cloud=True)
+        fits=user is not None and len(user.encode("utf-8"))<=CLOUD_PROMPT_LIMIT
+    except (ValueError, TypeError, OverflowError):
+        # Invalid Unicode/serialization cannot reach credentials or transport.
+        fits=False
+    if not fits:
         fallback["reason"]="Verified context exceeds the provider prompt limit"
         return fallback
     provider=selected_provider

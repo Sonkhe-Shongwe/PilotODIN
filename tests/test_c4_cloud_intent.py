@@ -125,3 +125,76 @@ def test_legacy_http_named_request_requires_intent(product_composition,dispatch)
         assert response.json()["provider"]=="gemini" and len(calls)==1
     finally:
         client.close()
+
+
+@pytest.mark.parametrize("value",["é", "漢", "😀", '"\\\n\u0001'])
+def test_cloud_serialized_byte_boundary(dispatch,value):
+    cfg,calls=dispatch
+    # Compute the exact remaining budget from a minimal fresh cloud envelope.
+    # JSON escape sequences can take more bytes than the original characters.
+    empty=ai._encode_insight_prompt({"required":""},"assistant","Question",None,
+                                    limit=ai.CLOUD_PROMPT_LIMIT,cloud=True)
+    overhead=len(empty.encode("utf-8"))
+    encoded_unit=len(json.dumps(value,ensure_ascii=False).encode("utf-8"))-2
+    budget=ai.CLOUD_PROMPT_LIMIT-overhead
+    required=value*(budget//encoded_unit)+"a"*(budget%encoded_unit)
+    context={"required":required}
+    result=ai.respond(context,"assistant","Question","Rules",
+                      selected_provider="gemini",cloud_intent=True)
+    assert result["provider"]=="gemini" and len(calls)==1
+    wire=calls[0][2]
+    assert len(wire.encode("utf-8"))==ai.CLOUD_PROMPT_LIMIT
+    assert json.loads(wire)=={"task":"assistant","question":"Question",
+                              "verified_context":context}
+    result=ai.respond({"required":required+"a"},"assistant","Question","Rules",
+                      selected_provider="gemini",cloud_intent=True)
+    assert result["fallback"] and len(calls)==1
+
+
+def test_cloud_wide_unicode_retains_required_metrics_and_whole_prefix(dispatch):
+    cfg,calls=dispatch
+    columns=[{"name":f"{i:02d} "+'漢😀é"\\'*40,"mean":i} for i in range(50)]
+    context={"dataset_version":3,"row_count":50,"columns":columns,
+             "experiment":{"metrics":{"accuracy":0.8},
+                           "comparison":[{"key":"model","cv_metric":0.81}]},
+             "prediction":{"outcome":"PRIVATE_PREDICTION"}}
+    original=json.dumps(context,ensure_ascii=False)
+    question="Explain the \"score\" — 統計"
+    result=ai.respond(context,"evaluate",question,"Rules",
+                      selected_provider="gemini",cloud_intent=True)
+    assert result["provider"]=="gemini" and len(calls)==1
+    wire=calls[0][2]
+    assert len(wire.encode("utf-8"))<=ai.CLOUD_PROMPT_LIMIT
+    payload=json.loads(wire)
+    assert payload["question"]==question and "continuation" not in payload
+    evidence=payload["verified_context"]
+    assert evidence["experiment"]==context["experiment"]
+    assert evidence["dataset_version"]==3 and evidence["row_count"]==50
+    kept=evidence["columns"]
+    assert 0<len(kept)<len(columns) and kept==columns[:len(kept)]
+    assert payload["omitted_context_items"]=={"columns":len(columns)-len(kept)}
+    assert "PRIVATE_PREDICTION" not in wire
+    assert json.dumps(context,ensure_ascii=False)==original
+
+
+def test_cloud_invalid_unicode_refused_before_credential_read(dispatch,monkeypatch):
+    cfg,calls=dispatch
+    def unexpected(*args):
+        pytest.fail("Invalid prompt reached credential read")
+    monkeypatch.setattr(ai,"_get_key",unexpected)
+    result=ai.respond({"column":"\ud800"},"assistant","Question","Rules",
+                      selected_provider="gemini",cloud_intent=True)
+    assert result["fallback"] and calls==[]
+
+
+def test_cloud_encoder_refuses_history_and_keeps_local_format():
+    context={"row_count":30,"prediction":{"outcome":"local"}}
+    assert ai._encode_insight_prompt(context,"predict","Question","Prior answer",
+                                     limit=11000,cloud=True) is None
+    fresh=json.loads(ai._encode_insight_prompt(context,"predict","Question",None,limit=9000))
+    assert fresh["continuation"] is None and fresh["verified_context"]==context
+    local=json.loads(ai._encode_insight_prompt(context,"predict","Question","Prior answer",
+                                               limit=9000))
+    assert local["continuation"]["previous_answer_tail"]=="Prior answer"
+    assert local["verified_context"]==context
+

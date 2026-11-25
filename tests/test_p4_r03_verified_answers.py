@@ -403,7 +403,7 @@ class CloudEvaluationPrivacyTests(unittest.TestCase):
         self.transport.assert_called_once()
         envelope = json.loads(self.transport.call_args.args[0].data)
         text = envelope['contents'][0]['parts'][0]['text']
-        self.assertLessEqual(len(text), 11000)
+        self.assertLessEqual(len(text.encode('utf-8')), 11000)
         return json.loads(text)
 
     def sent_context(self):
