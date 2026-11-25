@@ -9,6 +9,7 @@ from __future__ import annotations
 if __name__ == '__main__':
     raise SystemExit('FRESH_APPROVAL_REQUIRED: wheel acquisition is disabled')
 
+from contextlib import nullcontext
 import hashlib
 import http.client
 import io
@@ -32,8 +33,9 @@ HOST = 'files.pythonhosted.org'
 MEDIA = {'application/octet-stream', 'binary/octet-stream', 'application/zip'}
 FAILURES = {'HTTP_STATUS','CONTENT_TYPE','CONTENT_ENCODING','FRAMING',
             'BODY_LENGTH','DUPLICATE_HEADER','HEADER_SYNTAX','INCOMPLETE_BODY',
-            'BODY_HASH','TRANSPORT_ERROR','INSPECTION_REFUSED'}
+            'BODY_HASH','TRANSPORT_ERROR','INSPECTION_REFUSED','REQUEST_DEADLINE'}
 SCOPE = 'SYNTHETIC_ONLY_DISABLED'
+HOSTED_SCOPE = 'HOSTED_CANDIDATE_INTEGRITY_ONLY'
 
 
 def need(ok, reason):
@@ -193,6 +195,13 @@ def _receive(row, response, state, scratch):
 def _run(rows, plan_blob, replay, parent):
     """Synthetic protocol only; never call arbitrary connection objects."""
     need(type(replay) is Replay and LIVE_ENABLED is False, 'OFFLINE_FIXTURE_ONLY')
+    return _run_core(rows, plan_blob, replay.get, parent, nullcontext, SCOPE)
+
+
+def _run_core(rows, plan_blob, fetch, parent, deadline, scope):
+    # Internal protocol seam; only the synthetic entrypoint and separately gated
+    # hosted proposal may call this. Not an acquisition authorization boundary.
+    need(scope in (SCOPE, HOSTED_SCOPE), 'COLLECTION_SCOPE')
     rows = plan_rows(rows)
     batch = n._EvidenceBatch(rows, plan_blob)
     store = _Generation(parent)
@@ -208,8 +217,14 @@ def _run(rows, plan_blob, replay, parent):
         evidence = None
         response = None
         try:
-            response = replay.get(intent['url'])
-            raw = _receive(row, response, state, store.path)
+            with deadline():
+                try:
+                    response = fetch(intent['url'])
+                    raw = _receive(row, response, state, store.path)
+                finally:
+                    if response is not None:
+                        response.close()
+                        response = None
         except w.Blocked as exc:
             reason = str(exc)
             need(reason in FAILURES, 'UNEXPECTED_REFUSAL')
@@ -240,7 +255,7 @@ def _run(rows, plan_blob, replay, parent):
         store.put(prefix+'-result.json', n.canonical(result))
         if reason is not None:
             break
-    manifest = {'schema_version':1,'scope':SCOPE,'plan_blob':plan_blob,
+    manifest = {'schema_version':1,'scope':scope,'plan_blob':plan_blob,
                 'status':'CANDIDATE_EVIDENCE_RECORDED' if verified == len(rows) else 'BLOCKED',
                 'expected_count':len(rows),'attempted_count':attempted,
                 'verified_count':verified,'received_bytes':total,
@@ -267,7 +282,7 @@ def parse(raw):
         raise w.Blocked('MALFORMED_EVIDENCE') from None
 
 
-def verify_generation(path, manifest_sha, rows, plan_blob):
+def verify_generation(path, manifest_sha, rows, plan_blob, *, scope=SCOPE):
     """Independent read-only replay. Missing terminal manifest is unsettled."""
     rows = plan_rows(rows)
     path = Path(path)
@@ -281,7 +296,7 @@ def verify_generation(path, manifest_sha, rows, plan_blob):
             'attempted_count','verified_count','received_bytes','missing',
             'license_reviewed','production_ready','files'}
     need(set(m) == keys and type(m['schema_version']) is int and m['schema_version'] == 1
-         and m['scope'] == SCOPE and m['plan_blob'] == plan_blob
+         and scope in (SCOPE, HOSTED_SCOPE) and m['scope'] == scope and m['plan_blob'] == plan_blob
          and m['license_reviewed'] is False and m['production_ready'] is False,
          'MANIFEST_IDENTITY')
     count = m['attempted_count']

@@ -7,17 +7,17 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 82262af7e2c08b87fe65e3a11543977448c845bf |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
 | Operation ID | C5-WHEEL-HOSTED-TRANSFER-20261126 |
-| Operation state | PREPARED: disabled hosted TLS adapter and POSIX absolute deadline, bounded portable receipt export/import with independent digests, synthetic tests only. No activation marker, live requests or external publication. Prior exact 45723739297 SUCCESS. |
+| Operation state | PUBLISHED/VERIFYING if live HEAD confirmed: disabled hosted TLS adapter, POSIX deadline, receipt export/import and capacity fixtures; no live adapter invocation or hosted artifact transfer. Exact CI pending. |
 | Intended files | Existing qa/c5_wheel_metadata/wheel_acquisition_offline.py, new wheel_hosted_proposal.py and test_wheel_hosted_proposal.py; existing archive synthetic workflow; journal/handoff/ledger. Previous 97 triggers unchanged, archive workflow only expected match. No product source or approval changes. |
 | Approval | Twelve restricted approvals consumed/disarmed (six native, six metadata). No additional registry/metadata requests, artifacts, installs, native/model, owner device/data or installer authorized. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | None issued; dedicated Ubuntu/Windows synthetic matrix only. |
+| Pending runs | Inspect exact source push (parent 611bc4f7ab61dc8247c104a604be46dbf3e4acd2), dedicated archive synthetic workflow only. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
 | Recovery action | Reconcile actual branch, exact CI, limitations and failure evidence. Keep collection disabled; external artifact transfer/one-use activation separate and requires fresh approval. Remaining checksum proposal separately awaits approval. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |

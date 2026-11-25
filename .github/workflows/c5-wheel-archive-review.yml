@@ -10,6 +10,8 @@ on:
       - qa/c5_wheel_metadata/test_wheel_notice_evidence.py
       - qa/c5_wheel_metadata/wheel_acquisition_offline.py
       - qa/c5_wheel_metadata/test_wheel_acquisition_offline.py
+      - qa/c5_wheel_metadata/wheel_hosted_proposal.py
+      - qa/c5_wheel_metadata/test_wheel_hosted_proposal.py
 permissions:
   contents: read
 jobs:
@@ -32,6 +34,7 @@ jobs:
           python -I -B qa/c5_wheel_metadata/test_wheel_archive_inspector.py
           python -I -B qa/c5_wheel_metadata/test_wheel_notice_evidence.py
           python -I -B qa/c5_wheel_metadata/test_wheel_acquisition_offline.py
+          python -I -B qa/c5_wheel_metadata/test_wheel_hosted_proposal.py
       - name: Require direct acquisition refusal
         shell: bash
         run: |
@@ -62,3 +65,13 @@ jobs:
           printf '%s\n' "$result"
           test "$code" = 1
           test "$result" = 'FRESH_APPROVAL_REQUIRED: wheel acquisition is disabled'
+      - name: Require disabled hosted wheel collection
+        shell: bash
+        run: |
+          set +e
+          result=$(python -I -B qa/c5_wheel_metadata/wheel_hosted_proposal.py --collect 2>&1)
+          code=$?
+          set -e
+          printf '%s\n' "$result"
+          test "$code" = 1
+          test "$result" = 'FRESH_APPROVAL_REQUIRED: hosted wheel acquisition is disabled'
