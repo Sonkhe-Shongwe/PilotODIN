@@ -1239,3 +1239,19 @@ Prepared parent `436b54bf91560739ce65f3f5280536a59e8a81d8`. Both panels use vali
 
 
 Exact published desktop gate source `76e9d0fb5f7a060ca0a89a937b8a21eb64e4b062`; observed CI: #45673926563 P4 Target Review Queue and Transparent Ranking queued; #45673926641 P1 Isolated Frontend Verification in_progress; #45673926651 P3 Real HTTP Semantic Context Browser Acceptance in_progress. Source-only gate remains unverified until exact outcomes; no actual cloud request or owner/native operation. Preserve earlier successful exact backend and mounted frontend receipts. Formal source closure pending; official P4 14/20 and remediation 13/17 unchanged.
+
+
+## 25 November | C4 source exit audit and formal source closure
+
+Exact desktop gate `76e9d0fb5f7a060ca0a89a937b8a21eb64e4b062`: P1 #45673926641 SUCCESS (206 Node, TypeScript/Vite, 11/11 Chromium; job 139416287673); P3 #45673926651 SUCCESS (3 real HTTP browser; job 139416288188); P4 #45673926563 SUCCESS (1086 Python, 6 skipped, 552 subtests, 15 Rust, 146 Node/Vite including all three new confirmed POST regressions; job 139416288324; 13 HTTP browser job 139416288348; 68 Windows/133 subtests and five simulated scenarios job 139416287756; restricted collector 139416289955 skipped).
+
+| Required C-D06/07 result | Scoped source evidence / disposition |
+| --- | --- |
+| Bounded compatible settings, exact owned stage/identity, flush/replace/postcheck, uncertainty and foreign preservation | Foundation `89b2631`/correction `17b9477`, resource `a6e4b3b`, AI/credential `af49863`, bounded settings HTTP `e94d87f` and import witness correction `41db8e7`; prior exact receipts preserved. P1 `d16cfd6` 50 foundation and 252 C4/selected tests PASS. |
+| Existing preferences, encrypted DPAPI format, memory-only non-Windows, strict key/settings validation and redaction | Same scoped AI/settings integration and inert adapters; no actual Windows DPAPI/native durability proof. |
+| Explicit intent and named provider, saved permission, no implicit startup/probe/fallback/fanout | Common B1 `d43c9a4` + UTF-8 correction `eb5fd3f`, B8 final `1eb5e13`, witness `77de1c5`, backend pin `d16cfd6`; eight exact backend workflows pass at pin. Legacy explicit callers without witness retained; not claimed to have renderer freshness. |
+| Positive bounded projection, no raw rows/paths/prediction/history, no anonymity claim; strict transport and deadline/revocation | B6 `1a1799d`, B7/B8 and final `1eb5e13` receipts retained; selected inert C4 tests PASS. No live provider or physical cancellation proof. Already sent bytes cannot be recalled; slot retained until actual worker completion. |
+| Fresh witnessed consent/version, explicit per-click disclosure and confirmation, stale result suppression and draft retention | `d16cfd6`, `ee5985c`, final `76e9d0f`; 11/11 mounted Chromium including four consent cases; dedicated authenticated local POST, unsupported origin, stale/invalid request and redirect/no-retry mocks PASS. |
+| Regression integrity, no native/installer/owner-data operation | All exact final matching workflows SUCCESS, prior exact intermediate failures/cancellations retained; restricted collector skipped. No native acceptance credit. |
+
+C4 source closure earned under C specification §10. Scope is source/isolated synthetic evidence, not production/native acceptance. Actual desktop use, native DPAPI and filesystem durability, physical egress, resource/lifecycle proof remain D; G2 remains blocked. No OpenRouter project send; ordinary dev/QA project-cloud UI held (conservative source decision, no product identity inferred). Owner-local unpublished tree uninspected. A 5/5, B 5/5, C 4/5, D 0/2: **14/17 (82.4%)**, prior 13/17. Official P4 remains **14/20 (70%)**. C5 active under C-D08, no downloads/installer/activation authority.

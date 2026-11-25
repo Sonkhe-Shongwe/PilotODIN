@@ -6,21 +6,21 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 
 | Field | Value |
 | --- | --- |
-| Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | VERIFYING |
+| Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
+| State | READY |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | a931ff9775af8d32d391f2490cbaa15f2527aef6 |
-| Product baseline | Frontend version/draft integration ee5985c exact P1/P4 SUCCESS; backend pin d16cfd6 exact eight workflows SUCCESS. |
-| Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
-| Operation ID | C4-C3-DESKTOP-PROJECT-CLOUD-SOURCE-GATE-20261125 |
-| Operation state | ISSUED from prepared parent 436b54bf91560739ce65f3f5280536a59e8a81d8; authenticated desktop source gate and dedicated confirmed POST. Other dev/QA frontdoors held. No live cloud operation. |
-| Intended files | frontend/src/api.ts, cloudConsentSession.ts, AIWorkspace.tsx, AssistantWorkspace.tsx, frontend/tests/desktop-ai-boundaries.test.cjs; C specification and canonical records. |
+| Observed starting HEAD | 800b18a5aed181791e53af2a2b88724b6dc27f4f |
+| Product baseline | C4 source closed at verified product 76e9d0f; C5 not implemented. |
+| Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
+| Operation ID | C4-SOURCE-CLOSURE-20261125 |
+| Operation state | RECONCILED; C4 source closure recorded, C5 inventory next. |
+| Intended files | Canonical records only for C4 closure. C5 inventory read-only before any prepared source edit. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Exact frontend integration `ee5985c5722935dd91f9a896f7d728d20df098fe`: P1 #45672477038 SUCCESS (206 Node, TypeScript/Vite, 11/11 Chromium including all four C4 mounted scenarios; job 139411144989); P4 #45672477045 SUCCESS (routine source/frontend, disposable HTTP and simulated Windows jobs 139411146680, 139411146523, 139411146169; restricted collector 139411148643 skipped). Prior exact d16cfd6 eight workflows SUCCESS; selected C4 backend 252 passed. |
-| Pending runs | Exact 76e9d0fb5f7a060ca0a89a937b8a21eb64e4b062: #45673926563 P4 Target Review Queue and Transparent Ranking queued; #45673926641 P1 Isolated Frontend Verification in_progress; #45673926651 P3 Real HTTP Semantic Context Browser Acceptance in_progress. Reconcile terminal outcomes before C4 closure. |
+| Verification | Exact desktop gate `76e9d0fb5f7a060ca0a89a937b8a21eb64e4b062`: P1 #45673926641 SUCCESS (206 Node, TypeScript/Vite, 11/11 Chromium; job 139416287673); P3 #45673926651 SUCCESS (3 real HTTP browser; job 139416288188); P4 #45673926563 SUCCESS (1086 Python, 6 skipped, 552 subtests, 15 Rust, 146 Node/Vite including all three new confirmed POST regressions; job 139416288324; 13 HTTP browser job 139416288348; 68 Windows/133 subtests and five simulated scenarios job 139416287756; restricted collector 139416289955 skipped). C-D06/07 matrix in C ledger. |
+| Pending runs | None for 76e9d0f. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Reconcile exact desktop gate source CI, including dedicated authenticated POST mocks, unsupported dev refusal, stale/invalid payloads and mounted synthetic confirmation. No live cloud operation. Complete formal C4 closure matrix only after exact evidence; then C5. |
-| Resume after closure | C5 then D with separately approved scope. |
+| Recovery action | Inventory exact dependency locks, all packaging/preflight entrypoints, existing CI resolution evidence and asset/license/toolchain provenance. Identify unsafe fallback and missing complete Windows x64 hashes. Prepare next bounded C5 source operation; no actual acquisition/build or invented hashes. |
+| Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
 
@@ -28,4 +28,4 @@ C4-RESEARCH-AND-IMPLEMENTATION-PLAN-20261125: [`bd7c163`](https://github.com/Son
 
 ## Unresolved or interrupted operations
 
-C1–C3 source closed; C4 frontend witness foundation verified at a931ff9; mounted consent and server version pin exact verification reconciled at c206063 and d16cfd6; frontend version and draft protection verified at ee5985c; narrow product-source enablement and formal closure outstanding. No actual application/production or physical hardware acceptance. G2 proof blocker and physical D evidence remain outstanding. Earlier B5 approvals consumed; preserve local work. [Pre-audit journal](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/bcd3a979b1bbd30ab8cd2f60ad16b9c9e25c40cf/docs/ACTIVE_WORK_JOURNAL.md) retains prior operation detail.
+A/B and C1–C4 source closed; C5 outstanding. Source 14/17 (82.4%), official P4 14/20 (70%). Native DPAPI, actual desktop/physical egress and durability, physical 8 GB and G2/D evidence deferred. Owner-local tree uninspected. All six native approvals consumed/disarmed; preserve local work, installer freeze unchanged. Historical failures and exact receipts retained in C ledger.
