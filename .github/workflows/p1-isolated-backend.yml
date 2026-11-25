@@ -46,6 +46,8 @@ on:
       - desktop/verify_live_bundled_inference.py
       - backend/bundled_inference.py
       - tests/test_c3_local_verifier_trust.py
+      - diagnostics/Check_Local_API.ps1
+      - diagnostics/check_local_api.py
       - tests/test_p2_legacy_pdf_visual_source.py
       - tests/test_build_d_unified_journey.py
       - tests/test_canvas_investigations.py

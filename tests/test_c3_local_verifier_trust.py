@@ -270,3 +270,113 @@ def test_production_bundled_client_never_follows_worker_redirect_or_leaks_respon
         server.shutdown()
         server.server_close()
         thread.join(timeout=3)
+
+
+@pytest.mark.parametrize("port,path,headers", (
+    (5173, "/api/health", {"Origin": "http://127.0.0.1:5173", "X-PilotODIN-Dev-Request": "1"}),
+    (5173, "/api/projects", {"Origin": "http://127.0.0.1:5173", "X-PilotODIN-Dev-Request": "1"}),
+    (5173, "/api/projects/" + "a"*32 + "/live-profile",
+     {"Origin": "http://127.0.0.1:5173", "X-PilotODIN-Dev-Request": "1"}),
+    (11434, "/api/tags", {}),
+))
+def test_historical_diagnostic_exact_read_destination(port, path, headers, monkeypatch):
+    from diagnostics import check_local_api as diagnostic
+    monkeypatch.setenv("HTTP_PROXY", "http://invalid.example:3128")
+    monkeypatch.setenv("PILOTODIN_DEV_CAPABILITY", "a"*64)
+    conn = Mock()
+    response = conn.getresponse.return_value
+    response.status = 200
+    response.read.return_value = b'{}'
+    with patch.object(diagnostic.http.client, "HTTPConnection", return_value=conn) as connect:
+        assert diagnostic.read_local(port, path) == {}
+    connect.assert_called_once_with("127.0.0.1", port, timeout=8)
+    conn.request.assert_called_once_with("GET", path, headers=headers)
+    conn.close.assert_called_once()
+
+
+@pytest.mark.parametrize("port,path", (
+    (8000, "/api/health"), (True, "/api/health"), (5173, "/api/tags"),
+    (11434, "/api/health"), (5173, "/api/projects?x=1"),
+    (5173, "/api/projects/../live-profile"),
+    (5173, "/api/projects/" + "a"*32 + "/delete"),
+    (5173, "http://invalid.example/api/health"),
+))
+def test_historical_diagnostic_refuses_other_destinations(port, path):
+    from diagnostics import check_local_api as diagnostic
+    with patch.object(diagnostic.http.client, "HTTPConnection") as connect:
+        with pytest.raises(diagnostic.DiagnosticRefused, match="destination"):
+            diagnostic.read_local(port, path)
+    connect.assert_not_called()
+
+
+@pytest.mark.parametrize("status", (301, 302, 303, 307, 308, 401, 503))
+def test_historical_diagnostic_never_follows_redirect_or_reads_error(status):
+    from diagnostics import check_local_api as diagnostic
+    conn = Mock()
+    response = conn.getresponse.return_value
+    response.status = status
+    with patch.object(diagnostic.http.client, "HTTPConnection", return_value=conn) as connect:
+        with pytest.raises(diagnostic.DiagnosticRefused, match=f"HTTP {status}"):
+            diagnostic.read_local(5173, "/api/health")
+    connect.assert_called_once()
+    conn.request.assert_called_once()
+    response.read.assert_not_called()
+    conn.close.assert_called_once()
+
+
+@pytest.mark.parametrize("body,match", ((b"invalid", "JSON"), (b"x"*(4*1024*1024+1), "limit")))
+def test_historical_diagnostic_bounded_response(body, match):
+    from diagnostics import check_local_api as diagnostic
+    conn = Mock()
+    response = conn.getresponse.return_value
+    response.status = 200
+    response.read.return_value = body
+    with patch.object(diagnostic.http.client, "HTTPConnection", return_value=conn):
+        with pytest.raises(diagnostic.DiagnosticRefused, match=match):
+            diagnostic.read_local(5173, "/api/health")
+    response.read.assert_called_once_with(diagnostic.MAX_RESPONSE + 1)
+    conn.close.assert_called_once()
+
+
+def test_historical_diagnostic_health_failure_stops_all_other_reads(capsys):
+    from diagnostics import check_local_api as diagnostic
+    with patch.object(diagnostic, "read_local", side_effect=diagnostic.DiagnosticRefused("HTTP 401")) as read:
+        assert diagnostic.main() == 1
+    read.assert_called_once_with(5173, "/api/health")
+    assert "no further requests made" in capsys.readouterr().out
+
+
+def test_historical_diagnostic_existing_read_only_journey(capsys):
+    from diagnostics import check_local_api as diagnostic
+    project = "a"*32
+    with patch.object(diagnostic, "read_local", side_effect=[
+        {"status": "ok"}, [{"id": project, "name": "missingness"}],
+        {"private": "DO-NOT-PRINT"}, {}, [], [], {"models": []},
+    ]) as read:
+        assert diagnostic.main() == 0
+    assert [c.args for c in read.call_args_list] == [
+        (5173, "/api/health"), (5173, "/api/projects"),
+        *((5173, "/api/projects/" + project + suffix) for suffix in
+          ("/live-profile", "/explore/overview", "/investigations", "/explore/recommended")),
+        (11434, "/api/tags"),
+    ]
+    assert "DO-NOT-PRINT" not in capsys.readouterr().out
+
+
+def test_historical_diagnostic_rejects_untrusted_project_identity(capsys):
+    from diagnostics import check_local_api as diagnostic
+    with patch.object(diagnostic, "read_local", side_effect=[
+        {"status": "ok"}, [{"id": "../untrusted"}], {"models": []},
+    ]) as read:
+        assert diagnostic.main() == 1
+    assert [c.args for c in read.call_args_list] == [
+        (5173, "/api/health"), (5173, "/api/projects"), (11434, "/api/tags"),
+    ]
+    assert "../untrusted" not in capsys.readouterr().out
+
+
+def test_historical_diagnostic_launcher_retains_isolated_entrypoint():
+    source = (ROOT / "diagnostics" / "Check_Local_API.ps1").read_text(encoding="utf-8")
+    assert ".venv-live" in source and "check_local_api.py" in source
+    assert "Invoke-RestMethod" not in source and ":8000" not in source
+    assert "exit $LASTEXITCODE" in source

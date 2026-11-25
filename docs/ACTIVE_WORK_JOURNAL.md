@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 1fe8531bd913be555aae5bdffff0ac3240930cb2 |
 | Product baseline | 6b257546734f01808c9dee8c6ef840ea63200fb1 exact P1/P4 terminal SUCCESS. |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
 | Operation ID | C3-HISTORICAL-DIAGNOSTIC-20261125 |
-| Operation state | PREPARED (historical diagnostic correction; publication identified by prepared parent and operation marker) |
+| Operation state | ISSUED (diagnostic publication identifiable by prepared parent d2f6760 and operation marker; resolve exact SHA) |
 | Intended files | diagnostics/Check_Local_API.ps1; diagnostics/check_local_api.py; tests/test_c3_local_verifier_trust.py; .github/workflows/p1-isolated-backend.yml (explicit paths only); canonical journal, handoff and evidence. Keep Diagnose_PilotODIN.bat interface, existing read-only routes and separate Ollama inventory. No product server, approval, native workflow or dependency change. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Exact 6b25754 P1 #45600104262 and P4 #45600104253 terminal SUCCESS; 25 additional local transport tests passed, collector skipped. Reviewed old diagnostic, actual BAT, retired legacy launcher, paired Vite proxy plan, Live Dev launchers and existing verifier. Use fixed existing paired Vite frontdoor (5173, Origin and dev-request marker; no private capability), direct HTTPConnection no proxy or redirect; separate existing Ollama inventory on 11434 with no app header. Strict route allowlist, bounded response, fail closed on unavailable frontdoor, no raw body/error print, no fallback to port 8000. Reuse existing Live Dev venv and P1 pure/mock test group. Previously inspected 85 trigger definitions; only P1 expected for diagnostic/test/workflow path changes. No actual owner diagnostic execution. |
-| Pending runs | None; previous exact P1/P4 terminal SUCCESS. |
+| Verification | Prior product 6b25754 exact P1/P4 SUCCESS; 25 new local inference cases passed. Historical diagnostics migrated to paired 5173 frontdoor, strict fixed GET destinations, no capability propagation, no proxy/redirect, bounded JSON, health refusal and separate local Ollama inventory. Existing PowerShell launcher calls isolated venv Python; no new dependencies, no actual local service execution. 25 mocked/source cases registered through existing P1 verifier group. Exact CI pending; remaining indirect caller matrix still open. |
+| Pending runs | Expected exact P1 routine push workflow; resolve ID by product/diagnostic commit identified by prepared parent d2f6760 and operation marker. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Publish diagnostic/test batch after expected HEAD check, verify exact P1, then continue remaining caller classification; bare main guard still unchanged. |
+| Recovery action | Reconcile exact P1 CI, continue remaining actual caller/credential classifications, then mandatory bare-main guard and complete 76-route matrix. |
 | Resume after closure | C4, C5 in order; D separately approved. |
 
 ## Prior operation
