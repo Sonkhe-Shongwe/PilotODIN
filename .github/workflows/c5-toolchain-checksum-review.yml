@@ -3,12 +3,12 @@ on:
   push:
     branches: [feature/live-dev-workspace-20261023]
     paths:
-      - .github/workflows/c5-toolchain-checksum-review.yml
-      - qa/c5_wheel_metadata/collect_toolchain_checksums.py
+      - qa/c5_wheel_metadata/APPROVAL_TOOLCHAIN_CHECKSUMS_20261125.txt
 permissions:
   contents: read
 jobs:
   offline-review:
+    if: ${{ false }}
     runs-on: ubuntu-24.04
     timeout-minutes: 4
     steps:
@@ -25,7 +25,7 @@ jobs:
           set -e
           test "$code" = 2
   collect-once:
-    if: ${{ false }}
+    if: ${{ github.run_attempt == 1 && github.event.head_commit.message == 'C5-TOOLCHAIN-CHECKSUMS-ONCE-20261125 activate' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -34,7 +34,8 @@ jobs:
           ref: ${{ github.sha }}
           persist-credentials: false
       - run: python3 -I -B qa/c5_wheel_metadata/collect_toolchain_checksums.py --self-test
-      # Future activation requires exact marker-only trigger, commit message, attempt 1 and blob pin.
+      - name: Verify exact activated collector blob
+        run: test "$(git hash-object qa/c5_wheel_metadata/collect_toolchain_checksums.py)" = 3ada2f9a23c5d828794f46dc97282e8267a10fc8
       - run: python3 -I -B qa/c5_wheel_metadata/collect_toolchain_checksums.py --collect
         env:
           C5_APPROVED_ONCE: C5-TOOLCHAIN-CHECKSUMS-ONCE-20261125
