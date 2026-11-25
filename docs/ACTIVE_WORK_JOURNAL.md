@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | BLOCKED |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 896bb22cc00e2c193b1ea828bbfc1d40f173825e |
+| Observed starting HEAD | b94564bb0f30b8efb6b756be072df8b007e1416b |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
-| Operation ID | C5-FREEZER-METADATA-PROPOSAL-20261125 |
-| Operation state | RECONCILED: Exact d6ff2e3b923729ceff2535d1ca9d4f7dde277ebc, collector blob a521264c4ece4d43e90adad750e66929b4f2389c, run 45703803803 job 139520440425 SUCCESS, 24 offline checks, 12 synthetic requests, reviewer packaging 24.0, zero live requests, CLI FRESH_APPROVAL_REQUIRED; restricted job 139520443044 skipped. No new approval; candidate disabled. |
+| Operation ID | C5-FREEZER-METADATA-ONCE-20261125 |
+| Operation state | PREPARED: owner explicitly approved one freezer-only attempt; 24 checks and 12 synthetic requests passed on d6ff2e3, run 45703803803, live skipped. No activation issued yet. |
 | Intended files | Isolated qa/c5_wheel_metadata/collect_freezer.py and dedicated offline-only workflow, canonical records, evidence-only toolchain/licence summary; preserve prior collectors, receipts, product and locks. |
-| Approval | Ten restricted approvals consumed/disarmed (six native, four metadata). No additional registry requests, artifacts, installs, native/model, owner device/data or installer authorized. |
+| Approval | Ten previous restricted approvals consumed/disarmed. Fresh explicit approval for 6 named indexes + 6 selected hash-advertised sidecars, historical exact roots and documented highest stable compatible rule for four names. Windows CP311.9 candidate; 32 MiB/index, 1 MiB/sidecar, 128 MiB total, 15s/request, 15min/job. No artifacts, installs, resolver, native/model, owner device, retries or expanded scope. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
 | Pending runs | None for this operation. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Fresh explicit owner approval needed for one freezer-only candidate metadata attempt: six named Simple JSON indexes (altgraph, pefile, pyinstaller, pyinstaller-hooks-contrib, pywin32-ctypes, setuptools) and at most six dynamically selected exact hash-advertised .metadata URLs, 12 GETs total. Windows x64 CPython 3.11.9 candidate: exact PyInstaller 6.22.3/hooks 2026.9; highest stable non-yanked compatible candidate satisfying the reviewed minimum for each of four other names, best compatible wheel tag, ambiguity refused; no backtracking or fallback. 32 MiB/index, 1 MiB/sidecar, 128 MiB aggregate, 15s/request, 15min/job; no artifact downloads, installation, resolver, native/model, owner device or expanded scope. After approval prepare exact marker-only activation, blob pin, exact message and attempt 1, reconcile and disarm. Additional transitives require separate review. All four profiles BLOCKED. |
+| Recovery action | Fresh explicit owner approval received for one freezer-only candidate metadata attempt: six named Simple JSON indexes (altgraph, pefile, pyinstaller, pyinstaller-hooks-contrib, pywin32-ctypes, setuptools) and at most six dynamically selected exact hash-advertised .metadata URLs, 12 GETs total. Windows x64 CPython 3.11.9 candidate: exact PyInstaller 6.22.3/hooks 2026.9; highest stable non-yanked compatible candidate satisfying the reviewed minimum for each of four other names, best compatible wheel tag, ambiguity refused; no backtracking or fallback. 32 MiB/index, 1 MiB/sidecar, 128 MiB aggregate, 15s/request, 15min/job; no artifact downloads, installation, resolver, native/model, owner device or expanded scope. After approval prepare exact marker-only activation, blob pin, exact message and attempt 1, reconcile and disarm. Additional transitives require separate review. All four profiles BLOCKED. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
