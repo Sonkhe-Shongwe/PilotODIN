@@ -7,17 +7,17 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | PREPARED |
+| State | PUBLISHED |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 5404001d7571c5c2718ae3ecf35a4293cdb73b9e |
 | Product baseline | b74f0fa exact P1 SUCCESS and seven construction paths classified; c901eb73dee2d4629cb9a7864300100e379ea9d9 native smoke fail-closed source pending terminal reconciliation. |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
 | Operation ID | C3-NATIVE-SMOKE-SOURCE-ASSERTION-20261125-fix |
-| Operation state | PREPARED |
+| Operation state | ISSUED |
 | Intended files | frontend/tests/p1-playwright-pilot-contract.test.cjs: update stale A4-only error-text source assertion to exact new fail-closed smoke error and preserve all relay/header checks; no product edit. Journal. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | Exact c901eb7 P1 frontend #45588860686 job 139117423330 FAILURE: source test #70 expects old /A4 requires the authenticated Live Dev relay/ text; new intentional generic A4/hosted fail-closed message differs. No behavioral failure evidenced. P4 #45588860715 still in progress, restricted collector skipped. Correct one source assertion; only P1 isolated frontend expected. No native operation. |
-| Pending runs | P4 #45588860715 exact c901eb7 in progress; original P1 failure preserved. Corrective source not yet published. |
+| Pending runs | Original P4 #45588860715; corrective P1 exact SHA identified by parent 69aa0b9 and operation marker. |
 | Unpublished work | Owner-local tree not inspected. |
 | Recovery action | Publish exact stale assertion fix; reconcile corrective P1 and original P4. Next explicit browser fixture bootstrap and frontend default-port removal, backend fallback removal, remaining semantic route/caller audit. |
 | Resume after closure | C4, C5 in order; D separately approved. |

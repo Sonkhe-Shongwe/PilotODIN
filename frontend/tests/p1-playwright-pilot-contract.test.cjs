@@ -526,7 +526,7 @@ test('A4 relay preserves separate origin without inheriting or sending a private
  assert.match(runner,/\$env:PILOTODIN_A4_RELAY='1'/);
  assert.match(runner,/SetEnvironmentVariable\('PILOTODIN_A4_RELAY',\$priorRelay,'Process'\)/);
  assert.match(boot,/configureDevelopmentAPI\(window\.location\.origin\)/);
- assert.match(boot,/A4 requires the authenticated Live Dev relay/);
+ assert.match(boot,/Native smoke requires its authenticated isolated Live Dev frontdoor/);
 });
 
 
