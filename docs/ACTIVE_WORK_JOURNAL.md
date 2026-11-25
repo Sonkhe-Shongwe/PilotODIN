@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | READY |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | bd7c1639c3b98ae93e0d83b8170e189dc042b365 |
+| Observed starting HEAD | 79506210ddec3633f20160c08459ae07ba0cafc1 |
 | Product baseline | C3 source exit supported at 78c8672, latest product ebd01f4 and verified fixture/historical changes c329e0d/83c83f8. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
-| Operation ID | C4-DOCUMENTATION-AUDIT-20261125 |
-| Operation state | RECONCILED (documentation-only audit publication identified by prepared parent 1e950e5 and operation marker; verify live HEAD) |
-| Intended files | Audit record and navigation/current documentation only; next source batch requires its own write-ahead scope. |
+| Operation ID | C4-A-SETTINGS-FOUNDATION-20261125 |
+| Operation state | PREPARED (read-only review reconciled; source operation not yet published) |
+| Intended files | Bounded settings validation/publication helper, direct inert synthetic tests, reviewed P1 source-only CI wiring; journal/handoff and C ledger at checkpoint. No live integration until remaining exact caller/fixture compatibility and platform boundaries are reconciled. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Repository inventory and core navigation audit; nine latest CI workflows terminal SUCCESS, collector SKIPPED, native guards and activation false; no application/source/workflow change. See C4 documentation audit. C4 not implemented; 13/17 source and P4 14/20 unchanged. |
+| Verification | HEAD audit commit 7950621 confirmed documentation-only; latest 12 branch CI runs terminal success, exact C3 receipts unchanged. 85 workflow trigger/job summaries reviewed at HEAD; existing P1 backend workflow source/test steps read. Core three settings paths, HTTP request models, existing resource/AI fixtures and storage guards reviewed. Exact-source verification pending for planned helper; C4 remains open. |
 | Pending runs | None. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Begin C4 batch A from the linked plan: exact settings/credential reader/writer/fixture inventory, strict validation and safe redaction, proposed bounds and legacy compatibility, then prepare shared owned settings reader/writer and direct synthetic fault tests. Verify actual matching CI scope before any source push. No provider calls, native or owner data. |
+| Recovery action | Resolve this prepared operation by parent/marker and actual diff before replay. Complete remaining settings caller/fixture inventory and implement/test bounded helper independently; no live integration, DPAPI execution, provider requests, native work or owner data. Review exact matching workflow scope again before source publication. |
 | Resume after closure | C5 then D with separately approved scope. |
 
 ## Prior operation
