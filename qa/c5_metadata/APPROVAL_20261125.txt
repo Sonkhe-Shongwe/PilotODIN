@@ -1,0 +1,2 @@
+C5-PYPI-METADATA-ONCE-20261125
+Approved: one exact hosted release JSON metadata collection; no artifact bytes.

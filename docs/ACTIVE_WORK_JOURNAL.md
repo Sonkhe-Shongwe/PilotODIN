@@ -7,17 +7,17 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | PREPARED |
+| State | PUBLISHED |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 7d8efb93795b66da427e46f39bc73af480657762 |
 | Product baseline | 9163e6c6a4c55dae3b021aa8be90205c8fa6250d; corrective P4 #45684953141 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
 | Operation ID | C5-PYPI-METADATA-ONCE-20261125 |
-| Operation state | PREPARED; owner reply 'i approve' explicitly authorizes one disposable metadata-only hosted run, 50 exact pairs, no artifact bytes. No dispatch yet. |
+| Operation state | ISSUED; recover exact activation SHA from prepared parent 7b0da51b6833ec2a6afad152a81ab0dad91b1a11 and operation ID. Treat as potentially consumed until reconciled. |
 | Intended files | qa/c5_metadata/collect.py, qa/c5_metadata/APPROVAL_20261125.txt, .github/workflows/c5-pypi-metadata-once.yml, canonical docs. Pin inventory Git blob 6ccd3d47efe363ecf87fd13ce7d867cba4bef020. Exact prepared parent and attempt 1 gate; marker path only. |
 | Approval | One C5 metadata-only hosted attempt approved. Exactly 50 GET requests to exact PyPI release JSON URLs; no redirects, wheel/.metadata downloads, pip, model, installer, native, owner data or further network action. Six native approvals remain consumed/disarmed. Failed or uncertain attempt consumes approval; no replay. |
 | Verification | Exact corrective 9163e6c P4 SUCCESS: Linux 1166 passed/6 skipped/552 subtests, 15 Rust, 160 Node/Vite, 3 bundle refusal; Windows 79 C5/1 skipped, 3 refusal, 68/133 subtests; HTTP 13; restricted collector skipped. |
-| Pending runs | None; previous correction completed SUCCESS. |
+| Pending runs | Expected one C5 PyPI release metadata one use run from marker-only push, attempt 1. Observe exact run; disarm without replay. |
 | Unpublished work | Owner-local tree not inspected. |
 | Recovery action | Publish exact prepared-parent and attempt-1 marker-gated job once. Confirm exact run SHA, immediately disarm with if false, preserve marker and receipt. Read only sanitized metadata logs; no retry even on failure. No production readiness credit. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |

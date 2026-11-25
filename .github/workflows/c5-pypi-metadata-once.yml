@@ -1,0 +1,24 @@
+name: C5 PyPI release metadata one use
+
+on:
+  push:
+    branches: [feature/live-dev-workspace-20261023]
+    paths: [qa/c5_metadata/APPROVAL_20261125.txt]
+
+permissions:
+  contents: read
+
+jobs:
+  release-json-only:
+    # Owner approved exactly one attempt. No manual dispatch or rerun.
+    if: ${{ github.event.before == '7b0da51b6833ec2a6afad152a81ab0dad91b1a11' && github.run_attempt == 1 }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact approved source without persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Collect only the 50 pinned public release JSON records
+        run: python3 -I -B qa/c5_metadata/collect.py
