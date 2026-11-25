@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | PUBLISHED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | d4b58a86b952d6db3f7514ff35a5c2cdf0bdacb7 |
-| Product baseline | 9163e6c last fully verified; ec74f49 graph and Linux/HTTP pass; Windows lifecycle pending. |
+| Product baseline | ec74f49487dc7748cba85db874a12263c473649c; exact graph P4 #45687344896 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
 | Operation ID | C5-ARCHIVE-VALIDATION-20261125 |
-| Operation state | ISSUED; recover exact source from prepared parent 31259021e8c3e3b7d0d9dfad33d87914eff39eb5. Candidate archive validation only. |
+| Operation state | RECONCILED publication at e7ffc07d6801628eb5319f3be7484cad81c09e40; exact archive fixture CI IN_PROGRESS. No restricted action. |
 | Intended files | tools/c5_archive_preflight.py, tests/test_c5_build_input_preflight.py, .github/workflows/p4-target-ranking.yml, canonical documentation. No lock, marker, asset or production entrypoint changes. |
 | Approval | C5 metadata-only approval CONSUMED; no replay. Exact run 45686334903 attempt 1 only. All six native approvals still consumed/disarmed. No artifact bytes, native, model, installer, owner device, OS/network change or additional metadata dispatch authorized. |
-| Verification | Exact ec74f49 P4 #45687344896: Linux 1170 passed/6 skipped/552 subtests, 15 Rust, 160 Node/Vite, 3 bundle refusal, graph review PASS (59 edges/49 reachable each), HTTP 13 PASS; Windows in progress; collector skipped. |
-| Pending runs | Prior graph CI #45687344896 reconcile final Windows status; expected new matching P4 routine synthetic workflow only. No metadata/native dispatch. |
+| Verification | Exact ec74f49 SUCCESS: 1170 Python/6 skipped/552 subtests, 15 Rust, 160 Node/Vite, 3 bundle refusal; 13 HTTP; Windows 83 C5/1 skipped, parser, 3 refusal, 68/133 subtests; restricted skipped. Graph both 49 reachable/59 active edges, no missing named declarations; both BLOCKED. |
+| Pending runs | P4 #45687966996 IN_PROGRESS; 139465500465 in_progress; 139465501085 in_progress; 139465501193 in_progress; 139465504033 skipped. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Use guarded bounded read_exact to hash and capture exact archive bytes; validate conservative classic ZIP layout before parser and member decompression, exact reviewed names, no links/ADS/traversal/collisions, file/total limits, independent member hashes. Inert fixtures only; production no READY or extract route. Review matching synthetic CI scope. |
+| Recovery action | Reconcile exact archive fixture CI and any failures before edits. Candidate classic ZIP verifier captures bounded hash-verified snapshot, strict complete independent inventory, local/central consistency, streamed member hashes; no actual archive acquired, no extraction or physical ownership proof. Next implement synthetic fresh-generation staging and atomic publication with failure preservation, then non-executable candidate graph/asset/toolchain/license inventory. No new metadata/native/acquisition approval. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
