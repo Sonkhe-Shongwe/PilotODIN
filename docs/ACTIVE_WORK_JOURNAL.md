@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | PREPARED |
+| State | READY |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 7db2f60e7daa4e4f975822503b4e78008f4977e2 |
 | Product baseline | C3 source exit supported at 78c8672, latest product ebd01f4 and verified fixture/historical changes c329e0d/83c83f8. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
 | Operation ID | C4-RESEARCH-AND-IMPLEMENTATION-PLAN-20261125 |
-| Operation state | PREPARED (documentation-only research/implementation proposal; no product or controlling contract change) |
-| Intended files | docs/ACTIVE_WORK_JOURNAL.md; docs/TAB_MIGRATION_HANDOFF_CURRENT.md; docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md. Same docs-only paths as prior closure; no workflow definitions changed. |
+| Operation state | RECONCILED (C4 research proposal documented; identify docs publication by parent d5a9887 and operation marker) |
+| Intended files | C4 research ledger, compact handoff and journal only; next batch A exact source inventory/preparation before edit. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Reviewed C-D06/07 and Master Reconstruction Blueprint, live backend settings/provider/context/storage/lease/legacy+owned route code, frontend settings/insight/assistant/startup, existing regression contracts. External reference research only (Microsoft DPAPI, Python 3.11 stdlib, OWASP, OpenRouter provider routing). Confirmed source hazards; proposed plan, not implemented/tested. No real external provider requests, native or owner operations. Exact same docs-only paths previously reviewed; unchanged 85 workflow definitions. |
-| Pending runs | None; no new code CI expected. |
+| Verification | C4 baseline review and proposed architecture documented; no product edit or new test claim. Confirm exact schema/fixture compatibility, bounds, request validation and matching workflow scopes before source batch. C-D06/07 unchanged. C3/official P4 scores unchanged. |
+| Pending runs | None. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Publish dated C4 baseline/architecture/verification proposal in existing evidence ledger, update handoff and journal to READY for first bounded source batch. No closure or source credit. Preserve existing spec/blueprint and all approval freezes; review any new product disclosure decision before shipping. |
+| Recovery action | Begin C4 batch A: finish exact readers/writers/secret-store and fixture inventory, validate bounds/legacy compatibility and strict request/redaction mechanism, prepare shared bounded settings reader/writer and migrate three existing targets with direct fault injection. Review all actual matching workflows before non-force push. Next B unified consent/transport, C UI integration, closure only on evidence. No provider call/native/owner data. |
 | Resume after closure | C5 then D with separately approved scope. |
 
 ## Prior operation
