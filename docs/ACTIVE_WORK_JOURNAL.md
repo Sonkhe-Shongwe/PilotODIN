@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | PUBLISHED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 2e07cf0a748a426f2b861b0ac2fe8d337d35bca0 |
-| Product baseline | d5036773d7c3fea6f79280524ac25b2e0a8fc5ac; all four exact routine workflows SUCCESS. |
+| Observed starting HEAD | 2e07cf0a748a426f2b861b0ac2fe8d337d35bca0; write-ahead ac1841c70ab017741331c87e19948b804ba7dbd6; published and verified HEAD 736a0fe9def039f07936dbc52ecfb6e162e63e84. |
+| Product baseline | 736a0fe9def039f07936dbc52ecfb6e162e63e84 (new fixed-port local DevQA source; exact CI pending); previous d5036773d7c3fea6f79280524ac25b2e0a8fc5ac all four workflows SUCCESS. |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
 | Operation ID | C3-LOCAL-DEVQA-FIXED-PORT-AUTH-20261125-source |
-| Operation state | ISSUED |
+| Operation state | RECONCILED |
 | Intended files | backend/request_auth.py, backend/server_entry.py, frontend/scripts/live-dev-api-proxy.mjs, frontend/src/api.ts, three native QA pages, four existing local DevQA PowerShell launchers, P3 W5 probe, scoped Python/Node source tests and canonical records. Bind four exact phase names to 5177/5178 and fixed backend 8000, use private capability and no proxy/redirect for readiness/probe, keep all QA mutation budgets and IPC restrictions. No new listener or native execution. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Prior exact d503677 P1 frontend #45560998685, P3 HTTP #45560998671, P1 HTTP #45560998645 job 139024433573 all four acceptance steps SUCCESS, P4 #45560999140 source 139024432962, browser 139024433248 and Windows synthetic 139024432539 SUCCESS; restricted 139024433877 SKIPPED. New batch not yet published. |
-| Pending runs | None for prior source; expected new routine P1/P3 HTTP, P1 frontend, P4 synthetic, P2 source preflight/export, P3 semantic source/parser. No restricted trigger files changed. |
+| Verification | Published 17-file source/test/journal diff verified. All four fixed-port local DevQA phases now require phase-bound immutable capability before workspace admission, private paired Vite proxy, launcher-owned capability, authenticated no-proxy/no-redirect direct readiness and W5 probe. Preserved browser QA mutation budgets, W5 IPC rules, no new listener. Added exact phase/startup negatives, guarded disposable TestClient and proxy-plan tests, W5 probe transport tests. No native runtime or physical acceptance. Previous d503677 exact CI terminal SUCCESS as ledger records. |
+| Pending runs | P1 frontend #45562258510 in_progress; P3 source/parser #45562258476 in_progress; P4 #45562258444 in_progress; P3 real HTTP #45562258609 in_progress; P2 export safety #45562258528 success; P1 real HTTP #45562258591 in_progress; P2 Windows source preflight #45562258483 success. No restricted operation issued; existing native guards unchanged. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Inspect live branch and exact operation ID before repeating; publish non-force expected HEAD only after actual workflow scope review. Migrate the four fixed-port launchers and W5 probe, preserve P2 read-only, P3 two-save, W5 one-proposal/one-commit and stale POST rejection; reconcile exact CI. Hosted native/A4 and explicit in-process adapter plus fallback removal remain C3 work. C4 deferred. |
+| Recovery action | Reconcile all seven exact 736a0fe workflows and job scopes before overlapping push; correct any actual failures without weakening checks. Next inventory/migrate A4 smoke and hosted native P4/N12 startup and direct clients, including bare backend.main:app, then explicit in-process adapter and remove bare no-secret runtime fallback. Complete C3 route/direct-call matrix, disposable negatives and exact CI. No C4 until C3 closes; no native launch, production activation or new approval. |
 | Resume after closure | C4, C5 in order; D separately approved. |
 
 ## Prior operation
