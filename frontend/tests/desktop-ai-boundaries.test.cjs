@@ -378,3 +378,86 @@ test('C3 intercepted fixture is distinct from paired Live Dev and never has a de
   dev.configureDevelopmentAPI('http://127.0.0.1:5173');
   assert.throws(()=>dev.configureInterceptedFixtureAPI(origin));
 });
+
+
+test('C3 authenticated GET, POST, PUT and multipart upload share exact destination and refuse redirects',async()=>{
+ const modes=['desktop','dev','intercepted'];
+ for(const mode of modes){
+  const calls=[];
+  const api=loadAPI(async()=>assert.fail('Unexpected native IPC'),async(url,options)=>{
+   calls.push({url,options});
+   assert.equal(options.redirect,'error');
+   return Response.json({status:'ok'});
+  });
+  const origin=mode==='desktop'?'http://127.0.0.1:18042':mode==='dev'?'http://127.0.0.1:5173':'http://127.0.0.1:5187';
+  if(mode==='desktop')api.configureDesktopAPI({port:18042,token:'a'.repeat(64)});
+  else if(mode==='dev')api.configureDevelopmentAPI(origin);
+  else api.configureInterceptedFixtureAPI(origin);
+  const signal=new AbortController().signal;
+  await api.get('/health',{signal});
+  await api.get('/projects?column=Revenue%20%26%20Cost%2FUnit');
+  await api.post('/projects/id/reports',{synthetic:true});
+  await api.put('/ai/settings',{cloud_enabled:false});
+  await api.upload(new File(['synthetic'], 'fixture.csv',{type:'text/csv'}));
+  assert.deepEqual(calls.map(x=>x.url),['/health','/projects?column=Revenue%20%26%20Cost%2FUnit',
+    '/projects/id/reports','/ai/settings','/projects'].map(p=>origin+'/api'+p));
+  assert.deepEqual(calls.map(x=>x.options.method??'GET'),['GET','GET','POST','PUT','POST']);
+  assert.equal(calls[0].options.signal,signal);
+  for(const {url,options} of calls){
+   const header=mode==='desktop'?'X-PilotODIN-Session':'X-PilotODIN-Dev-Request';
+   assert.equal(options.headers[header],mode==='desktop'?'a'.repeat(64):'1');
+   assert.equal(Object.hasOwn(options.headers,'X-PilotODIN-Dev-Capability'),false);
+   assert.ok(!url.includes('a'.repeat(64)));
+  }
+  assert.ok(calls[4].options.body instanceof FormData);
+ }
+});
+
+test('C3 invalid or normalized escape destinations refuse before HTTP and native launch',async()=>{
+ const api=loadAPI(async()=>assert.fail('Unexpected native IPC'),async()=>assert.fail('Unexpected fetch'));
+ api.configureDesktopAPI({port:18042,token:'a'.repeat(64)});
+ for(const path of ['','health','https://invalid.example/health','//invalid.example/health',
+    '/','/../health','/./health','/%2e%2e/health','/projects/../ai/insight',
+    '/projects/%2e%2e/ai/insight','/projects/%2f/ai/insight','/projects/%5c/ai/insight',
+    '/projects/\\bad','/health#fragment','/health\n']){
+  await assert.rejects(api.get(path),/Invalid local API destination/);
+  await assert.rejects(api.post(path,{}),/Invalid local API destination/);
+  await assert.rejects(api.put(path,{}),/Invalid local API destination/);
+ }
+});
+
+test('C3 unexpected redirect and redirect transport failure cannot replay credentials or read response',async()=>{
+ const secret='a'.repeat(64);
+ for(const status of [301,302,303,307,308]){
+  const calls=[];
+  let cancelled=false;
+  const response=new Response(new ReadableStream({cancel(){cancelled=true}}),
+    {status,headers:{Location:'https://invalid.example/private-trap'}});
+  const api=loadAPI(async()=>assert.fail('Unexpected IPC'),async(url,options)=>{
+   calls.push(url);assert.equal(options.redirect,'error');return response;
+  });
+  api.configureDesktopAPI({port:18042,token:secret});
+  await assert.rejects(api.get('/health'),/Local API redirect refused/);
+  assert.equal(cancelled,true);
+  assert.deepEqual(calls,['http://127.0.0.1:18042/api/health']);
+ }
+ const calls=[];
+ const api=loadAPI(async()=>assert.fail('Unexpected IPC'),async(url,options)=>{
+  calls.push(url);assert.equal(options.redirect,'error');
+  throw new TypeError('redirect trap '+secret);
+ });
+ api.configureDesktopAPI({port:18042,token:secret});
+ await assert.rejects(api.post('/projects/id/reports?private=synthetic',{}),error=>
+  /Could not connect to PilotODIN/.test(error.message)&&!error.message.includes(secret)&&
+  !error.message.includes('synthetic')&&!error.message.includes('redirect trap'));
+ assert.deepEqual(calls,['http://127.0.0.1:18042/api/projects/id/reports?private=synthetic']);
+});
+
+test('C3 archived hosted desktop driver source confines direct session requests without running native QA',()=>{
+ const driver=fs.readFileSync(path.join(__dirname,'../e2e/p4-r03-hosted-desktop.mjs'),'utf8');
+ assert.match(driver,/Number\.isInteger\(connection\.port\)/);
+ assert.match(driver,/connection\.port<1024\|\|connection\.port>65535/);
+ assert.match(driver,/path!=='\/ai\/settings'&&path!=='\/resource\/policy'/);
+ assert.equal((driver.match(/redirect:'error'/g)||[]).length,3);
+ assert.match(driver,/PILOTODIN_R03_HOSTED_DESKTOP !== 'approved'/);
+});

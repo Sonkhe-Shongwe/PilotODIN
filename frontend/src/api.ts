@@ -60,13 +60,38 @@ async function check(res:Response){
   if(!res.ok){let detail = `Request failed (${res.status})`;try{const o=await res.json();const d=o?.detail;detail=typeof d==='string'?d:(d&&typeof d==='object'&&!Array.isArray(d)&&typeof d.message==='string'?d.message:JSON.stringify(d))}catch{}throw new Error(detail)}
   return res.json();
 }
+// Resolve only relative product API paths; do not allow URL normalization to
+// escape the admitted /api/ boundary or an invalid path to start native work.
+function localTarget(path:string):URL {
+ const base=apiBase();
+ if(typeof path!=='string'||!path.startsWith('/')||path.startsWith('//')||
+    /[\x00-\x1f\x7f\\#]/.test(path))throw new Error('Invalid local API destination');
+ const pathname=path.split('?')[0];
+ if(/(?:^|\/)(?:\.|%2e){1,2}(?:\/|$)/i.test(pathname)||
+    /%2f|%5c/i.test(pathname))throw new Error('Invalid local API destination');
+ const target=new URL(base+path);
+ if(target.origin!==new URL(base).origin||!target.pathname.startsWith('/api/')||
+    target.pathname==='/api/'||target.username||target.password||target.hash)
+    throw new Error('Invalid local API destination');
+ return target;
+}
 async function fetchLocal(path:string,options:RequestInit):Promise<Response>{
- try {return await fetch(`${apiBase()}${path}`,options);}
- catch(error){
+ const target=localTarget(path);
+ let response:Response;
+ try {
+  // Do not forward session headers or request bodies to a redirect destination.
+  response=await fetch(target.href,{...options,redirect:'error'});
+ } catch(error){
   if(error instanceof Error&&error.name==='AbortError')throw error;
-  const origin=new URL(apiBase()).origin;
-  throw new Error(`Could not connect to PilotODIN's local analytics service at ${origin} (request: ${path}). Check that the PilotODIN Backend window is running, then try again.`);
+  throw new Error("Could not connect to PilotODIN's local analytics service at "+target.origin+
+    ". Check that the PilotODIN Backend window is running, then try again.");
  }
+ // Defend in depth for intercepted or unexpected transport implementations.
+ if(response.redirected||(response.status>=300&&response.status<400)){
+  try{await response.body?.cancel()}catch{}
+  throw new Error('Local API redirect refused');
+ }
+ return response;
 }
 // Passive health checks must not allocate 1.5+ GB for a model on an 8 GB machine.
 // Only actions explicitly requesting AI reasoning can start the bundled worker.
@@ -115,6 +140,7 @@ async function requestLocalAI(path:string,method:'GET'|'POST',body?:unknown):Pro
 }
 export async function get<T>(path:string, options?:{signal?:AbortSignal}):Promise<T>{return check(await fetchLocal(path,{headers:authHeaders(),signal:options?.signal}));}
 export async function post<T>(path:string, body:unknown):Promise<T>{
+ localTarget(path);
  const startupIssue=await requestLocalAI(path,'POST',body);
  const result=await check(await fetchLocal(path,{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(body)}));
  // Preserve deterministic answers, but attach the verified desktop startup
@@ -127,11 +153,7 @@ export async function post<T>(path:string, body:unknown):Promise<T>{
 export async function put<T>(path:string, body:unknown):Promise<T>{return check(await fetchLocal(path,{method:'PUT',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(body)}));}
 export async function upload(file:File):Promise<{id:string;name:string;profile:Profile}>{
  const form=new FormData();form.append('file',file);
- try{return await check(await fetch(`${apiBase()}/projects`,{method:'POST',headers:authHeaders(),body:form}));}
- catch(error){
-  if(error instanceof TypeError)throw new Error(`Could not connect to PilotODIN's local analytics service at ${new URL(apiBase()).origin} (request: /projects). Check that the PilotODIN Backend window is running, then try again.`);
-  throw error;
- }
+ return check(await fetchLocal('/projects',{method:'POST',headers:authHeaders(),body:form}));
 }
 
 /** Read-only download: authentication never appears in the URL. */

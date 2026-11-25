@@ -25,13 +25,19 @@ async function run(browser) {
   receipt.stage = 'synthetic-fixture';
   const project = await page.evaluate(async () => {
     const connection = await window.__TAURI_INTERNALS__.invoke('launch_backend');
+    if(!connection||!Number.isInteger(connection.port)||connection.port<1024||connection.port>65535||
+       typeof connection.token!=='string'||!/^[0-9a-f]{64}$/.test(connection.token))
+      throw Error('Invalid desktop connection');
     const base = 'http://127.0.0.1:'+connection.port+'/api';
     const auth = {'X-PilotODIN-Session':connection.token};
-    const put = (path, body) => fetch(base+path, {
-      method:'PUT',headers:{...auth,'Content-Type':'application/json'},body:JSON.stringify(body),
+    const put = (path, body) => {
+      if(path!=='/ai/settings'&&path!=='/resource/policy')throw Error('Unexpected desktop fixture destination');
+      return fetch(base+path, {
+      method:'PUT',headers:{...auth,'Content-Type':'application/json'},body:JSON.stringify(body),redirect:'error',
       signal:AbortSignal.timeout(10000),
-    });
-    const projects = await fetch(base+'/projects', {headers:auth,signal:AbortSignal.timeout(10000)});
+      });
+    };
+    const projects = await fetch(base+'/projects', {headers:auth,signal:AbortSignal.timeout(10000),redirect:'error'});
     if (!projects.ok || (await projects.json()).length !== 0) throw Error('expected clean desktop project catalogue');
     const ai = await put('/ai/settings', {intelligence_mode:'local',cloud_enabled:false,local_timeout_seconds:120});
     if (!ai.ok || (await ai.json()).cloud_enabled !== false) throw Error('could not configure offline AI');
@@ -39,7 +45,7 @@ async function run(browser) {
     if (!policy.ok) throw Error('could not configure low-memory policy');
     const file = new FormData();
     file.append('file',new File(['premium,outcome\n10,Yes\n,No\n30,Yes\n40,No\n'],'r03_hosted_synthetic.csv',{type:'text/csv'}));
-    const uploaded = await fetch(base+'/projects', {method:'POST',headers:auth,body:file,signal:AbortSignal.timeout(15000)});
+    const uploaded = await fetch(base+'/projects', {method:'POST',headers:auth,body:file,signal:AbortSignal.timeout(15000),redirect:'error'});
     if (uploaded.status !== 201) throw Error('synthetic CSV import failed');
     const {id} = await uploaded.json();
     localStorage.setItem('pilotodin-current',id);
