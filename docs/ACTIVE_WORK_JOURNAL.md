@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | c6ea16a8b81bbffbf136ca1822736dbd7c800c99 |
-| Product baseline | 9163e6c6a4c55dae3b021aa8be90205c8fa6250d; corrective P4 #45684953141 SUCCESS. |
+| Observed starting HEAD | d4b58a86b952d6db3f7514ff35a5c2cdf0bdacb7 |
+| Product baseline | 9163e6c last fully verified; ec74f49 graph and Linux/HTTP pass; Windows lifecycle pending. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
-| Operation ID | C5-PYTHON-CANDIDATE-GRAPH-20261125 |
-| Operation state | RECONCILED publication at ec74f49487dc7748cba85db874a12263c473649c; P4 exact CI IN_PROGRESS. No new restricted action. |
-| Intended files | qa/c5_metadata/graph_review.py, tests/test_c5_build_input_preflight.py, .github/workflows/p4-target-ranking.yml, canonical docs. No changes to locks, consumed markers or metadata collection workflow. |
+| Operation ID | C5-ARCHIVE-VALIDATION-20261125 |
+| Operation state | PREPARED; implement independent exact ZIP member inventory and bounded read-only synthetic archive verification. No extraction, staging, acquisition or executable launch. |
+| Intended files | tools/c5_archive_preflight.py, tests/test_c5_build_input_preflight.py, .github/workflows/p4-target-ranking.yml, canonical documentation. No lock, marker, asset or production entrypoint changes. |
 | Approval | C5 metadata-only approval CONSUMED; no replay. Exact run 45686334903 attempt 1 only. All six native approvals still consumed/disarmed. No artifact bytes, native, model, installer, owner device, OS/network change or additional metadata dispatch authorized. |
-| Verification | Prior 9163e6c exact P4 SUCCESS; metadata run 45686334903 SUCCESS, 50 releases, 62 distinct files, 98 selections. Preliminary finite marker review: 14 roots, 59 active declared edges and 49 reachable distributions each, zero named missing, 23 Windows/22 Linux null dependency fields. |
-| Pending runs | P4 #45687344896 IN_PROGRESS; source 139463330783, Windows 139463331280, HTTP 139463331193, restricted collector 139463333136 skipped. |
+| Verification | Exact ec74f49 P4 #45687344896: Linux 1170 passed/6 skipped/552 subtests, 15 Rust, 160 Node/Vite, 3 bundle refusal, graph review PASS (59 edges/49 reachable each), HTTP 13 PASS; Windows in progress; collector skipped. |
+| Pending runs | Prior #45687344896 Windows lifecycle still running; reconcile before source push if possible. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Reconcile exact graph CI. Preliminary review 59 active edges and 49 reachable distributions each; verify actual packaging parser/target-tag test results, then derive non-executable candidate graph inventory with explicit unresolved fields and complete toolchain/license review. Continue synthetic safe archive validation. No more metadata requests or artifact acquisition approved. |
+| Recovery action | Use guarded bounded read_exact to hash and capture exact archive bytes; validate conservative classic ZIP layout before parser and member decompression, exact reviewed names, no links/ADS/traversal/collisions, file/total limits, independent member hashes. Inert fixtures only; production no READY or extract route. Review matching synthetic CI scope. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
