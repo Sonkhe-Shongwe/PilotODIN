@@ -13,13 +13,13 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Product baseline | C3 source exit supported at 78c8672, latest product ebd01f4 and verified fixture/historical changes c329e0d/83c83f8. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
 | Operation ID | C4-A-IMPORT-HTTP-WITNESS-CORRECTION-20261125 |
-| Operation state | ISSUED; reconcile test-only source by parent 301dd82 and operation marker before retry |
+| Operation state | RECONCILED: exact test-only correction [41db8e7](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/41db8e7e1289da773e3c2a9887d783c0ce6ac21a); no replay |
 | Intended files | frontend/e2e/p1-real-http.spec.ts and canonical records only; exact POST response synchronization, no product, authority, workflow or fixture allowlist changes. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | Added exact import response witness before independent catalogue read. Retains 201, ID, count, switcher and all prior safety/recovery assertions. Exact CI pending. |
-| Pending runs | P1 real HTTP and isolated frontend expected; reconcile exact IDs. |
+| Pending runs | [P1 Isolated Frontend Verification #45628391274](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45628391274) IN_PROGRESS; [P1 Disposable Real HTTP Browser/Backend Acceptance #45628391002](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45628391002) IN_PROGRESS. Both at exact 41db8e7. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Correct observed test race by registering exact same-origin POST /api/projects response waiter before Analyse click; require 201 and exact committed ID in independently read catalogue, retain all counts and isolation checks. Reconcile exact P1 HTTP and P1 frontend workflows; if failure persists inspect actual response. Then C4 Batch B. |
+| Recovery action | Reconcile both exact corrected test runs and all four real HTTP stages. If still failing, inspect the exact import response and do not broaden the allowlist or weaken acceptance. After green, C4 Batch B common explicit intent/consent and removal of implicit legacy dispatch, using mocked transport only. Read-only caller review confirms main legacy respond/verify/test routes and startup are still divergent from owned wrappers; unify policy and preserve owned context/version stop checks. Positive payload schema, strict transport and UI follow. |
 | Resume after closure | C5 then D with separately approved scope. |
 
 ## Prior operation
