@@ -1,0 +1,2 @@
+C5-FREEZER-METADATA-ONCE-20261125
+One hosted attempt; 6 indexes and 6 selected hash-advertised sidecars maximum; 32 MiB/index, 1 MiB/sidecar, 128 MiB aggregate.
