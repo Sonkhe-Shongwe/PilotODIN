@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | READY |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | ccdbf4b3fca677dfb6afd83266a3f1d41783e3cc |
+| Observed starting HEAD | a3ca8f73ee4cebb5d6bca15513b7b8c3bfc1a225 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
-| Operation ID | C5-CHECKSUM-REMAINING-REVIEW-20261126 |
-| Operation state | RECONCILED: exact 17df008fe505bd9c120e6085ff5e499534fc092d, collector blob 5f65d13d657ea2455e9fcc8239b68eacb4c53d43, run 45718196315 job 139569558338 SUCCESS, 42 checks, 4 synthetic requests, prior Windows receipt independently revalidated, original refusal reproduced, live false, CLI FRESH_APPROVAL_REQUIRED; restricted job 139569560787 skipped. No live requests. |
-| Intended files | New qa/c5_wheel_metadata/collect_remaining_checksums.py and dedicated offline workflow; no product or prior receipt changes. Wheel inspector remains independent. |
+| Operation ID | C5-WHEEL-ARCHIVE-OFFLINE-20261126 |
+| Operation state | PREPARED: offline-only wheel integrity inspector and inert fixtures developed in isolated scratch; local Python 3.13.5 40/40 pass, direct --collect refuses. First isolated test import and notice-order assertion failed and were corrected. Repository source not yet published. |
+| Intended files | qa/c5_wheel_metadata/wheel_archive_inspector.py (blob fb7c158fe88b3afa0d329019511648121341fea1), qa/c5_wheel_metadata/test_wheel_archive_inspector.py (58bd7724e2e47307e90bdfe6fb17864203d804dc), .github/workflows/c5-wheel-archive-review.yml (5e3be4da84e167f2943cdd9d4b428fbed16fdafe). Reviewed all 97 existing workflow trigger declarations against these paths and journal/handoff/ledger; no matches. New workflow only checkout exact SHA and standard-library synthetic tests + refusal on Ubuntu and Windows; no acquisition, build or activation. |
 | Approval | Twelve restricted approvals consumed/disarmed (six native, six metadata). No additional registry/metadata requests, artifacts, installs, native/model, owner device/data or installer authorized. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | None for this operation. |
-| Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Fresh explicit owner approval required for one remaining-three checksum-only attempt: Linux Python 3.11.18 hashes.sha256 (821 exact bytes, pinned document and target SHA256), Node 22.23.5 SHASUMS256.txt (64 KiB), Rust 1.100.0 exact channel TOML (4 MiB). Maximum four HTTPS GETs incl. one permitted authenticated GitHub redirect for Linux Python, 4260661 aggregate body bytes, 15s/request, 10min/job. No Windows checksum request, retries, binaries, signatures/keys, registry, installs, native/model, owner device or expanded scope. After explicit approval exact marker-only activation, exact commit message, attempt 1, blob pin, reconcile/disarm. Independently implement/test bounded wheel archive inspector; no wheel acquisition approved. |
+| Pending runs | None issued. Expected exact synthetic-only matrix after source push. |
+| Unpublished work | Owner-local tree not inspected; isolated QA draft not yet published. Recover only exact three blobs above; if missing, do not claim publication. |
+| Recovery action | First reconcile actual branch and intended blobs before conditional publish, then exact CI. Previous checksum operation is RECONCILED at 17df008fe505bd9c120e6085ff5e499534fc092d, run 45718196315 SUCCESS, 42 checks, four synthetic requests, live skipped. Fresh explicit owner approval still required for Linux Python hashes.sha256, Node SHASUMS256.txt, Rust exact channel TOML only: four HTTPS GETs max, 4260661 bytes, no Windows replay or retries. No wheel acquisition approved; real-wheel compatibility, notice evidence persistence and provenance remain open. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
