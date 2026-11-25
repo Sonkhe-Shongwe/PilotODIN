@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 5f96b28234f168a33aa182e833b0dce8988441f1 |
 | Product baseline | a949684360d99ea052ace639afa11aa2222e4d83; exact P1/P4 terminal SUCCESS independently rechecked. |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
 | Operation ID | C3-LEGACY-LOCAL-TRANSPORT-20261125 |
-| Operation state | PREPARED (bounded legacy local transport correction; publication identified by prepared parent and operation marker) |
+| Operation state | ISSUED (product publication identifiable by prepared parent 28ff2ab and operation marker; resolve exact SHA) |
 | Intended files | backend/ai_provider.py; backend/autonomy.py; tests/test_build_e_autonomous_investigations.py; tests/test_hybrid_local_ai.py; .github/workflows/p1-isolated-backend.yml (add existing fixed-loopback regression to historical case selection); journal, handoff and C ledger. No cloud policy, activation, native workflow, dependencies or installer changes. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Exact scanner `64a33d3` P1 #45599143546 job 139153070812 terminal SUCCESS; 9 new tests, 878/878 decoded, 433 candidates, 76 routes, zero AST/decode gaps. Reviewed actual serving factory/bytecode paths and legacy transport sources; local Ollama request and default planner openers disable proxies but follow redirects, which could send a local-only request outside loopback. Historical Check_Local_API.ps1 lacks explicit authentication and remains to be resolved. Cloud provider consent/legacy external transport remains C4. Expected matching P1/P4 routine workflows reviewed; native collector disabled. Add inert tests for both GET/POST local paths, response closure and refusal; no real inference or external network. |
-| Pending runs | None; previous P1 #45599143546 terminal SUCCESS. |
+| Verification | Prior expanded scanner P1 terminal SUCCESS; 878 decoded, 433 candidates, 76 routes, no AST/decode gaps. Implemented shared local-only response helper for existing Ollama tags/chat and autonomous planner generate with fixed destination, empty proxy handler, redirect refusal, sanitized/closed HTTP errors. Added 25 mocked cases; existing fixed-loopback test retained and registered in P1. Expected P1/P4 routine CI; no native, cloud or real inference. Historical diagnostic and wider caller matrix remain open. New product verification pending. |
+| Pending runs | Expected exact P1 and P4 routine push runs at product commit identified by prepared parent 28ff2ab and operation marker; resolve IDs and job status. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Verify prepared HEAD, publish bounded redirect correction and mocked regression tests, reconcile exact P1/P4 runs, then continue remaining caller/credential audit before removing bare main fallback. |
+| Recovery action | Reconcile exact P1/P4 CI, inspect failures or scanner candidate paths, resolve historical diagnostic and remaining indirect callers, then mandatory bare-main guard and complete 76-route matrix. |
 | Resume after closure | C4, C5 in order; D separately approved. |
 
 ## Prior operation

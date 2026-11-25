@@ -321,3 +321,88 @@ def test_resume_recovers_final_saved_step_with_offline_ai_disabled(monkeypatch):
     state = await_done(inv_id)
     assert state['status'] == 'needs_review'
     assert len(state['steps']) == 1 and state['steps'][0]['evidence_id']
+
+
+@pytest.mark.parametrize("status", (301, 302, 303, 307, 308, 401, 503))
+@pytest.mark.parametrize("operation", ("tags", "chat", "planner"))
+def test_legacy_local_inference_refuses_redirect_and_sanitizes_errors(monkeypatch, status, operation):
+    # Mock transport only: no actual Ollama, external endpoint or inference.
+    import io
+    import urllib.error
+    import urllib.request
+    from unittest.mock import Mock
+
+    monkeypatch.delenv("PILOTODIN_DESKTOP_SESSION", raising=False)
+    monkeypatch.setattr(autonomy, "_require_planner_admission", lambda: None)
+    monkeypatch.setenv("HTTP_PROXY", "http://invalid.example:3128")
+    monkeypatch.setenv("ALL_PROXY", "http://invalid.example:3128")
+    monkeypatch.setenv("NO_PROXY", "")
+    error_body = io.BytesIO(b"untrusted response")
+    error = urllib.error.HTTPError("http://127.0.0.1:11434", status, "untrusted reason",
+                                  {"Location": "http://invalid.example/redirect-trap"}, error_body)
+    opener = Mock()
+    opener.open.side_effect = error
+    build = Mock(return_value=opener)
+    monkeypatch.setattr(urllib.request, "build_opener", build)
+
+    with pytest.raises(urllib.error.HTTPError) as refused:
+        if operation == "planner":
+            autonomy.default_planner({"objective": "synthetic"})
+        elif operation == "chat":
+            ai_provider._ollama_request("/api/chat", payload={"synthetic": True})
+        else:
+            ai_provider._ollama_request("/api/tags")
+    assert refused.value.code == status
+    assert refused.value.headers is None
+    assert "redirect-trap" not in str(refused.value)
+    assert "untrusted reason" not in str(refused.value)
+    assert error_body.closed
+    build.assert_called_once()
+    proxy, redirect = build.call_args.args
+    assert isinstance(proxy, urllib.request.ProxyHandler) and proxy.proxies == {}
+    assert isinstance(redirect, urllib.request.HTTPRedirectHandler)
+    assert redirect.redirect_request(None, None, status, None, {}, "http://invalid.example") is None
+    opener.open.assert_called_once()
+    request = opener.open.call_args.args[0]
+    expected = "generate" if operation == "planner" else operation
+    assert request.full_url == "http://127.0.0.1:11434/api/" + expected
+    assert request.get_method() == ("GET" if operation == "tags" else "POST")
+
+
+@pytest.mark.parametrize("operation", ("tags", "chat", "planner"))
+def test_legacy_local_inference_success_still_uses_original_request(monkeypatch, operation):
+    import io
+    import json
+    import urllib.request
+    from unittest.mock import Mock
+
+    monkeypatch.delenv("PILOTODIN_DESKTOP_SESSION", raising=False)
+    monkeypatch.setattr(autonomy, "_require_planner_admission", lambda: None)
+    expected = propose()
+    data = {"response": json.dumps(expected)} if operation == "planner" else {"synthetic": True}
+    response = io.BytesIO(json.dumps(data).encode())
+    response.status = 200
+    opener = Mock()
+    opener.open.return_value = response
+    monkeypatch.setattr(urllib.request, "build_opener", Mock(return_value=opener))
+    if operation == "planner":
+        assert autonomy.default_planner({"objective": "synthetic"}) == expected
+    elif operation == "chat":
+        assert ai_provider._ollama_request("/api/chat", payload={"synthetic": True}) == data
+    else:
+        assert ai_provider._ollama_request("/api/tags") == data
+    opener.open.assert_called_once()
+    assert response.closed
+
+
+def test_legacy_local_inference_refuses_unexpected_destination_before_open(monkeypatch):
+    import urllib.request
+    from unittest.mock import Mock
+
+    build = Mock()
+    monkeypatch.setattr(urllib.request, "build_opener", build)
+    with pytest.raises(ValueError, match="destination"):
+        with ai_provider._local_inference_response(
+                urllib.request.Request("http://invalid.example/api/generate"), 1):
+            pytest.fail("Unexpected transport")
+    build.assert_not_called()

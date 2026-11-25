@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import base64
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
 import ctypes
 from itertools import zip_longest
 import json
@@ -256,6 +257,32 @@ def _call_provider(provider:str,model:str,system:str,user:str,key:str,timeout:in
     clipped=len(text)>16000
     return ProviderText(text.strip()[:16000], finish, incomplete or clipped)
 
+class _LocalNoRedirects(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+@contextmanager
+def _local_inference_response(request, timeout):
+    """Keep the legacy Ollama client on its original fixed loopback destination."""
+    if request.full_url not in (OLLAMA_URL + "/api/tags", OLLAMA_URL + "/api/chat",
+                                OLLAMA_URL + "/api/generate"):
+        raise ValueError("Unsupported local inference destination")
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), _LocalNoRedirects())
+    try:
+        with opener.open(request, timeout=timeout) as response:
+            if 300 <= response.status < 400:
+                raise urllib.error.HTTPError(request.full_url, response.status,
+                                             "Local inference request refused", None, None)
+            yield response
+    except urllib.error.HTTPError as exc:
+        code = exc.code
+        exc.close()
+        # Do not disclose a redirect destination, server reason or response body.
+        raise urllib.error.HTTPError(request.full_url, code, "Local inference request refused",
+                                     None, None) from None
+
+
 # The local model can also use the individual prediction. It cannot execute
 # Python or shell commands or write project data.
 def _ollama_request(path:str, *, payload:dict|None=None, timeout:int=2)->dict:
@@ -266,8 +293,7 @@ def _ollama_request(path:str, *, payload:dict|None=None, timeout:int=2)->dict:
         data=json.dumps(payload,ensure_ascii=False).encode('utf-8') if payload is not None else None,
         headers={'Content-Type':'application/json','User-Agent':'PilotODIN/local'},
         method='POST' if payload is not None else 'GET')
-    opener=urllib.request.build_opener(urllib.request.ProxyHandler({}))
-    with opener.open(request,timeout=timeout) as response:
+    with _local_inference_response(request, timeout) as response:
         body=response.read(192_000)
     data=json.loads(body)
     if not isinstance(data,dict):raise ValueError('Invalid local inference response')

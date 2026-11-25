@@ -175,8 +175,7 @@ def default_planner(context: dict[str, Any]) -> dict[str, Any]:
                  'prompt':payload,'stream':False,'format':SCHEMA,'think':False,
                  'options':{'temperature':0,'num_ctx':2048,'num_predict':190}}).encode('utf-8'),
             headers={'Content-Type':'application/json'},method='POST')
-        opener=urllib.request.build_opener(urllib.request.ProxyHandler({}))
-        with opener.open(req,timeout=75) as response:
+        with ai_provider._local_inference_response(req, 75) as response:
             answer=json.load(response)
         text=answer.get('response','')
     try: value=json.loads(text)

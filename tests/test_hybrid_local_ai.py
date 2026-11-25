@@ -143,6 +143,7 @@ def test_local_api_is_fixed_loopback(monkeypatch):
     import urllib.request
     calls=[]
     class Response:
+        status = 200
         def __enter__(self):return self
         def __exit__(self,*a):pass
         def read(self,n):return b'{"models":[]}'
