@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 35d2bd2002a8df92969744aced967000ef13515d |
-| Product baseline | C4 C3 server witness 77de1c5 exact eight routine CI SUCCESS; independently reconciled live Actions API. |
+| Observed starting HEAD | a931ff9775af8d32d391f2490cbaa15f2527aef6 |
+| Product baseline | C4 C3 frontend witness/fence 35d2bd2 + test-only a931ff9 exact P1/P4 SUCCESS. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
-| Operation ID | C4-C3-TEST-LOADER-CORRECTION-20261125 |
-| Operation state | ISSUED from prepared parent 87b6a7216b6406d2bbdd8c6c33aac0081a707860; test-only loader correction. Resolve exact corrected source and CI before proceeding. |
-| Intended files | frontend/tests/desktop-ai-boundaries.test.cjs and canonical records only. Restore original insight fence loader and pass simulated window only to consent loader. |
+| Operation ID | C4-C3-MOUNTED-CONSENT-FIXTURE-20261125 |
+| Operation state | PREPARED; fixture-only panel confirmation and response fencing, no real project-data cloud dispatch. |
+| Intended files | frontend/src/cloudConsentSession.ts, api.ts, AIWorkspace.tsx, AssistantWorkspace.tsx, App.tsx, frontend/tests/desktop-ai-boundaries.test.cjs, frontend/e2e/isolated-workspace.spec.ts, additive P1 intercepted browser test selection and canonical records. No real cloud enablement. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Exact 77de1c5: P1 236 focused cases and downstream SUCCESS; P4 1086 Python passed/6 skipped/552 subtests, 15 Rust storage, 139 Node/Vite, Windows 68/133 subtests, browser 13 SUCCESS. All eight workflows passed, restricted collector skipped. |
-| Pending runs | 35d2bd2: P1 #45668445896 and P4 #45668445916 IN_PROGRESS; reconcile terminal results including any superseded cancellation; corrected exact IDs to be discovered. |
+| Verification | Exact a931ff9: P1 #45668632462 SUCCESS (206 Node, Vite, 7 browser); P4 #45668632455 SUCCESS (1086 Python/6 skipped/552 subtests, 15 Rust, 141 Node/Vite, 13 browser, Windows 68/133 subtests); collector skipped. Original 35d2bd2 P1/P4 cancelled, source inspection error preserved. |
+| Pending runs | None from a931ff9. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | On owner continuation, verify live HEAD; then require fresh server witness in explicit frontend connection tests and project panels, cross-renderer invalidation and per-click confirmation, stale response rejection and mounted browser witnesses. Keep project cloud sending held until safeguards verified; OpenRouter project sharing disabled. Legacy explicit API clients may omit witness. Then C4 source closure, C5. No restricted scope or official score increment. |
+| Recovery action | Implement and verify per-click confirmed named project request only through existing intercepted fixture origin; all real routes held. Require fresh server witness before and after request, generation/context/response fences, no cloud continuation or preference restore. Add mounted intercepted browser cases for both panels and cross-window revocation; then review version-pin boundary and verify before actual cloud source enablement. OpenRouter stays disabled. Then C4 source closure and C5. |
 | Resume after closure | C5 then D with separately approved scope. |
 
 ## Prior operation
