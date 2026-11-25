@@ -231,9 +231,5 @@ def main():
 
 
 if __name__ == "__main__":
-    try:
-        raise SystemExit(main())
-    except (Refusal, OSError, ValueError, KeyError, TypeError) as exc:
-        print("C5_METADATA_BLOCKED " + (str(exc) if type(exc) is Refusal else type(exc).__name__),
-              file=sys.stderr)
-        raise SystemExit(2)
+    print("C5_METADATA_APPROVAL_CONSUMED: run 45686334903; no replay", file=sys.stderr)
+    raise SystemExit(2)
