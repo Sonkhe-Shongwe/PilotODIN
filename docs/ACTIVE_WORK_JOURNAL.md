@@ -7,14 +7,14 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | BLOCKED |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 00d77cd9bb39e39ac6833bcbffd344c0a30fb078 |
+| Observed starting HEAD | 965a433e784873c183864c1c93cce199ba744c2c |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
-| Operation ID | C5-SELECTED-WHEEL-METADATA-ONCE-20261125 |
-| Operation state | RECONCILED: exact activation ccfd5edd736644bfd0ed16ef05ed8b4a0537cadd; run 45695626291 attempt 1, job 139492148731 FAILURE (exit 2, CONTENT_TYPE_REFUSED), 1 index + 1 sidecar request, 8,031 body bytes, 0 verified sidecars, 62 missing, 0 artifact requests. Both workflow and CLI disarmed at 800f459994d61243ebcdca857658abe6ece5e64b. No replay. |
-| Intended files | Isolated collector, dedicated workflow/marker, canonical journal/handoff/evidence and terminal log-derived receipt; no product source or locks. |
+| Operation ID | C5-METADATA-RESPONSE-REVIEW-20261125 |
+| Operation state | PREPARED offline correction only. Prior run 45695626291 reconciled failure, both collectors remain disarmed. Research PEP 658/714, Warehouse source and Core Metadata; add synthetic response validation candidate with no live collection CLI and dedicated offline tests. |
+| Intended files | New isolated qa/c5_wheel_metadata/response_review.py, exact offline-only workflow and canonical docs. Preserve both consumed collectors, markers, locks and product source. |
 | Approval | Eight restricted approvals consumed/disarmed (six native, release metadata run 45686334903, selected-wheel metadata run 45695626291). No new requests, artifact bytes, installations, native/model, installer, owner device or expanded scope authorized. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
 | Pending runs | None for this operation. |
