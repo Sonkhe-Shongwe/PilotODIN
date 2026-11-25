@@ -13,13 +13,13 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Product baseline | C3 source exit supported at 78c8672, latest product ebd01f4 and verified fixture/historical changes c329e0d/83c83f8. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
 | Operation ID | C4-B1-UTF8-PROMPT-CORRECTION-20261125 |
-| Operation state | ISSUED; reconcile exact correction by parent f35b565 and operation marker before retry |
+| Operation state | RECONCILED: exact UTF-8 correction [eb5fd3f](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/eb5fd3f04ecdbb62d4c4d9d1dc40a922b17581b8); no replay |
 | Intended files | backend/ai_provider.py, tests/test_c4_cloud_intent.py, tests/test_p4_r03_verified_answers.py and canonical records only. No change to workflow, local prompt format, consent or 11000-byte maximum. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | Byte-aware cloud fitting and absent history field implemented; local character budget retained. Seven new inert cases including four exact boundary parameters, wide context, invalid Unicode and local format; original P4 assertions retained, wire limit strengthened. Exact CI pending. |
-| Pending runs | Two exact workflows expected (P1 isolated backend and P4); reconcile IDs. |
+| Pending runs | [P1 Isolated Backend Source Recovery #45630946373](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45630946373) IN_PROGRESS; [P4 Target Review Queue and Transparent Ranking #45630946280](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45630946280) IN_PROGRESS. Both at exact eb5fd3f. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Fit cloud prompt using serialized UTF-8 byte costs throughout, omit continuation key for fresh cloud request; reject cloud history and invalid Unicode safely. Preserve local character budgeting and format. Keep required facts and whole optional records, omission counts, final cap. Add inert exact-boundary and malformed Unicode tests, strengthen P4 wire-size assertion. Reconcile expected P1 isolated backend and P4 existing scoped workflows before B6. |
+| Recovery action | Reconcile both exact corrected CI runs, especially seven new byte/Unicode/local cases and two original P4 privacy regressions; preserve any failures. Then B6 positive nested payload projection, strict provider transport and revocation/concurrency, remaining historical test migration, UI wiring. No actual provider/native/owner-data operation. |
 | Resume after closure | C5 then D with separately approved scope. |
 
 ## Prior operation
