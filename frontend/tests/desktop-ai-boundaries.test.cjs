@@ -184,7 +184,7 @@ function loadInsightFence(){
  const source=fs.readFileSync(path.join(__dirname,'../src/insightRequestFence.ts'),'utf8');
  const output=ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2021,module:ts.ModuleKind.CommonJS}}).outputText;
  const mod={exports:{}};
- new Function('module','exports',output)(mod,mod.exports);
+ new Function('module','exports','window',output)(mod,mod.exports,browserWindow);
  return mod.exports.createInsightRequestFence;
 }
 test('C2 request fence refuses synchronous duplicate and keeps ownership until actual settlement',async()=>{
@@ -470,7 +470,7 @@ test('C3 archived hosted desktop driver source confines direct session requests 
 
 // C4 C1: execute the actual renderer-local mutation fence and saved permission
 // policy. No fetch, provider, IPC, native or model is invoked.
-function loadCloudConsentSession(){
+function loadCloudConsentSession(browserWindow){
  const source=fs.readFileSync(path.join(__dirname,'../src/cloudConsentSession.ts'),'utf8');
  const output=ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2021,module:ts.ModuleKind.CommonJS}}).outputText;
  const mod={exports:{}};
@@ -527,8 +527,10 @@ test('C4 settings and startup only use manual handshake, never key-save or start
  const keyBody=settings.slice(settings.indexOf('async function saveKey'),settings.indexOf('function move'));
  assert.match(testBody,/!fresh\|\|dirty\|\|!canTestCloud\(confirmed,provider\)/);
  assert.match(testBody,/await get<Settings>\('\/ai\/settings'\)/);
- assert.match(testBody,/if\(!canTestCloud\(saved,provider\)\)return/);
- assert.match(testBody,/\{cloud_intent:true\}/);
+ assert.match(testBody,/explicitHandshakeRequest\(reviewed,saved,provider\)/);
+ assert.match(testBody,/!body\|\|!cloudSettingsOperationIsCurrent\(ticket\)/);
+ assert.match(testBody,/post<\{status:string\}>\(`\/ai\/test\/\$\{provider\}`,body\)/);
+ assert.match(testBody,/savedCloudWitness\(value\)!==body.cloud_consent_witness/);
  assert.doesNotMatch(keyBody,/testProvider\(|\/ai\/test\//);
  assert.match(keyBody,/Connection not tested/);
  assert.doesNotMatch(shell,/\/ai\/verify-connected|\/ai\/test\//);
@@ -581,4 +583,40 @@ test('C4 C2 actual panels keep auto local and never persist a cloud choice or co
  assert.match(assistant,/!localPanelMayContinue\(last.answerSource\)/);
  assert.match(assistant,/r.source==='cloud_llm'\)return/);
  assert.doesNotMatch(insight,/insightCache|pendingInsights/);
+});
+
+test('C4 C3 handshake requires the exact reviewed server witness; malformed and restart witnesses fail closed',()=>{
+ const session=loadCloudConsentSession();
+ const saved={cloud_enabled:true,share_aggregates:true,intelligence_mode:'hybrid',providers:[{id:'gemini',connected:true}],
+   cloud_consent_witness:'a'.repeat(32)+':7'};
+ assert.deepEqual(session.explicitHandshakeRequest(saved,saved,'gemini'),{cloud_intent:true,cloud_consent_witness:saved.cloud_consent_witness});
+ for(const witness of [undefined,null,7,'bad','b'.repeat(32)+':7','a'.repeat(32)+':8']){
+   assert.equal(session.explicitHandshakeRequest(saved,{...saved,cloud_consent_witness:witness},'gemini'),null);
+ }
+ assert.equal(session.explicitHandshakeRequest(saved,{...saved,cloud_enabled:false},'gemini'),null);
+ assert.equal(session.explicitHandshakeRequest(saved,saved,'groq'),null);
+});
+test('C4 C3 two simulated renderers invalidate saved state at begin and finish without broadcasting consent',()=>{
+ const peers=[];const sent=[];
+ class Channel{
+   constructor(name){this.name=name;peers.push(this)}
+   postMessage(data){sent.push(data);for(const peer of peers)if(peer!==this&&peer.name===this.name)peer.onmessage?.({data})}
+   close(){}
+ }
+ let next=1;
+ const fakeWindow={BroadcastChannel:Channel,crypto:{getRandomValues(a){a.fill(next++);return a}}};
+ const a=loadCloudConsentSession(fakeWindow),b=loadCloudConsentSession(fakeWindow);
+ assert.equal(a.cloudConsentCrossWindowAvailable(),true);
+ const old=b.cloudConsentSnapshot().generation;
+ const t=a.beginCloudSettingsOperation(a.cloudConsentSnapshot().generation);
+ assert.ok(t);assert.equal(b.cloudConsentSnapshot().pending,true);
+ assert.equal(b.cloudConsentIsCurrent(old),false);
+ assert.equal(b.beginCloudSettingsOperation(b.cloudConsentSnapshot().generation),null);
+ assert.ok(a.cloudSettingsOperationIsCurrent(t));
+ assert.ok(a.finishCloudSettingsOperation(t));
+ assert.equal(b.cloudConsentSnapshot().pending,false);
+ assert.equal(b.cloudConsentIsCurrent(old),false);
+ assert.deepEqual(sent.map(s=>Object.keys(s).sort()),[['id','phase'],['id','phase']]);
+ assert.deepEqual(sent.map(s=>s.phase),['begin','finish']);
+ assert.equal(sent[0].id,sent[1].id);
 });

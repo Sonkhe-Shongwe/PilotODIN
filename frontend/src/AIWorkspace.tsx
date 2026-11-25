@@ -1,5 +1,5 @@
 import {useEffect,useLayoutEffect,useRef,useState,useSyncExternalStore} from 'react';
-import {beginCloudSettingsOperation,finishCloudSettingsOperation,cloudConsentSnapshot,subscribeCloudConsent,cloudConsentIsCurrent,canTestCloud,isLocalPanelProvider,localPanelProvider,projectCloudProviderName,projectCloudHold,projectCloudDisclosure,localPanelRequest,localPanelMayContinue} from './cloudConsentSession';
+import {beginCloudSettingsOperation,finishCloudSettingsOperation,cloudConsentSnapshot,subscribeCloudConsent,cloudConsentIsCurrent,canTestCloud,cloudConsentCrossWindowAvailable,cloudSettingsOperationIsCurrent,savedCloudWitness,explicitHandshakeRequest,isLocalPanelProvider,localPanelProvider,projectCloudProviderName,projectCloudHold,projectCloudDisclosure,localPanelRequest,localPanelMayContinue} from './cloudConsentSession';
 import {createInsightRequestFence} from './insightRequestFence';
 import {BrainCircuit,CheckCircle2,Cloud,KeyRound,LoaderCircle,LockKeyhole,RefreshCw,ShieldCheck,Sparkles,WifiOff} from 'lucide-react';
 import {get,post,put,usesOwnedInference} from './api';
@@ -8,7 +8,7 @@ import {ResourceSettings} from './ResourceSettings';
 
 type ProviderId='gemini'|'groq'|'openrouter';
 type ProviderState={id:ProviderId;connected:boolean;verified?:boolean;health?:{status:string;latency_ms?:number;tested_at_utc?:string;message?:string;http_status?:number};routine_model:string;deep_model:string};
-type Settings={intelligence_mode:'hybrid'|'local'|'cloud';local_model:string;local_model_enabled:boolean;local_timeout_seconds:number;local_ai?:{status:string;model:string;runtime?:string;installed_models?:string[]};cloud_enabled:boolean;share_aggregates:boolean;auto_insights:boolean;provider_order:ProviderId[];timeout_seconds:number;preferred_provider?:string;workspace_preferences?:Record<string,string>;providers:ProviderState[];secret_storage:string;privacy_note:string;credential_warning?:string|null;settings_warning?:string|null};
+type Settings={intelligence_mode:'hybrid'|'local'|'cloud';local_model:string;local_model_enabled:boolean;local_timeout_seconds:number;local_ai?:{status:string;model:string;runtime?:string;installed_models?:string[]};cloud_enabled:boolean;share_aggregates:boolean;auto_insights:boolean;provider_order:ProviderId[];timeout_seconds:number;preferred_provider?:string;workspace_preferences?:Record<string,string>;providers:ProviderState[];secret_storage:string;privacy_note:string;credential_warning?:string|null;settings_warning?:string|null;cloud_consent_witness?:string};
 type Analysis={answer:string;source:string;provider:string;model:string;fallback:boolean;reason?:string;incomplete?:boolean;finish_reason?:string;attempts:{provider:string;status:string}[];dataset_version:number;scope:string;investigation?:Record<string,unknown>};
 
 const names:Record<ProviderId,string>={gemini:'Google Gemini',groq:'GroqCloud',openrouter:'OpenRouter'};
@@ -33,19 +33,19 @@ export function AISettings(){
     return()=>{live=false};
   },[]);
   useEffect(()=>{if(!busy){setElapsed(0);return;}const start=Date.now();const t=window.setInterval(()=>setElapsed(Math.floor((Date.now()-start)/1000)),1000);return()=>window.clearInterval(t)},[busy]);
-  async function settingsOperation(label:string,operation:()=>Promise<{value:Settings;notice:string}>){
+  async function settingsOperation(label:string,operation:(ticket:NonNullable<ReturnType<typeof beginCloudSettingsOperation>>)=>Promise<{value:Settings;notice:string}>){
     const ticket=beginCloudSettingsOperation(session.generation);
     if(!ticket)return;
     setBusy(label);setError('');setNotice('');
     let result:{value:Settings;notice:string}|null=null;
-    try{result=await operation()}
+    try{result=await operation(ticket)}
     catch(e){setConfirmed(null);setConfirmedAt(-1);setError((e as Error).message)}
     finally{
       const settled=finishCloudSettingsOperation(ticket);
       if(settled&&result){
         setSettings(result.value);setConfirmed(result.value);setConfirmedAt(settled.generation);
         setNotice(result.notice);
-      }
+      }else if(!settled){setConfirmed(null);setConfirmedAt(-1);setNotice('');setError('Saved settings changed in another view. Reload before saving or testing again.')}
       setBusy('');
     }
   }
@@ -55,13 +55,16 @@ export function AISettings(){
       notice:'Saved settings refreshed. Unsaved edits were discarded.'}));
   }
   async function testProvider(provider:ProviderId){
-    if(busy||!fresh||dirty||!canTestCloud(confirmed,provider))return;
-    await settingsOperation('test:'+provider,async()=>{
+    if(busy||!fresh||dirty||!canTestCloud(confirmed,provider)||!savedCloudWitness(confirmed)||!cloudConsentCrossWindowAvailable())return;
+    const reviewed=confirmed;
+    await settingsOperation('test:'+provider,async ticket=>{
       // Refresh the authoritative saved permission; draft flags never authorize.
       const saved=await get<Settings>('/ai/settings');
-      if(!canTestCloud(saved,provider))return {value:saved,notice:'Connection test not sent: saved permission or credential unavailable.'};
-      const r=await post<{status:string}>(`/ai/test/${provider}`,{cloud_intent:true});
+      const body=explicitHandshakeRequest(reviewed,saved,provider);
+      if(!body||!cloudSettingsOperationIsCurrent(ticket)||!cloudConsentCrossWindowAvailable())return {value:saved,notice:'Connection test not sent: saved permission changed or is unavailable. Review settings and click again.'};
+      const r=await post<{status:string}>(`/ai/test/${provider}`,body);
       const value=await get<Settings>('/ai/settings');
+      if(savedCloudWitness(value)!==body.cloud_consent_witness||!cloudSettingsOperationIsCurrent(ticket))return {value,notice:'Saved permission changed. Previous connection result not verified for current settings.'};
       return {value,notice:`${names[provider]}: ${r.status==='connected'?'Connection verified by explicit test.':r.status==='busy'?'Another cloud operation is in progress.':r.status==='not_configured'?'Saved permission or credential unavailable.':'Connection not verified.'}`};
     });
   }
@@ -88,7 +91,7 @@ export function AISettings(){
     <section className="quality-banner"><div><div className="eyebrow">ODIN INTELLIGENCE · SETTINGS</div><h2>Local-first ODIN intelligence</h2><p>Use bundled local intelligence on Windows desktop, or Ollama during development. Cloud AI is optional and requires a separate explicit request. Calculations stay in the verified local engine.</p></div><BrainCircuit size={42}/></section>
     {error&&<div className="alert-error">{error}</div>}{busy&&<div role="status" className="ai-working"><LoaderCircle size={18} className="spin"/><span><strong>{busy==='test:ollama'?'Checking local model server status (no generation)…':busy.startsWith('test:')?'Contacting provider and verifying connection…':busy==='settings'?'Saving preferences securely…':busy==='refresh'?'Reading saved preferences…':'Saving or removing credential…'}</strong><small>{elapsed}s elapsed · waiting for the local service</small></span></div>}{notice&&<div className="ai-notice"><CheckCircle2 size={16}/>{notice}</div>}
     <ResourceSettings/>
-    <div className="ai-settings-actions"><button className="btn small" disabled={Boolean(busy)||session.pending} onClick={()=>void reloadSettings()}><RefreshCw size={14}/> Reload saved settings</button>{!fresh&&!session.pending&&<span className="muted-caption">Saved settings are not confirmed for this view. Reload before saving or testing.</span>}{fresh&&dirty&&<span className="muted-caption">Unsaved edits. Save preferences before changing credentials or testing.</span>}</div>
+    <div className="ai-settings-actions"><button className="btn small" disabled={Boolean(busy)||session.pending} onClick={()=>void reloadSettings()}><RefreshCw size={14}/> Reload saved settings</button>{!fresh&&!session.pending&&<span className="muted-caption">Saved settings are not confirmed for this view. Reload before saving or testing.</span>}{fresh&&dirty&&<span className="muted-caption">Unsaved edits. Save preferences before changing credentials or testing.</span>}{!cloudConsentCrossWindowAvailable()&&<span className="muted-caption">Cloud tests are unavailable without cross-window invalidation. Local settings remain available.</span>}</div>
     {(confirmed?.credential_warning||confirmed?.settings_warning)&&<div className="alert-error" role="status">{confirmed.credential_warning||confirmed.settings_warning}</div>}
     {!settings?<div className="panel">Saved AI settings not loaded.</div>:<fieldset disabled={Boolean(busy)||session.pending||!fresh} style={{display:'contents'}}>
     <section className="panel ai-settings-panel"><div className="panel-title"><BrainCircuit size={19}/><h2>ODIN intelligence routing</h2></div>
@@ -114,7 +117,7 @@ export function AISettings(){
       {settings.provider_order.map((p,index)=>{const state=settings.providers.find(x=>x.id===p);return <div className="ai-provider-row" key={p}>
         <div className="ai-provider-details"><b>{index+1}. {names[p]}</b><small>{state?.routine_model} · {state?.connected?'Key saved':'No key'}</small><span className={'health-status status-'+(state?.health?.status??'unverified')}>{!fresh||dirty?'Saved status not current':state?.verified===true&&state?.health?.status==='connected'?'Previously verified by explicit test':state?.health?.status==='not_configured'?'No key configured':state?.health?.status==='unavailable'?'Connection not verified':'Not tested'}</span></div>
         <div className="ai-provider-priority"><button className="btn small" disabled={index===0} aria-label={`Move ${names[p]} up`} onClick={()=>move(p,-1)}>↑</button><button className="btn small" disabled={index===settings.provider_order.length-1} aria-label={`Move ${names[p]} down`} onClick={()=>move(p,1)}>↓</button></div>
-        <div className="ai-provider-secret"><input className="input" type="password" autoComplete="new-password" value={keys[p]??''} placeholder={state?.connected?'•••••••• (saved)':'Paste private API key'} onChange={e=>setKeys({...keys,[p]:e.target.value})}/><button className="btn primary small" disabled={busy!==''||dirty||!fresh||!(keys[p]??'').trim()} onClick={()=>void saveKey(p)}><KeyRound size={14}/> Save</button>{state?.connected&&<><button className="btn small" disabled={Boolean(busy)||dirty||!fresh||!canTestCloud(confirmed,p)} onClick={()=>void testProvider(p)}>{busy==='test:'+p?<LoaderCircle size={14} className="spin"/>:<RefreshCw size={14}/>} {busy==='test:'+p?'Connecting…':'Test connection'}</button><button className="btn small" disabled={Boolean(busy)||dirty||!fresh} onClick={()=>void saveKey(p,true)}>Remove</button></>}</div>
+        <div className="ai-provider-secret"><input className="input" type="password" autoComplete="new-password" value={keys[p]??''} placeholder={state?.connected?'•••••••• (saved)':'Paste private API key'} onChange={e=>setKeys({...keys,[p]:e.target.value})}/><button className="btn primary small" disabled={busy!==''||dirty||!fresh||!(keys[p]??'').trim()} onClick={()=>void saveKey(p)}><KeyRound size={14}/> Save</button>{state?.connected&&<><button className="btn small" disabled={Boolean(busy)||dirty||!fresh||!canTestCloud(confirmed,p)||!savedCloudWitness(confirmed)||!cloudConsentCrossWindowAvailable()} onClick={()=>void testProvider(p)}>{busy==='test:'+p?<LoaderCircle size={14} className="spin"/>:<RefreshCw size={14}/>} {busy==='test:'+p?'Connecting…':'Test connection'}</button><button className="btn small" disabled={Boolean(busy)||dirty||!fresh} onClick={()=>void saveKey(p,true)}>Remove</button></>}</div>
       </div>})}
     </section>
     </fieldset>}
