@@ -33,6 +33,11 @@ export function configureDesktopAPI(connection:DesktopConnection) {
   if(developmentOrigin)throw new Error('Mixed API configuration');
   desktopEndpoint = {...connection};
 }
+// Only the existing DEV-only intercepted fixture bootstrap can configure this
+// origin. Vite refuses every un-intercepted API call there; no real backend.
+export function usesInterceptedFixtureAPI():boolean{
+ return developmentOrigin==='http://127.0.0.1:5187'&&desktopEndpoint===null;
+}
 export function usesOwnedInference():boolean {return desktopEndpoint?.backend_driven_inference===true;}
 export function apiBase():string {
   if(developmentOrigin)return `${developmentOrigin}/api`;

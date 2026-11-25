@@ -581,7 +581,7 @@ test('C4 C2 actual panels keep auto local and never persist a cloud choice or co
  assert.match(insight,/auto_insights===true&&r.local_model_enabled===true/);
  assert.match(insight,/if\(auto&&routeAvailable&&!session.pending\)void run\(false\)/);
  assert.match(assistant,/!localPanelMayContinue\(last.answerSource\)/);
- assert.match(assistant,/r.source==='cloud_llm'\)return/);
+ assert.match(assistant,/if\(!current\(\)\|\|r.source==='cloud_llm'\)return/);
  assert.doesNotMatch(insight,/insightCache|pendingInsights/);
 });
 
@@ -619,4 +619,32 @@ test('C4 C3 two simulated renderers invalidate saved state at begin and finish w
  assert.deepEqual(sent.map(s=>Object.keys(s).sort()),[['id','phase'],['id','phase']]);
  assert.deepEqual(sent.map(s=>s.phase),['begin','finish']);
  assert.equal(sent[0].id,sent[1].id);
+});
+
+test('C4 held project routes restrict reviewed consent to Gemini/Groq and require exact version/provider responses',()=>{
+ const session=loadCloudConsentSession();
+ const saved={cloud_enabled:true,share_aggregates:true,intelligence_mode:'hybrid',providers:[{id:'gemini',connected:true},{id:'groq',connected:true},{id:'openrouter',connected:true}],cloud_consent_witness:'a'.repeat(32)+':1'};
+ assert.deepEqual(session.projectCloudRoute(saved,saved,'gemini'),{selected_provider:'gemini',cloud_intent:true,cloud_consent_witness:saved.cloud_consent_witness});
+ assert.equal(session.projectCloudRoute(saved,saved,'openrouter'),null);
+ assert.equal(session.projectCloudRoute(saved,{...saved,cloud_consent_witness:'a'.repeat(32)+':2'},'groq'),null);
+ const r={source:'cloud_llm',provider:'gemini',fallback:false,scope:'assistant',dataset_version:3};
+ assert.equal(session.cloudResponseMatches(r,'gemini','assistant',3),true);
+ for(const value of [{...r,provider:'groq'},{...r,dataset_version:4},{...r,scope:'overview'},{...r,source:'unknown'}])
+  assert.equal(session.cloudResponseMatches(value,'gemini','assistant',3),false);
+ assert.equal(session.cloudResponseMatches({...r,source:'local_computed_rules',provider:'local',fallback:true},'gemini','assistant',3),true);
+});
+test('C4 mounted project send is held outside the explicitly intercepted API fixture',()=>{
+ const api=fs.readFileSync(path.join(__dirname,'../src/api.ts'),'utf8');
+ const ui=fs.readFileSync(path.join(__dirname,'../src/AIWorkspace.tsx'),'utf8');
+ const assistant=fs.readFileSync(path.join(__dirname,'../src/AssistantWorkspace.tsx'),'utf8');
+ assert.match(api,/function usesInterceptedFixtureAPI\(\):boolean\{\s*return developmentOrigin==='http:\/\/127\.0\.0\.1:5187'&&desktopEndpoint===null/);
+ for(const panel of [ui.slice(ui.indexOf('export function AIInsight')),assistant]){
+   assert.match(panel,/const cloudFixture=usesInterceptedFixtureAPI\(\)/);
+   assert.match(panel,/const cloudAvailable=cloudFixture&&cloudConsentCrossWindowAvailable\(\)/);
+   assert.match(panel,/confirmedProjectCloud</);
+   assert.match(panel,/window.confirm\(projectCloudConfirmationText/);
+   assert.match(panel,/cloudResponseMatches/);
+ }
+ assert.match(ui,/!route&&\(!manual\|\|!cloudAvailable\)/);
+ assert.match(assistant,/filter\(m=>!m.cloudRequest\)/);
 });

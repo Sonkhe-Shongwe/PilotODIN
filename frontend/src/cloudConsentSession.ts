@@ -119,3 +119,35 @@ export function localPanelRequest(value:unknown):{selected_provider:LocalPanelPr
   return isLocalPanelProvider(value)?{selected_provider:value,cloud_intent:false}:null;
 }
 export function localPanelMayContinue(source:unknown):boolean{return source==='local_llm'}
+
+export type ProjectCloudProvider='gemini'|'groq';
+export type ProjectCloudRoute={selected_provider:ProjectCloudProvider;cloud_intent:true;cloud_consent_witness:string};
+export function projectCloudRoute(reviewed:SavedCloudPermission|null,saved:SavedCloudPermission|null,provider:string):ProjectCloudRoute|null{
+  if((provider!=='gemini'&&provider!=='groq')||!saved)return null;
+  const body=explicitHandshakeRequest(reviewed,saved,provider);
+  return body?{selected_provider:provider,...body}:null;
+}
+export function projectCloudConfirmationText(provider:string,scope:string,version:number,question:string,deep:boolean):string{
+  return 'Send one '+(deep?'deeper':'routine')+' request to '+projectCloudProviderName(provider)+'?\nWorkspace: '+scope+' · Working dataset v'+version+'\nQuestion: '+question+'\n\n'+projectCloudDisclosure+'\n\nConfirm only this request.';
+}
+type CloudOutcome<T>={status:'cancelled'|'stale'}|{status:'result';response:T};
+// The confirmation callback runs synchronously from the explicit click, before
+// any await. An independent fresh read must match the reviewed witness before
+// dispatch and again before publication. No automatic retry.
+export async function confirmedProjectCloud<T>(reviewed:SavedCloudPermission|null,provider:string,
+  confirm:()=>boolean,read:()=>Promise<SavedCloudPermission>,send:(route:ProjectCloudRoute)=>Promise<T>,
+  current:()=>boolean):Promise<CloudOutcome<T>>{
+  if(!current()||!cloudConsentCrossWindowAvailable()||!projectCloudRoute(reviewed,reviewed,provider))return {status:'stale'};
+  if(!confirm())return {status:'cancelled'};
+  const route=projectCloudRoute(reviewed,await read(),provider);
+  if(!route||!current()||!cloudConsentCrossWindowAvailable())return {status:'stale'};
+  const response=await send(route);
+  if(!current()||!cloudConsentCrossWindowAvailable())return {status:'stale'};
+  if(!projectCloudRoute(reviewed,await read(),provider)||!current()||!cloudConsentCrossWindowAvailable())return {status:'stale'};
+  return {status:'result',response};
+}
+export function cloudResponseMatches(response:{source?:unknown;provider?:unknown;fallback?:unknown;dataset_version?:unknown;scope?:unknown},provider:string,scope:string,version:number):boolean{
+  return response.dataset_version===version&&response.scope===scope&&
+    ((response.source==='cloud_llm'&&response.provider===provider&&response.fallback===false)||
+     (response.source==='local_computed_rules'&&response.provider==='local'&&response.fallback===true));
+}

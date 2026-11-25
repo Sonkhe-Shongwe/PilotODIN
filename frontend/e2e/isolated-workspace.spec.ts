@@ -1462,3 +1462,132 @@ test('drag Your data onto Prepare page docks side by side without backend writes
  expect(audit.unexpectedReads).toEqual([]);
   expect(audit.blockedOrigins).toEqual([]);
 });
+
+/** Exact synthetic consent fixtures. All requests are intercepted, never sent
+ * to a backend or provider. The original route audit still blocks every other
+ * write and foreign origin. */
+async function installC4ConsentAPI(context:BrowserContext){
+  const audit=await installIsolatedAPI(context,true);
+  const epoch='a'.repeat(32);
+  const saved={
+    intelligence_mode:'hybrid',local_model:'synthetic-local',local_model_enabled:false,local_timeout_seconds:60,
+    cloud_enabled:true,share_aggregates:true,auto_insights:false,provider_order:['gemini','groq','openrouter'],
+    timeout_seconds:15,preferred_provider:'gemini',workspace_preferences:{},
+    providers:['gemini','groq','openrouter'].map(id=>({id,connected:true,verified:false,routine_model:'synthetic-routine',deep_model:'synthetic-deep'})),
+    secret_storage:'memory',privacy_note:'Synthetic fixture only',cloud_consent_witness:epoch+':1',
+  };
+  const posted:Record<string,unknown>[]=[];
+  let nextResponse:Promise<void>|null=null;
+  let nextAnswer='Synthetic cloud explanation only.';
+  const valid=(route:Route)=>route.request().headers()['x-pilotodin-dev-request']==='1';
+  await context.route(UI_ORIGIN+'/api/ai/settings',async route=>{
+    if(!valid(route)){await route.fallback();return}
+    const request=route.request();
+    if(request.method()==='GET'){
+      await route.fulfill({status:200,headers:{'cache-control':'no-store'},json:saved});return;
+    }
+    if(request.method()==='PUT'){
+      const body=request.postDataJSON();
+      const {providers,secret_storage,privacy_note,cloud_consent_witness,...settings}=saved;
+      const expected={...settings,cloud_enabled:false};
+      if(JSON.stringify(Object.keys(body).sort())===JSON.stringify(Object.keys(expected).sort())&&
+         Object.entries(expected).every(([key,value])=>JSON.stringify(body[key])===JSON.stringify(value))){
+        saved.cloud_enabled=false;saved.cloud_consent_witness=epoch+':2';
+        await route.fulfill({status:200,headers:{'cache-control':'no-store'},json:saved});return;
+      }
+    }
+    await route.fallback();
+  });
+  await context.route(UI_ORIGIN+'/api/resource/status',async route=>{
+    if(!valid(route)||route.request().method()!=='GET'){await route.fallback();return}
+    await route.fulfill({status:200,json:{policy:{mode:'adaptive',source:'default',warning:null},
+      memory:{status:'unavailable',total_gib:null,available_gib:null,available_bytes:null,source:'fixture',measured_at_utc:'2026-11-25T00:00:00Z',note:'Synthetic'},
+      policy_effect:'Synthetic',offline_8gb_ai_feasibility:'Not measured',low_memory_training_min_free_gib:1,low_memory_local_inference_min_free_gib:1}});
+  });
+  await context.route(UI_ORIGIN+'/api/projects/'+TEST_PROJECT+'/ai/insight',async route=>{
+    if(!valid(route)||route.request().method()!=='POST'){await route.fallback();return}
+    const body=route.request().postDataJSON() as Record<string,unknown>;
+    const base=['context','question','selected_provider','cloud_intent','cloud_consent_witness'];
+    const keys=body.context==='overview'?[...base,'target','experiment_id','deep','prediction']:base;
+    if(Object.keys(body).length!==keys.length||!keys.every(key=>Object.hasOwn(body,key))||
+       !['assistant','overview'].includes(String(body.context))||typeof body.question!=='string'||
+       !['Synthetic project question','Synthetic late question','What should I investigate first in this dataset and why?'].includes(body.question)||
+       (body.selected_provider!=='gemini'&&body.selected_provider!=='groq')||body.cloud_intent!==true||
+       body.cloud_consent_witness!==saved.cloud_consent_witness||!saved.cloud_enabled||
+       (body.context==='overview'&&(body.target!==null||body.experiment_id!==null||body.prediction!==null||body.deep!==false))){
+      await route.fallback();return;
+    }
+    posted.push(body);
+    const delay=nextResponse;const answer=nextAnswer;nextResponse=null;
+    if(delay)await delay;
+    await route.fulfill({status:200,json:{source:'cloud_llm',provider:body.selected_provider,model:'synthetic-routine',
+      answer,fallback:false,reason:'Synthetic',attempts:[],dataset_version:0,scope:body.context,incomplete:true}});
+  });
+  await context.addInitScript(id=>{
+    localStorage.setItem('pilotodin-current',id);
+    localStorage.setItem('pilotodin-workspace-tabs-v1-'+id,JSON.stringify(['overview','assistant']));
+    localStorage.setItem('pilotodin-workspace-active-v1-'+id,'assistant');
+    localStorage.setItem('pilotodin-ai-provider-assistant','groq');
+  },TEST_PROJECT);
+  return {audit,posted,saved,hold(response:Promise<void>,answer:string){nextResponse=response;nextAnswer=answer}};
+}
+test('C4 mounted consent requires explicit confirmation and a reviewed witness in both panels',async({page,context})=>{
+  const {audit,posted,saved}=await installC4ConsentAPI(context);
+  await page.goto('/#/studio/assistant');
+  const select=page.getByLabel('Choose intelligence');
+  const question=page.getByRole('textbox',{name:'Dataset question'});
+  await expect(select).toHaveValue('auto'); // Saved cloud preference is not intent.
+  await select.selectOption('gemini');
+  await question.fill('Synthetic project question');
+  const send=page.getByRole('button',{name:'Send to Google Gemini',exact:true});
+  await expect(send).toBeEnabled();
+  page.once('dialog',async dialog=>{expect(dialog.message()).toContain('Google Gemini');expect(dialog.message()).toContain('Synthetic project question');await dialog.dismiss()});
+  await send.click();
+  await expect(send).toBeEnabled();
+  expect(posted).toEqual([]);
+  page.once('dialog',async dialog=>{expect(dialog.message()).toContain('Confirm only this request');await dialog.accept()});
+  await send.click();
+  await expect(page.getByText('Synthetic cloud explanation only.',{exact:true})).toBeVisible();
+  expect(posted).toHaveLength(1);expect(posted[0].cloud_consent_witness).toBe(saved.cloud_consent_witness);
+  await expect(page.getByRole('button',{name:'Continue answer →'})).toHaveCount(0);
+  await select.selectOption('openrouter');await question.fill('Synthetic project question');
+  await expect(page.getByRole('button',{name:'Send to OpenRouter',exact:true})).toBeDisabled();
+  await page.getByRole('button',{name:/ODIN companion/}).click();
+  const drawer=page.getByRole('complementary',{name:'ODIN intelligence panel'});
+  await drawer.getByLabel('Intelligence',{exact:true}).selectOption('groq');
+  const deepSend=drawer.getByRole('button',{name:'Send to GroqCloud',exact:true});
+  await expect(deepSend).toBeEnabled();
+  page.once('dialog',async dialog=>{expect(dialog.message()).toContain('GroqCloud');expect(dialog.message()).toContain('Workspace: overview');await dialog.accept()});
+  await deepSend.click();
+  await expect(drawer.getByText('Synthetic cloud explanation only.',{exact:true})).toBeVisible();
+  expect(posted).toHaveLength(2);expect(posted[1].selected_provider).toBe('groq');
+  expect(posted[1].prediction).toBeNull();
+  expect(audit.writes).toEqual([]);expect(audit.blockedOrigins).toEqual([]);
+});
+test('C4 mounted consent revocation in a second renderer suppresses an in-flight response',async({page,context})=>{
+  const {audit,posted,hold}=await installC4ConsentAPI(context);
+  let release!:()=>void;
+  const delayed=new Promise<void>(resolve=>{release=resolve});
+  hold(delayed,'Synthetic stale response must never render.');
+  try{
+    await page.goto('/#/studio/assistant');
+    await page.getByLabel('Choose intelligence').selectOption('gemini');
+    await page.getByRole('textbox',{name:'Dataset question'}).fill('Synthetic late question');
+    const send=page.getByRole('button',{name:'Send to Google Gemini',exact:true});
+    await expect(send).toBeEnabled();
+    page.once('dialog',dialog=>dialog.accept());await send.click();
+    await expect.poll(()=>posted.length).toBe(1);
+    const other=await context.newPage();
+    await other.goto('/#/studio/ai_settings');
+    const enable=other.getByRole('checkbox',{name:/Enable cloud reasoning/});
+    await expect(enable).toBeChecked();
+    await enable.uncheck();
+    await other.getByRole('button',{name:'Save AI preferences',exact:true}).click();
+    await expect(other.getByText('AI preferences saved. Cloud permission disabled.',{exact:true})).toBeVisible();
+    release();
+    await expect(page.getByRole('button',{name:'Send to Google Gemini',exact:true})).toBeDisabled();
+    await expect(page.getByText('Synthetic stale response must never render.',{exact:true})).toHaveCount(0);
+    expect(posted).toHaveLength(1);
+    expect(audit.writes).toEqual([]);expect(audit.blockedOrigins).toEqual([]);
+  }finally{release()}
+});

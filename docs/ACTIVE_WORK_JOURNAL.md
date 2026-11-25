@@ -7,17 +7,17 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | a931ff9775af8d32d391f2490cbaa15f2527aef6 |
 | Product baseline | C4 C3 frontend witness/fence 35d2bd2 + test-only a931ff9 exact P1/P4 SUCCESS. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
 | Operation ID | C4-C3-MOUNTED-CONSENT-FIXTURE-20261125 |
-| Operation state | PREPARED; fixture-only panel confirmation and response fencing, no real project-data cloud dispatch. |
+| Operation state | ISSUED from prepared parent 8b77f4c8b63ca4575cd47777eb72b39ce4b02eaa; fixture-only panel integration and mounted tests. Reconcile exact CI before any real send activation. |
 | Intended files | frontend/src/cloudConsentSession.ts, api.ts, AIWorkspace.tsx, AssistantWorkspace.tsx, App.tsx, frontend/tests/desktop-ai-boundaries.test.cjs, frontend/e2e/isolated-workspace.spec.ts, additive P1 intercepted browser test selection and canonical records. No real cloud enablement. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | Exact a931ff9: P1 #45668632462 SUCCESS (206 Node, Vite, 7 browser); P4 #45668632455 SUCCESS (1086 Python/6 skipped/552 subtests, 15 Rust, 141 Node/Vite, 13 browser, Windows 68/133 subtests); collector skipped. Original 35d2bd2 P1/P4 cancelled, source inspection error preserved. |
-| Pending runs | None from a931ff9. |
+| Pending runs | Expect P1 frontend and P4 routine, plus any other path-matched routine workflow; discover exact IDs from source SHA. |
 | Unpublished work | Owner-local tree not inspected. |
 | Recovery action | Implement and verify per-click confirmed named project request only through existing intercepted fixture origin; all real routes held. Require fresh server witness before and after request, generation/context/response fences, no cloud continuation or preference restore. Add mounted intercepted browser cases for both panels and cross-window revocation; then review version-pin boundary and verify before actual cloud source enablement. OpenRouter stays disabled. Then C4 source closure and C5. |
 | Resume after closure | C5 then D with separately approved scope. |
