@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | READY |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | e87daff22bf17e9d3541392eda7d5ba9c5681df3 |
+| Observed starting HEAD | c441245c9424ac35badde9543e129a1d5605ceeb |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
-| Operation ID | C5-WHEEL-ONE-USE-ASSERTION-FIX-20261126 |
-| Operation state | RECONCILED: exact corrected QA 5bebbdccb2ae0d12b96b6cc71ff2a3adc253ea14 run 45724856304 attempt 1 SUCCESS, offline job 139592006652 27/27 + CLI refusal PASS, restricted collect-once 139592008022 SKIPPED. Initial failed assertion retained. No upload, live requests or actual wheels. |
-| Intended files | qa/c5_wheel_metadata/test_wheel_one_use_review.py only, plus journal/handoff/ledger; dedicated one-use offline-review trigger unchanged. |
-| Approval | Twelve restricted approvals consumed/disarmed (six native, six metadata). No additional registry/metadata requests, artifacts, installs, native/model, owner device/data or installer authorized. |
+| Operation ID | C5-TOOLCHAIN-CHECKSUMS-REMAINING-ONCE-20261126 |
+| Operation state | PREPARED: owner explicitly approved both proposed narrow operations in current chat. First arm exact remaining checksum collector via marker-only trigger, then one marker addition with expected parent and blob checks; reconcile/disarm before synthetic artifact operation. |
+| Intended files | qa/c5_wheel_metadata/collect_remaining_checksums.py, .github/workflows/c5-remaining-checksum-review.yml, one exact APPROVAL_REMAINING_CHECKSUMS_20261126.txt addition, then disarm; journal/handoff/evidence. No product source. |
+| Approval | Owner explicit 'i approve' after two precise proposals: (1) one synthetic receipt-only artifact upload and retrieval, max bundle 68550656 and ZIP 69599232 bytes, seven days, not yet consumed; (2) remaining checksum-only one attempt, Linux Python 3.11.18 hashes.sha256, Node 22.23.5 SHASUMS256.txt, Rust 1.100.0 channel TOML, max four HTTPS GETs, 4260661 body bytes, 15s/request, 10min job, no Windows replay/retries/binaries/registry/install/native/model/owner data. Previous twelve approvals consumed/disarmed. No real wheels. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | None for this operation. |
+| Pending runs | None issued; next prepare arm without marker, verify no workflow triggered, then exact marker-only activation attempt 1. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
-| Recovery action | Next independent source work: integrate reviewed actual Git/event and armed-source preflight driver while keeping all activation gates false; before real acquisition, prove hosted evidence publication/retrieval separately. Connector can list artifact metadata and download a ZIP file reference, but independently reading ZIP bytes via available tools is not established. Fresh approval proposal: one synthetic receipt-only artifact upload and one retrieval (max bundle 68550656 bytes, ZIP 69599232 bytes; seven-day retention, no real wheels, native, owner data, installs or retries); no live collection until verified. Remaining checksum collector 17df008 remains independently gated. |
+| Recovery action | If interrupted, inspect live HEAD and exact run before any action; never replay approved operation. Retain all checksum receipts including failure; disarm source/workflow and marker. Synthetic artifact approval remains separate, unconsumed until its own activation; independent bytes retrieval not yet established. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
