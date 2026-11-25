@@ -7,22 +7,24 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | ec26dce8e8d0a933001cf250d15f453903ba98a9 |
-| Product baseline | 16f3cf135f26a3b63d997f6b15d117ec845a6041: 7/8 terminal workflows SUCCESS; P1 source recovery FAIL before new route matrix. |
+| Observed starting HEAD | f7685620fdc27a73d3a59604f814365fae3f1dc0 |
+| Product baseline | 16f3cf1 mandatory inner auth, seven terminal SUCCESS; exact test-only 94c5d27 P1 terminal SUCCESS; identical product source. |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
-| Operation ID | C3-FSYNC-FIXTURE-COMPATIBILITY-20261125 |
-| Operation state | RECONCILED (test-only correction published at 94c5d27d84bd7dbe9c1ba8d544e7fa90c2a778d8; exact CI pending) |
-| Intended files | tests/test_p1_upload_atomic_staging.py; journal, compact handoff and C ledger. No product source or workflow change. |
+| Operation ID | C3-FRONTEND-REDIRECT-CONFINEMENT-20261125 |
+| Operation state | PREPARED (frontend transport correction; identify publication by parent and marker) |
+| Intended files | frontend/src/api.ts; frontend/e2e/p4-r03-hosted-desktop.mjs; frontend/tests/desktop-ai-boundaries.test.cjs; journal, handoff, evidence. No native build/approval/activation or workflow modifications. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Exact product 16f3cf1: 7/8 terminal workflows SUCCESS, P1 FAIL (199 passed, 1 failed, 2 subtests), route matrix skipped. Test correction changes only stale main.os reference to actual dataset_publication.os, retains identical error injection and assertions. All 85 push definitions reviewed, only routine P1 expected. Product code unchanged. New CI pending; C3 not closed. |
-| Pending runs | Exact `94c5d27` [P1 #45604752675](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45604752675) job 139172634824 IN_PROGRESS; scanner and backend compile SUCCESS; upload regression running, route matrix not yet run. |
+| Verification | Exact P1 #45604752675 job 139172634824 terminal SUCCESS; 200 import/recovery, 37 actual composition incl nine added C3 matrix cases; all steps pass. Frontend fetchLocal and upload lack redirect refusal; archived R03 driver direct token calls same. Central fixed origin /api path validation before dispatch and before post preflight, redirect:error, reject unexpected redirect response without reading body; route upload through shared fetch, no query in transport error; validate historical driver's fixed port/token and reject redirects, never execute. Inert tests across modes/methods, malformed path and redirection. Last full 85 workflow trigger review at ec26dce; all definitions unchanged since then; matching P1 frontend, P3 real HTTP, P4 target ranking reviewed at current HEAD (restricted collector false). No actual model or native work. |
+| Pending runs | None; prior P1 terminal SUCCESS. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Reconcile exact P1 #45604752675 terminal result and all route-matrix cases. New read-only credential audit found production frontend/src/api.ts fetchLocal and upload default redirect-following, and archived hosted R03 driver frontend/e2e/p4-r03-hosted-desktop.mjs direct desktop-session fetches also lack explicit redirect refusal. No observed leak; require fixed-origin/path and redirect refusal source/mock regression in next authorized batch, retain hosted native approval freeze. Continue remaining credential candidate dispositions; C3 stays open. |
+| Recovery action | Publish bounded source batch, reconcile exact three workflows and remaining credential/caller audit; C3 closure only with complete evidence. |
 | Resume after closure | C4, C5 in order; D separately approved. |
 
 ## Prior operation
+
+C3-FSYNC-FIXTURE-COMPATIBILITY-20261125: [94c5d27](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/94c5d27d84bd7dbe9c1ba8d544e7fa90c2a778d8), exact [P1 #45604752675](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45604752675) terminal SUCCESS; 37 composition tests including C3 matrix. Prior journal [f768562](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/f7685620fdc27a73d3a59604f814365fae3f1dc0).
 
 C3-MANDATORY-INNER-AUTH-20261125: [16f3cf1](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/16f3cf135f26a3b63d997f6b15d117ec845a6041), seven of eight routine workflows SUCCESS; [P1 #45603767991](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45603767991) FAIL, stale fsync monkeypatch target, route matrix SKIPPED. Prior journal [ec26dce](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/ec26dce8e8d0a933001cf250d15f453903ba98a9).
 
