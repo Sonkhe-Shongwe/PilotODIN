@@ -7,17 +7,17 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | PREPARED |
+| State | PUBLISHED |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | d4b58a86b952d6db3f7514ff35a5c2cdf0bdacb7 |
 | Product baseline | 9163e6c last fully verified; ec74f49 graph and Linux/HTTP pass; Windows lifecycle pending. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
 | Operation ID | C5-ARCHIVE-VALIDATION-20261125 |
-| Operation state | PREPARED; implement independent exact ZIP member inventory and bounded read-only synthetic archive verification. No extraction, staging, acquisition or executable launch. |
+| Operation state | ISSUED; recover exact source from prepared parent 31259021e8c3e3b7d0d9dfad33d87914eff39eb5. Candidate archive validation only. |
 | Intended files | tools/c5_archive_preflight.py, tests/test_c5_build_input_preflight.py, .github/workflows/p4-target-ranking.yml, canonical documentation. No lock, marker, asset or production entrypoint changes. |
 | Approval | C5 metadata-only approval CONSUMED; no replay. Exact run 45686334903 attempt 1 only. All six native approvals still consumed/disarmed. No artifact bytes, native, model, installer, owner device, OS/network change or additional metadata dispatch authorized. |
 | Verification | Exact ec74f49 P4 #45687344896: Linux 1170 passed/6 skipped/552 subtests, 15 Rust, 160 Node/Vite, 3 bundle refusal, graph review PASS (59 edges/49 reachable each), HTTP 13 PASS; Windows in progress; collector skipped. |
-| Pending runs | Prior #45687344896 Windows lifecycle still running; reconcile before source push if possible. |
+| Pending runs | Prior graph CI #45687344896 reconcile final Windows status; expected new matching P4 routine synthetic workflow only. No metadata/native dispatch. |
 | Unpublished work | Owner-local tree not inspected. |
 | Recovery action | Use guarded bounded read_exact to hash and capture exact archive bytes; validate conservative classic ZIP layout before parser and member decompression, exact reviewed names, no links/ADS/traversal/collisions, file/total limits, independent member hashes. Inert fixtures only; production no READY or extract route. Review matching synthetic CI scope. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |

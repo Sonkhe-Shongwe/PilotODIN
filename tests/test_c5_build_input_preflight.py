@@ -617,3 +617,137 @@ def test_c5_graph_distinguishes_unknown_python_from_incompatible():
     assert graph.check_python(">=3.11,<4", "3.11.9") == "COMPATIBLE_DECLARATION"
     with pytest.raises(preflight.Blocked, match="REQUIRES_PYTHON_CONFLICT"):
         graph.check_python(">=3.12", "3.11.9")
+
+
+def c5_zip_fixture(tmp_path, names=None, compression=None):
+    import zipfile
+    from tools import c5_archive_preflight as archive
+    names = names if names is not None else [
+        ("runtime/llama-server.exe", b"inert server header fixture"),
+        ("runtime/mock.dll", b"inert library fixture" * 5000),
+        ("LICENSE.txt", b"synthetic notice"),
+        ("empty.txt", b""),
+    ]
+    path = tmp_path / "fixture.zip"
+    with zipfile.ZipFile(path, "w", compression=compression if compression is not None
+                         else zipfile.ZIP_DEFLATED) as z:
+        for name, data in names:
+            z.writestr(name, data)
+    raw = path.read_bytes()
+    expected = {"bytes": len(raw), "sha256": hashlib.sha256(raw).hexdigest(),
+                "members": {name: {"bytes": len(data),
+                                   "sha256": hashlib.sha256(data).hexdigest()}
+                            for name, data in names}}
+    return archive, path, expected
+
+
+@pytest.mark.parametrize("compression", [0, 8])
+def test_c5_zip_candidate_exact_bytes_read_only(tmp_path, compression):
+    archive, path, expected = c5_zip_fixture(tmp_path, compression=compression)
+    before = snapshot(tmp_path)
+    with patch.object(subprocess, "run") as run, patch.object(subprocess, "Popen") as popen:
+        archive.verify_candidate_archive(path, expected)
+        run.assert_not_called()
+        popen.assert_not_called()
+    assert snapshot(tmp_path) == before
+
+
+@pytest.mark.parametrize("bad_name", [
+    "../escape.dll", "/absolute.dll", "C:/drive.dll", "dir\\escape.dll",
+    "runtime.dll:stream", "CON.dll", "dir/NUL.txt", "dir//file.dll",
+    "dir/../file.dll", "dir./file.dll", "dir/file.dll.", "dir/file .dll",
+    "dir/\u00e9.dll", "dir/",
+])
+def test_c5_zip_rejects_unsafe_expected_member(tmp_path, bad_name):
+    archive, path, expected = c5_zip_fixture(tmp_path, [(bad_name, b"inert")])
+    before = snapshot(tmp_path)
+    with pytest.raises(preflight.Blocked, match="UNSAFE_ZIP_NAME"):
+        archive.verify_candidate_archive(path, expected)
+    assert snapshot(tmp_path) == before
+
+
+@pytest.mark.parametrize("names", [
+    [("runtime/a.dll", b"a"), ("Runtime/b.dll", b"b")],
+    [("a.dll", b"a"), ("A.dll", b"b")],
+    [("runtime", b"a"), ("runtime/b.dll", b"b")],
+])
+def test_c5_zip_rejects_path_collisions(tmp_path, names):
+    archive, path, expected = c5_zip_fixture(tmp_path, names)
+    with pytest.raises(preflight.Blocked, match="ZIP_.*COLLISION|ZIP_DUPLICATE_NAME"):
+        archive.verify_candidate_archive(path, expected)
+
+
+@pytest.mark.parametrize("mutation", [
+    "wrong_archive_hash", "wrong_member_hash", "missing_expected",
+    "extra_expected", "local_name", "local_offset", "central_link",
+    "central_reparse", "central_encrypted", "central_zip64", "central_method",
+    "trailer", "crc", "compressed_data", "duplicate_central_name",
+])
+def test_c5_zip_refuses_malformed_or_mismatched_bytes(tmp_path, mutation):
+    import struct
+    archive, path, expected = c5_zip_fixture(
+        tmp_path, [("a.dll", b"first inert fixture"), ("b.dll", b"other inert fixture")])
+    raw = bytearray(path.read_bytes())
+    central = raw.index(b"PK\x01\x02")
+    second = raw.index(b"PK\x01\x02", central + 4)
+    if mutation == "wrong_archive_hash":
+        expected["sha256"] = "0" * 64
+    elif mutation == "wrong_member_hash":
+        expected["members"]["a.dll"]["sha256"] = "0" * 64
+    elif mutation == "missing_expected":
+        del expected["members"]["a.dll"]
+    elif mutation == "extra_expected":
+        expected["members"]["extra.dll"] = expected["members"]["a.dll"]
+    else:
+        if mutation == "local_name":
+            raw[archive.LOCAL.size] = ord("z")
+        elif mutation == "local_offset":
+            struct.pack_into("<I", raw, second + 42, 0)
+        elif mutation == "central_link":
+            struct.pack_into("<I", raw, central + 38, 0o120777 << 16)
+        elif mutation == "central_reparse":
+            struct.pack_into("<I", raw, central + 38, 0x400)
+        elif mutation == "central_encrypted":
+            struct.pack_into("<H", raw, central + 8, 1)
+        elif mutation == "central_zip64":
+            struct.pack_into("<H", raw, central + 6, 45)
+        elif mutation == "central_method":
+            struct.pack_into("<H", raw, central + 10, 99)
+        elif mutation == "trailer":
+            raw.extend(b"trailer")
+        elif mutation == "crc":
+            struct.pack_into("<I", raw, central + 16, 0)
+            struct.pack_into("<I", raw, 14, 0)
+        elif mutation == "compressed_data":
+            raw[archive.LOCAL.size + len("a.dll")] ^= 0xff
+        elif mutation == "duplicate_central_name":
+            raw[second + archive.CENTRAL.size] = ord("a")
+        path.write_bytes(raw)
+        expected["bytes"] = len(raw)
+        expected["sha256"] = hashlib.sha256(raw).hexdigest()
+    before = snapshot(tmp_path)
+    with pytest.raises(preflight.Blocked):
+        archive.verify_candidate_archive(path, expected)
+    assert snapshot(tmp_path) == before
+
+
+def test_c5_zip_bounds_refuse_before_reading(tmp_path):
+    archive, path, expected = c5_zip_fixture(tmp_path)
+    expected["bytes"] = archive.MAX_ARCHIVE + 1
+    with patch.object(archive, "read_exact") as read:
+        with pytest.raises(preflight.Blocked, match="ZIP_EXPECTED_ARCHIVE_IDENTITY"):
+            archive.verify_candidate_archive(path, expected)
+        read.assert_not_called()
+    expected["bytes"] = path.stat().st_size
+    expected["members"]["runtime/mock.dll"]["bytes"] = archive.MAX_MEMBER + 1
+    with patch.object(archive, "read_exact") as read:
+        with pytest.raises(preflight.Blocked, match="ZIP_EXPECTED_MEMBER_IDENTITY"):
+            archive.verify_candidate_archive(path, expected)
+        read.assert_not_called()
+
+
+def test_c5_zip_rejects_actual_extra_safe_name_even_with_new_archive_hash(tmp_path):
+    archive, path, expected = c5_zip_fixture(tmp_path, [("expected.dll", b"fixture")])
+    expected["members"] = {"other.dll": expected["members"]["expected.dll"]}
+    with pytest.raises(preflight.Blocked, match="ZIP_MEMBER_NOT_EXPECTED"):
+        archive.verify_candidate_archive(path, expected)
