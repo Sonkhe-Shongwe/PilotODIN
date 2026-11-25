@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | PUBLISHED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 44841cfb3e5796bbca7013f2a75bc1dbf87657a9 |
 | Product baseline | 0d9fe4b2aca6280cd3c4eef5cd8aadfd86408650; exact inventory P4 #45690254550 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
 | Operation ID | C5-HISTORICAL-DEVQA-FRONTDOORS-20261125 |
-| Operation state | ISSUED; recover exact source from prepared parent 13285d779247d3ec5cfe947af9d0b187f38028b7. Seven historical CLI/launcher mutation frontdoors only. |
+| Operation state | RECONCILED publication at a573c254b53f0a9af6738d652a92dca1636aefbe; exact historical frontdoor CI IN_PROGRESS. No restricted action. |
 | Intended files | Seven historical P2 .bat launchers and matching seven tools/p2_pdf_* Python CLI modules; tests/test_c5_build_input_preflight.py, .github/workflows/p4-target-ranking.yml and canonical docs. No production font gate, approval, dependency lock or native workflow changes. |
 | Approval | C5 metadata-only approval CONSUMED; no replay. Exact run 45686334903 attempt 1 only. All six native approvals still consumed/disarmed. No artifact bytes, native, model, installer, owner device, OS/network change or additional metadata dispatch authorized. |
 | Verification | Exact 0d9fe4b P4 SUCCESS: 1223 Python/6 skipped/552 subtests, 15 Rust, 160 Node/Vite, 3 refusal; Windows 136 C5/1 skipped, parser, 3 refusal, 68/133 subtests; HTTP 13; restricted collector skipped. Tree 1462 entries, 86 workflow files; targeted historical acquisition/build/staging/recheck frontdoors identified. |
-| Pending runs | Expected routine reviewed P4 synthetic only; reconcile exact triggered runs. No restricted dispatch. |
+| Pending runs | P4 #45691933928 IN_PROGRESS; 139479337780 in_progress; 139479337960 in_progress; 139479338191 in_progress; 139479340906 skipped. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Add early unconditional batch refusals, Python CLI mutation flag refusal before old paths/probes, preserve historical synthetic helper APIs and read-only CLI modes where applicable; AST/synthetic direct CLI refusal tests. Inspect matching workflow scope before publication. Remaining broader historical helpers and exact artifact provenance still open. No new network approval. |
+| Recovery action | Reconcile exact frontdoor CI before further edits. Seven historical launcher and CLI mutation frontdoors refuse, inspection and synthetic helper APIs retained; no arbitrary Python import security guarantee. Finish remaining historical entrypoint audit in targeted batches (local owner/native launchers and historical wrapper transitive calls still unreviewed), then prepare bounded provenance decision: selected wheel METADATA and remaining toolchain/asset evidence need independent review; no repeat of consumed metadata approval. No restricted action authorised. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
