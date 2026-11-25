@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | PREPARED |
+| State | READY |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 9f75ee9436ff7d49fc74fb9fc6bc2815d6a1ba5e |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
 | Operation ID | C5-TOOLCHAIN-RELEASE-METADATA-20261125 |
-| Operation state | PREPARED: read-only official release/source/checksum metadata review; record immutable published candidates and preserve unavailable hashes, signature and actual byte gaps. No artifact acquisition or tool invocation. |
+| Operation state | RECONCILED: exact hosted Python archive candidates (2), Linux published SHA256/size, Windows published size only; exact five upstream source references, ensurepip 24.0 source declarations and identical Node/npm package manifest; official text checksum manifests inaccessible. No actual distribution verification, production selection or acquisition. |
 | Intended files | Evidence-only qa/c5_wheel_metadata/toolchain_release_metadata_20261125.json and canonical journal/handoff/ledger; no product, policy, lock or workflow changes. |
 | Approval | Eleven restricted approvals consumed/disarmed (six native, five metadata). No additional registry requests, artifacts, installs, native/model, owner device/data or installer authorized. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
 | Pending runs | None for this operation. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Read-only official release/checksum manifest research for exact candidate CPython Windows 3.11.9 and Linux 3.11.18, Node 22.23.5/npm 10.9.9, Rust/Cargo 1.100.0; do not equate upstream source tarball with hosted binary or select a new production toolchain. Resolve CP311 pip identity and exact Windows MSVC/SDK/redist candidates separately; preserve all null unknowns. Prepare bounded acquisition-only proposals only after independent immutable URL/hash/size/notice evidence. No live registry requests, artifact downloads, installation, native/model, owner device or installer authority. All four profiles BLOCKED. |
+| Recovery action | Prepare a narrowly scoped, disabled metadata-only retrieval proposal for the two exact Actions Python hashes.sha256 manifests, Node v22.23.5 SHASUMS256.txt and Rust 1.100.0 exact channel manifest (plus independently bounded signature/size evidence where necessary); no binary downloads, resolver, installs, native or owner-device activity. Review source and synthetic scope/refusal controls before seeking fresh owner approval for hosted metadata retrieval if needed. In parallel prepare evidence-only exact 68-wheel candidate acquisition/notice verification plan from existing pinned receipts; no wheel acquisition without separate fresh approval. Preserve all unknown CP311 pip/MSVC/SDK/redist identities and four BLOCKED profiles. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
