@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | d111c6030c922132b8b8a7e7666098a3ef44a7db |
-| Product baseline | B8 final review 1eb5e13 exact P1/P4 SUCCESS (222 focused cases); Batch C frontend begins. |
+| Observed starting HEAD | 6bb35badb979ecdaf4fdd1276ddc45867a0c2c66 |
+| Product baseline | C4 C1 frontend e576ccd; P1/P2 SUCCESS, P4 one obsolete assertion FAILURE. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
-| Operation ID | C4-C1-FRONTEND-SETTINGS-STATUS-20261125 |
-| Operation state | RECONCILED; frontend C1 source published at [e576ccd](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/e576ccd34cbaa40891ecccbffb13b4b5a5b0e780), prepared at e287607; exact CI outstanding. |
-| Intended files | frontend/src/AIWorkspace.tsx, frontend/src/App.tsx, new cloudConsentSession.ts, frontend/tests/desktop-ai-boundaries.test.cjs and canonical records. No backend/schema/workflow changes. |
+| Operation ID | C4-C1-PANE-GUARD-CONTRACT-20261125 |
+| Operation state | PREPARED; test-only correction not issued. |
+| Intended files | frontend/tests/desktop-ai-boundaries.test.cjs and canonical records only. No product or workflow change. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | B8 final exact P1/P4 SUCCESS. C1 saved/draft separation, manual handshake, passive shell and renderer-local settings fence plus three inert/source-contract tests published; exact verification pending. |
-| Pending runs | [P2 Report Export Draft Safety #45663451031](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45663451031) IN_PROGRESS; [P1 Isolated Frontend Verification #45663450986](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45663450986) IN_PROGRESS; [P4 Target Review Queue and Transparent Ranking #45663450922](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45663450922) IN_PROGRESS; expected P1 isolated frontend if not yet listed; recheck exact SHA. |
+| Verification | Exact e576ccd P1 206 Node and 7 browser passed, P2 100 Node and 5 standalone Rust passed; P4 backend 1086 passed/6 skipped/552 subtests, Node 135 passed/1 failed, Windows 68/133 subtests and browser 13 passed. Collector skipped. |
+| Pending runs | None from e576ccd. Expected P1 frontend and P4 routine CI for test-only change. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Reconcile exact e576ccd terminal workflows, including expected P1 frontend if discovered. Correct evidenced issues. Then implement both workspace panels' manual per-request disclosure and explicit cloud intent, no automatic/cloud continuation, generation-aware result/cache invalidation, cross-renderer review and browser witnesses. No project cloud enablement until panel safeguards; OpenRouter project sharing held. No score increment. |
+| Recovery action | Update exact secondary-pane source contract to assert existing stronger embedded OR pending consent guard preceding passive GET; retain other primary control assertions, add generation and cleanup check. No product change. Reconcile new exact CI before C2. |
 | Resume after closure | C5 then D with separately approved scope. |
 
 ## Prior operation
