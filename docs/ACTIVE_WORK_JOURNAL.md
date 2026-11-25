@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | VERIFYING |
+| State | READY |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 82262af7e2c08b87fe65e3a11543977448c845bf |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
 | Operation ID | C5-WHEEL-HOSTED-GATE-HARDENING-20261126 |
-| Operation state | PUBLISHED/VERIFYING if live HEAD confirmed: direct real HTTPS factory gate plus regression test. Original hosted run 45724172997 succeeded. No activation, live calls or external upload. |
+| Operation state | RECONCILED: exact QA a7f30c275f7e6158376603dd578942714f6de0ef run 45724319018 attempt 1 SUCCESS; Ubuntu 139590183697 118 PASS, Windows 139590184101 116 PASS/2 POSIX skips; all four CLI refusals, large receipt replay and direct HTTPS factory refusal PASS. No actual network or external upload. |
 | Intended files | qa/c5_wheel_metadata/wheel_hosted_proposal.py and test_wheel_hosted_proposal.py only plus journal/handoff/ledger; dedicated synthetic workflow unchanged. No live workflow/marker. |
 | Approval | Twelve restricted approvals consumed/disarmed (six native, six metadata). No additional registry/metadata requests, artifacts, installs, native/model, owner device/data or installer authorized. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | Inspect exact source push (parent a9813c01d885cb49e128f203fbac9bce4f4f3d5b), dedicated archive synthetic workflow only. |
+| Pending runs | None for this operation. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
-| Recovery action | Reconcile actual branch, exact CI, limitations and failure evidence. Keep collection disabled; external artifact transfer/one-use activation separate and requires fresh approval. Remaining checksum proposal separately awaits approval. |
+| Recovery action | Next: prepare a disabled source-pinned one-use workflow and review actual hosted receipt publication/retrieval mechanism with synthetic evidence, no activation marker or live requests; independently retained run/manifest/bundle digests and exact retrieval must be established. Fresh explicit owner approval required for 68 exact wheel GETs/225699980 body bytes/zero redirects or retries, disposable acquisition only; no install, execution or legal clearance. Remaining checksum proposal 17df008 remains independently approval-gated. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
