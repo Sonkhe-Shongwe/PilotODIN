@@ -7,22 +7,24 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | f7685620fdc27a73d3a59604f814365fae3f1dc0 |
-| Product baseline | Last verified auth product 16f3cf1 with test-only 94c5d27 P1 SUCCESS; frontend transport product ebd01f45c5c2040835586628f23ab5702184d0b4 published, verification pending. |
+| Observed starting HEAD | c07502ef7965152377ca3f1ac503b8c04400b302 |
+| Product baseline | ebd01f45c5c2040835586628f23ab5702184d0b4 exact P1 frontend/P3 HTTP/P4 terminal SUCCESS; all four new transport tests pass. |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
-| Operation ID | C3-FRONTEND-REDIRECT-CONFINEMENT-20261125 |
-| Operation state | RECONCILED (frontend source publication verified at ebd01f45c5c2040835586628f23ab5702184d0b4; exact CI pending) |
-| Intended files | frontend/src/api.ts; frontend/e2e/p4-r03-hosted-desktop.mjs; frontend/tests/desktop-ai-boundaries.test.cjs; journal, handoff, evidence. No native build/approval/activation or workflow modifications. |
+| Operation ID | C3-HOSTED-CHILD-ENV-CONFINEMENT-20261125 |
+| Operation state | PREPARED (hosted fixture child-environment confinement; identify publication by parent and marker) |
+| Intended files | frontend/e2e/hosted-http-config.ts; four playwright.p1/p2/p3/p4-real-http.config.ts; p1-real-http.spec.ts, p1-real-http-export.spec.ts, p2-real-http-guided-report-persistence.spec.ts, p4-real-http-review-queue.spec.ts; frontend/tests/p1-playwright-pilot-contract.test.cjs; canonical journal, handoff and ledger. No native/approval or production change. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Exact P1 test correction terminal SUCCESS (200 import/recovery, 37 composition incl nine new C3 route matrix). Central localTarget validates admitted origin/path before HTTP or native post preflight, fetchLocal forces redirect:error and refuses unexpected 3xx/redirected responses without parsing; uploads use shared transport; no query/raw transport error leakage. Historical hosted R03 source validates desktop connection and fixed settings destinations and refuses redirects; approval unchanged, not executed. Four new inert Node tests added to existing P4 suite. Exact P1 frontend/P3 HTTP/P4 verification pending; C3 broader credential audit remains open. |
-| Pending runs | Exact `ebd01f4`: [45612039338](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45612039338) P1 Isolated Frontend Verification IN_PROGRESS; [45612039463](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45612039463) P3 Real HTTP Semantic Context Browser Acceptance IN_PROGRESS; [45612039246](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45612039246) P4 Target Review Queue and Transparent Ranking IN_PROGRESS. Reconcile all terminal jobs before subsequent source work. |
+| Verification | Exact ebd01f4 P1 #45612039338, P3 #45612039463, P4 #45612039246 all terminal SUCCESS, four new Node cases, collector skipped. Credential source review identified active hosted Playwright Chromium launches (including persistent N11) and three auxiliary Python child calls inheriting private capability by default. Use explicit small allowlists for browser and guarded audit subprocess env, preserve capability in trusted fixture coordinator and owned Vite/Uvicorn only; retain runner allocation metadata for fixture guard. Inert source/helper tests. Historical five local native QA scripts also pass capability to npm build before frozen native gate; separately resolve without rearming; not run. Workflow definitions unchanged from ec26dce 85-trigger review, five matching P1 isolated frontend/P1 HTTP/P2 HTTP/P3 HTTP/P4 reviewed, collector false. No prohibited scope. |
+| Pending runs | None; frontend exact verification complete. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Resolve exact source and CI, reconcile all terminal jobs; finish credential candidate dispositions and C-D05 exit matrix. No native approval/activation or closure implied. |
+| Recovery action | Publish source-only hosted fixture environment correction and verify exact five routine workflows. Continue credential audit, historical QA disposition and C3 exit matrix; no score credit yet. |
 | Resume after closure | C4, C5 in order; D separately approved. |
 
 ## Prior operation
+
+C3-FRONTEND-REDIRECT-CONFINEMENT-20261125: [ebd01f4](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/ebd01f45c5c2040835586628f23ab5702184d0b4), exact P1 #45612039338, P3 #45612039463, P4 #45612039246 SUCCESS; prior journal [c07502e](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/c07502ef7965152377ca3f1ac503b8c04400b302).
 
 C3-FSYNC-FIXTURE-COMPATIBILITY-20261125: [94c5d27](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/94c5d27d84bd7dbe9c1ba8d544e7fa90c2a778d8), exact [P1 #45604752675](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45604752675) terminal SUCCESS; 37 composition tests including C3 matrix. Prior journal [f768562](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/f7685620fdc27a73d3a59604f814365fae3f1dc0).
 
