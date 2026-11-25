@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 88348a51aee2289c30a0283e46dac0c66a31d81c; write-ahead 27dcfb98b5bb06eaf1a076d62276fc8c49648178; verified published d0818430bf1ad760fdc5fe97fbb5701624dafba2. |
-| Product baseline | d0818430bf1ad760fdc5fe97fbb5701624dafba2 (A4 relay source, exact routine CI pending); 736a0fe fixed-port local QA product and 78ca6e1 correction verified. |
+| Observed starting HEAD | c3fb3a47c3bb133ecb7338f846204ef6856ff90d |
+| Product baseline | d0818430bf1ad760fdc5fe97fbb5701624dafba2, four exact routine workflows SUCCESS. |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
-| Operation ID | C3-A4-LIVE-DEV-RELAY-20261125-source |
-| Operation state | RECONCILED |
-| Intended files | frontend/scripts/live-dev-api-proxy.mjs, frontend/src/api.ts, frontend/src/desktopBootstrap.ts, tools/Verify_A4_Native_Windows.ps1, frontend/tests/desktop-ai-boundaries.test.cjs, frontend/tests/p1-playwright-pilot-contract.test.cjs, canonical journal. Keep existing A4 5174 origin/profile; explicitly enabled server-side relay only to existing authenticated Live Dev 5173 frontdoor; no inherited/copied capability, no direct 8000 fallback, same raw local origin/Host/marker checks, fixed destination and no redirects; authenticate readiness via 5173 marker. Do not change native compile wrapper, overlay or consent. Other hosted/native compatibility later. |
+| Operation ID | C3-HOSTED-P4-NATIVE-TRUST-20261125-source |
+| Operation state | PREPARED |
+| Intended files | backend/request_auth.py, backend/server_entry.py, frontend/scripts/live-dev-api-proxy.mjs, qa/p4_native/Run_P4_71_Disposable_Windows.ps1, frontend/e2e/p4-71-native-webview-qa.mjs, frontend/e2e/p4-n12-native-cases.mjs, tests/test_owned_server.py, frontend/tests/p1-playwright-pilot-contract.test.cjs, journal. First hosted-native slice: explicit P4-71 opt-in startup, exact existing runner home, private capability, same-origin frontdoor 5173, no proxy/redirect readiness or probe; keep shared N12 legacy mode temporarily until its launchers migrate. Preserve native approval guards and mutation limits, no evidence-method changes. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Seven-file diff verified at exact HEAD. A4 launcher authenticates readiness via 5173 without redirect/proxy, refuses inherited serving credentials and restores relay env. Explicit local 5174 relay validates raw origin, peer, Host, marker and forwards only to existing 5173 frontdoor, not 8000; existing live proxy adds private capability. Native smoke configures development API before health check; existing hosted legacy callers still pending. Source tests check composed two-hop plan, all five approved origins, invalid startup/mixed state, hostile cross-origin/forwarded headers. Native compilation wrapper unchanged; currently selects P4 isolated overlay instead of supplied A4 overlay. A4 actual native launch not validated; no new approval. Prior exact CI all routine jobs passed, restricted skipped. |
-| Pending runs | P4 Target Review Queue and Transparent Ranking #45565819496 in_progress; P3 Real HTTP Semantic Context Browser Acceptance #45565819471 in_progress; P1 Disposable Real HTTP Browser/Backend Acceptance #45565819443 in_progress; P1 Isolated Frontend Verification #45565819480 in_progress. No restricted dispatch. |
+| Verification | A4 d081843 P1 frontend 45565819480, P1 HTTP 45565819443, P3 HTTP 45565819471, P4 45565819496 terminal SUCCESS; P4 jobs p4-disposable-real-http-browser 139040214023 success; p4-synthetic-source-and-frontend 139040214329 success; p4-r03-windows-local-answers 139040214411 success; Exercise preservation/hash collector on synthetic Windows fixture ONLY 139040215646 skipped. A4 actual native overlay/wrapper compatibility remains outstanding. |
+| Pending runs | None prior; expected P1 HTTP/frontend and P4 routine synthetic; no native dispatch. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Reconcile exact d081843 CI, including any failures, before overlapping source pushes. Then hosted native P4-71/N12 launchers/direct HTTP clients, fixed admitted hosted home and private capability; maintain all native/trace gates and historic evidence. Address A4 existing wrapper/config compatibility at source scope without enabling native compilation; explicit in-process adapter and removal of bare runtime fallback; C3 route/caller matrix and closure. C4 deferred. |
+| Recovery action | Publish bounded shared hosted native trust plus P4-71 launcher/probe migration. Preserve disabled native workflows, exact one-use gate and N12 evidence rules. Reconcile exact CI before overlapping pushes. N12 lifetime/journey and other probes need explicit new mode; remove temporary legacy path only after full caller inventory. A4 wrapper, explicit in-process adapter, bare fallback removal and C3 closure outstanding. |
 | Resume after closure | C4, C5 in order; D separately approved. |
 
 ## Prior operation
