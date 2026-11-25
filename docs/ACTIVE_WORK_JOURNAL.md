@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | READY |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 6ed19e9ff55e20a71f505c46903ffd9112abc1cd |
+| Observed starting HEAD | 8270b0fa40708a9bffcfaa4fabae6e9897993e84 |
 | Product baseline | C4 source closed at verified product 76e9d0f; C5 not implemented. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
-| Operation ID | C5-DOCUMENTATION-AUDIT-20261125 |
-| Operation state | RECONCILED; documentation audit only, C5.0 research readiness next; no source edit or CI dispatch. |
-| Intended files | Audit and canonical navigation/records only; C5.0 specification research before any prepared source batch. |
+| Operation ID | C5-RESEARCH-READINESS-20261125 |
+| Operation state | PREPARED; read-only research and documentation publication only, no source edit or dispatch. |
+| Intended files | New C5.0 specification extension, linked C-D08, canonical handoff, journal and one Package C evidence receipt. No workflow, lock, product source or approval-marker changes. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | Exact desktop gate `76e9d0fb5f7a060ca0a89a937b8a21eb64e4b062`: P1 #45673926641 SUCCESS (206 Node, TypeScript/Vite, 11/11 Chromium; job 139416287673); P3 #45673926651 SUCCESS (3 real HTTP browser; job 139416288188); P4 #45673926563 SUCCESS (1086 Python, 6 skipped, 552 subtests, 15 Rust, 146 Node/Vite including all three new confirmed POST regressions; job 139416288324; 13 HTTP browser job 139416288348; 68 Windows/133 subtests and five simulated scenarios job 139416287756; restricted collector 139416289955 skipped). C-D06/07 matrix in C ledger. |
 | Pending runs | None for 76e9d0f. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Complete C5.0 research, architecture and detailed implementation/test plan under C-D08. Read initial inventory and audit; map entrypoints/triggers and exact provenance gaps, then prepare bounded source edits. No acquisition or build. |
+| Recovery action | Publish bounded research/design, exact source entrypoint/trigger inventory, alternatives, file map and tests; reconcile branch/diff after non-force expected-HEAD publication. Exact source CI remains 76e9d0f; no matching active workflow for these documentation paths observed in 85 workflow trigger review. Missing provenance must remain explicit. No acquisition or build. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
