@@ -1,5 +1,5 @@
 import {defineConfig} from '@playwright/test';
-import {prepareHostedHttp} from './e2e/hosted-http-config';
+import {prepareHostedHttp,hostedBrowserEnvironment} from './e2e/hosted-http-config';
 
 // Reuse the existing CI-owned disposable Uvicorn helper and its exact
 // PILOTODIN_HOME/port protections. No local or owner-data execution allowed.
@@ -16,6 +16,7 @@ export default defineConfig({
  fullyParallel:false,workers:1,retries:0,reporter:'list',
  outputDir:'./test-results-p2-real-http',
  use:{
+    launchOptions:{env:hostedBrowserEnvironment()},
   baseURL:'http://127.0.0.1:5178',
   browserName:'chromium',headless:true,
   viewport:{width:1440,height:900},serviceWorkers:'block',

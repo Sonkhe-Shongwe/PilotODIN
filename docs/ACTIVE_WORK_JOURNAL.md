@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | c07502ef7965152377ca3f1ac503b8c04400b302 |
 | Product baseline | ebd01f45c5c2040835586628f23ab5702184d0b4 exact P1 frontend/P3 HTTP/P4 terminal SUCCESS; all four new transport tests pass. |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
 | Operation ID | C3-HOSTED-CHILD-ENV-CONFINEMENT-20261125 |
-| Operation state | PREPARED (hosted fixture child-environment confinement; identify publication by parent and marker) |
+| Operation state | ISSUED (source publication identifiable by prepared parent 5af4e85 and operation marker; resolve exact SHA) |
 | Intended files | frontend/e2e/hosted-http-config.ts; four playwright.p1/p2/p3/p4-real-http.config.ts; p1-real-http.spec.ts, p1-real-http-export.spec.ts, p2-real-http-guided-report-persistence.spec.ts, p4-real-http-review-queue.spec.ts; frontend/tests/p1-playwright-pilot-contract.test.cjs; canonical journal, handoff and ledger. No native/approval or production change. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Exact ebd01f4 P1 #45612039338, P3 #45612039463, P4 #45612039246 all terminal SUCCESS, four new Node cases, collector skipped. Credential source review identified active hosted Playwright Chromium launches (including persistent N11) and three auxiliary Python child calls inheriting private capability by default. Use explicit small allowlists for browser and guarded audit subprocess env, preserve capability in trusted fixture coordinator and owned Vite/Uvicorn only; retain runner allocation metadata for fixture guard. Inert source/helper tests. Historical five local native QA scripts also pass capability to npm build before frozen native gate; separately resolve without rearming; not run. Workflow definitions unchanged from ec26dce 85-trigger review, five matching P1 isolated frontend/P1 HTTP/P2 HTTP/P3 HTTP/P4 reviewed, collector false. No prohibited scope. |
-| Pending runs | None; frontend exact verification complete. |
+| Verification | Prior frontend exact P1/P3/P4 terminal SUCCESS including four new tests. Hosted fixture Chromium default launchOptions and persistent context now use explicit ordinary runtime environment; three auxiliary Python calls use ordinary runtime and exact CI allocation witness only. Trusted coordinator, Vite and owned Uvicorn retain private capability. Two inert Node contract tests registered in existing P1 isolated frontend suite. Exact five routine workflows pending. Historical five native QA launchers still require disposition, do not run or rearm. C3 open. |
+| Pending runs | Expected five routine push workflows at commit with prepared parent 5af4e85 and operation marker (P1 frontend, P1 HTTP, P2 HTTP, P3 HTTP, P4). |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Publish source-only hosted fixture environment correction and verify exact five routine workflows. Continue credential audit, historical QA disposition and C3 exit matrix; no score credit yet. |
+| Recovery action | Resolve exact source/run identities, reconcile terminal CI; finish remaining credential candidate dispositions, historical QA confinement and C-D05 closure matrix. No native permission or score credit. |
 | Resume after closure | C4, C5 in order; D separately approved. |
 
 ## Prior operation

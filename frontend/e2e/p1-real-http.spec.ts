@@ -1,5 +1,6 @@
 import {expect} from '@playwright/test';
 import {test} from './hosted-http-test';
+import {hostedAuditEnvironment} from './hosted-http-config';
 import type {BrowserContext,Route} from '@playwright/test';
 import {execFileSync} from 'node:child_process';
 import {Buffer} from 'node:buffer';
@@ -101,7 +102,7 @@ async function allowOnlyDisposableHTTP(context:BrowserContext,expectedB:string,
 
 function fixtureGuard(action:'hide'|'restore'|'audit',id:string):string{
   const output=execFileSync('python', ['../tools/p1_real_http_fixture_guard.py',
-    action,'--project-id',id],{encoding:'utf8',timeout:10_000});
+    action,'--project-id',id],{encoding:'utf8',timeout:10_000,env:hostedAuditEnvironment()});
   return output.trim();
 }
 

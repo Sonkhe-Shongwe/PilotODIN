@@ -1,5 +1,5 @@
 import {defineConfig} from '@playwright/test';
-import {prepareHostedHttp} from './e2e/hosted-http-config';
+import {prepareHostedHttp,hostedBrowserEnvironment} from './e2e/hosted-http-config';
 
 // One CI-only P4-05 browser scenario on disposable Uvicorn/SQLite. The borrowed
 // P1 backend helper only permits an exact runner-owned temporary location.
@@ -17,6 +17,7 @@ export default defineConfig({
  fullyParallel:false,workers:1,retries:0,reporter:'list',
  outputDir:'./test-results-p4-review-queue',
  use:{
+    launchOptions:{env:hostedBrowserEnvironment()},
   baseURL:'http://127.0.0.1:5178',
   browserName:'chromium',headless:true,
   viewport:{width:1440,height:900},serviceWorkers:'block',

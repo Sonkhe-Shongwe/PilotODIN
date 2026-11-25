@@ -1,5 +1,6 @@
 import {expect} from '@playwright/test';
 import {test} from './hosted-http-test';
+import {hostedAuditEnvironment} from './hosted-http-config';
 import type {BrowserContext,Route} from '@playwright/test';
 import {Buffer} from 'node:buffer';
 import {spawnSync} from 'node:child_process';
@@ -164,7 +165,7 @@ test('P2 guided report saves once, persists immutable narrative and exports same
   expect(pdf.subarray(0,5).toString('ascii')).toBe('%PDF-');
   const script='import fitz,sys; d=fitz.open(stream=sys.stdin.buffer.read(),filetype="pdf"); print("\\n".join(p.get_text() for p in d))';
   const extracted=spawnSync('python',['-c',script],{
-   input:pdf,encoding:'utf8',maxBuffer:1024*1024,timeout:12000,
+   input:pdf,encoding:'utf8',maxBuffer:1024*1024,timeout:12000,env:hostedAuditEnvironment(),
   });
   expect(extracted.status,extracted.stderr).toBe(0);
   const pdfText=extracted.stdout.replace(/\s+/g,' ');

@@ -1,5 +1,6 @@
 import {expect} from '@playwright/test';
 import {test} from './hosted-http-test';
+import {hostedBrowserEnvironment} from './hosted-http-config';
 import type {BrowserContext,Locator,Page,Route} from '@playwright/test';
 import {Buffer} from 'node:buffer';
 import {mkdtemp,rm} from 'node:fs/promises';
@@ -948,7 +949,7 @@ test('P4 N11 real HTTP: compact approval, archive, reviewed Undo v2 and persiste
   const writes:string[]=[];
   const profile=await mkdtemp(join(process.env.RUNNER_TEMP!,'pilotodin-p4-n11-chromium-'));
   const launch=()=>playwright.chromium.launchPersistentContext(profile,{
-    baseURL:UI,serviceWorkers:'block',viewport:{width:1440,height:900},
+    env:hostedBrowserEnvironment(),baseURL:UI,serviceWorkers:'block',viewport:{width:1440,height:900},
   });
   try{
     const context=await launch();

@@ -607,3 +607,44 @@ test('P2 full-stack proxy uses allocated dynamic backend and no browser-selected
  assert.match(launcher,/--no-proxy-headers/);
  assert.match(launcher,/seed_subprocess\(home,private\)/);
 });
+
+
+test('C3 hosted child environment retains only explicit public runtime and audit allocation fields',()=>{
+ const source=fs.readFileSync(path.resolve(__dirname,'../e2e/hosted-http-config.ts'),'utf8');
+ const js=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2021}}).outputText;
+ const mod={exports:{}};
+ new Function('module','exports','require',js)(mod,mod.exports,require);
+ const {hostedBrowserEnvironment,hostedAuditEnvironment}=mod.exports;
+ const runtime={PATH:'/synthetic/bin',HOME:'/synthetic/home',LANG:'C.UTF-8',
+  TMPDIR:'/synthetic/tmp',LD_LIBRARY_PATH:'/synthetic/lib'};
+ const allocation={CI:'true',GITHUB_ACTIONS:'true',P1_REAL_HTTP_E2E:'1',
+  GITHUB_RUN_ID:'123',RUNNER_TEMP:'/synthetic/tmp',
+  PILOTODIN_HOME:'/synthetic/tmp/pilotodin-p1-real-http-123',PYTHONDONTWRITEBYTECODE:'1'};
+ const privateFields={PILOTODIN_DEV_CAPABILITY:'a'.repeat(64),
+  pilotodin_dev_capability:'b'.repeat(64),PILOTODIN_DESKTOP_SESSION:'c'.repeat(64),
+  PILOTODIN_CONTROL_CAPABILITY:'d'.repeat(64),PILOTODIN_BUNDLED_LLM_TOKEN:'e'.repeat(64),
+  PILOTODIN_DATASET_EXPORT_KEY:'f'.repeat(64),PILOTODIN_SERVER_MODE:'hosted-fixture',
+  PILOTODIN_DEV_PORT:'8000',PILOTODIN_DEV_ORIGIN:'http://127.0.0.1:5178',
+  VITE_PILOTODIN_AUTH_DEV:'1',GITHUB_TOKEN:'synthetic-runner-secret',
+  HTTP_PROXY:'http://synthetic.invalid',NODE_OPTIONS:'synthetic-ambient-option'};
+ const env=Object.freeze({...runtime,...allocation,...privateFields});
+ assert.deepEqual(hostedBrowserEnvironment(env),runtime);
+ assert.deepEqual(hostedAuditEnvironment(env),{...runtime,...allocation});
+ assert.equal(env.PILOTODIN_DEV_CAPABILITY,privateFields.PILOTODIN_DEV_CAPABILITY);
+ assert.deepEqual(hostedBrowserEnvironment({}),{});
+ assert.deepEqual(hostedAuditEnvironment({}),{});
+});
+
+test('C3 all hosted browser launch sites and auxiliary Python children select confined environments',()=>{
+ for(const phase of ['p1','p2','p3','p4']){
+  const config=fs.readFileSync(path.resolve(__dirname,'../playwright.'+phase+'-real-http.config.ts'),'utf8');
+  assert.match(config,/launchOptions:\{env:hostedBrowserEnvironment\(\)\}/,phase);
+  assert.match(config,/prepareHostedHttp\(\)/,phase);
+ }
+ const persistent=fs.readFileSync(path.resolve(__dirname,'../e2e/p4-real-http-review-queue.spec.ts'),'utf8');
+ assert.match(persistent,/launchPersistentContext\(profile,\{\s*env:hostedBrowserEnvironment\(\)/);
+ for(const name of ['p1-real-http.spec.ts','p1-real-http-export.spec.ts','p2-real-http-guided-report-persistence.spec.ts']){
+  const source=fs.readFileSync(path.resolve(__dirname,'../e2e',name),'utf8');
+  assert.match(source,/env:hostedAuditEnvironment\(\)/,name);
+ }
+});

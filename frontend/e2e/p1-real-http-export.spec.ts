@@ -1,5 +1,6 @@
 import {expect} from '@playwright/test';
 import {test} from './hosted-http-test';
+import {hostedAuditEnvironment} from './hosted-http-config';
 import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
@@ -13,7 +14,7 @@ const UI='http://127.0.0.1:5178';
 type Receipt={format:string,state:string,size:number,sha256:string,reason:string|null,scratch_exists:boolean};
 function audit(pid:string):{receipts:Receipt[],original_matches:boolean,version:number,original_history:boolean}{
   return JSON.parse(execFileSync('python',[resolve('..','tools','p1_real_http_export_audit.py'),pid],
-    {encoding:'utf8',timeout:10000}));
+    {encoding:'utf8',timeout:10000,env:hostedAuditEnvironment()}));
 }
 let owned:DisposableBackend|null=null;
 test.beforeEach(async()=>{owned=await startDisposableBackend()});

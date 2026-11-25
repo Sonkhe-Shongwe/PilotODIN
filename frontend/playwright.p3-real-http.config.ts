@@ -1,5 +1,5 @@
 import {defineConfig} from '@playwright/test';
-import {prepareHostedHttp} from './e2e/hosted-http-config';
+import {prepareHostedHttp,hostedBrowserEnvironment} from './e2e/hosted-http-config';
 
 // CI-only real HTTP with a dedicated Vite port and an owned disposable Uvicorn.
 // Reuses the audited backend process guard; no local/owner-data execution.
@@ -17,6 +17,7 @@ export default defineConfig({
  fullyParallel:false,workers:1,retries:0,reporter:'list',
  outputDir:'./test-results-p3-real-http',
  use:{
+    launchOptions:{env:hostedBrowserEnvironment()},
   baseURL:'http://127.0.0.1:5178',
   browserName:'chromium',headless:true,
   viewport:{width:1440,height:900},serviceWorkers:'block',

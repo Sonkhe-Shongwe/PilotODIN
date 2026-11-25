@@ -1,5 +1,5 @@
 import {defineConfig} from '@playwright/test';
-import {prepareHostedHttp} from './e2e/hosted-http-config';
+import {prepareHostedHttp,hostedBrowserEnvironment} from './e2e/hosted-http-config';
 
 // Dedicated test refuses local runs. Playwright owns Vite; the test owns the
 // Uvicorn child by its process handle so it can explicitly stop/restart it.
@@ -20,6 +20,7 @@ export default defineConfig({
   reporter:'list',
   outputDir:'./test-results-p1-real-http',
   use:{
+    launchOptions:{env:hostedBrowserEnvironment()},
     baseURL:'http://127.0.0.1:5178',
     browserName:'chromium',
     headless:true,
