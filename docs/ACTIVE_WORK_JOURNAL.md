@@ -7,22 +7,24 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 1fe8531bd913be555aae5bdffff0ac3240930cb2 |
-| Product baseline | 6b257546734f01808c9dee8c6ef840ea63200fb1 exact P1/P4 terminal SUCCESS. |
+| Observed starting HEAD | 679f5643828dbd234f5a048c8f018c0f66d7a675 |
+| Product baseline | 6b257546734f01808c9dee8c6ef840ea63200fb1 exact P1/P4 terminal SUCCESS; diagnostic 860678c exact P1 SUCCESS. |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
-| Operation ID | C3-HISTORICAL-DIAGNOSTIC-20261125 |
-| Operation state | RECONCILED (diagnostic source publication verified at 860678c398bb4ae75977ac86b7d5632889735f55; exact CI not yet reconciled) |
-| Intended files | diagnostics/Check_Local_API.ps1; diagnostics/check_local_api.py; tests/test_c3_local_verifier_trust.py; .github/workflows/p1-isolated-backend.yml (explicit paths only); canonical journal, handoff and evidence. Keep Diagnose_PilotODIN.bat interface, existing read-only routes and separate Ollama inventory. No product server, approval, native workflow or dependency change. |
+| Operation ID | C3-MANDATORY-INNER-AUTH-20261125 |
+| Operation state | PREPARED (mandatory HTTP scope witness; publication identified by prepared parent and operation marker) |
+| Intended files | backend/main.py; tests/test_c1_product_integration.py; canonical journal, handoff and evidence. No route inventory, native, settings, workspace migration, dependency, activation or approval change. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Prior product 6b25754 exact P1/P4 SUCCESS; 25 new local inference cases passed. Historical diagnostics migrated to paired 5173 frontdoor, strict fixed GET destinations, no capability propagation, no proxy/redirect, bounded JSON, health refusal and separate local Ollama inventory. Existing PowerShell launcher calls isolated venv Python; no new dependencies, no actual local service execution. 25 mocked/source cases registered through existing P1 verifier group. Exact CI pending; remaining indirect caller matrix still open. |
-| Pending runs | Exact `860678c`: [P1 #45602844010](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45602844010) IN_PROGRESS; job 139165915851. Resolve terminal job and test logs before further source changes. |
+| Verification | Exact diagnostic 860678c P1 #45602844010 job 139165915851 terminal SUCCESS; verifier group 77 PASS including 25 new; 879/879 decoded, 433 candidates, 76 routes, zero AST/decode gaps. Inspected all 67 Python main-app-reference candidate paths (57 test modules; 10 non-test), guarded fixture or factory except route identity and direct synthetic lifespan assertions. Previously classified direct endpoint references; reviewed 15 additional launcher paths and archived R03 refusal before compile. Active serving paths use outer RequestGuard, no active bare Uvicorn identified. Frontend source assertions retain _local_request call. Main fallback and weaker _local_request only remaining known HTTP bypasses. Preserve inner CORS for actual authenticated response headers, archive-before-scratch order. Eight matching routine workflow jobs reviewed: P1 isolated backend, project lifecycle, real HTTP; P2 real HTTP and revision idempotency; P3 real HTTP and semantic context (PowerShell parser only); P4 target ranking (restricted collector false). Add direct ASGI all-route refusal/preflight and guarded positive ordering tests. Wider lexical credential/caller classification and actual CI remain required for C3 closure. |
+| Pending runs | None; exact 860678c P1 terminal SUCCESS. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Reconcile exact P1 CI, continue remaining actual caller/credential classifications, then mandatory bare-main guard and complete 76-route matrix. |
+| Recovery action | Publish mandatory inner witness and route-matrix tests only after expected HEAD check; reconcile all eight exact routine CI runs, inspect remaining caller/credential evidence and closure matrix. Do not award C3 credit until complete. |
 | Resume after closure | C4, C5 in order; D separately approved. |
 
 ## Prior operation
+
+C3-HISTORICAL-DIAGNOSTIC-20261125: [860678c](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/860678c398bb4ae75977ac86b7d5632889735f55), exact [P1 #45602844010](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45602844010) terminal SUCCESS; prior journal at [679f564](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/679f5643828dbd234f5a048c8f018c0f66d7a675).
 
 C3-LEGACY-LOCAL-TRANSPORT-20261125: [6b25754](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/6b257546734f01808c9dee8c6ef840ea63200fb1), exact [P1 #45600104262](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45600104262) and [P4 #45600104253](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45600104253) terminal SUCCESS; collector skipped. Previous journal at [1fe8531](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/1fe8531bd913be555aae5bdffff0ac3240930cb2).
 
