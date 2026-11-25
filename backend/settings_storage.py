@@ -11,6 +11,7 @@ import base64
 from dataclasses import dataclass
 from enum import Enum
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -85,12 +86,19 @@ def _constant(_):
     raise _invalid()
 
 
+def _finite_float(value):
+    number = float(value)
+    if not math.isfinite(number):
+        raise _invalid()
+    return number
+
+
 def strict_object(raw: bytes, limit: int) -> dict:
     if type(raw) is not bytes or not 0 < len(raw) <= limit:
         raise _invalid()
     try:
         value = json.loads(raw.decode("utf-8"), object_pairs_hook=_pairs,
-                           parse_constant=_constant)
+                           parse_constant=_constant, parse_float=_finite_float)
     except (ValueError, UnicodeError, RecursionError, OverflowError):
         raise _invalid() from None
     if type(value) is not dict:

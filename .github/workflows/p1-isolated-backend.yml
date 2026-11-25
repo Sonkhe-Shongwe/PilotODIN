@@ -77,6 +77,8 @@ on:
       - tests/test_c3_devqa_seeders.py
       - tests/test_p1_resource_policy.py
       - backend/settings_storage.py
+      - backend/settings_http.py
+      - tests/test_c4_settings_http.py
       - backend/resource_policy.py
       - backend/ai_provider.py
       - tests/test_c4_ai_settings.py
@@ -145,6 +147,7 @@ jobs:
         run: >-
           python -m pytest -q
           tests/test_c4_ai_settings.py
+          tests/test_c4_settings_http.py
           tests/test_multi_ai.py::test_disabled_by_default_and_no_credentials_leaked
           tests/test_multi_ai.py::test_keys_stored_and_never_returned
           tests/test_multi_ai.py::test_remove_key

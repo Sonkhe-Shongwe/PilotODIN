@@ -22,8 +22,10 @@ from pydantic import BaseModel, Field, ConfigDict
 
 try:
     from .request_auth import request_authorized
+    from .settings_http import SettingsRequestGuard
 except ImportError:
     from request_auth import request_authorized
+    from settings_http import SettingsRequestGuard
 
 try:
     from . import dataset_publication, model_artifacts, ai_provider, ai_context, engine, storage, project_lifecycle, quality, quality_investigations, analytics, explore_filters, explore_inspector, column_intelligence, saved_analyses, data_exports, export_transfer, quality_approvals, reports, project_delete_impact, resource_policy, semantic_profile, semantic_review, target_opportunities, verified_answers
@@ -64,6 +66,7 @@ async def _lifespan(_app:FastAPI):
         if not job.done():job.cancel()
 
 app = FastAPI(title="PilotODIN", version="0.8.0",description="Local-first intelligent analytics workspace",lifespan=_lifespan)
+app.add_middleware(SettingsRequestGuard)
 app.add_middleware(CORSMiddleware,
                    allow_origin_regex=r"(?:http://(?:localhost|127\.0\.0\.1):517[3-9]|https?://tauri\.localhost|tauri://localhost)",
                    allow_credentials=False,allow_methods=["*"],allow_headers=["*"],

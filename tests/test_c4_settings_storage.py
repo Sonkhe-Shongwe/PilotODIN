@@ -35,7 +35,7 @@ def store(tmp_path):
 @pytest.mark.parametrize("raw", [
     b"[]", b"null", b"", b"{", b'{"x":1,"x":2}',
     b'{"nested":{"x":1,"x":2}}', b'{"x":NaN}', b'{"x":Infinity}',
-    b'{"x":-Infinity}', b'{"x":"\xff"}',
+    b'{"x":-Infinity}', b'{"x":"\xff"}', b'{"x":1e999}', b'{"x":-1e999}',
 ])
 def test_strict_json_refuses_ambiguous_input(raw):
     with pytest.raises(settings.InvalidSettings):

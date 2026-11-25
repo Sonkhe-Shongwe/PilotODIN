@@ -7,17 +7,17 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | a3686345608bf033ce42bf0204698be135cfe719 |
 | Product baseline | C3 source exit supported at 78c8672, latest product ebd01f4 and verified fixture/historical changes c329e0d/83c83f8. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
 | Operation ID | C4-A-BOUNDED-SETTINGS-HTTP-20261125 |
-| Operation state | PREPARED; prior eight AI settings CI reconciled SUCCESS; new operation not issued |
+| Operation state | ISSUED; reconcile exact source by parent e49dcc8 and operation marker before retry |
 | Intended files | backend/settings_http.py (new pure ASGI boundary), backend/main.py, backend/settings_storage.py, tests/test_c4_settings_http.py, tests/test_c4_settings_storage.py, existing P1 workflow and canonical records. Three settings PUT routes only; no transport, UI, model or native activation. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Exact af49863 eight workflows SUCCESS, direct C4 AI/historical group 42/42, foundation 48/48, recovery 206 + 2 subtests, all existing P1 steps pass. P4 restricted collector skipped. |
-| Pending runs | None; all eight af49863 runs terminal SUCCESS. |
+| Verification | Three settings PUT routes now have a pure ASGI bounded strict JSON guard shared by both compositions; fixed framing/size/timeout/redaction responses and direct fixture tests. Exact CI pending. |
+| Pending runs | Eight existing exact workflows expected; reconcile actual IDs and results before credit. |
 | Unpublished work | Owner-local tree not inspected. |
 | Recovery action | Add bounded strict UTF-8 JSON request guard for three settings PUT routes inside auth/scratch and CORS, preserve FastAPI models and route inventory, no parser before bounds; test declared/chunked/ambiguous/disconnect/timeout and both compositions. Then review common consent dispatch and frontend warning integration. |
 | Resume after closure | C5 then D with separately approved scope. |
