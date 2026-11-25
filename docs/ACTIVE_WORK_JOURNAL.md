@@ -7,22 +7,24 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | dc64b687d178724306820c1cae0ff79383de102d |
-| Product baseline | ebd01f4 verified product; c329e0d hosted child confinement five exact routine workflows SUCCESS. |
+| Observed starting HEAD | 78c86721de75fcfcfba1c80bd5fb258039ff162b |
+| Product baseline | ebd01f4 product frontend transport verified; c329e0d hosted fixtures 5/5 SUCCESS; 83c83f8 historical QA refusal 4/4 SUCCESS. |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
-| Operation ID | C3-HISTORICAL-QA-EARLY-REFUSAL-20261125 |
-| Operation state | RECONCILED (historical refusal source publication verified at 83c83f8359943e2c228d38a04e01100a5880fff2; exact CI pending) |
-| Intended files | tools/Run_P2_Native_Deliver_Consent_Local.ps1; tools/Run_P2_Native_Two_Window_Local.ps1; tools/Run_P3_Native_Quality_W5_QA_Local.ps1; tools/Run_P3_Native_Semantic_QA_Local.ps1; tools/Verify_P2_DevQA_Native_Chain_Local.ps1; frontend/tests/p1-playwright-pilot-contract.test.cjs; journal, handoff, ledger. Preserve historical bodies; no workflow/native permission change. |
+| Operation ID | C3-SOURCE-EXIT-MATRIX-20261125 |
+| Operation state | PREPARED (documentation-only closure decision; identify by parent and operation marker) |
+| Intended files | docs/ACTIVE_WORK_JOURNAL.md; docs/TAB_MIGRATION_HANDOFF_CURRENT.md; docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md; docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md; docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md. No source/workflow/official acceptance change. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Five hosted fixture workflows terminal SUCCESS. Five unsupported historical native QA scripts now unconditionally refuse immediately after parameter setup, before workspace, capability, build or child operations. Historical bodies retained; no authority or overlay changes, future replacement requires fresh review/approval. One source-only Node test covers all five refusal positions and existing native launch-plan allowlist. Four routine workflows expected; full credential disposition/exit matrix outstanding. |
-| Pending runs | Exact `83c83f8`: [45613787078](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45613787078) P1 Isolated Frontend Verification IN_PROGRESS; [45613787174](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45613787174) P2 Report Export Draft Safety IN_PROGRESS; [45613787165](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45613787165) P2 Native Deliver Consent QA Windows Source Preflight IN_PROGRESS; [45613787132](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45613787132) P3 User-Described Semantic Business Context IN_PROGRESS. Reconcile all terminal jobs. |
+| Verification | Reconciled exact 83c83f8 four workflows all SUCCESS; 206 frontend Node, 7 browser, 100 report Node, 5 standalone Rust report, P2 PowerShell syntax/preflight zero findings, 89 P3 Python, 16 Node, P3 Windows parser and independent evidence synthetic check. Read all baseline 93 credential-boundary candidates over audit batches and 28 additional non-test desktop-session/development-capability references; grouped semantic dispositions, 67 main app references, 11 direct endpoint modules, seven transport construction paths, 16 non-test Python HTTP paths, serving launcher and indirect/dynamic paths. Exact post-scanner delta limited to reviewed frontend/fixture/historical QA changes and docs. C-D05 and section 10 source exit supported by 76 route matrix and scoped exact CI; no claim arbitrary dynamic/OS credential/egress proof. Historical five overlays remain unavailable; existing local dev marker not a same-user hostile process security boundary. C4 provider consent/settings, C5 provenance and D native/physical evidence remain open. Three C1/C2 native workflows literal false, activation false, 85 workflow definitions unchanged. No matching docs-only trigger found in prior full review. |
+| Pending runs | None; all four last workflows terminal SUCCESS. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Reconcile exact four routine workflow results, complete remaining credential candidate matrix and C-D05 closure; unsupported historical native overlays remain frozen and untested. No native execution or acceptance credit. |
+| Recovery action | Publish one C3 source exit receipt and update handoff/directive/policy to 13/17, C 3/5; official P4 14/20 unchanged. C4 next, no native/phase authority. |
 | Resume after closure | C4, C5 in order; D separately approved. |
 
 ## Prior operation
+
+C3-HISTORICAL-QA-EARLY-REFUSAL-20261125: [83c83f8](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/83c83f8359943e2c228d38a04e01100a5880fff2), exact P1 frontend #45613787078, P2 report safety #45613787174, P2 Windows preflight #45613787165, P3 semantic source/parser #45613787132 SUCCESS. Prior journal [78c8672](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/78c86721de75fcfcfba1c80bd5fb258039ff162b).
 
 C3-HOSTED-CHILD-ENV-CONFINEMENT-20261125: [c329e0d](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/c329e0d226384bb0046accaea0c2d89f88ee1322), exact P1 frontend #45612958408, P1 HTTP #45612959284, P2 HTTP #45612959275, P3 HTTP #45612959316, P4 #45612958254 SUCCESS; restricted collector SKIPPED. Prior journal [dc64b68](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/dc64b687d178724306820c1cae0ff79383de102d).
 
