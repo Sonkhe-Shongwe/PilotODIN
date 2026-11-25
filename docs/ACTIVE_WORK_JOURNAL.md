@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | cc613b78a43b41e1ab1736a23189df845c24dbfc |
+| Observed starting HEAD | 60b3fa07d1f4d265092c7ce5fad6073b25953c25 |
 | Product baseline | e0f944d2a9c14c4ae470c38c929bae249f35373c (frontend delta); native/backend runtime 388b35750316b9c5a060d603c35c7d728d5c0890; test-only native fixture 1d23ea139762d94d25e689c4c3489b72fb34acc9 |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
-| Operation ID | C3-HOSTED-BROWSER-CAPABILITY-20261125-source |
-| Operation state | ISSUED |
-| Intended files | Hosted browser contract and Vite proxy, Playwright configs/shared helper and 11 real HTTP specs, P2 alternate mount, owned-server tests, Vite fixture copy, continuity. No native or local-devqa activation. |
+| Operation ID | C3-HOSTED-HTTP-RECOVERY-COMPAT-20261125-source |
+| Operation state | PREPARED |
+| Intended files | frontend/scripts/live-dev-api-proxy.mjs, frontend/e2e/p4-real-http-review-queue.spec.ts, frontend/e2e/p4-n12-native-cases.mjs, frontend/tests/desktop-ai-boundaries.test.cjs, continuity. Preserve native helper default and all allowlists. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | C1/C2 SOURCE CLOSED, unchanged. C3 kernel exact 5fc531e source job 138854868629 SUCCESS: all five named C3 cases passed, workspace/owned-server 48 tests, 1058 Python + 544 subtests (6 skipped), 112 Node, Vite; disposable browser job 138854868635 SUCCESS. Windows job SUCCESS 53 passed, 66 subtests; restricted 138854871137 SKIPPED. No live auth integration. |
-| Pending runs | Exact hosted migration `f0c8be38fb668fa2e57d16a8a31edbb4c1be8f10`: #45528239205 P1 Isolated Frontend Verification IN_PROGRESS; #45528239261 P2 Real HTTP Saved Revision Comparison IN_PROGRESS; #45528239178 P4 Target Review Queue and Transparent Ranking IN_PROGRESS; #45528239207 P3 Real HTTP Semantic Context Browser Acceptance IN_PROGRESS; #45528239241 P1 Disposable Real HTTP Browser/Backend Acceptance IN_PROGRESS. Reconcile terminal CI before overlapping source push. |
+| Pending runs | None. f0c8be3 exact P1 frontend/P2/P3 SUCCESS, P4 source and Windows SUCCESS, P4 browser 11/13 failed two compatibility cases; P1 real HTTP recovery failure, subsequent suites not reached. Restricted SKIPPED. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Reconcile exact CI, especially authenticated hosted browser positive/negative readiness probes, preserved all 11 test allowlists and export socket-abort witness. Correct only observed regressions. Then local-devqa and hosted native callers plus explicit in-process adapter and bare fallback removal; no native execution. |
+| Recovery action | Distinguish upstream unavailable (502) from authentication refusal (400/403), preserve P1 recovery wording. Use authenticated direct fixture read for exact intercepted P4 history request instead of route.fetch, and explicit nonsecret hosted marker on peer lifecycle call only, preserving native default and exact permit. Add focused regression coverage; reconcile exact routine CI then migrate remaining QA and remove bare fallback. |
 | Resume after closure | C4, C5 in order; D separately approved. |
 
 ## Prior operation
