@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 2e07cf0a748a426f2b861b0ac2fe8d337d35bca0; write-ahead ac1841c70ab017741331c87e19948b804ba7dbd6; published and verified HEAD 736a0fe9def039f07936dbc52ecfb6e162e63e84. |
-| Product baseline | 736a0fe9def039f07936dbc52ecfb6e162e63e84 (new fixed-port local DevQA source; exact CI pending); previous d5036773d7c3fea6f79280524ac25b2e0a8fc5ac all four workflows SUCCESS. |
+| Observed starting HEAD | e951e2d734f1fa0ca4471fd9fd3569f61982bb7e |
+| Product baseline | 736a0fe9def039f07936dbc52ecfb6e162e63e84; six exact workflows SUCCESS, P4 source-contract failure. |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
-| Operation ID | C3-LOCAL-DEVQA-FIXED-PORT-AUTH-20261125-source |
-| Operation state | RECONCILED |
-| Intended files | backend/request_auth.py, backend/server_entry.py, frontend/scripts/live-dev-api-proxy.mjs, frontend/src/api.ts, three native QA pages, four existing local DevQA PowerShell launchers, P3 W5 probe, scoped Python/Node source tests and canonical records. Bind four exact phase names to 5177/5178 and fixed backend 8000, use private capability and no proxy/redirect for readiness/probe, keep all QA mutation budgets and IPC restrictions. No new listener or native execution. |
+| Operation ID | C3-FIXED-DEVQA-ORIGIN-TEST-20261125 |
+| Operation state | PREPARED |
+| Intended files | frontend/tests/desktop-ai-boundaries.test.cjs and .github/workflows/p4-target-ranking.yml (add this already-executed test to routine trigger filter only), journal. Test every explicit allowed development origin 5173/5176/5177/5178 with same-origin marker; reject unapproved, localhost and non-loopback origins; retain mixed-desktop rejection. No product change or restricted workflow activation. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Published 17-file source/test/journal diff verified. All four fixed-port local DevQA phases now require phase-bound immutable capability before workspace admission, private paired Vite proxy, launcher-owned capability, authenticated no-proxy/no-redirect direct readiness and W5 probe. Preserved browser QA mutation budgets, W5 IPC rules, no new listener. Added exact phase/startup negatives, guarded disposable TestClient and proxy-plan tests, W5 probe transport tests. No native runtime or physical acceptance. Previous d503677 exact CI terminal SUCCESS as ledger records. |
-| Pending runs | P1 frontend #45562258510 in_progress; P3 source/parser #45562258476 in_progress; P4 #45562258444 in_progress; P3 real HTTP #45562258609 in_progress; P2 export safety #45562258528 success; P1 real HTTP #45562258591 in_progress; P2 Windows source preflight #45562258483 success. No restricted operation issued; existing native guards unchanged. |
+| Verification | Exact 736a0fe six workflows SUCCESS: P1 frontend 45562258510, P1 HTTP 45562258591, P2 source preflight 45562258483, P2 export 45562258528, P3 source/parser 45562258476, P3 HTTP 45562258609. P4 45562258444 failed only source contract step job 139028529938, 115/116 Node, obsolete assertion rejecting newly admitted 5177, build skipped. Backend focused tests success, Windows job 139028529451 and browser job 139028529781 success; restricted 139028531202 SKIPPED. Corrected exact CI not yet issued. |
+| Pending runs | None from 736a0fe; terminal failure requires correction. Expect P1 frontend and routine P4 on test/trigger-only correction. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Reconcile all seven exact 736a0fe workflows and job scopes before overlapping push; correct any actual failures without weakening checks. Next inventory/migrate A4 smoke and hosted native P4/N12 startup and direct clients, including bare backend.main:app, then explicit in-process adapter and remove bare no-secret runtime fallback. Complete C3 route/direct-call matrix, disposable negatives and exact CI. No C4 until C3 closes; no native launch, production activation or new approval. |
+| Recovery action | Correct stale test without weakening origin/authentication checks; add exact routine P4 trigger for already-run test. Verify job scope and live HEAD, publish non-force, reconcile exact corrected CI. Then A4/hosted native P4/N12, explicit in-process adapter, fallback removal and C3 exit audit. No native launch or C4. |
 | Resume after closure | C4, C5 in order; D separately approved. |
 
 ## Prior operation
