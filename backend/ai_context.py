@@ -67,6 +67,12 @@ def build(project_id:str,task:str,question:str='',target:str|None=None,experimen
              'missing_pct':c['missing_pct'],'unique_count':c['unique']}
         for k in ('mean','median','min','max','std'):
             if k in c:out[k]=_finite(c[k])
+        if c['kind']=='numeric':
+            # Match analytics.describe's finite-only population, not its
+            # structural non-null counts (which may include infinities).
+            finite=analytics.finite_numeric(df[c['name']])
+            out['_finite_count']=int(len(finite))
+            out['_finite_unique_count']=int(finite.nunique())
         result['columns'].append(out)
     for item in issues[:25]:
         result['quality_findings'].append({'kind':item['kind'],'column':str(item.get('column') or '')[:100],
@@ -75,12 +81,13 @@ def build(project_id:str,task:str,question:str='',target:str|None=None,experimen
     for c in df.columns[:35]:
         s=df[c]
         if not pd.api.types.is_numeric_dtype(s):continue
-        vals=pd.to_numeric(s,errors='coerce').replace([float('inf'),-float('inf')],float('nan')).dropna()
+        vals=analytics.finite_numeric(s)
         if len(vals)<5:continue
         mean=_finite(vals.mean());median=_finite(vals.median())
         if mean is None or median is None:continue
         if mean!=median and abs(mean-median)>max(abs(median)*.4, 1.0):
             result['computed_patterns'].append({'column':str(c)[:100],'mean':mean,'median':median,
+              '_finite_count':int(len(vals)), '_finite_unique_count':int(vals.nunique()),
               'observation':'Large mean/median difference; investigate skew or outliers, not proof of an error'})
     if target and target in df.columns:
         result['target']=str(target)[:100]

@@ -7,17 +7,17 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | f3cd114551a47cfe73d7cf86cfb77e96f393ce0e |
 | Product baseline | C3 source exit supported at 78c8672, latest product ebd01f4 and verified fixture/historical changes c329e0d/83c83f8. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
 | Operation ID | C4-B6-FINITE-CV-SUPPORT-20261125 |
-| Operation state | PREPARED; earlier B6 scoped CI SUCCESS; support refinement not issued |
+| Operation state | ISSUED; reconcile exact support refinement by parent 2d6285b and operation marker before retry |
 | Intended files | backend/ai_context.py, backend/ai_provider.py, tests/test_c4_cloud_intent.py, tests/test_p4_r03_verified_answers.py and canonical records. No model training/schema/workflow changes. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Exact 1a1799d P1 #45634055861 SUCCESS (108 combined C4/settings/intent and selected historical tests; eight added projection cases), P4 #45634055287 SUCCESS (1086 passed, 6 skipped, 552 subtests); browser and scoped Windows passed, restricted collector skipped. |
-| Pending runs | None; both exact runs terminal SUCCESS. |
+| Verification | Finite-support provenance, pattern matching and separate CV withholding implemented. Eleven new inert cases; existing cloud tests now assert CV withheld and local retention. Exact CI pending. |
+| Pending runs | Expected P1 isolated backend and P4 scoped source CI; exact IDs pending. |
 | Unpublished work | Owner-local tree not inspected. |
 | Recovery action | Attach internal finite-count and finite-distinct witnesses using analytics.finite_numeric on same working data as numeric statistics; patterns require own matching support. Enforce witness >=5 and consistency with structural counts; omit metadata from wire and local prompt. Hold-out sample_count only gates held-out metrics; withhold all numeric CV fields until independent fold support provenance exists; retain model/status and local CV. Add inert actual dataframe and malformed/missing witness negatives, update superseded synthetic CV-positive assertions with local retention witnesses. Reconcile exact CI before B7. |
 | Resume after closure | C5 then D with separately approved scope. |

@@ -372,6 +372,7 @@ class CloudEvaluationPrivacyTests(unittest.TestCase):
         self.metrics = {
             'accuracy': 0.8, 'f1_macro': 0.75, 'sample_count': 64,
             'baseline_test_metric': 0.5, 'beats_heldout_baseline': True,
+            'baseline_cv': 0.61, 'cv_score': 0.81,
             'reliability': {'level': 'warning', 'issues': ['LOCAL_NOTE_SENTINEL']},
             'roc_auc': 'INVALID_METRIC_SENTINEL', 'rmse': True,
             'class_labels': ['PRIVATE_CLASS_SENTINEL'],
@@ -434,7 +435,10 @@ class CloudEvaluationPrivacyTests(unittest.TestCase):
         context = prompt['verified_context']
         self.assertEqual((context['dataset_version'], context['row_count'], context['column_count']), (0, 4, 50))
         self.assertEqual(context['experiment']['metrics']['accuracy'], 0.8)
-        self.assertEqual(context['experiment']['comparison'][0]['cv_metric'], 0.81)
+        self.assertEqual(context['experiment']['comparison'][0],
+                         {'key': 'logistic_regression', 'status': 'ready'})
+        self.assertNotIn('baseline_cv', context['experiment']['metrics'])
+        self.assertNotIn('cv_score', context['experiment']['metrics'])
         self.assertTrue(context['columns'])
         # Four-row fixture cannot disclose numerical column statistics. Whole
         # projected metadata records still fit as a prefix.
@@ -501,8 +505,14 @@ class CloudEvaluationPrivacyTests(unittest.TestCase):
             'accuracy': 0.8, 'f1_macro': 0.75, 'sample_count': 64, 'baseline_test_metric': 0.5,
             'beats_heldout_baseline': True, 'reliability': {'level': 'warning'},
         })
-        self.assertEqual(experiment['comparison'][0]['cv_metric'], 0.81)
-        saved = self.client.get(f'/api/experiments/{self.experiment_id}').json()['final_results']
+        self.assertEqual(experiment['comparison'][0],
+                         {'key': 'logistic_regression', 'status': 'ready'})
+        local_experiment = self.client.get(f'/api/experiments/{self.experiment_id}').json()
+        saved = local_experiment['final_results']
+        self.assertEqual(saved['baseline_cv'], 0.61)
+        self.assertEqual(saved['cv_score'], 0.81)
+        self.assertEqual(local_experiment['results']['models'][0]['cv_metric'], 0.81)
+        self.assertEqual(local_experiment['results']['models'][0]['cv_std'], 0.02)
         self.assertEqual(saved['evaluation_rows'], self.evaluation_rows)
         self.assertEqual(saved['class_labels'], self.metrics['class_labels'])
 

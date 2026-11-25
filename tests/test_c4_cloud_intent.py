@@ -3,7 +3,8 @@ import asyncio
 import json
 
 import pytest
-from backend import ai_provider as ai, main
+import pandas as pd
+from backend import ai_context, ai_provider as ai, main
 from tests.fixture_http import fixture_client
 from tests.test_c1_product_integration import product_composition
 
@@ -150,7 +151,8 @@ def test_cloud_serialized_byte_boundary(value):
 def test_cloud_wide_unicode_retains_required_metrics_and_whole_prefix(dispatch):
     cfg,calls=dispatch
     columns=[{"name":f"{i:02d} "+'漢😀é"'*24,"kind":"numeric",
-              "missing_count":0,"unique_count":50,"mean":i} for i in range(50)]
+              "missing_count":0,"unique_count":50,"mean":i,
+              "_finite_count":50,"_finite_unique_count":50} for i in range(50)]
     context={"dataset_version":3,"row_count":50,"columns":columns,
              "experiment":{"metrics":{"accuracy":0.8,"sample_count":50},
                            "comparison":[{"key":"logistic_regression","status":"ready","cv_metric":0.81}]},
@@ -165,10 +167,12 @@ def test_cloud_wide_unicode_retains_required_metrics_and_whole_prefix(dispatch):
     payload=json.loads(wire)
     assert payload["question"]==question and "continuation" not in payload
     evidence=payload["verified_context"]
-    assert evidence["experiment"]==context["experiment"]
+    assert evidence["experiment"]=={"metrics":{"accuracy":0.8,"sample_count":50},
+                                    "comparison":[{"key":"logistic_regression","status":"ready"}]}
     assert evidence["dataset_version"]==3 and evidence["row_count"]==50
     kept=evidence["columns"]
-    assert 0<len(kept)<len(columns) and kept==columns[:len(kept)]
+    projected=[{k:v for k,v in col.items() if not k.startswith("_")} for col in columns]
+    assert 0<len(kept)<len(columns) and kept==projected[:len(kept)]
     assert payload["omitted_context_items"]=={"columns":len(columns)-len(kept)}
     assert "PRIVATE_PREDICTION" not in wire
     assert json.dumps(context,ensure_ascii=False)==original
@@ -208,7 +212,7 @@ def test_positive_projection_omits_nested_private_data(dispatch,entry):
              "prediction":{"outcome":"PRIVATE_PREDICTION"},
              "columns":[
                  {"name":"amount","kind":"numeric","missing_count":0,"unique_count":20,
-                  "mean":12.0,"median":11.0,"std":3.0,"min":-123456,"max":987654,
+                  "_finite_count":30,"_finite_unique_count":20,"mean":12.0,"median":11.0,"std":3.0,"min":-123456,"max":987654,
                   "sample_values":["PRIVATE_VALUE"],"future":{"secret":"PRIVATE_NESTED"}},
                  {"name":"email","kind":"categorical","unique_count":30},
                  {"name":"C:/PRIVATE_PATH","kind":"numeric","mean":123},
@@ -216,7 +220,8 @@ def test_positive_projection_omits_nested_private_data(dispatch,entry):
                  {"name":"code","kind":"numeric","missing_count":0,"unique_count":30,"mean":999.0}],
              "quality_findings":[{"kind":"missing","column":"amount","affected_rows":3,
                                   "decision":"pending","severity":"review","details":"PRIVATE_DETAILS"}],
-             "computed_patterns":[{"column":"amount","mean":12.0,"median":11.0,"observation":"PRIVATE_PROSE"},
+             "computed_patterns":[{"column":"amount","mean":12.0,"median":11.0,
+                                  "_finite_count":30,"_finite_unique_count":20,"observation":"PRIVATE_PROSE"},
                                   {"column":"small","mean":321.0,"median":321.0}],
              "feature_screening":[{"column":"amount","risk":"review","recommendation":"investigate",
                                     "missing_pct":0,"reasons":["PRIVATE_REASON"]}],
@@ -249,7 +254,7 @@ def test_positive_projection_omits_nested_private_data(dispatch,entry):
     assert actual["computed_patterns"]==[{"column":"amount","mean":12.0,"median":11.0}]
     assert actual["feature_screening"]==[{"column":"amount","risk":"review","recommendation":"investigate","missing_pct":0}]
     assert actual["experiment"]["metrics"]=={"sample_count":20,"rmse":3.5,"reliability":{"level":"review"}}
-    assert actual["experiment"]["comparison"]==[{"key":"ridge","status":"ready","cv_metric":3.1}]
+    assert actual["experiment"]["comparison"]==[{"key":"ridge","status":"ready"}]
     assert actual["verified_investigation"]["numeric_comparisons"]==[
         {"column":"premium","missing_group_count":6,"other_group_count":24,"missing_group_mean":1.5,"other_group_mean":2.5}]
     assert "categorical_group_counts" not in actual["verified_investigation"]
@@ -273,4 +278,74 @@ def test_invalid_required_name_does_not_dispatch(dispatch,monkeypatch):
     result=ai.respond({"target":"x"*101},"assistant","Question","Rules",
                       selected_provider="gemini",cloud_intent=True)
     assert result["fallback"] and not calls
+
+
+def test_actual_finite_population_controls_cloud_statistics(dispatch):
+    cfg,calls=dispatch
+    df=pd.DataFrame({
+        "mixed":[10,20,30,float("inf"),float("-inf"),None,None],
+        "valid":[1,2,3,4,5,float("inf"),None],
+        "repeated":[1,1,1,2,3,4,4],
+        "skew":[1,2,3,4,50,float("inf"),None],
+    })
+    context=ai_context.build("inert","overview",working_data=(df,2,[]))
+    local={c["name"]:c for c in context["columns"]}
+    assert local["mixed"]["unique_count"]==5 and local["mixed"]["missing_count"]==2
+    assert local["mixed"]["_finite_count"]==3 and local["mixed"]["_finite_unique_count"]==3
+    assert local["mixed"]["mean"]==20
+    assert local["valid"]["_finite_count"]==local["valid"]["_finite_unique_count"]==5
+    assert local["repeated"]["_finite_count"]==7 and local["repeated"]["_finite_unique_count"]==4
+    r=ai.respond(context,"overview","Explain statistics","Rules",selected_provider="gemini",cloud_intent=True)
+    assert r["provider"]=="gemini" and len(calls)==1
+    wire=calls[0][2]
+    actual=json.loads(wire)["verified_context"]
+    columns={c["name"]:c for c in actual["columns"]}
+    assert "mean" not in columns["mixed"] and "median" not in columns["mixed"]
+    assert "mean" not in columns["repeated"]
+    assert columns["valid"]["mean"]==3 and columns["valid"]["median"]==3
+    assert columns["skew"]["mean"]==12 and columns["skew"]["median"]==3
+    assert actual["computed_patterns"]==[{"column":"skew","mean":12.0,"median":3.0}]
+    assert "_finite_count" not in wire and "_finite_unique_count" not in wire
+    local_prompt=json.loads(ai._encode_insight_prompt(context,"overview","Question",None,limit=9000))
+    local_columns={c["name"]:c for c in local_prompt["verified_context"]["columns"]}
+    assert local_columns["mixed"]["mean"]==20 and local_columns["mixed"]["max"]==30
+    assert "_finite_count" not in json.dumps(local_prompt) and "_finite_unique_count" not in json.dumps(local_prompt)
+    assert local["mixed"]["_finite_count"]==3
+
+
+@pytest.mark.parametrize("finite,distinct",[
+    (None,None),(4,4),(5,4),(True,5),("5",5),(51,5),(5,6),(50,51),
+])
+def test_invalid_finite_support_withholds_column_and_pattern(finite,distinct):
+    context={"row_count":50,"columns":[{"name":"amount","kind":"numeric",
+        "missing_count":0,"unique_count":50,"mean":99,"median":33,
+        "_finite_count":finite,"_finite_unique_count":distinct}],
+        "computed_patterns":[{"column":"amount","mean":99,"median":33,
+        "_finite_count":finite,"_finite_unique_count":distinct}]}
+    actual=ai._cloud_project(context)
+    assert "mean" not in actual["columns"][0] and actual["computed_patterns"]==[]
+
+
+def test_pattern_requires_own_matching_finite_witness():
+    context={"row_count":10,"columns":[{"name":"amount","kind":"numeric",
+        "missing_count":0,"unique_count":10,"mean":12,"median":3,
+        "_finite_count":10,"_finite_unique_count":10}],
+        "computed_patterns":[{"column":"amount","mean":12,"median":3,
+        "_finite_count":4,"_finite_unique_count":4}]}
+    actual=ai._cloud_project(context)
+    assert actual["columns"][0]["mean"]==12 and actual["computed_patterns"]==[]
+
+
+def test_holdout_support_never_authorizes_cv_scores(dispatch):
+    cfg,calls=dispatch
+    context={"experiment":{"metrics":{"sample_count":100,"accuracy":0.8,
+        "baseline_test_metric":0.5,"baseline_cv":0.73,"cv_score":0.91},
+        "comparison":[{"key":"ridge","status":"ready","cv_metric":0.91,"cv_std":0.02}]}}
+    r=ai.respond(context,"evaluate","Explain scores","Rules",selected_provider="gemini",cloud_intent=True)
+    assert r["provider"]=="gemini" and len(calls)==1
+    actual=json.loads(calls[0][2])["verified_context"]["experiment"]
+    assert actual["metrics"]=={"sample_count":100,"accuracy":0.8,"baseline_test_metric":0.5}
+    assert actual["comparison"]==[{"key":"ridge","status":"ready"}]
+    local=json.loads(ai._encode_insight_prompt(context,"evaluate","Question",None,limit=9000))
+    assert local["verified_context"]["experiment"]==context["experiment"]
 

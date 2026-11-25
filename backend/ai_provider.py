@@ -439,8 +439,10 @@ _CLOUD_TASKS = frozenset(("overview","understand","quality","explore","prepare",
 _CLOUD_MODELS = frozenset(("logistic_regression","linear_regression","ridge",
     "elastic_net","decision_tree","random_forest","extra_trees","gradient_boosting",
     "hist_gradient_boosting","knn","svm","svr","naive_bayes"))
+# Only held-out scores have a saved population witness today. Training-fold
+# CV metrics need independent evidence and remain local.
 _CLOUD_METRICS = ("accuracy","f1_macro","precision_macro","recall_macro","roc_auc",
-                  "mae","rmse","r2","baseline_cv","cv_score","baseline_test_metric")
+                  "mae","rmse","r2","baseline_test_metric")
 _CLOUD_ISSUES = frozenset(("exact_duplicates","missing","identifier","outliers",
     "whitespace","ambiguous_dates","numeric_text","case_variant","spelling"))
 _PRIVATE_NAME = re.compile(
@@ -505,7 +507,7 @@ def _cloud_project(context):
     result=_cloud_fields(context,("dataset_version","row_count","column_count",
                                   "missing_cells","duplicate_rows"),_cloud_count)
     rows=result.get("row_count")
-    eligible=set()
+    eligible={}
     columns=[]
     for item in _cloud_records(context.get("columns"),50):
         name=_cloud_name(item.get("name"))
@@ -517,10 +519,14 @@ def _cloud_project(context):
         out.update(_cloud_fields(item,("missing_pct",),_cloud_pct))
         missing=out.get("missing_count")
         distinct=out.get("unique_count")
+        finite=_cloud_count(item.get("_finite_count"))
+        finite_distinct=_cloud_count(item.get("_finite_unique_count"))
         if (kind=="numeric" and rows is not None and missing is not None
-                and distinct is not None and rows-missing>=distinct>=_CLOUD_MIN_SUPPORT):
-            eligible.add(name)
+                and distinct is not None and finite is not None and finite_distinct is not None
+                and rows-missing>=distinct>=finite_distinct>=_CLOUD_MIN_SUPPORT
+                and rows-missing>=finite>=finite_distinct):
             out.update(_cloud_fields(item,("mean","median","std"),_cloud_number))
+            eligible[name]=(finite,finite_distinct,out.get("mean"),out.get("median"))
         columns.append(out)
     if "columns" in context:
         result["columns"]=columns
@@ -543,7 +549,10 @@ def _cloud_project(context):
         if name in eligible:
             out={"column":name}
             out.update(_cloud_fields(item,("mean","median"),_cloud_number))
-            if "mean" in out and "median" in out:
+            support=(_cloud_count(item.get("_finite_count")),
+                     _cloud_count(item.get("_finite_unique_count")),
+                     out.get("mean"),out.get("median"))
+            if ("mean" in out and "median" in out and support==eligible[name]):
                 patterns.append(out)
     if "computed_patterns" in context:
         result["computed_patterns"]=patterns
@@ -590,10 +599,8 @@ def _cloud_project(context):
             status=_cloud_enum(item.get("status"),("ready","failed"))
             if model is None or status is None:
                 continue
-            entry={"key":model,"status":status}
-            if status=="ready" and sample is not None and sample>=_CLOUD_MIN_SUPPORT:
-                entry.update(_cloud_fields(item,("cv_metric","cv_std"),_cloud_number))
-            comparisons.append(entry)
+            # Holdout sample_count is not evidence of CV-fold support.
+            comparisons.append({"key":model,"status":status})
         out["comparison"]=comparisons
         result["experiment"]=out
     investigation=_cloud_object(context.get("verified_investigation"))
@@ -649,6 +656,16 @@ def _encode_insight_prompt(context: dict, task: str, question: str, continuation
         return len(serialized.encode('utf-8')) if cloud else len(serialized)
 
     evidence = _prompt_value(context)
+    # These are internal projection witnesses, not additional local prompt
+    # content. Preserve the established local payload and its character budget.
+    if not cloud:
+        for section in ("columns","computed_patterns"):
+            records=evidence.get(section)
+            if isinstance(records,list):
+                for record in records:
+                    if isinstance(record,dict):
+                        record.pop("_finite_count",None)
+                        record.pop("_finite_unique_count",None)
     continuation = None
     if continuation_text:
         continuation = {'previous_answer_tail': continuation_text[-5500:],
