@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 5a92f89793204b7fbdfe37110ffd5a4d767896b4 |
+| Observed starting HEAD | a3686345608bf033ce42bf0204698be135cfe719 |
 | Product baseline | C3 source exit supported at 78c8672, latest product ebd01f4 and verified fixture/historical changes c329e0d/83c83f8. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
-| Operation ID | C4-A-AI-PREFERENCES-CREDENTIALS-20261125 |
-| Operation state | RECONCILED: exact AI/credential source [af49863](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/af49863c557db62e45563aaaba084710685521c8); no replay |
-| Intended files | backend/ai_provider.py, settings_storage.py, workspace_boundary.py, main.py; disposable AI fixture adapter, direct mocked settings/credential and strict API validation tests, migrated historical path fixtures, P1 workflow and continuity records. Raw request bounds and common consent transport follow separately. |
+| Operation ID | C4-A-BOUNDED-SETTINGS-HTTP-20261125 |
+| Operation state | PREPARED; prior eight AI settings CI reconciled SUCCESS; new operation not issued |
+| Intended files | backend/settings_http.py (new pure ASGI boundary), backend/main.py, backend/settings_storage.py, tests/test_c4_settings_http.py, tests/test_c4_settings_storage.py, existing P1 workflow and canonical records. Three settings PUT routes only; no transport, UI, model or native activation. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | AI and credential service integration, shared lock and mandatory lease, strict API models and fixed validation responses, synthetic DPAPI and migrated fixture adapters. Exact CI pending; raw body cap and common cloud routing remain open. |
-| Pending runs | [P1 Disposable Real HTTP Browser/Backend Acceptance #45624170803](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45624170803) IN_PROGRESS; [P3 User-Described Semantic Business Context #45624170813](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45624170813) IN_PROGRESS; [P1 Isolated Backend Source Recovery #45624170801](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45624170801) IN_PROGRESS; [P2 Real HTTP Saved Revision Comparison #45624170846](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45624170846) IN_PROGRESS; [P3 Real HTTP Semantic Context Browser Acceptance #45624170982](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45624170982) IN_PROGRESS; [P4 Target Review Queue and Transparent Ranking #45624170856](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45624170856) IN_PROGRESS; [P1 Project Lifecycle Disposable Backend Acceptance #45624170808](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45624170808) IN_PROGRESS; [P2 Immutable Report Revision Idempotency #45624170821](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45624170821) IN_PROGRESS. All at exact af49863. |
+| Verification | Exact af49863 eight workflows SUCCESS, direct C4 AI/historical group 42/42, foundation 48/48, recovery 206 + 2 subtests, all existing P1 steps pass. P4 restricted collector skipped. |
+| Pending runs | None; all eight af49863 runs terminal SUCCESS. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Reconcile eight exact CI runs, especially P1 C4 fake-DPAPI/settings and strict API regressions and P4 existing source/synthetic cases. Preserve any failures. Review API raw body limit and strict duplicate-key parser, lease behavior, process inhibition semantics, frontend warning display; then proceed to common explicit provider consent/transport. No actual DPAPI, provider calls, native or owner data. |
+| Recovery action | Add bounded strict UTF-8 JSON request guard for three settings PUT routes inside auth/scratch and CORS, preserve FastAPI models and route inventory, no parser before bounds; test declared/chunked/ambiguous/disconnect/timeout and both compositions. Then review common consent dispatch and frontend warning integration. |
 | Resume after closure | C5 then D with separately approved scope. |
 
 ## Prior operation
