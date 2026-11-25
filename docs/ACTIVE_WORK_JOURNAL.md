@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | PUBLISHED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 03c907b42c6460bb0eafec6de9bfcdf043d50d3a |
-| Product baseline | e35447789ae8953ac1c99b77be387bc8194e4a0c exact P1 backend SUCCESS. |
+| Observed starting HEAD | 03c907b42c6460bb0eafec6de9bfcdf043d50d3a; write-ahead 620dec88204e26acd85f9f35e51241851bcd3c46; verified published b1ce6f7c794870ba977ef19027b547fa1c89de54. |
+| Product baseline | b1ce6f7c794870ba977ef19027b547fa1c89de54 (test-only async/autonomy adapter batch; exact CI pending); e354477 C1/PDF adapter exact P1 SUCCESS, PDF nine-case step SUCCESS. |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
 | Operation ID | C3-INPROCESS-ASYNC-AUTONOMY-20261125-source |
-| Operation state | ISSUED |
+| Operation state | RECONCILED |
 | Intended files | tests/fixture_http.py, tests/test_c1_resource_training_store.py, tests/test_c1_resource_autonomy.py, tests/test_build_e_autonomous_investigations.py, .github/workflows/p1-isolated-backend.yml, .github/workflows/p4-target-ranking.yml (routine triggers), journal. Shared explicit immutable trust construction for sync and async test-only clients; HTTPX ASGITransport exact loopback peer/port, no lifespan changes or exception suppression, no sockets, no global/environment auth bypass. Guard synthetic/actual training endpoints, assert no admission/queue on denied async requests; autonomy and investigation HTTP clients migrate; preserve mocked planner desktop branch tests because environment there selects legacy inference implementation, not HTTP trust. No production change. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | e354477 P1 backend #45574901687 terminal SUCCESS; Temporary-store source and import recovery 139070296276 success; PDF step success. Read training store two async ASGITransport construction sites (synthetic TrainingHTTP and actual production endpoint), staged autonomy one TestClient, legacy investigation global TestClient and mutable desktop HTTP auth test. Other two desktop env planner tests exercise explicitly mocked existing legacy planner behavior; not HTTP callers. P1 backend triggers helper and C1 tests, P4 routinely runs legacy investigation and owned server; register helper/investigation paths to exercise relevant P4. Existing restricted workflow literal false, no marker/launcher change. Full caller inventory still incomplete. |
-| Pending runs | None prior; expected routine P1 isolated backend and P4 regression. |
+| Verification | Seven-file diff verified. Shared fixture contract used by sync and new HTTPX async client; actual RequestGuard, fresh immutable capability, exact synthetic peer/server, no sockets, no global/environment bypass, no redirects or proxy environment, raise_app_exceptions=True, no implicit lifespan. Both async TrainingHTTP caller sites migrated including actual production endpoint. Added synthetic training auth refusal vs active data lane, origin/forwarded negatives, authorized contention 503, no queued IDs/SQLite experiments, ownership unchanged. Staged autonomy and Build E investigation HTTP clients migrated; immutable explicit desktop negative checks prove denied requests do not call investigation load. Two mocked planner desktop environment branch tests retained deliberately because they select existing bundled inference code, not HTTP authentication. P1/P4 routine source triggers registered; restricted collector literal false. No runtime fallback removed, full caller inventory incomplete. No native/model/owner/installer operation. |
+| Pending runs | P1 Isolated Backend Source Recovery #45575855972 in_progress; P4 Target Review Queue and Transparent Ranking #45575856219 in_progress. No restricted dispatch; native workflow guards unchanged. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Publish scoped async/autonomy batch, reconcile exact CI. Continue remaining TestClient/ASGI and direct endpoint compatibility inventory, QA tools; native smoke bootstrap, final main/frontend fallback removal and C3 closure. C4 deferred. |
+| Recovery action | Reconcile exact b1ce6f7 runs/failures before overlapping push. Next complete branch-wide caller inventory in reproducible source-only batches, remaining bare TestClient/ASGI and direct endpoint compatibility tests and QA tools, then native smoke bootstrap and final main/frontend fallback removal; C3 route/direct-call matrix and closure. C4 deferred. |
 | Resume after closure | C4, C5 in order; D separately approved. |
 
 ## Prior operation
