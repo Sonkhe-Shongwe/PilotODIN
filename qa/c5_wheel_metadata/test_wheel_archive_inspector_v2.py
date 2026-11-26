@@ -130,6 +130,9 @@ class Tests(unittest.TestCase):
     @staticmethod
     def directory(path, *, attrs=None, method=zipfile.ZIP_STORED):
         i=zipfile.ZipInfo(path); i.create_system=3; i.compress_type=method
+        # ZipInfo normalizes the OS separator on Windows; fixtures must write
+        # the exact hostile spelling, not a sanitized forward-slash name.
+        i.filename=path; i.orig_filename=path
         i.external_attr=(stat.S_IFDIR|0o755)<<16|0x10 if attrs is None else attrs
         return i
 
