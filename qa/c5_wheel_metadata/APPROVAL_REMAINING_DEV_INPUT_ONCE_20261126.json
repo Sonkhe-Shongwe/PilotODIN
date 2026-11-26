@@ -1,9 +1,0 @@
-{
-  "operation": "C5-REMAINING-DEV-INPUT-ONCE-20261126",
-  "parent": "1b50808fb2b8fa1cac3a9d220016c7f900a729ba",
-  "driver": "69c9dc4ca47226d197d8b81f0ece5c780a64aa86",
-  "workflow": "636e7743ea32d31ae23bbbce60cd05532d4d831d",
-  "spec": "8ca2c68b4de683d1162dd3efdbe5a7d971e4009b",
-  "lock": "845bc92192a1b77432f4d472c7a056f47ca3a3a7",
-  "manifest": "fbb17a9f2e53eecb812498f02196fa7638f85299"
-}
