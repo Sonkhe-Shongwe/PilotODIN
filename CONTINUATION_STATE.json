@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-APPROACH-C-METADATA-CORE-PREP-20261127",
-    "parent_sha": "0b33bb7c8fce05bddea6e15c8fcb95f8fae73bc7",
-    "previous_snapshot_sha": "0b33bb7c8fce05bddea6e15c8fcb95f8fae73bc7",
-    "scope": "Approved preparation/static and synthetic review of bounded metadata-only core; no actual acquisition, live adapter, or policy change.",
+    "operation_id": "C5-APPROACH-C-SIGNING-ANCHOR-BOOTSTRAP-REVIEW-20261127",
+    "parent_sha": "d56d49dd12277e10a911ae6f28605b95ad0696a6",
+    "previous_snapshot_sha": "d56d49dd12277e10a911ae6f28605b95ad0696a6",
+    "scope": "Read-only signing identity and verifier bootstrap feasibility; no acquisition, execution, adapter or policy change.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "27-november--c5-approach-c-metadata-only-synthetic-core-prepared",
-      "blob_sha": "d4676f72129c31436d92d09cafb4c503d7e97eb6",
-      "start_line": 2814,
-      "end_line": 2816
+      "anchor": "27-november--c5-approach-c-signing-anchor-and-verifier-bootstrap-review",
+      "blob_sha": "becffa6f573782b50121abe6ddc19b23df84ded7",
+      "start_line": 2818,
+      "end_line": 2820
     }
   },
   "product": {
@@ -117,16 +117,30 @@
   },
   "task": {
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
-    "status": "READY",
+    "status": "BLOCKED",
     "scope": "C-D08 revised C5-A/B development reproducibility and build safety only; D retains native prerequisites, P8 release-only",
-    "blocker": "Metadata core prepared, but independent key/subkey/keyring anchors and live verifier/transport/bootstrap remain unresolved; not execution ready.",
-    "next_action": "Read-only independent publisher signing anchor and subkey/keyring provenance review, feasibility of bounded trusted verifier and transport; if sufficiently justified complete disarmed adapters and static/synthetic verification under existing preparation-only authority. If not justified stop for owner decision. No key/metadata acquisition, restricted execution or active policy change.",
-    "next_action_kind": "READ_ONLY",
+    "blocker": "Independent current signing material, signing pairs/expiry/revocation and trusted GnuPG verifier bootstrap not established. GnuPG outside existing approved seven-path policy; no executable metadata candidate.",
+    "next_action": "Owner decision: approve preparation-only design/review of narrowly scoped Approach C metadata-evidence bootstrap on existing two approved runner images, including explicitly assessed distro GnuPG verifier/key-inspection paths, necessary existing loader/library closure and clock with existing hosted Python/curl/CA trust; no active trust policy change, acquisition or execution. Preserve original 13 GET/10 minute bounds and separately justify key material and exact execution. Alternatively select controlled independent verifier or revisit C5 necessity.",
+    "next_action_kind": "OWNER_DECISION",
     "after": [
-      "Only after independently justified anchors and exact fully reviewed disarmed candidate, request separate explicit one-use execution approval; no execution approval for synthetic core alone.",
-      "Even signed package hashes do not prove component bytes; subsequent package inspection, generated CA and closure require separate scope, and integrated qualification requires separate method/execution authority. Preserve C5 and phase gates."
+      "If approved, prepare only scoped trust/key material proposal and disarmed adapter as justified; separately approve exact key evidence and execution, account original 13 GET total; stop on insufficient signer/closure evidence, no blind retries.",
+      "Integrated Approach C requires independent expected component bytes, generated CA and closure disposition and separately approved method/execution; C5 and phase gates unchanged."
     ],
     "read": [
+      {
+        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
+        "anchor": "27-november--c5-approach-c-signing-anchor-and-verifier-bootstrap-review",
+        "blob_sha": "becffa6f573782b50121abe6ddc19b23df84ded7",
+        "start_line": 2818,
+        "end_line": 2820
+      },
+      {
+        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
+        "anchor": "approach-c-signing-anchors-and-verifier-bootstrap-review-read-only",
+        "blob_sha": "661ec72e0ab01bb52fd2ca6253f40ceb21bd0a4c",
+        "start_line": 833,
+        "end_line": 841
+      },
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "27-november--c5-approach-c-metadata-only-synthetic-core-prepared",
@@ -535,18 +549,17 @@
     ]
   },
   "operation": {
-    "id": "C5-APPROACH-C-METADATA-CORE-PREP-20261127",
+    "id": "C5-APPROACH-C-SIGNING-ANCHOR-BOOTSTRAP-REVIEW-20261127",
     "state": "RECONCILED",
-    "starting_sha": "0b33bb7c8fce05bddea6e15c8fcb95f8fae73bc7",
-    "outcome": "Detached synthetic-only metadata core 8514efee89259b5303f4e62000309bef063c3724; 9 local synthetic tests and static/extra checks PASS; no executable live adapter or anchors, no real signature verification or acquisition.",
-    "source_sha": "8514efee89259b5303f4e62000309bef063c3724",
+    "starting_sha": "d56d49dd12277e10a911ae6f28605b95ad0696a6",
+    "outcome": "Ubuntu primary publisher corroborated; Docker historical primary/subkey corroboration; current signing material/validity and GnuPG bootstrap unresolved. Proposed finite metadata-evidence bootstrap preparation decision; no execution or policy change.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "27-november--c5-approach-c-metadata-only-synthetic-core-prepared",
-      "blob_sha": "d4676f72129c31436d92d09cafb4c503d7e97eb6",
-      "start_line": 2814,
-      "end_line": 2816
+      "anchor": "27-november--c5-approach-c-signing-anchor-and-verifier-bootstrap-review",
+      "blob_sha": "becffa6f573782b50121abe6ddc19b23df84ded7",
+      "start_line": 2818,
+      "end_line": 2820
     }
   },
   "authority": {
