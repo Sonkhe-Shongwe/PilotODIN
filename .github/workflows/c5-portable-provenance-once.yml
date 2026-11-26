@@ -7,7 +7,7 @@ on:
 permissions: {}
 jobs:
   provenance-once:
-    if: ${{ true && github.event_name == 'push' && github.run_attempt == 1 && github.event.before == 'f7e9c7631cd1522bd74724c72d070d01717f465e' && github.event.head_commit.message == 'C5-PORTABLE-DOCKER-ONCE-20261126 owner approved exact no-pull data-only operation' }}
+    if: ${{ false && github.event_name == 'push' && github.run_attempt == 1 && github.event.before == 'f7e9c7631cd1522bd74724c72d070d01717f465e' && github.event.head_commit.message == 'C5-PORTABLE-DOCKER-ONCE-20261126 owner approved exact no-pull data-only operation' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
