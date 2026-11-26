@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | PREPARED |
+| State | BLOCKED |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 76bf24d1a720fac7fb9cfaef676a460d30ecc443 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | Revised C5-A/B development reproducibility and build safety; D prerequisites and P8 release-only allocation. No restricted acquisition, native, owner data, install, packaging, phase activation or release. |
 | Operation ID | C5-PYTHON-DUAL-ALIAS-CORRECTION-20261126 |
-| Operation state | PREPARED source-only correction; 22 prior restricted approvals consumed/disarmed, no new acquisition approval. |
-| Intended files | Existing remaining_dev_input_once.py: narrow alias predicate and regression fixtures only; workflow unchanged; both flags/jobs false. |
+| Operation state | RECONCILED source-only correction SUCCESS at cb72780 / #45826320744; 34/34 synthetic tests; both restricted jobs skipped. Fresh acquisition proposal only; 22 approvals consumed/disarmed. |
+| Intended files | Corrected disarmed driver 200c419def15030134ce138e3b8e49b6c8333bf3, workflow fe3fca2176040a75d443b43d74e5c472373c051a unchanged. No pending source changes. |
 | Approval | Ordinary source and synthetic CI only under live directive. Previous header-only scope consumed; no restricted authority. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | None. #45822448427 SUCCESS header 139917896830; acquisition/rehearsal skipped. #45822496719 SUCCESS rehearsal 139918064361 31/31; both restricted jobs skipped. Historical #45820796108 refusal preserved. |
+| Pending runs | None. #45826320744 SUCCESS rehearsal 139931284120, 34/34; header 139931286985 and acquisition 139931287452 SKIPPED. Prior failed acquisition and successful diagnostic/disarm retained. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
-| Recovery action | Narrow source correction: accept one or both recognized filename aliases only when EVERY present alias independently matches one of the two existing literal expected attachment filename forms; reject absent, mismatched, malformed or duplicate normalized keys; keep all original endpoint/repository/path/query/signature/size/hash limits unchanged. Add exact dual-literal positive and conflict/duplicate/absent/parsed-nonliteral negative fixtures, both live gates false. After exact CI, propose fresh bounded acquisition authority; no replay under consumed grant. |
+| Recovery action | Await fresh explicit approval for [C5-REMAINING-DEV-INPUT-CORRECTED-ONCE-20261126](./PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md#26-november--c5-dual-alias-correction-and-fresh-acquisition-proposal), same exact 45 archives, <=48 GETs and <=928307900 body bytes. Corrected predicate independently checks all present aliases; no other acquisition limits changed. Before activation bind exact corrected driver, separate new operation ID and marker, first-attempt marker-only workflow; disarmed synthetic verification and exact scope review. No replay or new acquisition until approved. |
 | Resume after closure | D only after revised C5 source closure, G2 resolution and separately approved scope; every native prerequisite before its use. P8 release-only obligations retained; installer frozen. |
 
 ## Prior operation
