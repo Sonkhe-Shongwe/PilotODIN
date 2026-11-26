@@ -3,12 +3,12 @@ on:
   push:
     branches: [feature/live-dev-workspace-20261023]
     paths:
-      - qa/c5_wheel_metadata/source_test_input_once.py
-      - .github/workflows/c5-source-test-input-once.yml
+      - qa/c5_wheel_metadata/APPROVAL_SOURCE_TEST_INPUT_ONCE_20261126.txt
 permissions:
   contents: read
 jobs:
   rehearsal:
+    if: ${{ false }}
     strategy:
       fail-fast: false
       matrix:
@@ -33,7 +33,7 @@ jobs:
           & $python -I -B qa/c5_wheel_metadata/source_test_input_once.py --rehearse
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
   windows-once:
-    if: ${{ false }}
+    if: ${{ github.event_name == 'push' && github.run_attempt == 1 && github.event.head_commit.message == 'C5-SOURCE-TEST-INPUT-ONCE-20261126 owner approved exact source-test dry-run only' }}
     runs-on: windows-2022
     timeout-minutes: 10
     steps:
@@ -51,7 +51,7 @@ jobs:
           & $python -I -B qa/c5_wheel_metadata/source_test_input_once.py --live
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
   linux-once:
-    if: ${{ false }}
+    if: ${{ github.event_name == 'push' && github.run_attempt == 1 && github.event.head_commit.message == 'C5-SOURCE-TEST-INPUT-ONCE-20261126 owner approved exact source-test dry-run only' }}
     needs: windows-once
     runs-on: ubuntu-24.04
     timeout-minutes: 10
