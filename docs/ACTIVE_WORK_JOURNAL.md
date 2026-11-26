@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | BLOCKED |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 630a5a787915b35e05f8ba762ec7064196a19da2 |
+| Observed starting HEAD | 02456c2994ba28658ff2c0eb40cbc5316bbd26f9 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
-| Operation ID | C5-PRIOR-NOTICE-PRESERVATION-20261126 |
-| Operation state | RECONCILED: exact 3a717d0 run 45758009735 attempt 1 SUCCESS, Ubuntu offline 139701121634 six tests and disabled CLI refusal PASS, preserve-notices 139701123130 SKIPPED. Exact five-document evidence preservation source ready; no actual retrieval or publication. Await explicit preservation approval. |
+| Operation ID | C5-PRIOR-NOTICE-PRESERVATION-ONCE-20261126 |
+| Operation state | PREPARED: owner explicitly approved the preceding five-document preservation proposal (i approve next). Exact offline CI 3a717d0 verified. Arm only exact preservation driver and workflow behind marker-only trigger. |
 | Intended files | New qa/c5_wheel_metadata/wheel_prior_notice_preservation.py, test_wheel_prior_notice_preservation.py, dedicated .github/workflows/c5-wheel-prior-notice-preservation.yml, journal/handoff/ledger. Existing historical pins and gates unchanged. |
-| Approval | Receipt-only approval consumed/disarmed; sixteen total restricted approvals consumed/disarmed (six native, seven metadata, one synthetic transfer, one actual wheel attempt, one receipt-only retrieval). No additional retrieval or wheel acquisition authorized. |
+| Approval | One exact metadata read and one ZIP retrieval of artifact 15076022558, 20475 bytes, pinned SHA256, at most one service redirect, no retries; emit five canonical evidence documents 10909 bytes including 5241 raw notice bytes and publish one canonical repository envelope <=32768 bytes, offline replay. No new wheel GET or artifact upload, install, execution or legal clearance. Sixteen prior approvals consumed/disarmed. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | None. Exact CI reconciled. |
+| Pending runs | None; verify arm commit and no matching run before marker activation. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
-| Recovery action | Await explicit approval for one metadata read and one exact existing artifact 15076022558 ZIP retrieval (20475 bytes, exact pinned SHA256, at most one authenticated service redirect with no token forwarded, no retries), emit only five verified canonical evidence documents (10909 encoded JSON bytes before outer base64, 5241 raw notice bytes), persist one canonical repository JSON envelope <=32768 bytes, verify independent offline replay. Artifact expires 2026-12-03T00:31:22Z. Arm exact source flag/workflow only behind marker-only trigger, verify exact parent/no arm run, activate attempt 1, reconcile and disarm even on refusal. No wheel GET, installation, execution, artifact upload or legal clearance. Separate 63-wheel collection approval required. |
+| Recovery action | Reconcile exact attempt and validate five documents against prior hashes, persist canonical envelope, restore exact disarmed source/workflow and remove marker even on failure. No retry; separate 63-wheel acquisition approval required. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
