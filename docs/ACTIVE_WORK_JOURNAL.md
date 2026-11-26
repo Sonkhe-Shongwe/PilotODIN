@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | READY |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 36032ad699d127154df3d5133f44e6fd08126691 |
+| Observed starting HEAD | e551fdc8720dc7a771937c1d89572e9b79e8626b |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
-| Operation ID | C5-R2-PUBLIC-ONLY-20261126 |
-| Operation state | RECONCILED: owner public-only route reaffirmed; local/private custody prerequisite superseded. Ready for synthetic hosted discovery implementation only; C5/R3 still BLOCKED. |
-| Intended files | Existing decision index, public review section 9, C ledger, journal and handoff (documentation only). |
+| Operation ID | C5-R2-PUBLIC-DISCOVERY-20261126 |
+| Operation state | PREPARED: fixture-only discovery projection, independent bounded schema replay, no raw notice output or actual acquisition. |
+| Intended files | Existing final driver and test file; existing final synthetic review workflow unchanged; documentation checkpoint. |
 | Approval | Routine source/synthetic CI only. All 18 restricted approvals consumed/disarmed; no actual wheels, retrieval, installation, owner tree or execution. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
 | Pending runs | None; [Exact synthetic run 45788172645](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45788172645), source [2b8888d](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/2b8888d929aa5233315a336caeeea02acb18b1cb): Ubuntu job 139800162154 SUCCESS, 217 tests including 10 new disclosure tests, eleven CLI refusals; Windows job 139800161660 SUCCESS, 217 tests; direct CLI refusal step successful. Collector 139800163978 and retriever 139800163688 SKIPPED. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
-| Recovery action | Implement/test bounded hosted discovery-only projection under public-only route section 9; no actual acquisition until fresh exact approval. Do not ask again about public/private architecture. Independent full raw replay requirement unchanged; specific publication rights blockers only. Keep prior five, all mandatory profile blockers and installer freeze. |
+| Recovery action | Reconcile exact source publication and synthetic CI; keep all real frontdoors and workflow jobs disabled. Discovery projection is not complete raw replay or acceptance. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
