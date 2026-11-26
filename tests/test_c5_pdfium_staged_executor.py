@@ -21,7 +21,10 @@ def test_disarmed_executor_refuses_before_side_effects():
             lambda: executor.read_disposition({}, {}),
             lambda: executor.Acquisition({}, None, None, {}),
             lambda: executor.run(("forbidden",), env={}, cwd=None),
-            lambda: executor.extract_interpreter(None, None, {}, {}),
+            lambda: executor.verified_existing_interpreter({}, {}),
+            lambda: executor.inspect_distribution(None, {}, {}),
+            lambda: executor.frontend_witness(None, {}, {}, [], None),
+            lambda: executor.font_witness(None, None, {}, {}, [], None),
             lambda: executor.native_linkage(None, None, None, None, None),
             lambda: executor.verify_loaded_native(None, None, None, None),
             lambda: executor.resolve_install(None, None, None, None, None, None),
@@ -101,3 +104,42 @@ def test_status_hook_rejects_incomplete_setup_call_teardown(tmp_path, monkeypatc
     receipt_hook.pytest_sessionfinish(None, 0)
     data = json.loads(path.read_text(encoding="ascii"))
     assert data["failed"] == [node] and data["passed"] == []
+
+
+def test_completion_inventory_never_acquires_python_installer():
+    plan = stages.read_plan()
+    assert plan["limits"]["combined"] == {"archive_uses": 174, "body_bytes": 368577782,
+                                           "max_gets": 174}
+    assert plan["limits"]["python_redirect_hops_per_platform"] == 0
+    for profile in plan["profiles"]:
+        assert profile["existing_interpreter"]["provenance"] == "UNRESOLVED_MUST_BE_INDEPENDENTLY_VERIFIED"
+        assert len(profile["rows"]) == 87
+        assert all(row["kind"] != "interpreter" for row in profile["rows"])
+        assert profile["existing_interpreter"]["historical_archive"] not in {
+            row["filename"] for row in profile["rows"]}
+
+
+def test_supplemental_identity_algorithms(tmp_path):
+    import hashlib
+    path = tmp_path / "test.tgz"
+    raw = b"synthetic fixture"
+    path.write_bytes(raw)
+    for row in (
+        {"kind": "npm", "bytes": len(raw), "sha512": hashlib.sha512(raw).hexdigest()},
+        {"kind": "node", "bytes": len(raw), "sha256": hashlib.sha256(raw).hexdigest()},
+        {"kind": "font", "bytes": len(raw), "git_blob_sha1": hashlib.sha1(
+            b"blob " + str(len(raw)).encode("ascii") + b"\0" + raw).hexdigest()},
+    ):
+        executor.exact_file(path, row)
+        algorithm, _ = executor.identity(row)
+        invalid = dict(row, **{algorithm: "0" * len(row[algorithm])})
+        with pytest.raises(ValueError, match="ARTIFACT_IDENTITY"):
+            executor.exact_file(path, invalid)
+
+
+def test_font_worker_refuses_before_native_or_owner_path():
+    from qa.c5_pdfium import font_witness
+    with patch.object(pdf, "require_pdfium") as native:
+        with pytest.raises(RuntimeError, match="DISARMED"):
+            font_witness.run("actual", None)
+        native.assert_not_called()

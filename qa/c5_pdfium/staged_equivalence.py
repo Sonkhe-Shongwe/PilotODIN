@@ -12,17 +12,17 @@ from pathlib import Path
 import re
 
 ROOT = Path(__file__).resolve().parents[2]
-PLAN_PATH = "qa/c5_pdfium/staged_equivalence_plan_20261126.json"
-PLAN_PIN = "f81c0bfe8b09cc226f1d566d8366f454a9f4dd4e"
+PLAN_PATH = "qa/c5_pdfium/staged_completion_plan_20261126.json"
+PLAN_PIN = "55303c6d3aff4f38f6edd31fe0c48e0368074559"
 LIVE_ENABLED = False
 PROFILE_IDS = ("windows-x64-cp311-source-test", "linux-x64-cp311-source-test")
 SHA1 = re.compile(r"[0-9a-f]{40}")
 SHA256 = re.compile(r"[0-9a-f]{64}")
 WHEEL_URL = re.compile(r"https://files\.pythonhosted\.org/packages/[0-9a-f]{2}/[0-9a-f]{2}/[0-9a-f]{60}/[A-Za-z0-9_.+-]+\.whl")
-TOTALS = {"A": (19, 148773093, 21), "B": (83, 166813645, 83)}
+TOTALS = {"A": (17, 30228009, 17), "B": (157, 338349773, 157)}
 PROFILE_TOTALS = {
-    PROFILE_IDS[0]: {"A": (10, 41213475), "B": (41, 78047853)},
-    PROFILE_IDS[1]: {"A": (9, 107559618), "B": (42, 88765792)},
+    PROFILE_IDS[0]: {"A": (9, 15278952), "B": (78, 165659930)},
+    PROFILE_IDS[1]: {"A": (8, 14949057), "B": (79, 172689843)},
 }
 SMOKE_ROOTS = frozenset(("pytest", "packaging", "iniconfig", "pluggy", "pygments",
                          "pillow", "pypdfium2"))
@@ -30,7 +30,9 @@ FONT_REQUIRED_NODES = ("font:scoped_cmap_unit", "font:baseline_extraction_mismat
                        "font:corrected_extraction_exact", "font:same_engine_rgb_identity",
                        "font:actual_unicode_exact", "font:actual_unicode_continuation",
                        "font:actual_unicode_line_bounds", "font:context_order_and_bounds",
-                       "font:coverage_outcomes")
+                       "font:coverage_outcomes", "font:tounicode_research")
+FRONTEND_REQUIRED_NODES = ("frontend:offline_install", "frontend:installed_lock_identity",
+                           "frontend:typescript", "frontend:vite_build")
 REQUIRED_ENV = {"PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1", "PYTHONDONTWRITEBYTECODE": "1",
                 "PIP_NO_INDEX": "1", "PIP_DISABLE_PIP_VERSION_CHECK": "1"}
 
@@ -62,7 +64,7 @@ def strict_json(raw):
 
 def read_plan():
     plan = strict_json(pinned(PLAN_PATH, PLAN_PIN))
-    need(plan["schema"] == 2 and plan["status"] == "DISARMED_PROPOSAL_ONLY",
+    need(plan["schema"] == 3 and plan["status"] == "DISARMED_PROPOSAL_ONLY",
          "PLAN_NOT_DISARMED")
     need(tuple(p["id"] for p in plan["profiles"]) == PROFILE_IDS, "PROFILE_SET")
     need(plan["scheduling"] == {"mode": "WINDOWS_A_B_THEN_LINUX_A_B",
@@ -76,28 +78,46 @@ def read_plan():
         limit = plan["limits"]["stage_a" if stage == "A" else "stage_b"]
         need(limit == {"archive_uses": count, "body_bytes": size, "max_gets": gets},
              "STAGE_LIMIT")
-    need(plan["limits"]["combined"] == {"archive_uses": 102, "body_bytes": 315586738,
-                                        "max_gets": 104}, "COMBINED_LIMIT")
+    need(plan["limits"]["combined"] == {"archive_uses": 174, "body_bytes": 368577782,
+                                        "max_gets": 174}, "COMBINED_LIMIT")
     for profile in plan["profiles"]:
         pid = profile["id"]
         rows = profile["rows"]
-        need(len(rows) == 51 and len({r["filename"] for r in rows}) == 51,
+        need(len(rows) == 87 and len({r["filename"] for r in rows}) == 87,
              "PROFILE_ARTIFACT_SET")
         wheels = [r for r in rows if r["kind"] == "wheel"]
         need(len(wheels) == 49 and len({r["name"] for r in wheels}) == 49,
              "PROFILE_WHEEL_SET")
-        need(sum(r["kind"] == "interpreter" for r in rows) == 1 and
-             sum(r["kind"] == "pip" for r in rows) == 1, "TOOLCHAIN_SET")
+        need(sum(r["kind"] == "interpreter" for r in rows) == 0 and
+             sum(r["kind"] == "pip" for r in rows) == 1 and
+             sum(r["kind"] == "node" for r in rows) == 1 and
+             sum(r["kind"] == "npm" for r in rows) == 30 and
+             sum(r["kind"] == "font" for r in rows) == 3 and
+             sum(r["kind"] == "font_notice" for r in rows) == 3, "TOOLCHAIN_SET")
+        need(profile["existing_interpreter"] == {"version": "3.11.9" if pid.startswith("windows") else "3.11.18",
+             "architecture": "x64", "provenance": "UNRESOLVED_MUST_BE_INDEPENDENTLY_VERIFIED",
+             "historical_archive": "python-3.11.9-win32-x64.zip" if pid.startswith("windows") else
+             "python-3.11.18-linux-24.04-x64.tar.gz"}, "EXISTING_INTERPRETER")
         for row in rows:
             need(row["stage"] in ("A", "B") and type(row["bytes"]) is int and
-                 row["bytes"] > 0 and SHA256.fullmatch(row["sha256"]), "ARTIFACT_IDENTITY")
+                 row["bytes"] > 0 and row["kind"] in ("pip", "wheel", "node", "npm", "font", "font_notice"), "ARTIFACT_IDENTITY")
+            if row["kind"] == "npm":
+                need(re.fullmatch(r"[0-9a-f]{128}", row["sha512"]) and
+                     row["url"].startswith("https://registry.npmjs.org/"), "NPM_IDENTITY")
+            elif row["kind"] in ("font", "font_notice"):
+                need(SHA1.fullmatch(row["git_blob_sha1"]) and row["url"].startswith(
+                     "https://raw.githubusercontent.com/google/fonts/e7db6ca603fd4862010383ff17ffd6cc4ffac1c0/"), "FONT_IDENTITY")
+            else:
+                need(SHA256.fullmatch(row["sha256"]), "SHA256_IDENTITY")
             if row["kind"] in ("pip", "wheel"):
                 need(WHEEL_URL.fullmatch(row["url"]) and
                      row["url"].endswith("/" + row["filename"]), "WHEEL_URL")
             if row["kind"] == "wheel":
                 need(SHA256.fullmatch(row["metadata_sha256"]), "METADATA_IDENTITY")
-            if row["kind"] != "wheel":
+            if row["kind"] == "pip":
                 need(row["stage"] == "A", "TOOLCHAIN_STAGE")
+            if row["kind"] not in ("pip", "wheel"):
+                need(row["stage"] == "B", "SUPPLEMENTAL_STAGE")
         smoke = {r["name"] for r in wheels if r["stage"] == "A"}
         need(smoke == SMOKE_ROOTS | ({"colorama"} if pid.startswith("windows") else set()),
              "SMOKE_CLOSURE")
@@ -200,7 +220,7 @@ def terminal_profile(plan, receipt, *, profile, generation, source):
                      generation=generation, source=source)
     commands = (plan["stage_b"]["regular_modules"] + plan["stage_b"]["contract_modules"] +
                 plan["stage_b"]["selected_nodes"])
-    expected = commands + ["mixed:contract", "mixed:mixed", "font:equivalence"]
+    expected = commands + ["mixed:contract", "mixed:mixed", "font:equivalence", "frontend:compatibility"]
     b = receipt["stage_b"]
     need(isinstance(b, dict) and set(b) == set(expected), "STAGE_B_CASE_SET")
     all_nodes = set()
@@ -221,11 +241,13 @@ def terminal_profile(plan, receipt, *, profile, generation, source):
             need(len(nodes) == (3 if selection.endswith("contract") else 9), "MIXED_COUNT")
         if selection == "font:equivalence":
             need(tuple(nodes) == FONT_REQUIRED_NODES, "FONT_PREDICATE_SET")
+        if selection == "frontend:compatibility":
+            need(tuple(nodes) == FRONTEND_REQUIRED_NODES, "FRONTEND_PREDICATE_SET")
     totals = PROFILE_TOTALS[profile]
-    need(type(receipt["archive_uses"]) is int and receipt["archive_uses"] == 51 and
+    need(type(receipt["archive_uses"]) is int and receipt["archive_uses"] == 87 and
          type(receipt["body_bytes"]) is int and
          receipt["body_bytes"] == totals["A"][1] + totals["B"][1] and
-         type(receipt["requests"]) is int and 51 <= receipt["requests"] <= 52,
+         type(receipt["requests"]) is int and receipt["requests"] == 87,
          "TERMINAL_BUDGET")
     return True
 

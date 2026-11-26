@@ -50,11 +50,13 @@ def _terminal(plan, report):
         rows["mixed:" + kind] = {"collected": nodes, "passed": list(nodes), "state": "PASS"}
     rows["font:equivalence"] = {"collected": list(stages.FONT_REQUIRED_NODES),
                                 "passed": list(stages.FONT_REQUIRED_NODES), "state": "PASS"}
+    rows["frontend:compatibility"] = {"collected": list(stages.FRONTEND_REQUIRED_NODES),
+                                      "passed": list(stages.FRONTEND_REQUIRED_NODES), "state": "PASS"}
     totals = stages.PROFILE_TOTALS[pid]
     return {"profile": pid, "generation": report["generation"], "source": report["source"],
             "attempt": 1, "state": "PASS", "stage_a": report, "stage_b": rows,
-            "archive_uses": 51, "body_bytes": totals["A"][1] + totals["B"][1],
-            "requests": 52, "cleanup": "OWNED_SCRATCH_REMOVED"}
+            "archive_uses": 87, "body_bytes": totals["A"][1] + totals["B"][1],
+            "requests": 87, "cleanup": "OWNED_SCRATCH_REMOVED"}
 
 
 def test_local_stage_a_gate_and_mandatory_combined_acceptance():
@@ -93,12 +95,14 @@ def test_local_stage_a_gate_and_mandatory_combined_acceptance():
     for bad in (terminals[:1], terminals[::-1], [terminals[0], terminals[0]]):
         with pytest.raises(ValueError):
             stages.final_eligible(plan, bad, generation=gen, source=source)
-    for mutation in ("missing_b", "font", "cleanup", "attempt", "budget", "partial", "foreign"):
+    for mutation in ("missing_b", "font", "frontend", "cleanup", "attempt", "budget", "partial", "foreign"):
         bad = copy.deepcopy(terminals)
         if mutation == "missing_b":
             bad[0]["stage_b"].pop("mixed:mixed")
         elif mutation == "font":
             bad[0]["stage_b"].pop("font:equivalence")
+        elif mutation == "frontend":
+            bad[0]["stage_b"].pop("frontend:compatibility")
         elif mutation == "cleanup":
             bad[0]["cleanup"] = "UNKNOWN"
         elif mutation == "attempt":

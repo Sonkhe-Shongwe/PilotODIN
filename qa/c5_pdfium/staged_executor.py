@@ -24,7 +24,6 @@ import zipfile
 
 from qa.c5_pdfium import staged_equivalence as stages
 from qa.c5_wheel_metadata import source_test_input_once as old
-from qa.c5_wheel_metadata import remaining_dev_input_once as redirects
 from qa.c5_wheel_metadata import wheel_archive_inspector_v2 as wheelcheck
 
 ROOT = stages.ROOT
@@ -52,8 +51,8 @@ def need(ok, reason):
     stages.need(ok, reason)
 
 
-def digest(path):
-    h = hashlib.sha256()
+def digest(path, algorithm="sha256"):
+    h = hashlib.new(algorithm)
     with path.open("rb") as stream:
         for part in iter(lambda: stream.read(1024 * 1024), b""):
             h.update(part)
@@ -71,10 +70,24 @@ def owned(path, root):
     return path
 
 
+def identity(row):
+    if row["kind"] == "npm":
+        return "sha512", row["sha512"]
+    if row["kind"] in ("font", "font_notice"):
+        return "git_blob_sha1", row["git_blob_sha1"]
+    return "sha256", row["sha256"]
+
+
 def exact_file(path, row):
     need(path.is_file() and not path.is_symlink() and path.stat().st_nlink == 1 and
-         path.stat().st_size == row["bytes"] and digest(path) == row["sha256"],
-         "ARTIFACT_IDENTITY")
+         path.stat().st_size == row["bytes"], "ARTIFACT_IDENTITY")
+    algorithm, expected = identity(row)
+    if algorithm == "git_blob_sha1":
+        raw = path.read_bytes()
+        actual = hashlib.sha1(b"blob " + str(len(raw)).encode("ascii") + b"\0" + raw).hexdigest()
+    else:
+        actual = digest(path, algorithm)
+    need(actual == expected, "ARTIFACT_IDENTITY")
 
 
 def clean_env(scratch):
@@ -104,7 +117,7 @@ def read_disposition(plan, profile):
          "DISPOSITION_SCOPE")
     rehearsal = d["pure_rehearsal"]
     need(rehearsal["state"] == "PASS" and stages.SHA1.fullmatch(rehearsal["source"]) and
-         rehearsal["plan_blob"] == stages.PLAN_PIN and rehearsal["count"] == 8 and
+         rehearsal["plan_blob"] == stages.PLAN_PIN and rehearsal["count"] == plan["pure_rehearsal"]["expected_count"] and
          rehearsal["failed"] == rehearsal["skipped"] == rehearsal["xfailed"] == 0 and
          stages.SHA256.fullmatch(rehearsal["reviewed_receipt_sha256"]), "PURE_REHEARSAL_UNVERIFIED")
     result = d["profiles"][profile["id"]]
@@ -112,10 +125,14 @@ def read_disposition(plan, profile):
          "DISPOSITION_ARCHIVE_SET")
     for row in profile["rows"]:
         a = result["archives"][row["filename"]]
-        need(a["sha256"] == row["sha256"] and a["use"] == "REVIEWED" and
+        algorithm, expected = identity(row)
+        need(a[algorithm] == expected and a["use"] == "REVIEWED" and
              stages.SHA256.fullmatch(a["notice_inventory_sha256"]), "DISPOSITION_ARCHIVE")
     need(result["network_scope"] == "EXACT_APPROVED_ENDPOINTS_ONLY" and
          result["runner_reviewed"] is True, "RUNNER_DISPOSITION")
+    need(result["interpreter"]["version"] == profile["existing_interpreter"]["version"] and
+         result["interpreter"]["provenance"] == "INDEPENDENTLY_REVIEWED_INSTALLED_RUNTIME" and
+         result["interpreter"]["licence_use"] == "REVIEWED", "INSTALLED_INTERPRETER_DISPOSITION")
     return result
 
 
@@ -211,19 +228,19 @@ class Acquisition:
 
     def _hop(self, row, url, path):
         require_live()
-        need(self.requests < 52 and time.monotonic() < self.deadline, "REQUEST_BUDGET")
+        need(self.requests < len(self.rows) and time.monotonic() < self.deadline, "REQUEST_BUDGET")
         header = owned(path.with_suffix(path.suffix + ".headers"), self.scratch)
         need(not path.exists() and not header.exists(), "TRANSFER_DESTINATION")
         request = dict(row, url=url)
         command = old.curl_command(self.curl, request, path)
         # Preserve exact reviewed wheel command; add strict header/framing evidence.
         command[-1:-1] = ["--dump-header", str(header)]
-        if row["kind"] == "interpreter":
-            command[command.index("--max-time") + 1] = "120"
+        # Exact immutable font paths contain literal encoded brackets; disable curl globbing.
+        command.insert(2, "--globoff")
         self.requests += 1
         try:
             output = run(command, env=self.env, cwd=self.scratch,
-                         seconds=121 if row["kind"] == "interpreter" else 31)
+                         seconds=31)
         finally:
             if path.exists():
                 self.body += path.stat().st_size
@@ -243,16 +260,6 @@ class Acquisition:
         self.seen.add(name)
         path = owned(destination / name, self.scratch)
         status, length, location = self._hop(row, row["url"], path)
-        if status in (301, 302, 303, 307, 308):
-            need(row["kind"] == "interpreter" and length == 0 and location,
-                 "REDIRECT_SCOPE")
-            tag, asset, size = redirects.PYTHON_ASSETS[name]
-            redirect_row = redirects.Row(name, row["url"], "sha256", row["sha256"],
-                                         size, exact=size, asset=asset)
-            target = redirects.redirect(redirect_row, row["url"], location)
-            if path.exists():
-                path.unlink()
-            status, length, location = self._hop(row, target, path)
         need(status == 200 and length == row["bytes"] and location is None, "HTTP_BODY")
         exact_file(path, row)
         return path
@@ -264,79 +271,154 @@ def archive_member_path(name):
     return wheelcheck.name(name.rstrip("/"))
 
 
-def extract_interpreter(path, destination, row, approved, notice_inventory_sha256=None):
-    """Bounded standard ZIP/tar reader; reject unsupported layouts, never run setup scripts."""
+def verified_existing_interpreter(profile, disposition):
+    """Use only an independently reviewed pre-existing runner installation.
+
+    The historical Windows archive is an installer; no setup scripts, cache
+    population, relocation, or fallback are permitted.
+    """
+    require_live()
+    approved = disposition["interpreter"]
+    cache = Path(os.environ["RUNNER_TOOL_CACHE"])
+    prefix = cache / "Python" / profile["existing_interpreter"]["version"] / "x64"
+    need(cache.is_absolute() and prefix.is_dir(), "EXISTING_INTERPRETER_MISSING")
+    root = prefix.resolve(strict=True)
+    need(root == prefix.absolute() and approved["root"] == str(root),
+         "INTERPRETER_ROOT")
+    python = root / ("python.exe" if os.name == "nt" else "bin/python3.11")
+    need(str(python) == approved["path"] and
+         python.resolve(strict=True).is_relative_to(root), "INTERPRETER_PATH")
+    # Independently reviewed full installed regular-file inventory, including
+    # standard library, DLL/SO, executable and notice files, not version alone.
+    expected = approved["files"]
+    need(isinstance(expected, dict) and 0 < len(expected) <= 50000,
+         "INTERPRETER_INVENTORY")
+    observed = {}
+    total = 0
+    for directory, dirs, files in os.walk(root, followlinks=False):
+        for name in dirs + files:
+            path = Path(directory) / name
+            attrs = getattr(path.lstat(), "st_file_attributes", 0)
+            need(not attrs & 0x400, "INTERPRETER_REPARSE")
+            key = path.relative_to(root).as_posix()
+            if path.is_symlink():
+                need(name in files and path.resolve(strict=True).is_relative_to(root),
+                     "INTERPRETER_LINK")
+                observed[key] = {"link": os.readlink(path)}
+            elif name in files:
+                need(path.is_file() and key in expected and
+                     path.stat().st_size <= MAX_ARCHIVE_MEMBER, "INTERPRETER_FILE")
+                total += path.stat().st_size
+                need(total <= 2 * 1024**3, "INTERPRETER_EXPANDED")
+                observed[key] = {"bytes": path.stat().st_size, "sha256": digest(path)}
+            need(len(observed) <= 50000, "INTERPRETER_INVENTORY")
+    need(observed == expected and python.relative_to(root).as_posix() in expected,
+         "INTERPRETER_IDENTITY")
+    need(approved["notice_members"] and all(n in observed and "sha256" in observed[n]
+         for n in approved["notice_members"]), "INTERPRETER_NOTICE_SET")
+    return python
+
+
+def inspect_distribution(path, row, approved, destination=None):
+    """Bounded ZIP/tar inventory against reviewed exact members.
+
+    Only Node is extracted, into owned scratch. npm tgz is inspected as data;
+    standard npm performs installation. Reviewed links in the Node tar are
+    checked but never materialised; invoke npm-cli.js directly.
+    """
     require_live()
     exact_file(path, row)
-    need(not destination.exists(), "INTERPRETER_DESTINATION")
-    destination.mkdir()
-    seen = set()
+    expected = approved["members"]
+    need(isinstance(expected, dict) and 0 < len(expected) <= MAX_ARCHIVE_MEMBERS,
+         "DISTRIBUTION_INVENTORY")
+    need((row["kind"] == "node") == (destination is not None), "EXTRACTION_SCOPE")
+    if destination is not None:
+        need(not destination.exists(), "DISTRIBUTION_DESTINATION")
+        destination.mkdir()
+    observed, directories, folded, parents = {}, set(), set(), {}
     total = 0
-    members = 0
 
-    def copy(name, size, directory, stream, mode):
-        nonlocal total, members
-        members += 1
+    def visit(name, size, mode, stream=None, link=None, directory=False):
+        nonlocal total
         name = archive_member_path(name)
         key = name.casefold()
-        need(key not in seen and members <= MAX_ARCHIVE_MEMBERS and
-             0 <= size <= MAX_ARCHIVE_MEMBER, "INTERPRETER_MEMBER")
-        seen.add(key)
-        total += size
-        need(total <= MAX_INTERPRETER_EXPANDED, "INTERPRETER_EXPANSION")
-        target = owned(destination / name, destination)
+        need(key not in folded, "DISTRIBUTION_DUPLICATE")
+        folded.add(key)
+        parts = name.split("/")
+        for length in range(1, len(parts)):
+            parent = "/".join(parts[:length])
+            need(parents.setdefault(parent.casefold(), parent) == parent, "DISTRIBUTION_CASE_COLLISION")
+        need(len(observed) + len(directories) < MAX_ARCHIVE_MEMBERS and
+             0 <= size <= MAX_ARCHIVE_MEMBER, "DISTRIBUTION_BOUNDS")
         if directory:
-            need(size == 0, "DIRECTORY_PAYLOAD")
-            target.mkdir(parents=True, exist_ok=True)
+            need(size == 0, "DISTRIBUTION_DIRECTORY")
+            directories.add(name.casefold())
+            if destination is not None:
+                owned(destination / name, destination).mkdir(parents=True, exist_ok=True)
             return
-        target.parent.mkdir(parents=True, exist_ok=True)
-        with target.open("xb") as out:
-            remaining = size
+        need(name in expected, "DISTRIBUTION_MEMBER")
+        if link is not None:
+            need(row["kind"] == "node" and destination is not None and
+                 name.endswith(("/bin/npm", "/bin/npx", "/bin/corepack")) and
+                 expected[name] == {"link": link}, "DISTRIBUTION_LINK")
+            # No links created; exact reviewed npm-cli.js is invoked by Node.
+            observed[name] = {"link": link}
+            return
+        total += size
+        need(total <= (1024**3 if row["kind"] == "node" else 512 * 1024**2),
+             "DISTRIBUTION_EXPANSION")
+        h = hashlib.sha256()
+        target = None
+        if destination is not None:
+            target = owned(destination / name, destination)
+            target.parent.mkdir(parents=True, exist_ok=True)
+        remaining = size
+        with (target.open("xb") if target is not None else open(os.devnull, "wb")) as out:
             while remaining:
                 chunk = stream.read(min(65536, remaining))
-                need(chunk, "INTERPRETER_TRUNCATED")
+                need(chunk, "DISTRIBUTION_TRUNCATED")
+                h.update(chunk)
                 out.write(chunk)
                 remaining -= len(chunk)
-            need(stream.read(1) == b"", "INTERPRETER_OVERFLOW")
-        if os.name != "nt":
+            need(stream.read(1) == b"", "DISTRIBUTION_OVERFLOW")
+        got = {"bytes": size, "sha256": h.hexdigest()}
+        need(got == expected[name], "DISTRIBUTION_MEMBER_IDENTITY")
+        observed[name] = got
+        if target is not None and os.name != "nt":
             target.chmod(0o700 if mode & 0o111 else 0o600)
 
     if path.name.endswith(".zip"):
-        with zipfile.ZipFile(path) as z:
-            need(len(z.infolist()) <= MAX_ARCHIVE_MEMBERS, "INTERPRETER_MEMBER_COUNT")
-            for entry in z.infolist():
+        with zipfile.ZipFile(path) as archive:
+            need(len(archive.infolist()) <= MAX_ARCHIVE_MEMBERS, "DISTRIBUTION_COUNT")
+            for entry in archive.infolist():
                 mode = entry.external_attr >> 16
                 need(stat.S_IFMT(mode) in (0, stat.S_IFREG, stat.S_IFDIR) and
-                     not entry.external_attr & 0x458 and not entry.flag_bits & 1,
-                     "INTERPRETER_ZIP_MODE")
-                with z.open(entry) as src:
-                    copy(entry.filename, entry.file_size, entry.is_dir(), src, mode)
+                     not entry.external_attr & 0x448 and not entry.flag_bits & 1,
+                     "DISTRIBUTION_ZIP_MODE")
+                with archive.open(entry) as stream:
+                    visit(entry.filename, entry.file_size, mode, stream, directory=entry.is_dir())
     else:
-        need(path.name.endswith(".tar.gz"), "INTERPRETER_FORMAT")
-        with tarfile.open(path, mode="r|gz") as archive:
+        need(path.name.endswith((".tgz", ".tar.xz")), "DISTRIBUTION_FORMAT")
+        with tarfile.open(path, mode="r|*") as archive:
             for entry in archive:
-                need(entry.isfile() or entry.isdir(), "INTERPRETER_TAR_MODE")
                 if entry.isdir():
-                    copy(entry.name, entry.size, True, None, entry.mode)
+                    visit(entry.name, entry.size, entry.mode, directory=True)
+                elif entry.issym():
+                    visit(entry.name, entry.size, entry.mode, link=entry.linkname)
                 else:
-                    with archive.extractfile(entry) as src:
-                        copy(entry.name, entry.size, False, src, entry.mode)
-    need(members == approved["member_count"] and total == approved["expanded_bytes"],
-         "INTERPRETER_APPROVED_LAYOUT")
-    notice_names = approved["notice_members"]
-    need(isinstance(notice_names, list) and notice_names and
-         len(notice_names) == len(set(notice_names)), "INTERPRETER_NOTICE_SET")
-    notices = []
-    for name in sorted(notice_names):
-        file = owned(destination / archive_member_path(name), destination)
-        need(file.is_file() and 0 < file.stat().st_size <= 1024**2, "INTERPRETER_NOTICE_FILE")
-        notices.append({"path": name, "bytes": file.stat().st_size, "sha256": digest(file)})
+                    need(entry.isfile(), "DISTRIBUTION_TAR_MODE")
+                    with archive.extractfile(entry) as stream:
+                        visit(entry.name, entry.size, entry.mode, stream)
+    need(observed == expected and not {n.casefold() for n in observed}.intersection(parents),
+         "DISTRIBUTION_INVENTORY")
+    names = approved["notice_members"]
+    need(isinstance(names, list) and names and len(names) == len(set(names)) and
+         all(n in observed and "sha256" in observed[n] for n in names),
+         "DISTRIBUTION_NOTICE_SET")
+    notices = [{"path": n, **observed[n]} for n in sorted(names)]
     need(hashlib.sha256(json.dumps(notices, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
-         == notice_inventory_sha256, "INTERPRETER_NOTICE_INVENTORY")
-    python = owned(destination / archive_member_path(approved["python_member"]), destination)
-    need(python.is_file() and digest(python) == approved["python_sha256"],
-         "INTERPRETER_BINARY")
-    return python
+         == approved["notice_inventory_sha256"], "DISTRIBUTION_NOTICE_INVENTORY")
+    return total
 
 
 def wheel_expectation(row, plan, disposition):
@@ -515,16 +597,173 @@ def mixed_witness(python, scratch, env):
     return result
 
 
-def font_witness(*_args):
-    # No existing verified font inputs/hosted use disposition are bound to
-    # this plan. Do not substitute the synthetic Helvetica map or owner CLI.
-    raise RuntimeError("PINNED_FONT_EQUIVALENCE_UNRESOLVED")
+def font_witness(python, scratch, env, disposition, rows, extra):
+    require_live()
+    require_font_authority(disposition)
+    fonts = owned(scratch / "PilotODIN/DevQA/font-candidates", scratch)
+    fonts.mkdir(parents=True)
+    selected = [r for r in rows if r["kind"] in ("font", "font_notice")]
+    need(len(selected) == 6, "FONT_INPUT_SET")
+    for row in selected:
+        path = extra / row["filename"]
+        exact_file(path, row)
+        approved = disposition["archives"][row["filename"]]
+        need(digest(path) == approved["measured_sha256"], "FONT_USE_IDENTITY")
+        shutil.copyfile(path, fonts / row["filename"])
+        exact_file(fonts / row["filename"], row)
+    evidence = {}
+    for mode in ("unit", "baseline", "corrected", "actual", "context", "coverage", "research"):
+        home = owned(scratch / ("font-home-" + mode), scratch)
+        home.mkdir()
+        child = dict(env, PILOTODIN_HOME=str(home), PYTHONPATH=str(ROOT))
+        reply = run((str(python), "-B", "-m", "qa.c5_pdfium.font_witness",
+                     mode, str(fonts)), cwd=ROOT, env=child, seconds=180)
+        evidence[mode] = stages.strict_json(reply)
+    unit, baseline, corrected = (evidence[k] for k in ("unit", "baseline", "corrected"))
+    need(unit == {"state": "PASS", "expected": 9, "executed": 9, "failures": 0,
+                  "errors": 0, "skipped": 0}, "CMAP_UNIT")
+    need(baseline["exact"] is False and corrected["exact"] is True and
+         stages.SHA256.fullmatch(baseline["pixel_sha256"]) and
+         baseline["pixel_sha256"] == corrected["pixel_sha256"] and
+         baseline["reportlab_version"] == corrected["reportlab_version"] == "4.5.1",
+         "CMAP_EQUIVALENCE")
+    actual = evidence["actual"]
+    for key in ("real_backend_report_pdf", "legacy_default_report_preserved",
+                "unicode_title_narrative_table_chart", "chart_metric_values_unchanged",
+                "immutable_revision_and_html", "footer_and_pages", "page_bounds"):
+        need(actual[key] is True, "ACTUAL_REPORT_PREDICATE")
+    need(type(actual["pages"]) is int and 1 <= actual["pages"] <= 4, "ACTUAL_REPORT_PAGES")
+    context = evidence["context"]
+    need(context["state"] == "SCOPED_FONT_CONTEXT_IN_MEMORY_PASS" and
+         all(context[k] is True for k in ("paragraph_exact", "vector_label_exact",
+                                         "one_page", "page_bounds_ok")), "FONT_CONTEXT")
+    coverage = evidence["coverage"]
+    samples = coverage["samples"]
+    need(coverage["scope"] == "DEVELOPER_PROBE_NOT_ACCEPTANCE" and
+         set(samples) == {"latin", "greek", "cyrillic", "rupee", "cjk", "emoji", "mixed"} and
+         all(x["state"] in ("EXTRACTED_EXACT", "MISMATCH", "UNSUPPORTED", "RENDER_ERROR")
+             for x in samples.values()), "FONT_COVERAGE_OUTCOME")
+    # The historical probe is diagnostic, not a claim all scripts extract.
+    # Compare exact previously reviewed outcome expectations; do not infer PASS.
+    need({k: v["state"] for k, v in samples.items()} ==
+         disposition["font_coverage_expected"], "FONT_COVERAGE_REGRESSION")
+    research = evidence["research"]
+    need(research["state"] == "RESEARCH_ONLY" and research["baseline_matches"] is False and
+         research["corrected_matches"] is True and research["same_rendered_pixels"] is True and
+         research["product_acceptance"] == research["visual_acceptance"] == "NOT_TESTED",
+         "FONT_RESEARCH")
+    return {"collected": list(stages.FONT_REQUIRED_NODES),
+            "passed": list(stages.FONT_REQUIRED_NODES), "state": "PASS"}
+
+
+def frontend_witness(scratch, env, disposition, rows, extra):
+    require_live()
+    node_row, = [r for r in rows if r["kind"] == "node"]
+    packages = [r for r in rows if r["kind"] == "npm"]
+    need(len(packages) == 30, "NPM_INPUT_SET")
+    # Inspect all inputs and applicable notices before any Node/npm execution.
+    expanded = 0
+    for row in packages:
+        expanded += inspect_distribution(extra / row["filename"], row,
+                                         disposition["archives"][row["filename"]])
+        need(expanded <= 2 * 1024**3, "NPM_PROFILE_EXPANSION")
+    node_dir = owned(scratch / "node", scratch)
+    approved = disposition["archives"][node_row["filename"]]
+    inspect_distribution(extra / node_row["filename"], node_row, approved, node_dir)
+    node = owned(node_dir / archive_member_path(approved["node_member"]), node_dir)
+    cli = owned(node_dir / archive_member_path(approved["npm_member"]), node_dir)
+    need(node.is_file() and cli.is_file(), "NODE_NPM_ENTRYPOINT")
+    need(digest(node) == approved["members"][approved["node_member"]]["sha256"] and
+         digest(cli) == approved["members"][approved["npm_member"]]["sha256"], "NODE_NPM_IDENTITY")
+    work = owned(scratch / "frontend", scratch)
+    work.mkdir()
+    git = tool_identity(disposition["git"]["path"], disposition["git"]["sha256"])
+    tracked = run((git, "ls-files", "-z", "--", "frontend"), cwd=ROOT, env=env)
+    entries = tracked.decode("utf-8", "strict").split("\0")
+    need(entries[-1] == "" and 0 < len(entries) <= 50000, "FRONTEND_TRACKED_SET")
+    total = 0
+    for name in entries[:-1]:
+        need(name.startswith("frontend/"), "FRONTEND_SOURCE_SCOPE")
+        source = ROOT / name
+        target = owned(work / name[len("frontend/"):], scratch)
+        need(source.is_file() and not source.is_symlink() and
+             source.resolve().is_relative_to(ROOT.resolve()) and
+             source.stat().st_size <= 32 * 1024**2, "FRONTEND_SOURCE_FILE")
+        total += source.stat().st_size
+        need(total <= 256 * 1024**2, "FRONTEND_SOURCE_BOUND")
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(source, target)
+    lock = work / "package-lock.json"
+    lock_hash = digest(lock)
+    cache = scratch / "npm-cache"
+    cache.mkdir()
+    config = scratch / "npmrc"
+    config.touch(exist_ok=False)
+    child = dict(env, PATH=str(node.parent), NPM_CONFIG_USERCONFIG=str(config),
+                 NPM_CONFIG_GLOBALCONFIG=str(config), NPM_CONFIG_CACHE=str(cache),
+                 NPM_CONFIG_OFFLINE="true", NPM_CONFIG_IGNORE_SCRIPTS="true",
+                 NPM_CONFIG_AUDIT="false", NPM_CONFIG_FUND="false",
+                 NPM_CONFIG_UPDATE_NOTIFIER="false", PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD="1")
+    need(run((str(node), "--version"), cwd=work, env=child).strip() == b"v22.23.5",
+         "NODE_VERSION")
+    base = (str(node), str(cli))
+    need(run(base + ("--version",), cwd=work, env=child).strip() == b"10.9.9", "NPM_VERSION")
+    flags = ("--offline", "--ignore-scripts", "--no-audit", "--no-fund", "--cache", str(cache))
+    for row in packages:
+        # Local tarball cache population only. No fallback to a registry.
+        exact_file(extra / row["filename"], row)
+        run(base + ("cache", "add", str(extra / row["filename"]), *flags),
+            cwd=work, env=child)
+    run(base + ("ci", *flags), cwd=work, env=child, seconds=180)
+    need(digest(lock) == lock_hash, "NPM_LOCK_MUTATION")
+    # Exact package paths and versions, excluding only npm-owned .bin and
+    # .package-lock.json bookkeeping; no unexpected dependency tree.
+    modules = work / "node_modules"
+    observed = {}
+    for entry in modules.iterdir():
+        if entry.name in (".bin", ".package-lock.json"):
+            continue
+        need(entry.is_dir() and not entry.is_symlink(), "NPM_INSTALLED_PATH")
+        candidates = list(entry.iterdir()) if entry.name.startswith("@") else [entry]
+        for candidate in candidates:
+            package = owned(candidate / "package.json", scratch)
+            need(package.is_file() and package.stat().st_size <= 2 * 1024**2,
+                 "NPM_INSTALLED_METADATA")
+            doc = stages.strict_json(package.read_bytes())
+            key = candidate.relative_to(work).as_posix()
+            need(doc["name"] == key[len("node_modules/"):], "NPM_INSTALLED_NAME")
+            observed[key] = doc["version"]
+    need(observed == {r["package_path"]: r["version"] for r in packages}, "NPM_INSTALLED_SET")
+    # Match every installed package file against its independently reviewed
+    # tar member identity, excluding npm-generated bin links outside packages.
+    for row in packages:
+        expected = disposition["archives"][row["filename"]]["members"]
+        directory = work / row["package_path"]
+        got = {}
+        for folder, dirs, files in os.walk(directory, followlinks=False):
+            for name in dirs + files:
+                path = owned(Path(folder) / name, scratch)
+                if name in files:
+                    key = "package/" + path.relative_to(directory).as_posix()
+                    need(key in expected and path.is_file() and
+                         path.stat().st_size == expected[key]["bytes"], "NPM_INSTALLED_FILE")
+                    got[key] = {"bytes": path.stat().st_size, "sha256": digest(path)}
+        need(got == expected, "NPM_INSTALLED_BYTES")
+    verifier = work / "scripts/verify-npm-lock.mjs"
+    run((str(node), str(verifier), *(("--installed",) if os.name == "nt" else ())),
+        cwd=work, env=child)
+    # Invoke exact package CLI scripts directly, no npm lifecycle commands.
+    run((str(node), str(modules / "typescript/bin/tsc"), "--noEmit"), cwd=work, env=child)
+    run((str(node), str(modules / "vite/bin/vite.js"), "build"), cwd=work, env=child, seconds=180)
+    need(digest(lock) == lock_hash, "NPM_LOCK_MUTATION")
+    return {"collected": list(stages.FRONTEND_REQUIRED_NODES),
+            "passed": list(stages.FRONTEND_REQUIRED_NODES), "state": "PASS"}
 
 
 def bootstrap_python(interpreter, pip_wheel, scratch, env, disposition):
     require_live()
-    # The interpreter archive has already been inspected/extracted, and the
-    # pip wheel has passed the exact reviewed declaration/notice gate.
+    # Existing interpreter identity independently reviewed before use;
+    # the pip wheel has passed the exact declaration/notice gate.
     expected_version = disposition["interpreter"]["version"]
     output = run((str(interpreter), "-I", "-B", "-c",
                   "import platform,sys; print(platform.python_version()); print(sys.maxsize)"),
@@ -557,6 +796,16 @@ def verify_loaded_native(python, profile, scratch, env):
     expected, = profile["native"]
     script = r"""
 import ctypes, hashlib, importlib.metadata as metadata, json, os, pathlib, sys
+from importlib import util
+spec = util.find_spec("pypdfium2_raw")
+if spec is None or spec.origin is None: raise RuntimeError("native package absent")
+pre = pathlib.Path(spec.origin).parent / pathlib.Path(sys.argv[1]).name
+pre = pre.resolve(strict=True)
+if not pre.is_relative_to(pathlib.Path(sys.prefix).resolve()) or pre.stat().st_size != int(sys.argv[4]):
+    raise RuntimeError("native path/size mismatch before import")
+with pre.open("rb") as stream:
+    if hashlib.file_digest(stream, "sha256").hexdigest() != sys.argv[3]:
+        raise RuntimeError("native digest mismatch before import")
 sys.path.insert(0, sys.argv[2])
 from tools.pdf_test_inspection import require_pdfium
 require_pdfium()
@@ -590,7 +839,7 @@ print(json.dumps({'loaded': loaded, 'sha256': sha, 'bytes': path.stat().st_size,
                   'inside_venv': path.is_relative_to(pathlib.Path(__import__('sys').prefix).resolve()),
                   'version': metadata.version('pypdfium2')}))
 """
-    got = stages.strict_json(run((str(python), "-I", "-B", "-c", script, expected["path"], str(ROOT)),
+    got = stages.strict_json(run((str(python), "-I", "-B", "-c", script, expected["path"], str(ROOT), expected["sha256"], str(expected["bytes"])),
                                  cwd=scratch, env=env))
     need(got == {"loaded": True, "sha256": expected["sha256"], "bytes": expected["bytes"],
                  "inside_venv": True, "version": "5.15.2"}, "LOADED_NATIVE_IDENTITY")
@@ -612,10 +861,8 @@ def run_profile(profile_id, generation, source, windows_receipt=None):
     if windows_receipt is not None:
         need(windows_receipt["stage_a"]["pre_use_disposition_sha256"] == hashlib.sha256(
             stages.pinned(DISPOSITION_PATH, DISPOSITION_PIN)).hexdigest(), "DISPOSITION_GENERATION")
-    # A separate exact source review must implement and bind the authorised
-    # font witness, verified runner and activation identity. No caller flag
-    # enables these unresolved prerequisites in this draft.
-    require_font_authority()
+    require_font_authority(disposition)
+    verified_python = verified_existing_interpreter(profile, disposition)
     base = Path(os.environ["RUNNER_TEMP"])
     need(base.is_absolute() and base.is_dir() and
          not base.resolve().is_relative_to(ROOT.resolve()) and
@@ -649,15 +896,10 @@ def run_profile(profile_id, generation, source, windows_receipt=None):
         smoke = [row for row in a if row["kind"] == "wheel"]
         for row in a:
             p = acquisition.get(row, house if row["kind"] == "wheel" else tools)
-            if row["kind"] != "interpreter":
-                inspect_wheel(p, row, plan, disposition, budget)
+            inspect_wheel(p, row, plan, disposition, budget)
         pdf = next(row for row in smoke if row["name"] == "pypdfium2")
         native = native_linkage(house / pdf["filename"], profile, disposition, scratch, env)
-        interpreter = next(row for row in a if row["kind"] == "interpreter")
         pip = next(row for row in a if row["kind"] == "pip")
-        verified_python = extract_interpreter(tools / interpreter["filename"], scratch / "python",
-                                              interpreter, disposition["interpreter"],
-                                              disposition["archives"][interpreter["filename"]]["notice_inventory_sha256"])
         python = bootstrap_python(verified_python, tools / pip["filename"], scratch, env, disposition)
         lock = scratch / "smoke-lock.txt"
         lock.write_text(stages.smoke_lock(plan, profile_id), encoding="ascii")
@@ -677,10 +919,13 @@ def run_profile(profile_id, generation, source, windows_receipt=None):
         stages.stage_b_eligible(plan, stage_a, profile=profile_id, generation=generation, source=source)
         # Local A precedes local B. Reuse the same wheelhouse and venv.
         exact_inventory(python, smoke, scratch, env, pip_meta)
+        extra = scratch / "supplemental"
+        extra.mkdir()
         for row in b:
-            p = acquisition.get(row, house)
-            inspect_wheel(p, row, plan, disposition, budget)
-        rows = smoke + b
+            if row["kind"] == "wheel":
+                p = acquisition.get(row, house)
+                inspect_wheel(p, row, plan, disposition, budget)
+        rows = smoke + [r for r in b if r["kind"] == "wheel"]
         full_lock = ROOT / "backend/locks" / (profile_id + ".txt")
         resolve_install(python, rows, full_lock, house, scratch, env, pip_meta)
         need(verify_loaded_native(python, profile, scratch, env) == native, "NATIVE_IDENTITY")
@@ -689,7 +934,11 @@ def run_profile(profile_id, generation, source, windows_receipt=None):
             selection = command[-1]
             outcome[selection] = pytest_witness(python, selection, scratch / f"b-{number}", env)
         outcome.update(mixed_witness(python, scratch / "mixed-worker", env))
-        outcome["font:equivalence"] = font_witness(python, scratch, env, disposition)
+        for row in b:
+            if row["kind"] != "wheel":
+                acquisition.get(row, extra)
+        outcome["font:equivalence"] = font_witness(python, scratch, env, disposition, b, extra)
+        outcome["frontend:compatibility"] = frontend_witness(scratch, env, disposition, b, extra)
         receipt = {"profile": profile_id, "generation": generation, "source": source,
                    "attempt": 1, "state": "PASS", "stage_a": stage_a, "stage_b": outcome,
                    "archive_uses": len(acquisition.seen), "body_bytes": acquisition.body,
@@ -699,8 +948,9 @@ def run_profile(profile_id, generation, source, windows_receipt=None):
     return receipt
 
 
-def require_font_authority():
-    raise RuntimeError("PINNED_FONT_EQUIVALENCE_UNRESOLVED")
+def require_font_authority(disposition=None):
+    if not isinstance(disposition, dict) or disposition.get("font_equivalence") != "REVIEWED_PINNED_SIX_FILES":
+        raise RuntimeError("PINNED_FONT_EQUIVALENCE_UNRESOLVED")
 
 
 def hosted_identity():
