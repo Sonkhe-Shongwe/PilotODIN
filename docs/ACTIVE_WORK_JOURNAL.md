@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | BLOCKED |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | e489685ecaaaee03dee8d53c4bd5a2e517e0f16d |
+| Observed starting HEAD | 08fb22f73e37982e7830b0dc5d32f143a958ff6e |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | Revised C5-A/B development reproducibility and build safety; D prerequisites and P8 release-only allocation. No restricted acquisition, native, owner data, install, packaging, phase activation or release. |
-| Operation ID | C5-PDF-TEST-DEPENDENCY-DISPOSITION-20261126 |
-| Operation state | RECONCILED READ_ONLY_REVIEW; proposed PDF test-only dependency disposition awaits owner decision. Prior acquisition and disarm exact receipts preserved at e489685. |
+| Operation ID | C5-PDFIUM-EVALUATION-DESIGN-20261126 |
+| Operation state | PREPARED; read-only caller/API/licence review and source-only migration design; no execution. |
 | Intended files | Journal, handoff, C ledger only. No dependency, lock, workflow, product or guard change. |
-| Approval | No new restricted approval. Prior exact one-use approval consumed/disarmed; see [prior journal](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/e489685ecaaaee03dee8d53c4bd5a2e517e0f16d/docs/ACTIVE_WORK_JOURNAL.md). Candidate dependency evaluation/migration design requires owner decision; no acquisition/install/execute authority. |
+| Approval | Owner explicitly stated: "I approve the bounded evaluation and source-only migration design of pypdfium2 as a test-only replacement for PyMuPDF. Preserve all existing acceptance criteria and production functionality. No acquisition, installation, execution or release authorised. Proceed." No new restricted execution authority; 23 previous approvals consumed/disarmed. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
 | Pending runs | None. #45827293999 SUCCESS acquisition 139934619797, rehearsal/header skipped. #45827352794 SUCCESS rehearsal 139934819535 34/34; both restricted jobs skipped. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
-| Recovery action | [PDF test dependency disposition](./PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md#26-november--c5-pdf-test-dependency-licence-decision-boundary): owner chooses test-only permissive candidate evaluation (recommended pypdfium2) or retains PyMuPDF with documented licence-use resolution. Preserve all QA assertions and production generator. If approved, complete caller inventory and exact candidate/notice/lock/equivalence design, then obtain separate execution authority. No new dependency or actual-use permission. Remaining npm/toolchain notices and use-time evidence still open. |
+| Recovery action | Complete exact caller inventory, candidate CP311 Windows/Linux artifact metadata and notice review, API/predicate equivalence design, and proposed lock delta; no product/dependency/lock/workflow edits or execution. Update handoff and C ledger on terminal review. |
 | Resume after closure | D only after revised C5 source closure, G2 resolution and separately approved scope; every native prerequisite before its use. P8 release-only obligations retained; installer frozen. |
 
 ## Prior operation
