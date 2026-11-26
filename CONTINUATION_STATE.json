@@ -6,16 +6,16 @@
   },
   "checkpoint": {
     "operation_id": "C5-PORTABLE-DOCKER-STDLIB-ONCE-20261126",
-    "parent_sha": "fdba34b507026c4c6e76665d012b8ae8daf28e42",
-    "previous_snapshot_sha": "fdba34b507026c4c6e76665d012b8ae8daf28e42",
-    "scope": "One fresh exact 5701ff8 no-pull Docker data-only verification on reviewed Ubuntu image and engine, all original safeguards; full pure tests and preflights before bounded acquisition; no retry/fallback.",
-    "state": "PREPARED",
+    "parent_sha": "65495864ba78ece62a1941d609220dce95f9a5cb",
+    "previous_snapshot_sha": "fccbfe302b570cb302e4a5aa8f410fe83a8ffe3b",
+    "scope": "Reconcile exact stdlib candidate image refusal and restore false workflow guard",
+    "state": "RECONCILED",
     "receipt": {
-      "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
-      "anchor": "owner-approved-exact-stdlib-alias-one-use-integrated-docker-execution",
-      "blob_sha": "b5bea17951e823241c813f06b2ec7f015120f761",
-      "start_line": 762,
-      "end_line": 764
+      "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
+      "anchor": "26-november--c5-stdlib-alias-attempt-refused-unreviewed-runner-image",
+      "blob_sha": "d76603c74ac1d69477e889198bcbce5889dc3a6c",
+      "start_line": 2742,
+      "end_line": 2744
     }
   },
   "product": {
@@ -117,16 +117,23 @@
   },
   "task": {
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
-    "status": "PREPARED",
+    "status": "READY",
     "scope": "C-D08 revised C5-A/B development reproducibility and build safety only; D retains native prerequisites, P8 release-only",
-    "blocker": "Exact integrated verification not yet executed; previous approval consumed.",
-    "next_action": "Activate sole owned workflow using exact approved candidate template and only two permitted substitutions at verified write-ahead HEAD. Observe and reconcile run; disarm without replay.",
-    "next_action_kind": "APPROVED_EXECUTION",
+    "blocker": "Runtime BLOCKED: hosted image 20261116.133.1 differed from approved 20261122.23.1, first image guard refused before staging; stdlib alias correction untested on runner, full updated 14-method suite, rootfs/isolation/provenance still unverified.",
+    "next_action": "Read-only review exact observed runner image release and existing approved image/runtime constraints; determine bounded image compatibility approach without broadening trust, weakening acceptance or replay. Any revised image or execution requires explicit owner authority before activation.",
+    "next_action_kind": "SOURCE_PREPARATION",
     "after": [
-      "Reconcile exact run/receipt or refusal; disarm and preserve failure without replay. No broad trust expansion.",
-      "Complete C5 rows 5–7 and row 8 exact regression/source closure only on qualifying evidence; D only after C5 closure, G2 resolution and separate authority."
+      "Review and pin justified inert candidate or exact image proposal; seek fresh execution authority before any new activation. Reconcile evidence without replay.",
+      "Complete C5 rows 5–7 and row 8 exact regression/source closure on qualifying evidence; D only after C5 closure, G2 resolution and separate authority."
     ],
     "read": [
+      {
+        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
+        "anchor": "26-november--c5-stdlib-alias-attempt-refused-unreviewed-runner-image",
+        "blob_sha": "d76603c74ac1d69477e889198bcbce5889dc3a6c",
+        "start_line": 2742,
+        "end_line": 2744
+      },
       {
         "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
         "anchor": "owner-approved-exact-stdlib-alias-one-use-integrated-docker-execution",
@@ -313,49 +320,23 @@
   },
   "operation": {
     "id": "C5-PORTABLE-DOCKER-STDLIB-ONCE-20261126",
-    "state": "PREPARED",
+    "state": "RECONCILED",
     "starting_sha": "fdba34b507026c4c6e76665d012b8ae8daf28e42",
-    "scope": "One fresh exact 5701ff8 no-pull Docker data-only verification on reviewed Ubuntu image and engine, all original safeguards; full pure tests and preflights before bounded acquisition; no retry/fallback.",
-    "intended_paths": [
-      ".github/workflows/c5-portable-provenance-once.yml"
-    ],
-    "authority_ref": {
-      "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
-      "anchor": "owner-approved-exact-stdlib-alias-one-use-integrated-docker-execution",
-      "blob_sha": "b5bea17951e823241c813f06b2ec7f015120f761",
-      "start_line": 762,
-      "end_line": 764
-    },
-    "expected_evidence": "Exact activation parent and message, sole owned first-attempt workflow, terminal job/step logs and reconstructed bounded receipt if present; exact false guard restored.",
-    "recovery": "Inspect live head, commit message and diff, exact workflow run and attempt before any retry; approval is unavailable on uncertainty; disarm owned workflow with expected HEAD after reconciliation. Never replay.",
+    "outcome": "Run 45893331954 attempt 1/job 140161073580 terminal FAILURE: image 20261116.133.1 != approved 20261122.23.1. All staging/tests/driver skipped, zero Docker or acquisition. One-use approval consumed; false guard restored.",
     "reconcile_before_retry": false,
-    "source_sha": "5701ff8ded08cf378b1fed8eee7e456267fe1c35",
-    "template_sha256": "4a4d33441cdc7e519349065e51b98e2733029b56b37a51d23dbde01db5ffdaef",
-    "expected_activation_message": "C5-PORTABLE-DOCKER-STDLIB-ONCE-20261126 owner approved exact stdlib alias no-pull data-only operation",
-    "run_attempt": 1
+    "receipt": {
+      "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
+      "anchor": "26-november--c5-stdlib-alias-attempt-refused-unreviewed-runner-image",
+      "blob_sha": "d76603c74ac1d69477e889198bcbce5889dc3a6c",
+      "start_line": 2742,
+      "end_line": 2744
+    }
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next.",
     "preparation_only": "Owner approved consolidated shared-bundle disarmed acquisition-before-signature source and exact limited existing host bootstrap; owner approved proposed limited local Docker control-plane and host-derived rootfs trust/no-pull isolation method for preparation only. Authentication before extraction/use; no Docker invocation, acquisition, verification execution, installation or live cutover authorised.",
-    "restricted_active": [
-      {
-        "id": "C5-PORTABLE-DOCKER-STDLIB-ONCE-20261126",
-        "state": "APPROVED",
-        "source_sha": "5701ff8ded08cf378b1fed8eee7e456267fe1c35",
-        "scope": "One fresh exact 5701ff8 no-pull Docker data-only verification on reviewed Ubuntu image and engine, all original safeguards; full pure tests and preflights before bounded acquisition; no retry/fallback.",
-        "owner_authority_ref": {
-          "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
-          "anchor": "owner-approved-exact-stdlib-alias-one-use-integrated-docker-execution",
-          "blob_sha": "b5bea17951e823241c813f06b2ec7f015120f761",
-          "start_line": 762,
-          "end_line": 764
-        },
-        "reconcile_before_retry": false,
-        "template_sha256": "4a4d33441cdc7e519349065e51b98e2733029b56b37a51d23dbde01db5ffdaef",
-        "run_attempt": 1
-      }
-    ],
-    "consumed_disarmed_count": 33,
+    "restricted_active": [],
+    "consumed_disarmed_count": 34,
     "consumed_history": {
       "commit": "b9864b70fb9bb5a72d0f79c37f15b94100722192",
       "path": "docs/TAB_MIGRATION_HANDOFF_CURRENT.md",
@@ -374,21 +355,21 @@
       "release",
       "replay of consumed or uncertain approval"
     ],
-    "guards": "33 consumed/disarmed including corrected Docker attempt; owned workflow false job guard restored with exact activation parent/message retained; no fallback or acquisition. Three C1/C2 workflows and OWNED_RESOURCE_ENABLED false; three consumed variables owner cleanup unverified.",
+    "guards": "34 consumed/disarmed including stdlib candidate image refusal; owned workflow false job guard restored with exact activation parent/message retained; no fallback or acquisition. Three C1/C2 workflows and OWNED_RESOURCE_ENABLED false; three consumed variables owner cleanup unverified.",
     "last_consumed": {
-      "id": "C5-PORTABLE-DOCKER-ROOTFS-ONCE-20261126",
-      "source_sha": "3aeebbc9c9021f8d8810b82e0b2b9c148df172cd",
-      "activation_sha": "fd5364e8fc392848ddede5a557f75871175e9669",
-      "run_id": 45891625178,
+      "id": "C5-PORTABLE-DOCKER-STDLIB-ONCE-20261126",
+      "source_sha": "5701ff8ded08cf378b1fed8eee7e456267fe1c35",
+      "activation_sha": "65495864ba78ece62a1941d609220dce95f9a5cb",
+      "run_id": 45893331954,
       "run_attempt": 1,
-      "job_id": 140155442819,
-      "outcome": "FAILURE_ROOTFS_STDLIB_ZERO_ACQUISITION_ENGINE_AND_FULL_SYNTHETIC_PASS",
+      "job_id": 140161073580,
+      "outcome": "FAILURE_UNREVIEWED_IMAGE_ZERO_STAGING_TESTS_DOCKER_ACQUISITION",
       "receipt": {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "26-november--c5-corrected-docker-attempt-refused-at-stdlib-path-guard",
-        "blob_sha": "95e16909dcb047046af4bbc76076b791c7a513ca",
-        "start_line": 2734,
-        "end_line": 2736
+        "anchor": "26-november--c5-stdlib-alias-attempt-refused-unreviewed-runner-image",
+        "blob_sha": "d76603c74ac1d69477e889198bcbce5889dc3a6c",
+        "start_line": 2742,
+        "end_line": 2744
       }
     }
   },
