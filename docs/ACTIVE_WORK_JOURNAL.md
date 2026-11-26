@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | VERIFYING |
+| State | READY |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | c441245c9424ac35badde9543e129a1d5605ceeb |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
 | Operation ID | C5-SYNTHETIC-RECEIPT-TRANSFER-ONCE-20261126 |
-| Operation state | CONSUMED: exact synthetic marker 0de1597 run 45725783645 attempt 1 SUCCESS; offline 139595159864, upload 139595202367, independent retrieval 139595331252 all SUCCESS. Artifact 15074477258, one upload/one retrieval, 2564 ZIP bytes; all digests and receipt replay PASS. Restore disarmed source/workflow and remove marker in this checkpoint. |
+| Operation state | RECONCILED: exact synthetic marker 0de1597 run 45725783645 attempt 1 SUCCESS; offline 139595159864, upload 139595202367, independent retrieval 139595331252 all SUCCESS. Artifact 15074477258, one upload/one retrieval, 2564 ZIP bytes, all digests and receipt replay PASS. Disarmed 8a91463 run 45725949696 SUCCESS, offline 139595735459 PASS, upload/retrieve skipped, marker absent. |
 | Intended files | New qa/c5_wheel_metadata/synthetic_receipt_transfer.py and .github/workflows/c5-synthetic-receipt-transfer.yml; journal/handoff/ledger; then exact one-use synthetic marker addition and disarm. Existing real wheel hosted workflow and collector stay false. |
-| Approval | Both explicit owner approvals consumed: remaining checksum-only operation SUCCESS, disarmed e3e5b69 (13 prior restricted approvals total); synthetic receipt transfer SUCCESS, disarming now (14 total including six native, seven metadata, one synthetic). No actual wheel acquisition, new metadata/binaries, installs, native/model, owner data, installer or retries authorized. |
+| Approval | Both explicit approvals consumed/disarmed; checksum-only run 45725150647 SUCCESS, independent persisted receipt replay PASS; synthetic receipt transfer run 45725783645 SUCCESS, disarm verified. Fourteen total restricted approvals consumed/disarmed (six native, seven metadata, one synthetic). No actual wheel acquisition, new metadata/binaries, installs, native/model, owner data, installer or retries authorized. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | Both approved runs terminal SUCCESS; verify exact synthetic disarm CI and skipped transfer jobs before reconciliation. |
+| Pending runs | None. Exact disarm CI reconciled. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
-| Recovery action | Verify synthetic disarm and preserve independent transfer evidence. Next independent source work: integrate runtime Git/event and exact armed-source preflight driver for actual 68-wheel collection with all real-wheel gates false; use verified separate hosted receipt retrieval design. Fresh explicit approval for actual wheel acquisition required after driver verification. No replay. |
+| Recovery action | Next independent source work: integrate runtime Git/event and exact armed-source preflight driver for actual 68-wheel collection with all real-wheel gates false; use verified separate hosted receipt retrieval design. Fresh explicit approval for actual wheel acquisition required after driver verification. No replay. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
@@ -28,4 +28,4 @@ C4-RESEARCH-AND-IMPLEMENTATION-PLAN-20261125: [`bd7c163`](https://github.com/Son
 
 ## Unresolved or interrupted operations
 
-A/B and C1–C4 source closed; C5 outstanding. Source 14/17 (82.4%), official P4 14/20 (70%). Native DPAPI, actual desktop/physical egress and durability, physical 8 GB and G2/D evidence deferred. Owner-local tree uninspected. Fourteen restricted approvals consumed, latest synthetic disarm pending verification; preserve local work, installer freeze unchanged. Historical failures and exact receipts retained in C ledger.
+A/B and C1–C4 source closed; C5 outstanding. Source 14/17 (82.4%), official P4 14/20 (70%). Native DPAPI, actual desktop/physical egress and durability, physical 8 GB and G2/D evidence deferred. Owner-local tree uninspected. Fourteen restricted approvals consumed/disarmed; preserve local work, installer freeze unchanged. Historical failures and exact receipts retained in C ledger.
