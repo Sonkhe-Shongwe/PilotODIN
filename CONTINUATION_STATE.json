@@ -6,16 +6,16 @@
   },
   "checkpoint": {
     "operation_id": "C5-HOST-OBSERVATION-ONCE-20261127",
-    "parent_sha": "39e306b73a7ada3c525ea5f03c734c786ba01d8c",
-    "previous_snapshot_sha": "39e306b73a7ada3c525ea5f03c734c786ba01d8c",
-    "scope": "One exact five-minute Approach C observation-only attempt on 11 fixed host components; no network/acquisition/Docker/installation/qualification or policy change; no replay.",
-    "state": "PREPARED",
+    "parent_sha": "5e5a35b23fcdc5176ffc407771519561334bbdb8",
+    "previous_snapshot_sha": "5e5a35b23fcdc5176ffc407771519561334bbdb8",
+    "scope": "Exact one-use Approach C observation succeeded on already approved image; canonical receipt verified and original disabled workflow restored; no qualification or policy change.",
+    "state": "RECONCILED",
     "receipt": {
-      "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
-      "anchor": "owner-approved-exact-approach-c-one-use-observation-execution",
-      "blob_sha": "ed17a80312ad6a3f230a56fe34ad4901f38fd6cf",
-      "start_line": 817,
-      "end_line": 819
+      "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
+      "anchor": "27-november--c5-approach-c-bounded-host-observation-succeeded-on-approved-image",
+      "blob_sha": "1d5b281266346e39bfaf30adbcf1f27265c5aa42",
+      "start_line": 2806,
+      "end_line": 2808
     }
   },
   "product": {
@@ -117,16 +117,29 @@
   },
   "task": {
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
-    "status": "PREPARED",
+    "status": "READY",
     "scope": "C-D08 revised C5-A/B development reproducibility and build safety only; D retains native prerequisites, P8 release-only",
-    "blocker": "Await exact observation activation and terminal evidence; runner compatibility unverified.",
-    "next_action": "Activate sole owned workflow from exact approved observation candidate with only two substitutions. Reconcile terminal receipt/refusal, restore previous false workflow; no replay.",
-    "next_action_kind": "APPROVED_EXECUTION",
+    "blocker": "Actual observations available for 11 roles on approved image only; independent publisher expected-byte evidence, generated CA and dependency closure, live host/daemon trust and previously refused image evidence remain unresolved.",
+    "next_action": "Read-only review of independent publisher metadata feasibility and exact observed ten package identities, signing anchors, generated CA bundle and dependency closure; propose finite independent evidence acquisition scope only if justified. No package downloads/acquisition, workflow activation or trust change without separate explicit authority.",
+    "next_action_kind": "READ_ONLY",
     "after": [
-      "After fresh exact authority, activate once and reconcile actual bounded receipt or refusal and disarm; no repeat or assumed identity; independent publisher provenance review separately authorised.",
-      "Only after qualifying independent evidence and explicit method and execution approval, prepare integrated qualification; close C5 rows 5–8 only on evidence, keep G2/D/P5 and installer gates."
+      "Obtain separate bounded authority for any independent publisher package acquisition or changed evidence method; no self-qualification or assumed future runner identity.",
+      "Only after qualifying evidence and explicit method/execution approval prepare integrated qualification; close C5 rows 5–8 only on evidence, preserve G2/D/P5 and installer gates."
     ],
     "read": [
+      {
+        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
+        "anchor": "27-november--c5-approach-c-bounded-host-observation-succeeded-on-approved-image",
+        "blob_sha": "1d5b281266346e39bfaf30adbcf1f27265c5aa42",
+        "start_line": 2806,
+        "end_line": 2808
+      },
+      {
+        "path": "docs/C5_HOST_OBSERVATION_RECEIPT_45909617464.json",
+        "blob_sha": "3df80cbaaca4206eb5e1869c39ebbfa0a9e45fae",
+        "start_line": 1,
+        "end_line": 1
+      },
       {
         "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
         "anchor": "owner-approved-exact-approach-c-one-use-observation-execution",
@@ -495,49 +508,30 @@
   },
   "operation": {
     "id": "C5-HOST-OBSERVATION-ONCE-20261127",
-    "state": "PREPARED",
+    "state": "RECONCILED",
     "starting_sha": "39e306b73a7ada3c525ea5f03c734c786ba01d8c",
-    "scope": "One exact five-minute Approach C observation-only attempt on 11 fixed host components; no network/acquisition/Docker/installation/qualification or policy change; no replay.",
-    "intended_paths": [
-      ".github/workflows/c5-portable-provenance-once.yml"
-    ],
-    "authority_ref": {
-      "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
-      "anchor": "owner-approved-exact-approach-c-one-use-observation-execution",
-      "blob_sha": "ed17a80312ad6a3f230a56fe34ad4901f38fd6cf",
-      "start_line": 817,
-      "end_line": 819
-    },
-    "expected_evidence": "Exact activation parent/message, sole first-attempt observe-once job; verify bounded observation JSON digest/fields or refusal; restore exact prior false workflow.",
-    "recovery": "Inspect actual HEAD, exact commit/diff and run/attempt before retry; approval unavailable on uncertainty; restore prior owned false guard after terminal reconciliation using expected HEAD; no replay.",
-    "reconcile_before_retry": false,
+    "outcome": "SUCCESS_OBSERVATION_ONLY_11_ROLES_APPROVED_IMAGE_20261122_23_1_NOT_INDEPENDENT_PROVENANCE",
     "source_sha": "68f40aa3cceef75eeae3b08e0934363a47b3760c",
-    "template_sha256": "52dde6e25b199e02b0f9857377a2c76b66e2e8d65395719215394843d8ff2bd8",
-    "expected_activation_message": "C5-HOST-OBSERVATION-ONCE-20261127 owner approved bounded host observation only",
-    "run_attempt": 1
+    "activation_sha": "2a16c6b6734302111b20c2e7c90c5996f2df2c05",
+    "run_id": 45909617464,
+    "run_attempt": 1,
+    "job_id": 140214530795,
+    "disarm_sha": "5e5a35b23fcdc5176ffc407771519561334bbdb8",
+    "disarm_run_id": 45909666740,
+    "reconcile_before_retry": false,
+    "receipt": {
+      "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
+      "anchor": "27-november--c5-approach-c-bounded-host-observation-succeeded-on-approved-image",
+      "blob_sha": "1d5b281266346e39bfaf30adbcf1f27265c5aa42",
+      "start_line": 2806,
+      "end_line": 2808
+    }
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next.",
     "preparation_only": "Owner approved consolidated shared-bundle disarmed acquisition-before-signature source and exact limited existing host bootstrap; owner approved proposed limited local Docker control-plane and host-derived rootfs trust/no-pull isolation method for preparation only. Authentication before extraction/use; no Docker invocation, acquisition, verification execution, installation or live cutover authorised. Owner approved bounded first-collision encoded public member-path diagnostic preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-bounded-first-collision-diagnostic-preparation-only. No restricted execution authority. Owner approved finite exact Linux data-only terminfo inventory policy and bounded receipt projection as proposed in 8cc1a696, preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-finite-exact-linux-terminfo-inventory-policy-and-bounded-receipt-preparation-only. Strict Windows/gh and other safeguards unchanged; no acquisition, extraction or restricted execution. Owner explicitly approved preparation and static/synthetic verification only of Approach C observation-only candidate (11 fixed roles, five minutes); no restricted execution, acquisition, Docker invocation or active policy change. Exact reference in C5 spec owner-approved-bounded-approach-c-observation-candidate-preparation-only.",
-    "restricted_active": [
-      {
-        "id": "C5-HOST-OBSERVATION-ONCE-20261127",
-        "state": "APPROVED",
-        "source_sha": "68f40aa3cceef75eeae3b08e0934363a47b3760c",
-        "scope": "One exact five-minute Approach C observation-only attempt on 11 fixed host components; no network/acquisition/Docker/installation/qualification or policy change; no replay.",
-        "owner_authority_ref": {
-          "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
-          "anchor": "owner-approved-exact-approach-c-one-use-observation-execution",
-          "blob_sha": "ed17a80312ad6a3f230a56fe34ad4901f38fd6cf",
-          "start_line": 817,
-          "end_line": 819
-        },
-        "reconcile_before_retry": false,
-        "template_sha256": "52dde6e25b199e02b0f9857377a2c76b66e2e8d65395719215394843d8ff2bd8",
-        "run_attempt": 1
-      }
-    ],
-    "consumed_disarmed_count": 39,
+    "restricted_active": [],
+    "consumed_disarmed_count": 40,
     "consumed_history": {
       "commit": "b9864b70fb9bb5a72d0f79c37f15b94100722192",
       "path": "docs/TAB_MIGRATION_HANDOFF_CURRENT.md",
@@ -556,21 +550,21 @@
       "release",
       "replay of consumed or uncertain approval"
     ],
-    "guards": "39 consumed/disarmed; one fresh exact observation-only approval, existing owned false workflow; finite two-image policy unchanged. No integrated verification, acquisition or replay. Three C1/C2 workflows and OWNED_RESOURCE_ENABLED false; three consumed variables owner cleanup unverified.",
+    "guards": "40 consumed/disarmed; observation-only success on already approved 20261122.23.1; no independent qualification. Existing exact prior false workflow restored; finite image list 20261122.23.1 and 20261116.376.1 unchanged; 20261116.133.1 twice refused. No execution approval remains, no fallback/replay. Three C1/C2 workflows and OWNED_RESOURCE_ENABLED false; three consumed variables owner cleanup unverified.",
     "last_consumed": {
-      "id": "C5-PORTABLE-DOCKER-TERMINFO-POLICY-ONCE-20261127",
-      "source_sha": "28181cf992ab6efd5156265e5ea7d4752b00e66f",
-      "activation_sha": "0e789c220e0b8bbbc2d83b161d192006c64cc361",
-      "run_id": 45907585039,
+      "id": "C5-HOST-OBSERVATION-ONCE-20261127",
+      "source_sha": "68f40aa3cceef75eeae3b08e0934363a47b3760c",
+      "activation_sha": "2a16c6b6734302111b20c2e7c90c5996f2df2c05",
+      "run_id": 45909617464,
       "run_attempt": 1,
-      "job_id": 140207931214,
-      "outcome": "FAILURE_UNREVIEWED_RUNNER_IMAGE_20261116_133_1_BEFORE_STAGING_NO_SYNTHETIC_DOCKER_ACQUISITION_OR_RECEIPT",
+      "job_id": 140214530795,
+      "outcome": "SUCCESS_OBSERVATION_ONLY_11_ROLES_APPROVED_IMAGE_20261122_23_1_NOT_INDEPENDENT_PROVENANCE",
       "receipt": {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "27-november--c5-distinct-terminfo-attempt-again-refused-unreviewed-runner-before-staging",
-        "blob_sha": "0d7d2645b825eefa2513fa1e1d1f7f004770fde9",
-        "start_line": 2794,
-        "end_line": 2796
+        "anchor": "27-november--c5-approach-c-bounded-host-observation-succeeded-on-approved-image",
+        "blob_sha": "1d5b281266346e39bfaf30adbcf1f27265c5aa42",
+        "start_line": 2806,
+        "end_line": 2808
       }
     }
   },
@@ -657,7 +651,7 @@
       },
       {
         "sha": "68f40aa3cceef75eeae3b08e0934363a47b3760c",
-        "scope": "Inert Approach C observation-only candidate, four QA files, 9 local synthetic methods PASS; exact source/test/template blob readback, wrapper mocked and tamper refusal PASS; no active probe, zero runs; fresh exact execution authority required."
+        "scope": "Exact inert observation candidate; one-use run 45909617464 SUCCESS on approved image, 11 observed roles; disarmed, consumed, no replay; not host qualification."
       }
     ]
   },
