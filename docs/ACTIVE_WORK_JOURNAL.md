@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | BLOCKED |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 90980afe8d6a11732ad0058376c0fc3cd2556bc5 |
+| Observed starting HEAD | 06c5b695a2bf0f944bc2c913166a1e42e9eb188e |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | Revised C5-A/B development reproducibility and build safety; D prerequisites and P8 release-only allocation. No restricted acquisition, native, owner data, install, packaging, phase activation or release. |
-| Operation ID | C5-PORTABLE-ATTESTATION-LOOKUP-PREP-20261126 |
-| Operation state | RECONCILED PROPOSAL: upstream release job and attestation generation succeeded; overall release workflow failed in docs job. Exact two public digest lookups bounded; actual signed bundle location and independent verifier/root/builder trust unresolved. No metadata acquisition or workflow activation issued. |
-| Intended files | Documentation-only checkpoint; exact two-GET metadata-only proposal; conditional two-archive data inspection remains blocked. No code/CI/acquisition. |
-| Approval | Owner: "I approve the evaluation and design of the pinned portable CPython 3.11.18 provenance route for Windows and Linux isolated development verification. Preserve independent provenance, exact file integrity, licensing and compatibility requirements. No acquisition, installation, execution, production selection or live branch cutover is authorised. Proceed with preparation." Design only; 25 restricted approvals consumed/disarmed; zero active restricted approvals. |
+| Operation ID | C5-PORTABLE-ATTESTATION-LOOKUP-ONCE-20261126 |
+| Operation state | PREPARED, not issued. Isolated activation candidate 15f858dd390888f9cf411b14f8e0681fc1671d78 (workflow blob ae4d66ece3d3d8f1ce0676e567104a3312dcabbe), parent main 64bb85676f50ec507e8d0614f1cf9293f04c9291. Zero candidate runs. Branch qa/c5-portable-attestation-lookup-20261126; exact one workflow path; main's existing workflow manual only. |
+| Intended files | Journal-only write ahead, isolated QA branch only: exact two digest GETs, 1 MiB each, 64 KiB header cap each, no redirects/retry/pagination/bundle follow; five-minute cap, attempt 1, no checkout, credentials, Python, archive, installation or product execution. Remove workflow immediately after terminal result; publish safe receipts only. |
+| Approval | Owner explicitly approves one bounded public attestation metadata lookup for the two pinned portable CPython archives, including limited hosted Ubuntu and existing tool bootstrap trust for metadata discovery only. Maximum two GET requests, 2 MiB response data, five minutes, zero redirects, retries or bundle URL follows. No archive acquisition, installation, interpreter execution, product execution or live cutover. Preserve all independent provenance and acceptance requirements. 25 earlier restricted approvals consumed/disarmed; current one-use approval unissued. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | None for rehearsal; #45862485546 SUCCESS, one job and one attempt. Isolated branch activation removed, branch query exactly one run. |
+| Pending runs | None at preparation. Reconcile exact isolated candidate/branch run before acting if interrupted; never replay uncertain issue. |
 | Unpublished work | 5e149a034c7bb37dd3afe4945026d1a581af3ed3 remains off live development branch; reachable in isolated QA ancestry. Owner-local tree untouched/uninspected. |
-| Recovery action | [Bounded provenance evidence intake](./PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md#bounded-portable-provenance-evidence-intake-proposal-not-authority). Request fresh one-use public metadata lookup and narrow hosted Ubuntu/tool bootstrap trust only (two GETs, 2 MiB, no redirects, five-minute cap); then prepare/review exact isolated job before dispatch. Do not follow signed URLs or acquire portable archives until actual transport, independent verifier/root and builder trust are resolved. Preserve all existing final-use and acceptance requirements. |
+| Recovery action | Verify isolated QA branch and candidate run; if absent and no activation issued, one expected-main-SHA non-force update only. If issued or uncertain, reconcile actual Actions run and logs, then remove only activation workflow with expected SHA; verify disarm, exact request counts and safe metadata. No replay. Final-use provenance unchanged. |
 | Resume after closure | D only after revised C5 source closure, G2 resolution and separately approved scope; every native prerequisite before its use. P8 release-only obligations retained; installer frozen. |
 
 ## Prior operation
