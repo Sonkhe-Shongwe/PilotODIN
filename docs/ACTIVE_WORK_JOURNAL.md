@@ -9,17 +9,17 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
 | State | BLOCKED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 60ad52e87dd743fc0bdac52920795fa7e7a9e112 |
+| Observed starting HEAD | 165914442a78f15bba1e421d9becabfe8161a660 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
-| Operation ID | C5-R2-NOTICE-IDENTITY-DISCOVERY-20261126 |
-| Operation state | RECONCILED: 13 exact upstream source byte identities verified against Git blobs, nine declared member candidates across seven remaining rows; no actual wheel inventory. Upstream-only limit established; narrow custody/discovery route decision required. |
-| Intended files | Existing public-route review section 7, journal, handoff and C ledger (documentation only). |
+| Operation ID | C5-R4-CP311-PATCH-PROVENANCE-20261126 |
+| Operation state | RECONCILED: read-only Windows CP311 patch discrepancy and exact third-party 3.11.18 distribution candidate recorded; no selection or binary acquisition. R2 custody/discovery decision remains blocked. |
+| Intended files | Existing C ledger, journal, handoff (documentation only). |
 | Approval | Routine source/synthetic CI only. All 18 restricted approvals consumed/disarmed; no actual wheels, retrieval, installation, owner tree or execution. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
 | Pending runs | None; [Exact synthetic run 45788172645](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45788172645), source [2b8888d](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/2b8888d929aa5233315a336caeeea02acb18b1cb): Ubuntu job 139800162154 SUCCESS, 217 tests including 10 new disclosure tests, eleven CLI refusals; Windows job 139800161660 SUCCESS, 217 tests; direct CLI refusal step successful. Collector 139800163978 and retriever 139800163688 SKIPPED. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
-| Recovery action | Present section 7 narrow route decision: prefer isolated owner-controlled custody, alternatively hosted discovery-only projection (not acceptance). No execution approval yet. Prepare/test exact bounded adapter only after route agreed; fresh exact acquisition approval required. Independent R4–R7 read-only work may proceed. R3 remains disarmed. |
+| Recovery action | R2 route decision remains outstanding (public evidence review section 7); no execution approval. Next independent R4 read-only: exact CP311 pip candidate and MSVC/SDK/redist component identity, then R5 locked npm/Cargo. Existing checksum replay already passed; do not repeat. Candidate patched Windows interpreter needs exact compatibility and security/licence review before selection. R3 remains disarmed. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
