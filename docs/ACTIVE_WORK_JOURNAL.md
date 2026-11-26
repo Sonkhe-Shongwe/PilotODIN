@@ -7,20 +7,20 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | PREPARED |
+| State | READY |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 02a1b915c0b9db294aa50b14ebf4461a9054e450 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
-| Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
+| Scope | Revised C5-A/B development reproducibility and build safety; D prerequisites and P8 release-only allocation. No restricted acquisition, native, owner data, install, packaging, phase activation or release. |
 | Operation ID | C5-SCOPE-RATIONALISATION-20261126 |
-| Operation state | PREPARED: owner approved scope rationalisation; record controlling bounded C5 development/build-safety exit, D prerequisite and P8 release obligation mapping, candidate lock review transcriptions; no activation or score credit. |
-| Intended files | Existing owning specification, phase policy, directive, decision index, handoff and evidence ledger; candidate lock drafts as non-installable review data only. No executable lock, production, workflow or approval marker edits. |
+| Operation state | RECONCILED: owner scope adopted, [controlling allocation](./PILOTODIN_PACKAGE_C_RESOURCE_TRUST_SPEC_2026-11-24.md#c-d08-rationalised-scope-owner-decision-26-november-2026) and [three review projections/checklist](./PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md#owner-approved-c5-delivery-checklist-26-november-2026) published; no execution or source credit. |
+| Intended files | Existing governing specification, phase policy, directive, decision index, handoff, journal and evidence ledger only. Three non-installable review transcriptions embedded in existing C5 spec. Machine safety policy and actual locks unchanged. |
 | Approval | Owner explicitly stated: "I approve the revised C5 scope rationalisation. Prioritise development reproducibility and build safety, consolidate verification infrastructure, retain mandatory native prerequisites for D, and defer release-only packaging and distribution requirements to P8. Existing execution restrictions remain in force." This is a sequencing/acceptance-scope decision, not execution authority. All 19 restricted approvals remain consumed/disarmed. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
 | Pending runs | None. Exact 45807039660 a9f9f75 Ubuntu 139864905469 and Windows 139864906049 SUCCESS 296 tests and CLI refusals each. Prior 45805506550 initial syntax failure retained; 45805589636 corrected 279 each SUCCESS. Prior disarm 085222b full 45801721107/dedicated 45801721259 SUCCESS all restricted jobs skipped. 19 approvals consumed/disarmed. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
-| Recovery action | Reconcile scope allocation and exact candidate data; do not resume obsolete R2 expansion automatically, do not waive use-time security/licence/provenance, do not acquire, build, install or advance phase. |
-| Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
+| Recovery action | Checklist row 4: finalise reviewed exact Python lock definitions from existing graphs, then rows 5–7 standard-tool/development verification and row 8 consolidated closure. No obsolete R2 expansion unless concretely required. Owner clears consumed variables; restricted operations require separate exact authority. |
+| Resume after closure | D only after revised C5 source closure, G2 resolution and separately approved scope; every native prerequisite before its use. P8 release-only obligations retained; installer frozen. |
 
 ## Prior operation
 

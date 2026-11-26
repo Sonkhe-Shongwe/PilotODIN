@@ -99,7 +99,7 @@ For future approved staging: new owned disposable generation, unique exclusive f
 
 Add deterministic preflight unit tests using generated local text/archive fixtures and fake process runner; assert zero side effects on refusal and exact unchanged file digests. Add source-contract tests for PowerShell entrypoint order and old fallback absence, static wrapper/inventory review and both positive/negative profile cases. Integrate into a specifically reviewed existing routine source workflow (P4 synthetic source and Windows parser/synthetic if appropriate) by explicit test/path list; preserve all prior tests, do not activate skipped collector. Existing P1/P3/P4 regressions and Cargo metadata workflow only when matched; use exact commit/job/run IDs, no broad dispatch. On source change, compare locks and approval files byte-for-byte against prior Git tree. Historical disarmed or manual native jobs not executed. No owner-local file reads or actual build inputs acquired. Verify later exact offline wheelhouse install / bundler / native smoke only after fresh explicit approval at appropriate scope; physical acceptance D/P8 unchanged.
 
-C5 source exit is binary under existing §10: all required entrypoints have an explicit safe disposition, no fallback in active/maintained build/preflight routes, early installer refusal, complete independently sourced Windows production and platform test locks plus toolchain and asset/license provenance, direct positive/negative regression coverage, exact matched synthetic CI passing. Measurable: zero missing/unapproved required entries, zero mismatched digests, zero unknown dependency/license disposition for required inputs, zero unreviewed acquisition/build calls in refusal tests, zero lock or native approval marker drift, all planned direct tests and matching source CI success. No numerical build/physical claims until separately evidenced. Cannot claim complete C5 closure while mandatory provenance outstanding; P4 remains 14/20, source 14/17.
+Historical pre-rationalisation C5 exit (superseded as to phase allocation by the owner-approved checklist below): all required entrypoints have an explicit safe disposition, no fallback in active/maintained build/preflight routes, early installer refusal, complete independently sourced Windows production and platform test locks plus toolchain and asset/license provenance, direct positive/negative regression coverage, exact matched synthetic CI passing. Measurable: zero missing/unapproved required entries, zero mismatched digests, zero unknown dependency/license disposition for required inputs, zero unreviewed acquisition/build calls in refusal tests, zero lock or native approval marker drift, all planned direct tests and matching source CI success. No numerical build/physical claims until separately evidenced. Cannot claim complete C5 closure while mandatory provenance outstanding; P4 remains 14/20, source 14/17.
 
 ## 7. Precise unresolved inputs and acquisition boundary
 
@@ -268,3 +268,181 @@ Record actual expiry at terminal reconciliation. Custodian should complete appro
 ### C5-R2 | Owner-aligned existing repository and public evidence route (26 November)
 
 **C-D08-R2-PUBLIC-ROUTE: owner repository strategy reaffirmed.** Continue development in the current public PilotODIN repository. At project completion, the full development repository is intended to become private and a separate public demonstration repository is intended for portfolio/recruitment; those future changes require separate approval at that time. No extra private repo or private vault by default. This supersedes the preferred-private route and mandatory private-custody recommendation in C-D08-R2-RETENTION and C-D08-R2-FINAL, not the independent identity/replay, finite retention, publication safeguards or C-D08 exit criteria. The [focused public licence/evidence review](./C5_PUBLIC_REPOSITORY_LICENCE_EVIDENCE_REVIEW_2026-11-26.md) owns the exact pinned 63-row triage and public evidence handling plan. Public facts/hashes/metadata may be retained in existing Git with bounded reviewed receipts; actual raw notice documents only after exact content/publication rights review, with complete independent replay and durable Git identity. Unknown material stays unpublished and unresolved; a metadata-only projection is not equivalent to raw notice replay and would require separate evidence-method approval before replacing it. No new default private infrastructure or owner path. Actual acquisition remains disarmed pending viable reviewed publication/replay route, exact independent activation expectation and fresh scope approval; no extra repository, visibility or variable changes now. Future repository privacy cannot undo past publication and does not resolve third-party distribution licence obligations. Keep product distribution licence review distinct, particularly PyMuPDF source-test candidate and freezer licence exceptions.
+
+
+## Owner-approved C5 delivery checklist (26 November 2026)
+
+Controlling [C-D08 rationalised scope](./PILOTODIN_PACKAGE_C_RESOURCE_TRUST_SPEC_2026-11-24.md#c-d08-rationalised-scope-owner-decision-26-november-2026) and explicit owner decision supersede prior R1–R9 closure sequencing and the broad exit sentence in §6 **only as to phase allocation**. Earlier evidence is preserved, not re-scored. No new execution grant or machine-policy transition. Use this finite eight-row checklist; do not create additional process gates.
+
+| ID | Required deliverable | State at decision | Evidence needed to close |
+| --- | --- | --- | --- |
+| 1 | Existing npm/Cargo locks | VERIFIED, scoped | Exact existing lock and manifest/tree identities; retain locked resolution/no regeneration, previously verified static graph and guard evidence. Recheck on final source. |
+| 2 | Fail-closed build safeguards | VERIFIED, scoped | Exact 8da7f33 P1/P4 evidence and reviewed entrypoint inventory; keep all restrictions and recheck applicable guards at final source. |
+| 3 | Python dependency lock review drafts | COMPLETE (review only) | Three projections below, 43 + 49 + 49 = 141 profile rows; 68 unique expected artifacts, exact graph/plan match, zero mismatches and duplicate names. |
+| 4 | Finalise three reviewed Python locks | OPEN | Select compatible CP311 target and exact versions/expected hashes including uvicorn standard and freezer role, review marker/extra/ABI and graph against existing evidence and current source intent. Produce actual reviewed lock files only when criteria met; distinguish from installable profile or actual-byte evidence. No placeholder or fake READY. |
+| 5 | Verify development toolchain and compatibility | OPEN | Existing verified source-test toolchain receipts or narrowly scoped missing facts (interpreter, pip, Node/npm and necessary Rust/Cargo source-test identity); existing browser-dev compatibility, no owner migration or private inspection. Production-only MSVC/SDK/NSIS etc allocated to D/P8 by actual use. |
+| 6 | Integrate standard dependency verification | OPEN | Minimal existing preflight integration; pip hash-checking/approved wheelhouse/no-index, npm ci/lock, Cargo --locked in applicable reviewed routes; verify actual inputs and usage rights before authorised consumption. Avoid new custom frameworks; no execution until permitted. Keep all four machine profiles BLOCKED until each original applicable safety requirement is satisfied. |
+| 7 | Verify development and source testing readiness | OPEN | Exact authorised environment/fixture/source-test proof and applicable provenance/licence-use disposition. Scope and source identity explicit; no native, packaging, owner environment, or network action inferred. If necessary verification needs restricted execution, obtain separate exact authority. |
+| 8 | Final regression and C5 closure | OPEN | Exact matched existing regression evidence, checklist audit, zero unresolved mandatory C5-A/B facts, map every remaining native/release requirement to D/P8, no weakened guard or unverified profile claim; award 15/17 only once earned. |
+
+Checklist 3/8 scoped deliverables evidenced at decision (not an official score; two safeguards require final regression recheck). Next complete row 4 using existing pinned graph and draft data; identify concrete missing inputs for rows 5–7, then standard-tool route and consolidated exact verification. Do not make the old R2 hosted-wrapper work an unconditional prerequisite. No repeated broad research, parallel custom framework, live acquisition, model execution, installation, or release. Any earlier conflicting next action is superseded. Old R2 synthetic policy remains disarmed and preserved as optional evidence; reopen only if an identified required operation cannot be safely satisfied using existing standard tooling.
+
+### Exact non-executable candidate lock projections
+
+Reconciled directly against original plan blob `1aa96a7172508f94b2cdc4b7aabd65e3b8f21f89`, source-test graph `6b27407f4b24942c385179bb253f692370f21df7` and production graph `70cdac979b732aadfad0c51d7e159a60840cc1ef`. All name/version/filename/size/wheel SHA256/metadata SHA256 tuples match, unique within each profile. These are commented review transcriptions, **not** final active requirements files, not independently measured hashes for all wheel bytes and not install permission. Existing policy planned paths remain absent. Preserve uvicorn standard extra. No new resolution, package-manager invocation or actual download. Use-time verification and licence disposition remain outstanding; 5/68 prior full archive receipts and 48 diagnostic-only fingerprints remain distinct. Do not treat the 68 plan hashes as 68 actual archive verification receipts.
+
+#### windows-x64-cp311-production-build (43 rows)
+
+```text
+# altgraph==0.17.5 --hash=sha256:f3a22400bce1b0c701683820ac4f3b159cd301acab067c51c653e06961600597
+# annotated-doc==0.0.7 --hash=sha256:6bc31bbbec6dfaaedc1676dbc11dbda96fe22a2b5c400e9ebad113fec44a9dc6
+# annotated-types==0.8.0 --hash=sha256:f072f4d804ea359e4eaf198b1af7a8b0943881a87f31bb764f8bf219bb9419e0
+# anyio==4.16.0 --hash=sha256:c66ae634e0b8228396b801741beb3294326d4b6102f7bba4041c0dfb58c29026
+# charset-normalizer==3.5.3 --hash=sha256:cd5422fd4f8a7859846c9289e310dd95c0d1890c31819667942753e510f88f69
+# click==8.5.1 --hash=sha256:8bb5376d2006950386f8c6427613334a2acadc5f559cb80e638d00b4df957e37
+# cloudpickle==3.1.3 --hash=sha256:1654f4f18e416447210a63c5c25a135d65a292156aa5fa519dfa4baf7726dddb
+# et-xmlfile==2.0.0 --hash=sha256:7a91720bc756843502c3b7504c77b8fe44217c85c537d85037f0f536151b2caa
+# fastapi==0.165.0 --hash=sha256:896f48462042bb4f162147eb8fac7e858753dc1f486765709baf105d70e4fc5b
+# h11==0.16.0 --hash=sha256:63cf8bbe7522de3bf65932fda1d9c2772064ffb3dae62d55932da54b31cb6c86
+# httptools==0.9.0 --hash=sha256:c4fa57d3c31889722f64bfa785545a5e603a893b6f29ac1a41bfa830abeaefd5
+# idna==3.20 --hash=sha256:ab7ae7122974553370f0bdb919e1a960b2cd1bc1ef0276416d896db81c14582c
+# joblib==1.6.0 --hash=sha256:3dbbf9f6e4b592a2357b854608e980fe6390d131d7a82f011a377ef2ebef7aba
+# narwhals==2.29.0 --hash=sha256:1c69b3dc30240f6e848c5a673cafc86affa44184ecce721e25b7194663ad10dc
+# numpy==2.4.6 --hash=sha256:1e254a00cdf42b1e4d5b3d68d33af63268d41340d8885df2ab6470f2e1500147
+# openpyxl==3.1.5 --hash=sha256:5282c12b107bffeef825f4617dc029afaf41d0ea60823bbb665ef3079dc79de2
+# opentelemetry-api==1.45.2 --hash=sha256:2cbd737377e710ee740d261c94e93fa0f08e6d037c18f17513cc0a2d94479a34
+# packaging==26.4 --hash=sha256:81383611a09c1bc0b08b76e0fd5829d7c6824c65b27a6aee339da133f4233ea2
+# pandas==2.3.3 --hash=sha256:f086f6fe114e19d92014a1966f43a3e62285109afe874f067f5abbdcbb10e59c
+# pefile==2024.8.26 --hash=sha256:76f8b485dcd3b1bb8166f1128d395fa3d87af26360c2358fb75b80019b957c6f
+# pillow==13.0.0 --hash=sha256:d7710eb676e9bb68965cb045be0d333b4c0d7f9dfbaa7fbf121385b1588683d3
+# pydantic==2.14.4 --hash=sha256:653a2ad9f6d8858529c77c72717d0ea991d6c6837fe683246b2f4b2bbfc3fadc
+# pydantic-core==2.50.5 --hash=sha256:d4ebf349b1b60049e80df5d9ea6725b1b7e434a7d006474b0f664fa72a6b3c75
+# pyinstaller==6.22.3 --hash=sha256:500bd58c7bf7e584a8435adccbd763a0b918d5c12b08d74ff50fd79b2915458b
+# pyinstaller-hooks-contrib==2026.9 --hash=sha256:fb3e67dd64122561724c48ad0366ac9e8c16e638b63bf7d85de03bf3fdbf06c3
+# python-dateutil==4.0.0 --hash=sha256:a5e246f79eb80475e691bf93862cead98decd8a498cf53ba0516fcdc0f50dc1c
+# python-dotenv==1.2.4 --hash=sha256:42269a8a5b3fd54ffa6f3d84b18abed50064717576b4ecf03dc4a55d8aa04fdc
+# python-multipart==0.0.34 --hash=sha256:ebacd224bd686eee2f9aa1066a657affe07435a185834e05e5235e2e59173e91
+# pytz==2026.6 --hash=sha256:7fed3fee8fd6bd4a2b7b75a8d56021d0624127bf69bd5691f115db929ac570b3
+# pywin32-ctypes==0.2.3 --hash=sha256:8a1513379d709975552d202d942d9837758905c8d01eb82b8bcc30918929e7b8
+# pyyaml==6.0.4 --hash=sha256:0db75f402e99c25239003a499c214a61947b4ef5312af34711d4c63e5c179318
+# reportlab==4.5.1 --hash=sha256:06fce8cb56c83307cfa4909cdf4e6a2ddbb44e5d6ef4d2edca896d7e9769f091
+# scikit-learn==1.9.1 --hash=sha256:220fa18152852a5ce29c49e1eaba9d44ec44631cd2e5cf65f5a40eafa5ab3412
+# scipy==1.17.1 --hash=sha256:d30e57c72013c2a4fe441c2fcb8e77b14e152ad48b5464858e07e2ad9fbfceff
+# setuptools==84.2.1 --hash=sha256:ca140b45d5325a9478f880e351484f62fef15f336462e449ca0c03c873d589c2
+# starlette==1.10.0 --hash=sha256:478c0ab3b4ced6e82719849c118fa406f0278a3499c1a898cd15cd31bdc38ce4
+# threadpoolctl==3.8.0 --hash=sha256:f1b49c82704d50f13ffae019c727b0fa4f6791a58f48f06a09c45face1be66da
+# typing-extensions==4.16.0 --hash=sha256:481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8
+# typing-inspection==0.4.5 --hash=sha256:bc210535442b39e1bf2805e0c7a17dfd6a4ace760c84c7f7d16245d23a6b1c39
+# tzdata==2026.6 --hash=sha256:0a10eec6e13ef16b627fabed9a5f2ba61a62b1c67f327305f4e7e412a70b4aec
+# uvicorn[standard]==0.54.0 --hash=sha256:505bdb0f318731d45f1f712071fc781a8981f6847a31c902c9f5e652d4f67faf
+# watchfiles==1.3.0 --hash=sha256:1acabde19b67e673274e89a04d613b7fb1f122e2c4b8ec9a581e59c149264b61
+# websockets==17.4 --hash=sha256:e4beaef2f4796558e738e15ca0b8802e35f419a9fa374a978e41706f43c48b26
+```
+
+#### windows-x64-cp311-source-test (49 rows)
+
+```text
+# annotated-doc==0.0.7 --hash=sha256:6bc31bbbec6dfaaedc1676dbc11dbda96fe22a2b5c400e9ebad113fec44a9dc6
+# annotated-types==0.8.0 --hash=sha256:f072f4d804ea359e4eaf198b1af7a8b0943881a87f31bb764f8bf219bb9419e0
+# anyio==4.16.0 --hash=sha256:c66ae634e0b8228396b801741beb3294326d4b6102f7bba4041c0dfb58c29026
+# certifi==2026.11.20 --hash=sha256:7422df25243767b9877031a2248cb14d09ddac9beee846f4cef3d5c9191d488f
+# charset-normalizer==3.5.3 --hash=sha256:cd5422fd4f8a7859846c9289e310dd95c0d1890c31819667942753e510f88f69
+# click==8.5.1 --hash=sha256:8bb5376d2006950386f8c6427613334a2acadc5f559cb80e638d00b4df957e37
+# cloudpickle==3.1.3 --hash=sha256:1654f4f18e416447210a63c5c25a135d65a292156aa5fa519dfa4baf7726dddb
+# colorama==0.4.6 --hash=sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6
+# et-xmlfile==2.0.0 --hash=sha256:7a91720bc756843502c3b7504c77b8fe44217c85c537d85037f0f536151b2caa
+# fastapi==0.165.0 --hash=sha256:896f48462042bb4f162147eb8fac7e858753dc1f486765709baf105d70e4fc5b
+# h11==0.16.0 --hash=sha256:63cf8bbe7522de3bf65932fda1d9c2772064ffb3dae62d55932da54b31cb6c86
+# httpcore==1.0.9 --hash=sha256:2d400746a40668fc9dec9810239072b40b4484b640a8c38fd654a024c7a1bf55
+# httpcore2==2.16.2 --hash=sha256:16051ae2a42f776007543f32de9349a317b23d2cbb4e1456b4bac0e88b87419a
+# httptools==0.9.0 --hash=sha256:c4fa57d3c31889722f64bfa785545a5e603a893b6f29ac1a41bfa830abeaefd5
+# httpx==0.28.1 --hash=sha256:d909fcccc110f8c7faf814ca82a9a4d816bc5a6dbfea25d6591d6985b8ba59ad
+# httpx2==2.16.2 --hash=sha256:f05c13aade4c45dbf1c9060647a1058f0acad62398fad96e741269edb33d46f5
+# idna==3.20 --hash=sha256:ab7ae7122974553370f0bdb919e1a960b2cd1bc1ef0276416d896db81c14582c
+# iniconfig==2.3.1 --hash=sha256:9121e2c1fdb355232495be3194c8dfe87ccc2d5dee45947b78e68f499790d7a7
+# joblib==1.6.0 --hash=sha256:3dbbf9f6e4b592a2357b854608e980fe6390d131d7a82f011a377ef2ebef7aba
+# narwhals==2.29.0 --hash=sha256:1c69b3dc30240f6e848c5a673cafc86affa44184ecce721e25b7194663ad10dc
+# numpy==2.4.6 --hash=sha256:1e254a00cdf42b1e4d5b3d68d33af63268d41340d8885df2ab6470f2e1500147
+# openpyxl==3.1.5 --hash=sha256:5282c12b107bffeef825f4617dc029afaf41d0ea60823bbb665ef3079dc79de2
+# opentelemetry-api==1.45.2 --hash=sha256:2cbd737377e710ee740d261c94e93fa0f08e6d037c18f17513cc0a2d94479a34
+# packaging==26.4 --hash=sha256:81383611a09c1bc0b08b76e0fd5829d7c6824c65b27a6aee339da133f4233ea2
+# pandas==2.3.3 --hash=sha256:f086f6fe114e19d92014a1966f43a3e62285109afe874f067f5abbdcbb10e59c
+# pillow==13.0.0 --hash=sha256:d7710eb676e9bb68965cb045be0d333b4c0d7f9dfbaa7fbf121385b1588683d3
+# pluggy==1.7.0 --hash=sha256:7dd7b0d8832ba3cb632c306926ded123429211b83641b35dc5c41ad2d34f9bec
+# pydantic==2.14.4 --hash=sha256:653a2ad9f6d8858529c77c72717d0ea991d6c6837fe683246b2f4b2bbfc3fadc
+# pydantic-core==2.50.5 --hash=sha256:d4ebf349b1b60049e80df5d9ea6725b1b7e434a7d006474b0f664fa72a6b3c75
+# pygments==2.21.0 --hash=sha256:2363c69b61c4a97c838da3b130dcd6468f4848992b21a82f2a63ec34377137d9
+# pymupdf==1.28.2 --hash=sha256:ebd244918798502d7b4504c90410d1711a4d7675a32584ca30f1bab419ecbffe
+# pytest==9.2.0 --hash=sha256:07acdcf88ec174f907dc01af70bf52d49b014bbab03faeeade31c96b18c2e588
+# python-dateutil==4.0.0 --hash=sha256:a5e246f79eb80475e691bf93862cead98decd8a498cf53ba0516fcdc0f50dc1c
+# python-dotenv==1.2.4 --hash=sha256:42269a8a5b3fd54ffa6f3d84b18abed50064717576b4ecf03dc4a55d8aa04fdc
+# python-multipart==0.0.34 --hash=sha256:ebacd224bd686eee2f9aa1066a657affe07435a185834e05e5235e2e59173e91
+# pytz==2026.6 --hash=sha256:7fed3fee8fd6bd4a2b7b75a8d56021d0624127bf69bd5691f115db929ac570b3
+# pyyaml==6.0.4 --hash=sha256:0db75f402e99c25239003a499c214a61947b4ef5312af34711d4c63e5c179318
+# reportlab==4.5.1 --hash=sha256:06fce8cb56c83307cfa4909cdf4e6a2ddbb44e5d6ef4d2edca896d7e9769f091
+# scikit-learn==1.9.1 --hash=sha256:220fa18152852a5ce29c49e1eaba9d44ec44631cd2e5cf65f5a40eafa5ab3412
+# scipy==1.17.1 --hash=sha256:d30e57c72013c2a4fe441c2fcb8e77b14e152ad48b5464858e07e2ad9fbfceff
+# starlette==1.10.0 --hash=sha256:478c0ab3b4ced6e82719849c118fa406f0278a3499c1a898cd15cd31bdc38ce4
+# threadpoolctl==3.8.0 --hash=sha256:f1b49c82704d50f13ffae019c727b0fa4f6791a58f48f06a09c45face1be66da
+# truststore==0.10.5 --hash=sha256:9aaaedaefaf06d8b206278cf8b5012bc897f485a874503501e12d776df78951c
+# typing-extensions==4.16.0 --hash=sha256:481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8
+# typing-inspection==0.4.5 --hash=sha256:bc210535442b39e1bf2805e0c7a17dfd6a4ace760c84c7f7d16245d23a6b1c39
+# tzdata==2026.6 --hash=sha256:0a10eec6e13ef16b627fabed9a5f2ba61a62b1c67f327305f4e7e412a70b4aec
+# uvicorn[standard]==0.54.0 --hash=sha256:505bdb0f318731d45f1f712071fc781a8981f6847a31c902c9f5e652d4f67faf
+# watchfiles==1.3.0 --hash=sha256:1acabde19b67e673274e89a04d613b7fb1f122e2c4b8ec9a581e59c149264b61
+# websockets==17.4 --hash=sha256:e4beaef2f4796558e738e15ca0b8802e35f419a9fa374a978e41706f43c48b26
+```
+
+#### linux-x64-cp311-source-test (49 rows)
+
+```text
+# annotated-doc==0.0.7 --hash=sha256:6bc31bbbec6dfaaedc1676dbc11dbda96fe22a2b5c400e9ebad113fec44a9dc6
+# annotated-types==0.8.0 --hash=sha256:f072f4d804ea359e4eaf198b1af7a8b0943881a87f31bb764f8bf219bb9419e0
+# anyio==4.16.0 --hash=sha256:c66ae634e0b8228396b801741beb3294326d4b6102f7bba4041c0dfb58c29026
+# certifi==2026.11.20 --hash=sha256:7422df25243767b9877031a2248cb14d09ddac9beee846f4cef3d5c9191d488f
+# charset-normalizer==3.5.3 --hash=sha256:2a6f937e0b70133d1f826d0a253331b6fe1a4c874808cc12e16f2fb8177042f4
+# click==8.5.1 --hash=sha256:8bb5376d2006950386f8c6427613334a2acadc5f559cb80e638d00b4df957e37
+# cloudpickle==3.1.3 --hash=sha256:1654f4f18e416447210a63c5c25a135d65a292156aa5fa519dfa4baf7726dddb
+# et-xmlfile==2.0.0 --hash=sha256:7a91720bc756843502c3b7504c77b8fe44217c85c537d85037f0f536151b2caa
+# fastapi==0.165.0 --hash=sha256:896f48462042bb4f162147eb8fac7e858753dc1f486765709baf105d70e4fc5b
+# h11==0.16.0 --hash=sha256:63cf8bbe7522de3bf65932fda1d9c2772064ffb3dae62d55932da54b31cb6c86
+# httpcore==1.0.9 --hash=sha256:2d400746a40668fc9dec9810239072b40b4484b640a8c38fd654a024c7a1bf55
+# httpcore2==2.16.2 --hash=sha256:16051ae2a42f776007543f32de9349a317b23d2cbb4e1456b4bac0e88b87419a
+# httptools==0.9.0 --hash=sha256:b68fb053b37c258a473ab67f4965c3b439500dc160fe364667035a6833eaf50a
+# httpx==0.28.1 --hash=sha256:d909fcccc110f8c7faf814ca82a9a4d816bc5a6dbfea25d6591d6985b8ba59ad
+# httpx2==2.16.2 --hash=sha256:f05c13aade4c45dbf1c9060647a1058f0acad62398fad96e741269edb33d46f5
+# idna==3.20 --hash=sha256:ab7ae7122974553370f0bdb919e1a960b2cd1bc1ef0276416d896db81c14582c
+# iniconfig==2.3.1 --hash=sha256:9121e2c1fdb355232495be3194c8dfe87ccc2d5dee45947b78e68f499790d7a7
+# joblib==1.6.0 --hash=sha256:3dbbf9f6e4b592a2357b854608e980fe6390d131d7a82f011a377ef2ebef7aba
+# narwhals==2.29.0 --hash=sha256:1c69b3dc30240f6e848c5a673cafc86affa44184ecce721e25b7194663ad10dc
+# numpy==2.4.6 --hash=sha256:89cd468399cfd2504718f0ba50e410dca55a170b61a02ad92bb18c8a65186e93
+# openpyxl==3.1.5 --hash=sha256:5282c12b107bffeef825f4617dc029afaf41d0ea60823bbb665ef3079dc79de2
+# opentelemetry-api==1.45.2 --hash=sha256:2cbd737377e710ee740d261c94e93fa0f08e6d037c18f17513cc0a2d94479a34
+# packaging==26.4 --hash=sha256:81383611a09c1bc0b08b76e0fd5829d7c6824c65b27a6aee339da133f4233ea2
+# pandas==2.3.3 --hash=sha256:b98560e98cb334799c0b07ca7967ac361a47326e9b4e5a7dfb5ab2b1c9d35a1b
+# pillow==13.0.0 --hash=sha256:a625df9a2a5597fa5e5266e01aefc82604bb85d291e3547981e863560d75da6c
+# pluggy==1.7.0 --hash=sha256:7dd7b0d8832ba3cb632c306926ded123429211b83641b35dc5c41ad2d34f9bec
+# pydantic==2.14.4 --hash=sha256:653a2ad9f6d8858529c77c72717d0ea991d6c6837fe683246b2f4b2bbfc3fadc
+# pydantic-core==2.50.5 --hash=sha256:488319076ec92908b91fc6265ce761f1d78748f69f85518564fd16bf333e1b70
+# pygments==2.21.0 --hash=sha256:2363c69b61c4a97c838da3b130dcd6468f4848992b21a82f2a63ec34377137d9
+# pymupdf==1.28.2 --hash=sha256:397d6715c1f0df7548a92d0afd8ce370fc48fa47aeefac16be2bc04a16a8227f
+# pytest==9.2.0 --hash=sha256:07acdcf88ec174f907dc01af70bf52d49b014bbab03faeeade31c96b18c2e588
+# python-dateutil==4.0.0 --hash=sha256:a5e246f79eb80475e691bf93862cead98decd8a498cf53ba0516fcdc0f50dc1c
+# python-dotenv==1.2.4 --hash=sha256:42269a8a5b3fd54ffa6f3d84b18abed50064717576b4ecf03dc4a55d8aa04fdc
+# python-multipart==0.0.34 --hash=sha256:ebacd224bd686eee2f9aa1066a657affe07435a185834e05e5235e2e59173e91
+# pytz==2026.6 --hash=sha256:7fed3fee8fd6bd4a2b7b75a8d56021d0624127bf69bd5691f115db929ac570b3
+# pyyaml==6.0.4 --hash=sha256:622aa875fa6533f25fedcffe23079357d65a690d462200afed5d8e9d0e01ebee
+# reportlab==4.5.1 --hash=sha256:06fce8cb56c83307cfa4909cdf4e6a2ddbb44e5d6ef4d2edca896d7e9769f091
+# scikit-learn==1.9.1 --hash=sha256:52a0703bbc07ad27f560fa63fa68e4c54dd735bfbbf65b4dd3c225dc7547b6df
+# scipy==1.17.1 --hash=sha256:43af8d1f3bea642559019edfe64e9b11192a8978efbd1539d7bc2aaa23d92de4
+# starlette==1.10.0 --hash=sha256:478c0ab3b4ced6e82719849c118fa406f0278a3499c1a898cd15cd31bdc38ce4
+# threadpoolctl==3.8.0 --hash=sha256:f1b49c82704d50f13ffae019c727b0fa4f6791a58f48f06a09c45face1be66da
+# truststore==0.10.5 --hash=sha256:9aaaedaefaf06d8b206278cf8b5012bc897f485a874503501e12d776df78951c
+# typing-extensions==4.16.0 --hash=sha256:481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8
+# typing-inspection==0.4.5 --hash=sha256:bc210535442b39e1bf2805e0c7a17dfd6a4ace760c84c7f7d16245d23a6b1c39
+# tzdata==2026.6 --hash=sha256:0a10eec6e13ef16b627fabed9a5f2ba61a62b1c67f327305f4e7e412a70b4aec
+# uvicorn[standard]==0.54.0 --hash=sha256:505bdb0f318731d45f1f712071fc781a8981f6847a31c902c9f5e652d4f67faf
+# uvloop==0.23.0 --hash=sha256:ab17b3a8aa754be0de0e397f7b95f13b14e56f077a4c6ae295e3d4afd199b325
+# watchfiles==1.3.0 --hash=sha256:b5768b49e426fd5b550b012c866db347cdf15c398ef98dc557b6e6b72fa74cd1
+# websockets==17.4 --hash=sha256:cebad8f4796248b91fc2168515e507e5cb6b663a32befd09f3b1e7920acdcb1a
+```

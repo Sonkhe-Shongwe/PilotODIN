@@ -4,6 +4,10 @@
 
 P4 is the active phase. The dated entries preserve decisions and results as recorded at the time. The active work and exact permission state are maintained in the [migration handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md) and [active journal](./ACTIVE_WORK_JOURNAL.md); official points remain in the [phase ledger](./PROJECT_STATUS_CURRENT.md).
 
+## 26 November 2026 | Owner decision on C5 scope rationalisation
+
+"I approve the revised C5 scope rationalisation. Prioritise development reproducibility and build safety, consolidate verification infrastructure, retain mandatory native prerequisites for D, and defer release-only packaging and distribution requirements to P8. Existing execution restrictions remain in force." [Controlling allocation](./PILOTODIN_PACKAGE_C_RESOURCE_TRUST_SPEC_2026-11-24.md#c-d08-rationalised-scope-owner-decision-26-november-2026) and [finite C5 delivery checklist](./PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md#owner-approved-c5-delivery-checklist-26-november-2026). C5 now closes on development reproducibility and build safety; D retains every prerequisite for the exact native/physical evidence and P8 owns release-only packaging/distribution. No changes to six P4 acceptance checks, G2 method, P5–P8 authority, permitted roots, original-data guarantees, required use-time input integrity or licence obligations. All four machine profiles remain blocked until actually qualified. No installer, acquisition, native execution, owner access or release authority. Existing historical full release requirements remain obligations, not completed evidence. No score increase from this decision.
+
 ## 13 November 2026 | Owner decision on Gate C
 
 The owner approved moving **P4-R01 / Gate C** from P4 engineering closure to the approval of a specific real-world prediction use. This decision supersedes the 9 November bundled deferral decision only for Gate C.
