@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | READY |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 15f2a106efb71662be2c0941ec95871d88af04f5 |
+| Observed starting HEAD | 630a5a787915b35e05f8ba762ec7064196a19da2 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
-| Operation ID | C5-MISSING-HOSTED-DRIVER-20261126 |
-| Operation state | RECONCILED: exact e6b2321 run 45757622977 attempt 1 SUCCESS, Ubuntu offline 139699864673 18+13=31 tests and both direct CLI refusals PASS, collect 139699865661 and retrieve 139699865858 SKIPPED. Residual cap enforced in schema-2 producer and independent replay; exact ZIP cap before retrieval, inert marker/event/claim checks. All live gates false. |
-| Intended files | New qa/c5_wheel_metadata/wheel_missing_hosted.py, test_wheel_missing_hosted.py, dedicated c5-wheel-missing-hosted.yml; journal/handoff/ledger. No existing gates changed. |
+| Operation ID | C5-PRIOR-NOTICE-PRESERVATION-20261126 |
+| Operation state | PREPARED: source-only disarmed notice preservation workflow; independently replay exact historical artifact and emit five canonical evidence documents through bounded base64 job records for subsequent reviewed Git persistence, then offline verification. No actual retrieval/publication authorized. |
+| Intended files | New qa/c5_wheel_metadata/wheel_prior_notice_preservation.py, test_wheel_prior_notice_preservation.py, dedicated .github/workflows/c5-wheel-prior-notice-preservation.yml, journal/handoff/ledger. Existing historical pins and gates unchanged. |
 | Approval | Receipt-only approval consumed/disarmed; sixteen total restricted approvals consumed/disarmed (six native, seven metadata, one synthetic transfer, one actual wheel attempt, one receipt-only retrieval). No additional retrieval or wheel acquisition authorized. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | None for this operation. |
+| Pending runs | None issued; dedicated offline review only, restricted retrieval false. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
-| Recovery action | Prioritize durable preservation of the five prior raw notice payloads before artifact 15076022558 expires 2026-12-03T00:31:22Z. Prepare separately gated preservation source or accept owner-supplied receipt; one additional exact 20475-byte receipt ZIP retrieval and reviewed notice-only persistence would require explicit approval. No wheel replay. Missing-only driver source verified, but exact sixth-wheel root predicate still unknown. Before further collection obtain fresh explicit approval for 63 exact GETs max 225397605 body bytes, 15s/request, 25min job, no wheel redirects/retries, stop first refusal; one receipt-only artifact upload/retrieval max bundle 68457827, ZIP 69506403, 7-day retention, 6min verifier. Prepare exact arm/marker-only activation and disarm even on refusal. No actual requests, installation, execution or legal clearance authorized. |
+| Recovery action | Verify offline exact CI and prepare approval for one existing 20475-byte artifact retrieval and bounded publication of five canonical evidence documents (10909 bytes; 5241 raw notice bytes) in Git with independent offline replay. No wheel requests or retry. Artifact expires 2026-12-03T00:31:22Z. Separate 63-wheel collection approval still required. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
