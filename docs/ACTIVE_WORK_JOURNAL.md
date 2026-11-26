@@ -7,17 +7,17 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 02456c2994ba28658ff2c0eb40cbc5316bbd26f9 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
 | Operation ID | C5-PRIOR-NOTICE-PRESERVATION-ONCE-20261126 |
-| Operation state | ARM PREPARED: exact reviewed preservation driver and workflow armed with marker-only trigger; marker absent, verify arm HEAD and zero runs before activation. |
+| Operation state | CONSUMED: exact 7ba89ac run 45758394105 attempt 1 SUCCESS, preserve-notices 139702346497 recovered five verified evidence documents (10909 bytes including 5241 original notice bytes); canonical envelope 15779 bytes, expected SHA256 24d5b5ff7644e3f4765e91afbf7b351ecda328d7aa6a8d961dc9a8847fc4cc56. Persist envelope and restore original disabled source/workflow/remove marker in this checkpoint; independent offline replay pending. |
 | Intended files | New qa/c5_wheel_metadata/wheel_prior_notice_preservation.py, test_wheel_prior_notice_preservation.py, dedicated .github/workflows/c5-wheel-prior-notice-preservation.yml, journal/handoff/ledger. Existing historical pins and gates unchanged. |
-| Approval | One exact metadata read and one ZIP retrieval of artifact 15076022558, 20475 bytes, pinned SHA256, at most one service redirect, no retries; emit five canonical evidence documents 10909 bytes including 5241 raw notice bytes and publish one canonical repository envelope <=32768 bytes, offline replay. No new wheel GET or artifact upload, install, execution or legal clearance. Sixteen prior approvals consumed/disarmed. |
+| Approval | Seventeenth restricted approval consumed; disarm/persisted replay pending verification. No new wheel requests or additional retrieval authorized. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | None; verify arm commit and no matching run before marker activation. |
+| Pending runs | Actual run terminal SUCCESS; exact disarm and persisted replay CI pending. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
 | Recovery action | Reconcile exact attempt and validate five documents against prior hashes, persist canonical envelope, restore exact disarmed source/workflow and remove marker even on failure. No retry; separate 63-wheel acquisition approval required. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |

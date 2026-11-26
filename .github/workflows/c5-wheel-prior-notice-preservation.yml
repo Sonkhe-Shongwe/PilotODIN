@@ -3,12 +3,14 @@ on:
   push:
     branches: [feature/live-dev-workspace-20261023]
     paths:
-      - qa/c5_wheel_metadata/APPROVAL_WHEEL_PRIOR_NOTICE_PRESERVATION_20261126.txt
+      - qa/c5_wheel_metadata/wheel_prior_notice_preservation.py
+      - qa/c5_wheel_metadata/test_wheel_prior_notice_preservation.py
+      - .github/workflows/c5-wheel-prior-notice-preservation.yml
+      - qa/c5_wheel_metadata/wheel_prior_notice_preservation_45729307962.json
 permissions:
   contents: read
 jobs:
   offline-review:
-    if: ${{ false }}
     runs-on: ubuntu-24.04
     timeout-minutes: 4
     steps:
@@ -18,7 +20,7 @@ jobs:
           persist-credentials: false
       - name: Verify fixture and exact persisted evidence if present
         run: |
-          test "$(git hash-object qa/c5_wheel_metadata/wheel_prior_notice_preservation.py)" = "1f5f9009eb77f46b3ed348fe8dca6f1a1d9e91bb"
+          test "$(git hash-object qa/c5_wheel_metadata/wheel_prior_notice_preservation.py)" = "8bc7159fe3b0adb760aa2e510f5c76afe8231403"
           python3 -I -B qa/c5_wheel_metadata/test_wheel_prior_notice_preservation.py
           if test -e qa/c5_wheel_metadata/wheel_prior_notice_preservation_45729307962.json; then python3 -I -B qa/c5_wheel_metadata/wheel_prior_notice_preservation.py --verify-preserved; fi
           set +e
@@ -28,7 +30,7 @@ jobs:
           test "$code" = 1
           test "$result" = 'FRESH_APPROVAL_REQUIRED: prior notice preservation disabled'
   preserve-notices:
-    if: ${{ github.run_attempt == 1 && github.event.head_commit.message == 'C5-PRIOR-NOTICE-PRESERVATION-ONCE-20261126 owner approved five prior notice documents only' && github.event.forced == false && github.event.created == false && github.event.deleted == false }}
+    if: ${{ false }}
     runs-on: ubuntu-24.04
     timeout-minutes: 4
     permissions:
@@ -43,6 +45,6 @@ jobs:
       - name: Exact prior notice evidence retrieval
         run: python3 -I -B qa/c5_wheel_metadata/wheel_prior_notice_preservation.py --retrieve
         env:
-          C5_DRIVER_BLOB: 1f5f9009eb77f46b3ed348fe8dca6f1a1d9e91bb
+          C5_DRIVER_BLOB: 8bc7159fe3b0adb760aa2e510f5c76afe8231403
           C5_APPROVED_ONCE: C5-PRIOR-NOTICE-PRESERVATION-ONCE-20261126
           GH_TOKEN: ${{ github.token }}
