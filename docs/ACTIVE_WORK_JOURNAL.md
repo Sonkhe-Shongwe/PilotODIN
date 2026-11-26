@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | VERIFYING |
+| State | READY |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 85bb66b2bd630900cada2c171c83ce0f8ac36eae |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
 | Operation ID | C5-R2-SHARED-SETTLEMENT-20261126 |
-| Operation state | PUBLISHED in this checkpoint: shared schema-3 policy-bound settlement core, separate inert Replay frontdoor, independently pinned prior-five evidence and exact remaining plan. No live hosted entrypoint or historical changes. |
+| Operation state | RECONCILED: exact 11dd669 run 45761837913 SUCCESS; Ubuntu 139713413227 and Windows 139713413439 each 125 existing +25 new tests, five direct CLI refusals, historical pins, remaining 63 rows and five preserved evidence documents replay PASS. Shared core and inert fixture frontdoor only; no hosted activation. All 18 prior approvals consumed/disarmed. |
 | Intended files | qa/c5_wheel_metadata/wheel_settlement_core.py, wheel_settlement_fixture.py, test_wheel_settlement_core.py, .github/workflows/c5-wheel-settlement-core-review.yml, journal/handoff/ledger/spec. |
 | Approval | Routine source/synthetic CI only. All 18 restricted approvals consumed/disarmed; no actual wheels, retrieval, installation, owner tree or execution. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | Dedicated exact Ubuntu/Windows synthetic CI pending reconciliation. |
+| Pending runs | None; exact final synthetic CI reconciled. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
-| Recovery action | Implement producer and independent replay once, explicit residual caps and accepted totals, exact metadata policy digest binding, safe refusal allowlist, prior-five evidence identity and residual reconciliation. Preserve inspector pre-decompression reservation through public counters; no historical private evidence counters. Fixture-only public frontdoor; no network path or activation. Exact CI before separately disabled hosted adapter. |
+| Recovery action | Next C5-R2 source-only separately versioned disabled hosted adapter using the shared core producer/verifier (not a third copy); add explicit hosted scope only behind independently pinned exact plan/caps/policy and exact new one-use gate, no generic live flag. Reuse bounded artifact export/replay primitives with schema-3 policy manifest, exact parent/event/marker/attempt/job and no mutation before authorisation. Test synthetic artifact/gate refusals and first-refusal behavior, then resource and retention review before any fresh R3 proposal. No live requests/activation, no old pin or approval reuse. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
