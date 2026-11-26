@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | PREPARED |
+| State | READY |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | c118e5dc812bb186fd60a53ecb2dd5792d3d4c3b |
+| Observed starting HEAD | 3c1155fabd286c303d5ff44b73306e7045df6c86 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | Revised C5-A/B development reproducibility and build safety; D prerequisites and P8 release-only allocation. No restricted acquisition, native, owner data, install, packaging, phase activation or release. |
 | Operation ID | C5-PDFIUM-DETACHED-IMPLEMENTATION-20261126 |
-| Operation state | PREPARED detached source-only candidate; no live ref advance to candidate, no workflow execution. |
-| Intended files | QA-only PDF inspection helper, 19 direct callers, indirect guards, test requirements and two locks, current preflight/policy and historical/current projection tests; no production/workflow changes. |
-| Approval | Owner: "I approve the detached, disarmed implementation of the reviewed PDFium test-only migration proposal. Preserve all existing acceptance criteria, historical evidence and production functionality. No live branch cutover, acquisition, installation, CI execution, native execution or release is authorised. Proceed." Design implementation only; 24 prior restricted approvals remain consumed. |
+| Operation state | RECONCILED detached implementation at 605abd0c25f7cf43ecb21bd1e7e3d96290175f03; 29 paths, 19 known direct callers migrated, literal execution refusal, zero CI. No active cutover or equivalence. |
+| Intended files | Documentation-only completion checkpoint. Next read-only candidate review, linkage/use disposition and bounded disarmed equivalence proposal. No consumption or activation. |
+| Approval | Owner: "I approve the detached, disarmed implementation of the reviewed PDFium test-only migration proposal. Preserve all existing acceptance criteria, historical evidence and production functionality. No live branch cutover, acquisition, installation, CI execution, native execution or release is authorised. Proceed." Detached preparation completed at authorised scope only; no transferable approval. 24 prior restricted approvals remain consumed and disarmed. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
 | Pending runs | None. #45840503532 acquisition SUCCESS; #45840727452 rehearsal SUCCESS and acquisition SKIPPED. |
-| Unpublished work | Owner-local tree uninspected; detached draft a64306a preserved historically, reviewed overlay published with added synthetic coverage. |
-| Recovery action | Review [exact migration proposal](./PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md#26-november--c5-exact-pdfium-test-only-migration-proposal-and-finite-equivalence-boundary). Recover detached commit by operation ID and parent; do not advance ref to it. Verify static diff and retain exact candidate SHA, unresolved compatibility and no-run evidence in documentation checkpoint. |
+| Unpublished work | Final detached candidate 605abd0c25f7cf43ecb21bd1e7e3d96290175f03 preserved by exact Git identity and link; no ref advanced to it. Owner-local tree untouched/uninspected. Earlier detached historical work retained. |
+| Recovery action | [detached disarmed implementation checkpoint](./PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md#26-november--c5-detached-disarmed-pdfium-migration-implementation-prepared). Recover final detached candidate 605abd0c25f7cf43ecb21bd1e7e3d96290175f03; intermediate commits are not activation targets. Review exact source and use prerequisites, then finite separately approved equivalence proposal. No acquisition/install/execution or live cutover. |
 | Resume after closure | D only after revised C5 source closure, G2 resolution and separately approved scope; every native prerequisite before its use. P8 release-only obligations retained; installer frozen. |
 
 ## Prior operation
