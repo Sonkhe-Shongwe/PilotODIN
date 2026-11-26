@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | VERIFYING |
+| State | BLOCKED |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 83d8e1d8ab52fed386eb0feed6ba2891606ca171 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
 | Operation ID | C5-WHEEL-DRIVER-EXCLUSIVE-ARM-20261126 |
-| Operation state | PUBLISHED/VERIFYING: exact driver-only arm design, original adapter source pin preserved; process-local gate restore and complete inert runtime Git/event claim test added. All real gates remain false. Exact offline CI pending. |
+| Operation state | RECONCILED: exact hardened QA 6ccc04bc3cf7393edc537244c2d5d66c2aeeb15d run 45726661197 attempt 1 SUCCESS; offline 139598130008 27+16=43 tests and three CLI refusals PASS; collect-once 139598131739 and retrieve-once 139598131840 SKIPPED. All real wheel gates false. Blocked on fresh actual acquisition approval. |
 | Intended files | Existing wheel_acquisition_driver.py, test_wheel_acquisition_driver.py and dedicated c5-wheel-hosted-one-use.yml driver pin, journal/handoff/ledger only. No adapter source changes or actual activation. |
 | Approval | Both explicit approvals consumed/disarmed; checksum-only run 45725150647 SUCCESS, independent persisted receipt replay PASS; synthetic receipt transfer run 45725783645 SUCCESS, disarm verified. Fourteen total restricted approvals consumed/disarmed (six native, seven metadata, one synthetic). No actual wheel acquisition, new metadata/binaries, installs, native/model, owner data, installer or retries authorized. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | Inspect exact correction push (parent 398568baba8a87d7247170b5fd26997dad310a68), offline review only; restricted jobs skip. |
+| Pending runs | None for this operation. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
-| Recovery action | Reconcile exact source and CI, preserve failures. Only after verification propose explicit single attempt for exact 68 wheel GETs, 225699980 body bytes, 15s/request, 25min collector, zero redirects/retries, one bounded receipt-only upload/retrieval, no install/execute or legal clearance. All actual wheel gates remain false. |
+| Recovery action | Request fresh owner approval for one actual hosted candidate-only collection: 68 exact files.pythonhosted.org GETs maximum, 225699980 aggregate body bytes maximum, 15s absolute/request, 25min collection, no wheel redirects/retries, stop first refusal; one receipt/notice-only artifact upload and one independent exact artifact retrieval (max bundle 68550656 bytes, ZIP 69599232 bytes, 7-day retention, 6min verifier), no wheel upload/install/execute/native/model/owner data/installer. After explicit approval arm only driver flag and dedicated workflow behind marker-only push, pin exact driver blob and parent, skip disarmed offline tests on activation, verify no arm run, activate exact child attempt 1, reconcile and restore both source/workflow/remove marker even on failure. Preserve adapter source pin; temporary process-local gate only. No replay or C5 closure until remaining provenance and locks verified. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
