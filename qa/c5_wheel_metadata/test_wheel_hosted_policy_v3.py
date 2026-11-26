@@ -209,7 +209,7 @@ class Tests(unittest.TestCase):
 
     def test_bundle_extra_trailing(self):
         _,bundle,record=self.generate();payload=bundle.read_bytes()+b'x'
-        record=m.artifact_record('12345','1'*40',{'bytes':len(payload),'sha256':w.sha(payload),
+        record=m.artifact_record('12345','1'*40,{'bytes':len(payload),'sha256':w.sha(payload),
                                  'manifest_sha256':record['bundle']['manifest_sha256']},
                                  self.rows,'fixture',bindings=self.bindings,caps=self.caps)
         self.deny('BUNDLE_TRAILING',lambda:self.replay(self.zip(payload),record))
