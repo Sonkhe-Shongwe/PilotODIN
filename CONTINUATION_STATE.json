@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-REVIEWED-IMAGES-PREP-20261126",
-    "parent_sha": "f4db02295e91cfee50ef6faaae10b7ffd7f05244",
-    "previous_snapshot_sha": "f4db02295e91cfee50ef6faaae10b7ffd7f05244",
-    "scope": "Read-only exact runner image review and inert finite two-image compatibility proposal; no activation",
-    "state": "RECONCILED",
+    "operation_id": "C5-PORTABLE-DOCKER-REVIEWED-IMAGES-ONCE-20261126",
+    "parent_sha": "8c6f7c85f5e1e1d6205db122e058c58974f86fba",
+    "previous_snapshot_sha": "8c6f7c85f5e1e1d6205db122e058c58974f86fba",
+    "scope": "One fresh exact c466b5b no-pull Docker data-only verification on exactly 20261122.23.1 or 20261116.376.1 and Docker 28.0.4; all original safeguards; full pure tests and preflights before bounded acquisition; no retry/fallback.",
+    "state": "PREPARED",
     "receipt": {
-      "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "26-november--c5-finite-documented-runner-image-compatibility-proposal",
-      "blob_sha": "799f75d4dcc0c10cbb4aa7ba9f0ff777ff1789c4",
-      "start_line": 2746,
-      "end_line": 2748
+      "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
+      "anchor": "owner-approved-finite-reviewed-runner-image-policy-and-one-use-integrated-docker-execution",
+      "blob_sha": "bffa5a5ca96a90a9a9af99cf67a1404997ee73f3",
+      "start_line": 766,
+      "end_line": 768
     }
   },
   "product": {
@@ -117,16 +117,23 @@
   },
   "task": {
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
-    "status": "BLOCKED",
+    "status": "PREPARED",
     "scope": "C-D08 revised C5-A/B development reproducibility and build safety only; D retains native prerequisites, P8 release-only",
-    "blocker": "Explicit owner decision required for proposed finite host image trust list and one fresh exact c466b5b attempt. Actual refused image 20261116.133.1 undocumented and excluded; full 16-method suite, stdlib correction runtime, isolation/provenance unverified.",
-    "next_action": "Obtain explicit owner approval of finite exact images 20261122.23.1 and 20261116.376.1 only and one fresh exact c466b5b bounded data-only Docker attempt, template SHA256 da80fa5caea65f5d4057f4b214740055f8e92250085d843047ea6e287835764c. Verify live head/triggers/pins; write ahead; full disarmed 16-method suite and all preflights before first GET; one-use activation, reconcile/disarm. Unknown image .133.1 remains refused; no fallback/replay.",
-    "next_action_kind": "OWNER_DECISION",
+    "blocker": "Exact integrated verification not yet executed; previous approval consumed.",
+    "next_action": "Activate sole owned workflow using exact approved finite-image candidate template and only two permitted substitutions at verified write-ahead HEAD. Observe and reconcile run; disarm without replay.",
+    "next_action_kind": "APPROVED_EXECUTION",
     "after": [
       "Reconcile exact run and receipt or refusal; if unknown image assigned, stop without replay and consider separate reviewed diagnostic/controlled runner only with owner authority.",
       "Complete C5 rows 5–7 and row 8 exact regression/source closure only on qualifying evidence; D only after C5 closure, G2 resolution and separate authority."
     ],
     "read": [
+      {
+        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
+        "anchor": "owner-approved-finite-reviewed-runner-image-policy-and-one-use-integrated-docker-execution",
+        "blob_sha": "bffa5a5ca96a90a9a9af99cf67a1404997ee73f3",
+        "start_line": 766,
+        "end_line": 768
+      },
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "26-november--c5-finite-documented-runner-image-compatibility-proposal",
@@ -326,23 +333,49 @@
     ]
   },
   "operation": {
-    "id": "C5-REVIEWED-IMAGES-PREP-20261126",
-    "state": "RECONCILED",
-    "starting_sha": "f4db02295e91cfee50ef6faaae10b7ffd7f05244",
-    "outcome": "Detached c466b5b exact inert proposal; six QA paths, two new exact test methods passed in mocked Python, 22 SHA256 pins and cross-layer list readback verified; full 16-method suite mandatory before driver, no Docker/acquisition.",
+    "id": "C5-PORTABLE-DOCKER-REVIEWED-IMAGES-ONCE-20261126",
+    "state": "PREPARED",
+    "starting_sha": "8c6f7c85f5e1e1d6205db122e058c58974f86fba",
+    "scope": "One fresh exact c466b5b no-pull Docker data-only verification on exactly 20261122.23.1 or 20261116.376.1 and Docker 28.0.4; all original safeguards; full pure tests and preflights before bounded acquisition; no retry/fallback.",
+    "intended_paths": [
+      ".github/workflows/c5-portable-provenance-once.yml"
+    ],
+    "authority_ref": {
+      "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
+      "anchor": "owner-approved-finite-reviewed-runner-image-policy-and-one-use-integrated-docker-execution",
+      "blob_sha": "bffa5a5ca96a90a9a9af99cf67a1404997ee73f3",
+      "start_line": 766,
+      "end_line": 768
+    },
+    "expected_evidence": "Exact activation parent and message, sole owned first-attempt workflow, terminal job/step logs and reconstructed bounded receipt if present; exact false guard restored.",
+    "recovery": "Inspect live head, commit message and diff, exact workflow run and attempt before any retry; approval is unavailable on uncertainty; disarm owned workflow with expected HEAD after reconciliation. Never replay.",
     "reconcile_before_retry": false,
-    "receipt": {
-      "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "26-november--c5-finite-documented-runner-image-compatibility-proposal",
-      "blob_sha": "799f75d4dcc0c10cbb4aa7ba9f0ff777ff1789c4",
-      "start_line": 2746,
-      "end_line": 2748
-    }
+    "source_sha": "c466b5b2faff2a7bb1b6df5020185b3de798952d",
+    "template_sha256": "da80fa5caea65f5d4057f4b214740055f8e92250085d843047ea6e287835764c",
+    "expected_activation_message": "C5-PORTABLE-DOCKER-REVIEWED-IMAGES-ONCE-20261126 owner approved finite reviewed images no-pull data-only operation",
+    "run_attempt": 1
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next.",
     "preparation_only": "Owner approved consolidated shared-bundle disarmed acquisition-before-signature source and exact limited existing host bootstrap; owner approved proposed limited local Docker control-plane and host-derived rootfs trust/no-pull isolation method for preparation only. Authentication before extraction/use; no Docker invocation, acquisition, verification execution, installation or live cutover authorised.",
-    "restricted_active": [],
+    "restricted_active": [
+      {
+        "id": "C5-PORTABLE-DOCKER-REVIEWED-IMAGES-ONCE-20261126",
+        "state": "APPROVED",
+        "source_sha": "c466b5b2faff2a7bb1b6df5020185b3de798952d",
+        "scope": "One fresh exact c466b5b no-pull Docker data-only verification on exactly 20261122.23.1 or 20261116.376.1 and Docker 28.0.4; all original safeguards; full pure tests and preflights before bounded acquisition; no retry/fallback.",
+        "owner_authority_ref": {
+          "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
+          "anchor": "owner-approved-finite-reviewed-runner-image-policy-and-one-use-integrated-docker-execution",
+          "blob_sha": "bffa5a5ca96a90a9a9af99cf67a1404997ee73f3",
+          "start_line": 766,
+          "end_line": 768
+        },
+        "reconcile_before_retry": false,
+        "template_sha256": "da80fa5caea65f5d4057f4b214740055f8e92250085d843047ea6e287835764c",
+        "run_attempt": 1
+      }
+    ],
     "consumed_disarmed_count": 34,
     "consumed_history": {
       "commit": "b9864b70fb9bb5a72d0f79c37f15b94100722192",
