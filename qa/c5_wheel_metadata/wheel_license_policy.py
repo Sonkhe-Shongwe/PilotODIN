@@ -138,16 +138,23 @@ def verify_evidence(raw, sha, expected, plan_blob, bound):
 
 
 def inspect(batch, raw, expected, bound, plan_blob):
-    """Candidate producer seam; policy refusal MUST stop the caller's generation."""
-    match(expected,bound)
+    """Candidate producer seam; only policy-accepted evidence is counted."""
+    fn=expected['filename']
     try:
-        doc,sha=batch.inspect(expected['filename'],raw)
+        match(expected,bound)
+        doc,sha=batch.inspect(fn,raw)
+    except BaseException:
+        batch._failed=True
+        raise
+    try:
         verify_evidence(doc,sha,expected,plan_blob,bound)
         return doc,sha
     except BaseException:
-        # The pinned v2 batch may already have encoded the receipt. The wrapper
-        # must never publish it or allow another attempt after policy refusal.
+        # Undo only the just-encoded unpublished evidence accounting. Never
+        # release attempted/expansion reservations or erase earlier successes.
         batch._failed=True
+        batch._verified.pop(fn)
+        batch._persisted_bytes-=len(doc)
         raise
 
 

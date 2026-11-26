@@ -59,6 +59,10 @@ class Tests(unittest.TestCase):
         batch=n._EvidenceBatch([row],'fixture-plan')
         self.deny('MODERN_LICENCE_LOCATION',lambda:p.inspect(batch,raw,row,b,'fixture-plan'))
         self.deny('BATCH_STOPPED',lambda:batch.inspect(row['filename'],raw))
+        self.assertEqual(batch.settlement()['verified_count'],0)
+        self.assertEqual(batch.settlement()['evidence_bytes'],0)
+        self.assertEqual(batch.settlement()['attempted_count'],1)
+        self.assertGreater(batch._budget.expanded,0)
 
     def test_independent_replay_modern_root(self):
         raw,row,b=self.make('2.5',{D+'licenses/LICENSE':None,D+'LICENSE':b'legacy'})
@@ -115,5 +119,31 @@ class Tests(unittest.TestCase):
     def test_signature(self):
         for name in ('RECORD.jws','RECORD.p7s'):
             self.deny('RECORD_SIGNATURE_UNSUPPORTED',lambda:v2.InspectionBudget().inspect(*fixture(changes={D+name:b'x'})),v2.Blocked)
+
+    def test_policy_refusal_preserves_prior_success(self):
+        raw,row,b=self.make()
+        raw2,row2,b2=self.make('2.4',{D+'licenses/LICENSE':None,D+'LICENSE':b'legacy'})
+        row2['filename']='demo_pkg-1.2-2-py3-none-any.whl'
+        b2['filename']=row2['filename']
+        batch=n._EvidenceBatch([row,row2],'fixture-plan')
+        p.inspect(batch,raw,row,b,'fixture-plan')
+        before=batch.settlement()
+        self.deny('MODERN_LICENCE_LOCATION',lambda:p.inspect(batch,raw2,row2,b2,'fixture-plan'))
+        after=batch.settlement()
+        self.assertEqual(after['status'],'BLOCKED')
+        self.assertEqual(after['verified_count'],1)
+        self.assertEqual(after['attempted_count'],2)
+        self.assertEqual(after['records'],before['records'])
+        self.assertEqual(after['evidence_bytes'],before['evidence_bytes'])
+        self.assertEqual(after['missing'],[row2['filename']])
+
+    def test_duplicate_preserves_prior_success(self):
+        raw,row,b=self.make()
+        batch=n._EvidenceBatch([row],'fixture-plan')
+        p.inspect(batch,raw,row,b,'fixture-plan')
+        before=batch.settlement()
+        self.deny('BATCH_DUPLICATE',lambda:p.inspect(batch,raw,row,b,'fixture-plan'))
+        self.assertEqual(batch.settlement()['records'],before['records'])
+        self.assertEqual(batch.settlement()['evidence_bytes'],before['evidence_bytes'])
 
 if __name__=='__main__': unittest.main(verbosity=2)
