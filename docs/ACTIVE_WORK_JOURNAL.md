@@ -7,17 +7,17 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | dbeca3f3dbd1c0522ff954004a0101b2f780a484 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | Revised C5-A/B development reproducibility and build safety; D prerequisites and P8 release-only allocation. No restricted acquisition, native, owner data, install, packaging, phase activation or release. |
 | Operation ID | C5-STANDARD-LOCK-PREFLIGHT-20261126 |
-| Operation state | PREPARED row 6: integrate three exact lock pins into existing read-only preflight and test missing/tampered locks plus pip offline dry-run synthetic fixtures. Row 5 exact hosted tool versions verified, full browser compatibility open. |
+| Operation state | PUBLISHED existing lock integrity preflight and standard pip inert dry-run test, exact P4 verification pending. All profiles BLOCKED. |
 | Intended files | Existing tools/build_input_preflight.py and tests/test_c5_build_input_preflight.py; no new workflow, real dependency acquisition, runtime/installer or machine policy changes. |
 | Approval | Owner explicitly stated: "I approve the revised C5 scope rationalisation. Prioritise development reproducibility and build safety, consolidate verification infrastructure, retain mandatory native prerequisites for D, and defer release-only packaging and distribution requirements to P8. Existing execution restrictions remain in force." This is a sequencing/acceptance-scope decision, not execution authority. All 19 restricted approvals remain consumed/disarmed. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | None. P4 #45812275540 attempt 1 exact 7674552 SUCCESS: Linux 139882885911 (1243 Python/6 skipped/552 subtests, 15 Rust, 161 Node, 3 refusals); Windows 139882886050 (156 C5/1 skipped, 3 refusals, 68/133 subtests); HTTP 139882885600 13 passed; restricted 139882887960 skipped. Both CP311 x64 (Win 3.11.9, Linux 3.11.18), pip 26.3, Node 22.23.5, npm 10.9.9, rustc 1.100.0 commit 0ef1bc386059596dada8fb65b50425aab2ea637a, Cargo 1.100.0; both pip check clean, Windows hosted Python compatibility PASS. Rust hosts x86_64-pc-windows-msvc and x86_64-unknown-linux-gnu. Full Windows browser-dev installed compatibility and actual input integrity remain open. |
+| Pending runs | Exact routine P4 run expected at child of c1f854685c2dfaba2987f834106c9ffa94c9f71f; prior row 5 #45812275540 SUCCESS, full Windows browser-dev evidence still open. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
 | Recovery action | Publish minimal lock integrity gate and source tests; reconcile routine P4 CI. Row 5 browser compatibility and use-time provenance remain open; no actual lock use. |
 | Resume after closure | D only after revised C5 source closure, G2 resolution and separately approved scope; every native prerequisite before its use. P8 release-only obligations retained; installer frozen. |

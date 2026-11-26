@@ -8,6 +8,8 @@ import json
 import os
 import shutil
 import subprocess
+import sys
+import zipfile
 from types import SimpleNamespace
 
 import pytest
@@ -248,6 +250,90 @@ def test_reviewed_python_locks_match_pinned_graphs_and_stay_blocked():
             f" --hash=sha256:{r['sha256']}\n" for r in rows)
         assert (ROOT / path).read_text(encoding="ascii") == expected
     assert total == 141
+
+
+@pytest.mark.parametrize("change", ["missing", "tampered", "extra-index", "crlf", "linked"])
+def test_existing_preflight_checks_reviewed_lock_identity(tmp_path, change, monkeypatch, capsys):
+    paths = set(preflight.SOURCE_PATHS) | set(preflight.REVIEWED_LOCK_PINS) | {preflight.POLICY_PATH}
+    for relative in paths:
+        dst = tmp_path / relative
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        dst.write_bytes((ROOT / relative).read_bytes().replace(b"\r\n", b"\n"))
+    original = preflight.audit_policy
+    monkeypatch.setattr(preflight, "audit_policy", lambda: original(tmp_path))
+    assert preflight.main(["--audit-policy"]) == 0
+    capsys.readouterr()
+    relative = "backend/locks/windows-x64-cp311-source-test.txt"
+    path = tmp_path / relative
+    if change == "missing":
+        path.unlink()
+    elif change == "tampered":
+        path.write_bytes(path.read_bytes().replace(b"fastapi==", b"fastapx==", 1))
+    elif change == "extra-index":
+        path.write_bytes(path.read_bytes() + b"--extra-index-url https://foreign.invalid/\n")
+    elif change == "crlf":
+        path.write_bytes(path.read_bytes().replace(b"\n", b"\r\n"))
+    else:
+        outside = tmp_path / "outside.txt"
+        outside.write_bytes(path.read_bytes())
+        path.unlink()
+        try:
+            path.symlink_to(outside)
+        except OSError:
+            pytest.skip("symlinks unavailable")
+    with patch.object(subprocess, "run") as run:
+        result = preflight.main(["--audit-policy"])
+        run.assert_not_called()
+    output = capsys.readouterr()
+    if change == "crlf":
+        assert result == 0 and "BLOCKED_POLICY_VALID" in output.out
+    else:
+        assert result == 2 and "C5_PROFILE_POLICY_BLOCKED" in output.err
+
+
+def test_pip_standard_offline_hash_dry_run_on_inert_wheel(tmp_path):
+    # No importable code, build backend, direct URLs or dependencies. This is
+    # only a disposable fixture demonstrating pip's own hash-checking mode.
+    wheelhouse = tmp_path / "wheelhouse"
+    wheelhouse.mkdir()
+    scratch = tmp_path / "scratch"
+    scratch.mkdir()
+    wheel = wheelhouse / "c5_inert_fixture-1.0-py3-none-any.whl"
+    dist = "c5_inert_fixture-1.0.dist-info"
+    with zipfile.ZipFile(wheel, "w") as archive:
+        archive.writestr(dist + "/METADATA",
+                         "Metadata-Version: 2.1\nName: c5-inert-fixture\nVersion: 1.0\n")
+        archive.writestr(dist + "/WHEEL",
+                         "Wheel-Version: 1.0\nRoot-Is-Purelib: true\nTag: py3-none-any\n")
+        archive.writestr(dist + "/RECORD",
+                         dist + "/METADATA,,\n" + dist + "/WHEEL,,\n" + dist + "/RECORD,,\n")
+    digest = hashlib.sha256(wheel.read_bytes()).hexdigest()
+    lock = tmp_path / "fixture.txt"
+    env = {k: v for k, v in os.environ.items()
+           if not k.upper().startswith("PIP_") and k.upper() not in ("PYTHONPATH", "PYTHONHOME")}
+    env.update(PIP_CONFIG_FILE=os.devnull, TMP=str(scratch), TEMP=str(scratch),
+               TMPDIR=str(scratch), PYTHONDONTWRITEBYTECODE="1")
+    cmd = [sys.executable, "-I", "-B", "-m", "pip", "--isolated",
+           "--disable-pip-version-check", "--no-input", "--no-cache-dir",
+           "install", "--dry-run", "--ignore-installed", "--no-deps",
+           "--no-index", "--only-binary=:all:", "--require-hashes",
+           "--find-links", str(wheelhouse), "-r", str(lock)]
+    def invoke(expected):
+        lock.write_text("--no-index\n--only-binary=:all:\n--require-hashes\n"
+                        f"c5-inert-fixture==1.0 --hash=sha256:{expected}\n", encoding="ascii")
+        before = snapshot(wheelhouse)
+        result = subprocess.run(cmd, cwd=tmp_path, env=env, timeout=45,
+                                capture_output=True, text=True)
+        assert snapshot(wheelhouse) == before
+        return result
+    accepted = invoke(digest)
+    assert accepted.returncode == 0, accepted.stderr
+    assert "Would install c5-inert-fixture-1.0" in accepted.stdout
+    refused = invoke("0" * 64)
+    assert refused.returncode != 0 and "hash" in refused.stderr.lower()
+    wheel.unlink()
+    missing = invoke(digest)
+    assert missing.returncode != 0 and "No matching distribution" in missing.stderr
 
 
 @pytest.mark.parametrize("change", [

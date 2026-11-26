@@ -36,6 +36,13 @@ PROFILES = {
     "linux-x64-cp311-source-test": ("linux", "cp311", "source-test", "backend/locks/linux-x64-cp311-source-test.txt", ["interpreter_distribution","pip_distribution","selected_wheel_graph","wheel_metadata_and_tags","wheel_artifact_sha256","license_inventory"]),
     "windows-x64-browser-dev": ("windows", "unresolved", "browser-dev", None, ["interpreter_distribution","pip_distribution","selected_wheel_graph","wheel_metadata_and_tags","wheel_artifact_sha256","license_inventory","node_npm_toolchain","installed_tree_identity","legacy_environment_compatibility"]),
 }
+# Exact reviewed definitions at 0df12bb, separate from the historical v1
+# policy schema. A matching definition does not authorise its consumption.
+REVIEWED_LOCK_PINS = {
+    "backend/locks/windows-x64-cp311-production-build.txt": ("c28770c27a8e4add9037c1aeab20044880c4eaef", 4665),
+    "backend/locks/windows-x64-cp311-source-test.txt": ("6dba467333bd1111d4375aa10f268c0cb360cb2f", 5200),
+    "backend/locks/linux-x64-cp311-source-test.txt": ("2d4601fc3103afc34df25a2b4f24646a959c1f6e", 5198),
+}
 WHEEL_FIELDS = {
     "name", "version", "filename", "bytes", "sha256", "source",
     "metadata_source", "license_expression", "license_review",
@@ -137,7 +144,8 @@ def read_exact(path, *, size, collect=False, limit=None, prefix_bytes=0):
 
 def source_file(root, relative):
     """Only fixed repo-relative source paths, no traversal or directory links."""
-    require(relative in SOURCE_PATHS or relative == POLICY_PATH, "UNKNOWN_SOURCE_PATH")
+    require(relative in SOURCE_PATHS or relative in REVIEWED_LOCK_PINS
+            or relative == POLICY_PATH, "UNKNOWN_SOURCE_PATH")
     checked_directory(root)
     path = root
     parts = relative.split("/")
@@ -203,6 +211,23 @@ def audit_policy(root=ROOT):
                               + b"\0" + canonical).hexdigest()
         require(len(canonical) == row["bytes"] and digest == row["git_blob_sha1"],
                 "SOURCE_PIN_MISMATCH")
+    # The lock files are independently pinned, not trusted just because a
+    # BLOCKED profile names them. The existing CLI remains read-only.
+    require({row["planned_lock"] for row in doc["profiles"]
+             if row["planned_lock"] is not None} == set(REVIEWED_LOCK_PINS),
+            "REVIEWED_LOCK_INVENTORY")
+    for relative, (expected_blob, expected_size) in REVIEWED_LOCK_PINS.items():
+        try:
+            path = source_file(root, relative)
+            _, raw = read_exact(path, size=path.lstat().st_size, collect=True,
+                                limit=MAX_POLICY_BYTES)
+        except (Blocked, OSError):
+            raise Blocked("REVIEWED_LOCK_UNREADABLE") from None
+        canonical = raw.replace(b"\r\n", b"\n")
+        digest = hashlib.sha1(b"blob " + str(len(canonical)).encode("ascii")
+                              + b"\0" + canonical).hexdigest()
+        require(len(canonical) == expected_size and digest == expected_blob,
+                "REVIEWED_LOCK_PIN_MISMATCH")
     return doc
 
 
