@@ -369,7 +369,7 @@ def wire(body=b"", status="200 OK", headers=(), length=True):
     return ("HTTP/1.1 "+status+"\r\n"+"".join(k+": "+v+"\r\n" for k,v in headers)
             +("Content-Length: "+str(len(body))+"\r\n" if length else "")+"\r\n").encode()+body
 
-HEADER_ENABLED = False
+HEADER_ENABLED = True
 HEADER_CAPABILITY = object()
 HEADER_OP = "C5-PYTHON-REDIRECT-HEADER-ONLY-20261126"
 HEADER_MARKER = "qa/c5_wheel_metadata/APPROVAL_PYTHON_REDIRECT_HEADER_ONLY_20261126.json"
