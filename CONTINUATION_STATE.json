@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-READER-API-PREP-20261126",
-    "parent_sha": "c8146b40e172f29fc9e45d9099ea6e60e00dc05b",
-    "previous_snapshot_sha": "c8146b40e172f29fc9e45d9099ea6e60e00dc05b",
-    "scope": "Read-only exact LLVM 18 source review and inert equivalent reader option correction; no activation",
-    "state": "RECONCILED",
+    "operation_id": "C5-PORTABLE-DOCKER-READER-API-ONCE-20261126",
+    "parent_sha": "a909829f4a222497ef201509e604bd0976f66ff8",
+    "previous_snapshot_sha": "a909829f4a222497ef201509e604bd0976f66ff8",
+    "scope": "One fresh exact 72e1142 no-pull Docker data-only verification on exactly 20261122.23.1 or 20261116.376.1 and Docker 28.0.4; all original safeguards; full pure tests and preflights before bounded acquisition; no retry/fallback.",
+    "state": "PREPARED",
     "receipt": {
-      "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "26-november--c5-exact-llvm-18-native-reader-option-correction-prepared",
-      "blob_sha": "d596013898c341f4e00d637f0a1c0d5abe5f7e3b",
-      "start_line": 2754,
-      "end_line": 2756
+      "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
+      "anchor": "owner-approved-exact-llvm-reader-correction-one-use-integrated-docker-execution",
+      "blob_sha": "86e5586c515069eb457d0ae248dd26e82b656e7e",
+      "start_line": 770,
+      "end_line": 772
     }
   },
   "product": {
@@ -117,16 +117,23 @@
   },
   "task": {
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
-    "status": "BLOCKED",
+    "status": "PREPARED",
     "scope": "C-D08 revised C5-A/B development reproducibility and build safety only; D retains native prerequisites, P8 release-only",
-    "blocker": "Fresh exact owner approval required for 72e1142; upstream option contract corrected without reducing import coverage, actual runner help/readers, full 17-method suite and provenance still unverified.",
-    "next_action": "Obtain explicit owner approval of one fresh exact 72e1142 bounded integrated no-pull data-only Docker attempt, template SHA256 5694da0f8eadd1fe161c5fb14be0febf7d5061d0465ddae520db8736f65b4ff4, under unchanged approved finite image policy and safeguards. Verify live head/triggers/pins; write ahead; full disarmed 17-method suite and all preflights before first GET; one-use activation, reconcile/disarm. No fallback/replay.",
-    "next_action_kind": "OWNER_DECISION",
+    "blocker": "Exact integrated verification not yet executed; previous approval consumed.",
+    "next_action": "Activate sole owned workflow using exact approved LLVM reader correction candidate template and only two permitted substitutions at verified write-ahead HEAD. Observe and reconcile run; disarm without replay.",
+    "next_action_kind": "APPROVED_EXECUTION",
     "after": [
       "Reconcile exact run and receipt or refusal, preserving all earlier evidence; no replay or acceptance changes.",
       "Complete C5 rows 5–7 and row 8 exact regression/source closure only on qualifying evidence; D only after C5 closure, G2 resolution and separate authority."
     ],
     "read": [
+      {
+        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
+        "anchor": "owner-approved-exact-llvm-reader-correction-one-use-integrated-docker-execution",
+        "blob_sha": "86e5586c515069eb457d0ae248dd26e82b656e7e",
+        "start_line": 770,
+        "end_line": 772
+      },
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "26-november--c5-exact-llvm-18-native-reader-option-correction-prepared",
@@ -347,23 +354,49 @@
     ]
   },
   "operation": {
-    "id": "C5-READER-API-PREP-20261126",
-    "state": "RECONCILED",
-    "starting_sha": "c8146b40e172f29fc9e45d9099ea6e60e00dc05b",
-    "outcome": "Detached 72e1142 exact inert correction; five QA paths, one new exact synthetic method passed locally, 22 SHA256 pins and ten source matches verified; full 17-method suite mandatory before driver, no Docker/acquisition.",
+    "id": "C5-PORTABLE-DOCKER-READER-API-ONCE-20261126",
+    "state": "PREPARED",
+    "starting_sha": "a909829f4a222497ef201509e604bd0976f66ff8",
+    "scope": "One fresh exact 72e1142 no-pull Docker data-only verification on exactly 20261122.23.1 or 20261116.376.1 and Docker 28.0.4; all original safeguards; full pure tests and preflights before bounded acquisition; no retry/fallback.",
+    "intended_paths": [
+      ".github/workflows/c5-portable-provenance-once.yml"
+    ],
+    "authority_ref": {
+      "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
+      "anchor": "owner-approved-exact-llvm-reader-correction-one-use-integrated-docker-execution",
+      "blob_sha": "86e5586c515069eb457d0ae248dd26e82b656e7e",
+      "start_line": 770,
+      "end_line": 772
+    },
+    "expected_evidence": "Exact activation parent and message, sole owned first-attempt workflow, terminal job/step logs and reconstructed bounded receipt if present; exact false guard restored.",
+    "recovery": "Inspect live head, commit message and diff, exact workflow run and attempt before any retry; approval is unavailable on uncertainty; disarm owned workflow with expected HEAD after reconciliation. Never replay.",
     "reconcile_before_retry": false,
-    "receipt": {
-      "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "26-november--c5-exact-llvm-18-native-reader-option-correction-prepared",
-      "blob_sha": "d596013898c341f4e00d637f0a1c0d5abe5f7e3b",
-      "start_line": 2754,
-      "end_line": 2756
-    }
+    "source_sha": "72e11429adf316316d71084a5eb6f3fd3da048df",
+    "template_sha256": "5694da0f8eadd1fe161c5fb14be0febf7d5061d0465ddae520db8736f65b4ff4",
+    "expected_activation_message": "C5-PORTABLE-DOCKER-READER-API-ONCE-20261126 owner approved exact LLVM reader correction no-pull data-only operation",
+    "run_attempt": 1
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next.",
     "preparation_only": "Owner approved consolidated shared-bundle disarmed acquisition-before-signature source and exact limited existing host bootstrap; owner approved proposed limited local Docker control-plane and host-derived rootfs trust/no-pull isolation method for preparation only. Authentication before extraction/use; no Docker invocation, acquisition, verification execution, installation or live cutover authorised.",
-    "restricted_active": [],
+    "restricted_active": [
+      {
+        "id": "C5-PORTABLE-DOCKER-READER-API-ONCE-20261126",
+        "state": "APPROVED",
+        "source_sha": "72e11429adf316316d71084a5eb6f3fd3da048df",
+        "scope": "One fresh exact 72e1142 no-pull Docker data-only verification on exactly 20261122.23.1 or 20261116.376.1 and Docker 28.0.4; all original safeguards; full pure tests and preflights before bounded acquisition; no retry/fallback.",
+        "owner_authority_ref": {
+          "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
+          "anchor": "owner-approved-exact-llvm-reader-correction-one-use-integrated-docker-execution",
+          "blob_sha": "86e5586c515069eb457d0ae248dd26e82b656e7e",
+          "start_line": 770,
+          "end_line": 772
+        },
+        "reconcile_before_retry": false,
+        "template_sha256": "5694da0f8eadd1fe161c5fb14be0febf7d5061d0465ddae520db8736f65b4ff4",
+        "run_attempt": 1
+      }
+    ],
     "consumed_disarmed_count": 35,
     "consumed_history": {
       "commit": "b9864b70fb9bb5a72d0f79c37f15b94100722192",
