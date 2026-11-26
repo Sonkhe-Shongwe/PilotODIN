@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-PORTABLE-DOCKER-TERMINFO-POLICY-ONCE-20261127",
-    "parent_sha": "d72c00b93130b27d4e289bc23ab11734110db199",
-    "previous_snapshot_sha": "d72c00b93130b27d4e289bc23ab11734110db199",
-    "scope": "Distinct exact one-use C5 terminfo attempt refused at unchanged finite image guard before staging; observed terminal failure, disarm and skipped disarm run reconciled.",
+    "operation_id": "C5-CAPABILITY-QUALIFICATION-READONLY-DESIGN-20261127",
+    "parent_sha": "346b710fd8f1cfa43b124c35a834ead22451f04c",
+    "previous_snapshot_sha": "346b710fd8f1cfa43b124c35a834ead22451f04c",
+    "scope": "Read-only Approach C host qualification design; proposed bounded observation and independent package provenance, no trust-policy adoption or execution.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "27-november--c5-distinct-terminfo-attempt-again-refused-unreviewed-runner-before-staging",
-      "blob_sha": "0d7d2645b825eefa2513fa1e1d1f7f004770fde9",
-      "start_line": 2794,
-      "end_line": 2796
+      "anchor": "27-november--c5-approach-c-capability-based-host-qualification-read-only-design",
+      "blob_sha": "a555507ae6120322510953bcd91b7445ae07f5f8",
+      "start_line": 2798,
+      "end_line": 2800
     }
   },
   "product": {
@@ -119,14 +119,28 @@
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
     "status": "BLOCKED",
     "scope": "C-D08 revised C5-A/B development reproducibility and build safety only; D retains native prerequisites, P8 release-only",
-    "blocker": "Second distinct exact terminfo attempt refused unreviewed runner 20261116.133.1 before staging; no complete inventory/accounting/receipt; full 19-method gate not reached; exact authoritative runner manifest/tool/engine/isolation evidence unavailable; nondeterministic runner assignment.",
-    "next_action": "Owner decision: recommend avoid further blind attempts; obtain authoritative exact 20261116.133.1 manifest/source evidence or authorise bounded preparation/review of a distinct host qualification/evidence approach. No policy expansion, changed method, acquisition or execution without separate explicit authority. A future distinct attempt under unchanged policy requires fresh preparation and exact one-use approval; no replay.",
+    "blocker": "Two unreviewed runner refusals; Approach C proposed but independent expected-byte provenance and explicit method scope not yet approved or proven.",
+    "next_action": "Owner decision: approve preparation/static and synthetic verification only of the exact bounded observation-only candidate design in Approach C step 1 (five minutes, 11 fixed roles, no network/Docker commands, no package manager, no actual execution). Separate exact approval required for diagnostic execution, any independent package acquisition and changed qualification policy.",
     "next_action_kind": "OWNER_DECISION",
     "after": [
-      "Only after explicit scoped authority, prepare and verify any new method or distinct inert candidate, then obtain separate exact execution approval as required; record write-ahead, reconcile and disarm.",
-      "Complete C5 rows 5–7 and row 8 only on qualifying evidence; D after C5 closure, G2 resolution and separate authority."
+      "After exact observation candidate review and separate execution approval, observe actual runner and reconcile/disarm; then seek bounded independent publisher provenance evidence and explicit trust-method approval.",
+      "Only after qualifying evidence and separate execution authority, prepare exact integrated candidate, close C5 rows 5–8 on evidence; retain G2/D/P5 and installer gates."
     ],
     "read": [
+      {
+        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
+        "anchor": "proposed-capability-based-host-qualification-approach-c-preparation-only",
+        "blob_sha": "84a1973acaac3c4df661015464d27a861fbdd400",
+        "start_line": 794,
+        "end_line": 812
+      },
+      {
+        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
+        "anchor": "27-november--c5-approach-c-capability-based-host-qualification-read-only-design",
+        "blob_sha": "a555507ae6120322510953bcd91b7445ae07f5f8",
+        "start_line": 2798,
+        "end_line": 2800
+      },
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "27-november--c5-distinct-terminfo-attempt-again-refused-unreviewed-runner-before-staging",
@@ -459,24 +473,17 @@
     ]
   },
   "operation": {
-    "id": "C5-PORTABLE-DOCKER-TERMINFO-POLICY-ONCE-20261127",
+    "id": "C5-CAPABILITY-QUALIFICATION-READONLY-DESIGN-20261127",
     "state": "RECONCILED",
-    "starting_sha": "d4ca962b34b8d6b45d8d2b3677cb50f7205cb043",
-    "outcome": "FAILURE_UNREVIEWED_RUNNER_IMAGE_20261116_133_1_BEFORE_STAGING_NO_SYNTHETIC_DOCKER_ACQUISITION_OR_RECEIPT",
-    "source_sha": "28181cf992ab6efd5156265e5ea7d4752b00e66f",
-    "activation_sha": "0e789c220e0b8bbbc2d83b161d192006c64cc361",
-    "run_id": 45907585039,
-    "run_attempt": 1,
-    "job_id": 140207931214,
-    "disarm_sha": "d72c00b93130b27d4e289bc23ab11734110db199",
-    "disarm_run_id": 45907637329,
+    "starting_sha": "346b710fd8f1cfa43b124c35a834ead22451f04c",
+    "outcome": "Proposed bounded observation-only candidate preparation and independently authenticated expected-byte qualification; existing verifier reused; trust and actual bytes unresolved; no runtime execution or policy change.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "27-november--c5-distinct-terminfo-attempt-again-refused-unreviewed-runner-before-staging",
-      "blob_sha": "0d7d2645b825eefa2513fa1e1d1f7f004770fde9",
-      "start_line": 2794,
-      "end_line": 2796
+      "anchor": "27-november--c5-approach-c-capability-based-host-qualification-read-only-design",
+      "blob_sha": "a555507ae6120322510953bcd91b7445ae07f5f8",
+      "start_line": 2798,
+      "end_line": 2800
     }
   },
   "authority": {
