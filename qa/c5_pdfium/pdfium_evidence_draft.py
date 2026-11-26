@@ -1,15 +1,22 @@
-"""Disarmed two-wheel evidence draft. No HTTP transport, installation or wheel execution."""
+"""Disarmed two-wheel evidence adapter. Synthetic transport only until exact activation."""
 from __future__ import annotations
 import base64
+from contextlib import contextmanager
 import csv
 import hashlib
+import http.client
 import io
 import importlib.util
 import json
+import os
 from pathlib import Path
 import re
+import signal
+import ssl
 import subprocess
 import sys
+import time
+from urllib.parse import urlsplit
 import unittest
 from unittest import mock
 import zipfile
@@ -218,6 +225,230 @@ def inventory():
     print(json.dumps({"source":BASE,"tracked_blobs":len(files),"matches":sorted(matched,key=lambda x:x["path"]),
                       "classification":"UNREVIEWED_MATCHES_NOT_CALLER_CLOSURE"}, sort_keys=True))
 
+
+# Adapted fixed-origin/deadline pattern from remaining_dev_input_once.py
+# blob 23433611fa42031c66b17379fe7e5baef8db7ff5; no redirect path.
+DRIVER = "qa/c5_pdfium/pdfium_evidence_draft.py"
+WORKFLOW = ".github/workflows/c5-pdfium-evidence-draft.yml"
+MARKER = "qa/c5_pdfium/APPROVAL_PDFIUM_TWO_WHEEL_ONCE_20261126.json"
+OP = "C5-PDFIUM-TWO-WHEEL-EVIDENCE-ONCE-20261126"
+MESSAGE = OP + " owner approved exact acquisition only"
+CAPABILITY = object()
+
+def gate_snapshot(enabled, env, head, parents, subject, changed, dirty, marker, pins):
+    need(enabled and env.get("GITHUB_ACTIONS") == "true"
+         and env.get("GITHUB_EVENT_NAME") == "push"
+         and env.get("GITHUB_REF") == "refs/heads/feature/live-dev-workspace-20261023"
+         and env.get("GITHUB_WORKFLOW") == "C5 PDFium evidence draft"
+         and env.get("GITHUB_RUN_ATTEMPT") == "1"
+         and re.fullmatch(r"[0-9]{1,20}",env.get("GITHUB_RUN_ID","")), "FRESH_APPROVAL_REQUIRED")
+    need(re.fullmatch(r"[0-9a-f]{40}",head) and head == env.get("GITHUB_SHA")
+         and len(parents)==1 and re.fullmatch(r"[0-9a-f]{40}",parents[0])
+         and subject == MESSAGE, "ACTIVATION_IDENTITY")
+    need(changed == ["A\t"+MARKER] and not dirty, "ACTIVATION_SCOPE")
+    need(set(pins)=={"driver","workflow","inspector"}
+         and all(re.fullmatch(r"[0-9a-f]{40}",v) for v in pins.values())
+         and pins["inspector"]==INSPECTOR_PIN, "ACTIVATION_PINS")
+    need(marker == {"operation":OP,"parent":parents[0],**pins}, "APPROVAL_PIN")
+
+def live_gate():
+    # Literal disarm currently refuses before accessing any marker or network.
+    need(LIVE_ENABLED, "DISARMED_DRAFT")
+    head = git("rev-parse","HEAD").decode().strip()
+    parents = git("show","-s","--format=%P","HEAD").decode().split()
+    need(len(parents)==1,"ACTIVATION_PARENT")
+    marker_path=ROOT/MARKER
+    need(marker_path.is_file() and not marker_path.is_symlink()
+         and marker_path.stat().st_size<=4096,"MARKER")
+    pins={k:git("rev-parse","HEAD:"+p).decode().strip()
+          for k,p in (("driver",DRIVER),("workflow",WORKFLOW),("inspector",INSPECTOR))}
+    gate_snapshot(LIVE_ENABLED,os.environ,head,parents,
+                  git("log","-1","--format=%s").decode().strip(),
+                  git("diff","--name-status",parents[0],head).decode().splitlines(),
+                  git("status","--porcelain","--untracked-files=all"),
+                  strict_json(marker_path.read_bytes()),pins)
+    return CAPABILITY
+
+@contextmanager
+def deadline(seconds):
+    need(seconds>0 and hasattr(signal,"setitimer")
+         and signal.getitimer(signal.ITIMER_REAL)==(0.,0.),"TIMER")
+    def expired(*_):
+        raise Refused("DEADLINE")
+    prior=signal.signal(signal.SIGALRM,expired)
+    try:
+        signal.setitimer(signal.ITIMER_REAL,seconds)
+        yield
+    finally:
+        signal.setitimer(signal.ITIMER_REAL,0)
+        signal.signal(signal.SIGALRM,prior)
+
+def header(response,key):
+    values=[v for k,v in response.getheaders() if k.lower()==key.lower()]
+    need(len(values)<=1,"DUPLICATE_HEADER")
+    if not values:
+        return None
+    need(len(values[0])<=256 and all(32<=ord(c)<=126 for c in values[0]),"HEADER_SYNTAX")
+    return values[0]
+
+class MemorySocket:
+    def __init__(self,raw): self.raw=raw
+    def makefile(self,*_): return io.BytesIO(self.raw)
+
+class Replay:
+    responses={}
+    calls=[]
+    def __init__(self,host,port,**_):
+        need(host in ("pypi.org","files.pythonhosted.org") and port==443,"FIXTURE_HOST")
+        self.host=host
+    def request(self,method,path,headers):
+        url="https://"+self.host+path
+        need(method=="GET" and headers["Accept-Encoding"]=="identity"
+             and url in self.responses,"FIXTURE_REQUEST")
+        self.calls.append(url)
+        self.raw=self.responses[url]
+    def getresponse(self):
+        resp=http.client.HTTPResponse(MemorySocket(self.raw))
+        resp.begin()
+        return resp
+    def close(self): pass
+
+class Transport:
+    """Sequential, fixed plan, in-memory body caps; never retries after refusal."""
+    def __init__(self,connection,record,capability=None):
+        need(connection is Replay or (LIVE_ENABLED and capability is CAPABILITY
+             and connection is http.client.HTTPSConnection),"OFFLINE_FIXTURE_ONLY")
+        self.connection,self.record=connection,record
+        self.requests=self.body=0
+        self.failed=False
+        self.end=time.monotonic()+MAX_JOB_SECONDS
+        self.plan=[(VERSION_URL,MAX_META,None,None)]
+        self.meta_digest=None
+        self.bound=False
+
+    def remaining(self):
+        remaining=self.end-time.monotonic()
+        need(remaining>0,"JOB_DEADLINE")
+        return remaining
+
+    def bind(self,metadata):
+        need(not self.failed and not self.bound and self.requests==1
+             and self.meta_digest==sha(metadata),"PLAN_BINDING")
+        try:
+            rows=select(metadata)
+            self.plan=request_plan(rows)
+            self.bound=True
+            return rows
+        except Exception:
+            self.failed=True
+            raise
+
+    def get(self):
+        need(not self.failed and self.requests<len(self.plan)
+             and self.requests<MAX_REQUESTS,"REQUEST_SCOPE")
+        url,cap,exact,digest=self.plan[self.requests]
+        u=urlsplit(url)
+        need(url==VERSION_URL or (u.netloc=="files.pythonhosted.org"
+             and URL.fullmatch(url.removesuffix(".metadata"))),"REQUEST_ORIGIN")
+        need(u.scheme=="https" and not u.query and not u.fragment
+             and cap<=MAX_BODY-self.body,"BODY_BUDGET")
+        self.requests+=1
+        self.failed=True
+        raw=bytearray()
+        status=None
+        complete=False
+        conn=None
+        try:
+            duration=min(MAX_SECONDS_PER_REQUEST,self.remaining())
+            with deadline(duration):
+                conn=self.connection(u.netloc,443,timeout=duration,
+                                     context=ssl.create_default_context())
+                conn.request("GET",u.path,headers={"Accept-Encoding":"identity",
+                             "Connection":"close","User-Agent":"PilotODIN-C5-PDFium/1"})
+                response=conn.getresponse()
+                status=response.status
+                need(status==200,"HTTP_STATUS")
+                enc=header(response,"Content-Encoding")
+                need(enc is None or enc.lower()=="identity","CONTENT_ENCODING")
+                length,te=header(response,"Content-Length"),header(response,"Transfer-Encoding")
+                need(te is None or (te.lower()=="chunked" and length is None),"FRAMING")
+                need(length is not None or (exact is None and te=="chunked"),"BODY_FRAMING")
+                declared=None
+                if length is not None:
+                    need(re.fullmatch(r"[0-9]{1,10}",length),"BODY_LENGTH")
+                    declared=int(length)
+                    need(0<declared<=cap and (exact is None or declared==exact),"BODY_LENGTH")
+                while declared is None or len(raw)<declared:
+                    room=cap-len(raw)
+                    if room==0:
+                        need(response.isclosed(),"BODY_BUDGET")
+                        break
+                    amount=min(65536,room,declared-len(raw) if declared is not None else room)
+                    interrupted=False
+                    try:
+                        chunk=response.read1(amount)
+                    except http.client.IncompleteRead as exc:
+                        chunk=exc.partial
+                        interrupted=True
+                    need(type(chunk) is bytes and len(chunk)<=amount,"BODY_BUDGET")
+                    raw.extend(chunk)
+                    self.body+=len(chunk)
+                    need(not interrupted,"INCOMPLETE_BODY")
+                    if not chunk:
+                        break
+                need(len(raw)>0 and (declared is None or len(raw)==declared)
+                     and (exact is None or len(raw)==exact),"INCOMPLETE_BODY")
+                measured=sha(raw)
+                need(digest is None or measured==digest,"HASH_MISMATCH")
+                if self.requests==1:
+                    self.meta_digest=measured
+                complete=True
+                self.failed=False
+                return bytes(raw)
+        finally:
+            if conn is not None:
+                conn.close()
+            self.record("REQUEST",{"ordinal":self.requests,"host":u.netloc,
+                        "status":status,"bytes":len(raw),"sha256":sha(raw),"complete":complete})
+
+def collect(connection,record,capability=None):
+    transport=Transport(connection,record,capability)
+    verified=0
+    try:
+        metadata=transport.get()
+        rows=transport.bind(metadata)
+        module=inspector()
+        budget=module.InspectionBudget()
+        for row in rows:
+            sidecar=transport.get() if row["sidecar_sha256"] else None
+            raw=transport.get()
+            with deadline(transport.remaining()):
+                receipt=inspect_archive(raw,row,module,budget,sidecar)
+            record("WHEEL",{"url":row["url"],**receipt})
+            verified+=1
+            del raw,sidecar
+        need(transport.bound and transport.requests==len(transport.plan)
+             and verified==2 and transport.body<=MAX_BODY,"TERMINAL_SCOPE")
+        return 0
+    finally:
+        record("RESULT",{"requests":transport.requests,"response_bytes":transport.body,
+                        "verified":verified,"status":"INTEGRITY_PASS" if verified==2
+                        and not transport.failed and transport.requests==len(transport.plan) else "REFUSED",
+                        "installed":False,"extracted":False,"license_reviewed":False})
+
+def live():
+    capability=live_gate()
+    def record(kind,value):
+        print("C5_PDFIUM_"+kind,json.dumps(value,sort_keys=True,ensure_ascii=True),flush=True)
+    return collect(http.client.HTTPSConnection,record,capability)
+
+def wire(body=b"",status="200 OK",headers=(),length=True):
+    fields=list(headers)
+    if length: fields.append(("Content-Length",str(len(body))))
+    return ("HTTP/1.1 "+status+"\r\n"+"".join(k+": "+v+"\r\n" for k,v in fields)
+            +"\r\n").encode()+body
+
+
 class Synthetic(unittest.TestCase):
     def fixture(self):
         return {"info":{"name":"pypdfium2","version":VERSION},"urls":[
@@ -383,11 +614,119 @@ class Synthetic(unittest.TestCase):
         with self.assertRaisesRegex(m.Blocked,"ZIP_WHEEL_EXPANSION|ZIP_BOUNDS"):
             self.inspect_fixture(raw,row,module=m)
 
+    def test_gate_refuses_disarmed_and_wrong_context(self):
+        env={"GITHUB_ACTIONS":"true","GITHUB_EVENT_NAME":"push",
+             "GITHUB_REF":"refs/heads/feature/live-dev-workspace-20261023",
+             "GITHUB_WORKFLOW":"C5 PDFium evidence draft","GITHUB_RUN_ATTEMPT":"1",
+             "GITHUB_RUN_ID":"123","GITHUB_SHA":"a"*40}
+        pins={"driver":"b"*40,"workflow":"c"*40,"inspector":INSPECTOR_PIN}
+        marker={"operation":OP,"parent":"d"*40,**pins}
+        args=[True,env,"a"*40,["d"*40],MESSAGE,["A\t"+MARKER],b"",marker,pins]
+        gate_snapshot(*args)
+        for index,value in ((0,False),(1,{**env,"GITHUB_RUN_ATTEMPT":"2"}),
+              (1,{**env,"GITHUB_REF":"refs/heads/main"}),(2,"e"*40),
+              (3,["d"*40,"e"*40]),(4,"wrong"),(5,["M\t"+DRIVER]),
+              (6,b"dirty"),(7,{**marker,"parent":"e"*40}),(8,{**pins,"inspector":"e"*40})):
+            mutated=args.copy();mutated[index]=value
+            with self.subTest(index=index),self.assertRaises(Refused):
+                gate_snapshot(*mutated)
+        with self.assertRaisesRegex(Refused,"DISARMED_DRAFT"): live_gate()
+
+    def test_transport_refuses_real_connection(self):
+        with self.assertRaisesRegex(Refused,"OFFLINE_FIXTURE_ONLY"):
+            Transport(http.client.HTTPSConnection,lambda *_:None,CAPABILITY)
+
+    def transport(self,response):
+        Replay.responses={VERSION_URL:response}
+        Replay.calls=[]
+        logs=[]
+        return Transport(Replay,lambda k,v:logs.append((k,v))),logs
+
+    def test_transport_metadata_and_plan_binding(self):
+        metadata=self.encode(self.fixture())
+        t,logs=self.transport(wire(metadata))
+        self.assertEqual(t.get(),metadata)
+        rows=t.bind(metadata)
+        self.assertEqual(len(rows),2)
+        self.assertEqual(t.requests,1)
+        self.assertEqual(t.body,len(metadata))
+        self.assertTrue(logs[0][1]["complete"])
+        with self.assertRaisesRegex(Refused,"PLAN_BINDING"): t.bind(metadata)
+
+    def test_transport_redirect_status_and_headers_refused(self):
+        for response,reason in (
+            (wire(status="302 Found",headers=(("Location","https://example.com/x"),)),"HTTP_STATUS"),
+            (wire(status="503 Unavailable"),"HTTP_STATUS"),
+            (wire(b"x",headers=(("Content-Encoding","gzip"),)),"CONTENT_ENCODING"),
+            (wire(b"x",headers=(("Content-Length","1"),)),"DUPLICATE_HEADER"),
+            (wire(b"x",headers=(("Transfer-Encoding","chunked"),)),"FRAMING"),
+            (wire(b"x",length=False),"BODY_FRAMING"),
+            (wire(b"x",length=False,headers=(("Content-Length",str(MAX_META+1)),)),"BODY_LENGTH"),
+            (wire(b"x",length=False,headers=(("Content-Length","2"),)),"INCOMPLETE_BODY")):
+            t,logs=self.transport(response)
+            with self.subTest(reason=reason),self.assertRaisesRegex(Refused,reason): t.get()
+            self.assertEqual(t.requests,1)
+            self.assertEqual(len(Replay.calls),1)
+            self.assertFalse(logs[0][1]["complete"])
+            with self.assertRaisesRegex(Refused,"REQUEST_SCOPE"): t.get()
+            self.assertEqual(len(Replay.calls),1)
+
+    def test_transport_chunked_metadata(self):
+        t,_=self.transport(wire(b"3\r\nabc\r\n0\r\n\r\n",length=False,
+                               headers=(("Transfer-Encoding","chunked"),)))
+        self.assertEqual(t.get(),b"abc")
+
+    def test_transport_budget_and_deadline(self):
+        t,_=self.transport(wire(b"x"))
+        t.body=MAX_BODY
+        with self.assertRaisesRegex(Refused,"BODY_BUDGET"): t.get()
+        self.assertEqual(Replay.calls,[])
+        t,_=self.transport(wire(b"x"))
+        t.end=time.monotonic()-1
+        with self.assertRaisesRegex(Refused,"JOB_DEADLINE"): t.get()
+        self.assertEqual(Replay.calls,[])
+        with self.assertRaisesRegex(Refused,"DEADLINE"):
+            with deadline(0.01): time.sleep(0.05)
+        self.assertEqual(signal.getitimer(signal.ITIMER_REAL),(0.,0.))
+
+    def test_collect_synthetic_complete_and_hash_refusal(self):
+        raw1,row1,meta1=self.make_wheel()
+        raw2,row2,_=self.make_wheel(linux=True)
+        pins={row1["filename"]:(len(raw1),sha(raw1)),row2["filename"]:(len(raw2),sha(raw2))}
+        with mock.patch.dict(PINS,pins,clear=True):
+            doc=self.fixture()
+            doc["urls"][0]["core-metadata"]={"sha256":sha(meta1)}
+            metadata=self.encode(doc)
+            u1,u2=[x["url"] for x in doc["urls"]]
+            Replay.responses={VERSION_URL:wire(metadata),u1+".metadata":wire(meta1),
+                              u1:wire(raw1),u2:wire(raw2)}
+            Replay.calls=[]
+            logs=[]
+            self.assertEqual(collect(Replay,lambda k,v:logs.append((k,v))),0)
+            self.assertEqual(Replay.calls,[VERSION_URL,u1+".metadata",u1,u2])
+            self.assertEqual(logs[-1][1]["verified"],2)
+            self.assertEqual(logs[-1][1]["status"],"INTEGRITY_PASS")
+            self.assertEqual(logs[-1][1]["response_bytes"],len(metadata)+len(meta1)+len(raw1)+len(raw2))
+            Replay.responses[u1]=wire(b"x"*len(raw1))
+            Replay.calls=[];logs=[]
+            with self.assertRaisesRegex(Refused,"HASH_MISMATCH"):
+                collect(Replay,lambda k,v:logs.append((k,v)))
+            self.assertEqual(Replay.calls,[VERSION_URL,u1+".metadata",u1])
+            self.assertEqual(logs[-1][1]["status"],"REFUSED")
+
 if __name__ == "__main__":
     if sys.argv[1:] == ["--rehearse"]:
         unittest.main(argv=[sys.argv[0]],verbosity=2)
     elif sys.argv[1:] == ["--inventory"]:
         inventory()
+    elif sys.argv[1:] == ["--live"]:
+        try:
+            raise SystemExit(live())
+        except Refused as exc:
+            print("C5_PDFIUM_LIVE_REFUSED:",str(exc),flush=True)
+            raise SystemExit(2)
+        except Exception:
+            print("C5_PDFIUM_LIVE_REFUSED: INTERNAL_OR_INSPECTION_REFUSED",flush=True)
+            raise SystemExit(2)
     else:
-        print("C5_PDFIUM_LIVE_REFUSED: DISARMED_DRAFT",flush=True)
         raise SystemExit(2)

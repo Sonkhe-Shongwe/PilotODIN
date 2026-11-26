@@ -15,7 +15,7 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           ref: ${{ github.sha }}
-          fetch-depth: 4
+          fetch-depth: 8
           persist-credentials: false
       - name: Existing cached CP311 only, static inventory and fixtures
         shell: bash
@@ -33,5 +33,5 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - name: Explicitly disarmed; no transport or activation in draft
+      - name: Explicitly disarmed; no live acquisition
         run: exit 2
