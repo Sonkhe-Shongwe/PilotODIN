@@ -179,143 +179,21 @@ class Tests(unittest.TestCase):
 
     def test_batch_no_repeat(self):
         raw,e=fixture();b=c._FixtureBudget();b.inspect(raw,e)
-        with self.assertRaisesRegex(c.Blocked,'^BATCH_DUPLICATE
-    def test_historical_pins_and_prior_five(self):
-        for path,expected in [
-            ('wheel_archive_inspector.py','aa5ab610d711fb8f9bc1fce1020c4999e53f3571'),
-            ('wheel_archive_inspector_v2.py','9bf91fb983bd354f0b6db20dbb4eec32c447f369'),
-            ('wheel_notice_evidence.py','141f069706d0c597214829eea90a48197c381e2c'),
-            ('wheel_notice_evidence_v2.py','81693017a1f287cafe521e6a7e958831cfd9dc6a'),
-            ('wheel_license_policy.py','876bb701544cee28e5f06851bc85c05acb74af35'),
-            ('wheel_settlement_core.py','263d2565d744f4e53289fb973ff0a205561e4a7c'),
-            ('wheel_hosted_final.py','e0501942a15d61f50bb9f3429bdee3721456461b'),
-            ('wheel_hosted_policy_v3.py','939bb94802311a45a7f8e3f23183100c857df3be'),
-            ('wheel_hosted_runtime.py','e20cc3f4f11c2d5a4659e9537d565687687a2f49'),
-            ('wheel_prior_notice_preservation_45729307962.json','1adcd112c54ffa90ee638bcd7598d879e01798bc')]:
-            raw=git_blob('qa/c5_wheel_metadata/'+path)
-            self.assertEqual(hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest(),expected)
-        self.assertEqual(len(p.prior_placements()),5)
-        root=Path(__file__).resolve().parent
-        self.assertFalse((root/'APPROVAL_WHEEL_PUBLIC_DISCOVERY_20261126.txt').exists())
-        self.assertFalse((root/'APPROVAL_WHEEL_POLICY_V3_HOSTED_20261126.txt').exists())
-
-if __name__=='__main__':
-    unittest.main(verbosity=2)
-): b.inspect(raw,e)
-        with self.assertRaisesRegex(c.Blocked,'^BATCH_STOPPED
-    def test_historical_pins_and_prior_five(self):
-        for path,expected in [
-            ('wheel_archive_inspector.py','aa5ab610d711fb8f9bc1fce1020c4999e53f3571'),
-            ('wheel_archive_inspector_v2.py','9bf91fb983bd354f0b6db20dbb4eec32c447f369'),
-            ('wheel_notice_evidence.py','141f069706d0c597214829eea90a48197c381e2c'),
-            ('wheel_notice_evidence_v2.py','81693017a1f287cafe521e6a7e958831cfd9dc6a'),
-            ('wheel_license_policy.py','876bb701544cee28e5f06851bc85c05acb74af35'),
-            ('wheel_settlement_core.py','263d2565d744f4e53289fb973ff0a205561e4a7c'),
-            ('wheel_hosted_final.py','e0501942a15d61f50bb9f3429bdee3721456461b'),
-            ('wheel_prior_notice_preservation_45729307962.json','1adcd112c54ffa90ee638bcd7598d879e01798bc')]:
-            raw=git_blob('qa/c5_wheel_metadata/'+path)
-            self.assertEqual(hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest(),expected)
-        self.assertEqual(len(p.prior_placements()),5)
-        root=Path(__file__).resolve().parent
-        self.assertFalse((root/'APPROVAL_WHEEL_PUBLIC_DISCOVERY_20261126.txt').exists())
-        self.assertFalse((root/'APPROVAL_WHEEL_POLICY_V3_HOSTED_20261126.txt').exists())
-
-if __name__=='__main__':
-    unittest.main(verbosity=2)
-): b.inspect(raw,e)
+        with self.assertRaisesRegex(c.Blocked,'^BATCH_DUPLICATE$'): b.inspect(raw,e)
+        with self.assertRaisesRegex(c.Blocked,'^BATCH_STOPPED$'): b.inspect(raw,e)
 
     def test_batch_stops_on_refusal(self):
         raw,e=fixture();b=c._FixtureBudget()
-        with self.assertRaisesRegex(c.Blocked,'^ARCHIVE_HASH
-    def test_historical_pins_and_prior_five(self):
-        for path,expected in [
-            ('wheel_archive_inspector.py','aa5ab610d711fb8f9bc1fce1020c4999e53f3571'),
-            ('wheel_archive_inspector_v2.py','9bf91fb983bd354f0b6db20dbb4eec32c447f369'),
-            ('wheel_notice_evidence.py','141f069706d0c597214829eea90a48197c381e2c'),
-            ('wheel_notice_evidence_v2.py','81693017a1f287cafe521e6a7e958831cfd9dc6a'),
-            ('wheel_license_policy.py','876bb701544cee28e5f06851bc85c05acb74af35'),
-            ('wheel_settlement_core.py','263d2565d744f4e53289fb973ff0a205561e4a7c'),
-            ('wheel_hosted_final.py','e0501942a15d61f50bb9f3429bdee3721456461b'),
-            ('wheel_prior_notice_preservation_45729307962.json','1adcd112c54ffa90ee638bcd7598d879e01798bc')]:
-            raw=git_blob('qa/c5_wheel_metadata/'+path)
-            self.assertEqual(hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest(),expected)
-        self.assertEqual(len(p.prior_placements()),5)
-        root=Path(__file__).resolve().parent
-        self.assertFalse((root/'APPROVAL_WHEEL_PUBLIC_DISCOVERY_20261126.txt').exists())
-        self.assertFalse((root/'APPROVAL_WHEEL_POLICY_V3_HOSTED_20261126.txt').exists())
-
-if __name__=='__main__':
-    unittest.main(verbosity=2)
-): b.inspect(raw,{**e,'sha256':'0'*64})
-        with self.assertRaisesRegex(c.Blocked,'^BATCH_STOPPED
-    def test_historical_pins_and_prior_five(self):
-        for path,expected in [
-            ('wheel_archive_inspector.py','aa5ab610d711fb8f9bc1fce1020c4999e53f3571'),
-            ('wheel_archive_inspector_v2.py','9bf91fb983bd354f0b6db20dbb4eec32c447f369'),
-            ('wheel_notice_evidence.py','141f069706d0c597214829eea90a48197c381e2c'),
-            ('wheel_notice_evidence_v2.py','81693017a1f287cafe521e6a7e958831cfd9dc6a'),
-            ('wheel_license_policy.py','876bb701544cee28e5f06851bc85c05acb74af35'),
-            ('wheel_settlement_core.py','263d2565d744f4e53289fb973ff0a205561e4a7c'),
-            ('wheel_hosted_final.py','e0501942a15d61f50bb9f3429bdee3721456461b'),
-            ('wheel_prior_notice_preservation_45729307962.json','1adcd112c54ffa90ee638bcd7598d879e01798bc')]:
-            raw=git_blob('qa/c5_wheel_metadata/'+path)
-            self.assertEqual(hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest(),expected)
-        self.assertEqual(len(p.prior_placements()),5)
-        root=Path(__file__).resolve().parent
-        self.assertFalse((root/'APPROVAL_WHEEL_PUBLIC_DISCOVERY_20261126.txt').exists())
-        self.assertFalse((root/'APPROVAL_WHEEL_POLICY_V3_HOSTED_20261126.txt').exists())
-
-if __name__=='__main__':
-    unittest.main(verbosity=2)
-): b.inspect(raw,e)
+        with self.assertRaisesRegex(c.Blocked,'^ARCHIVE_HASH$'): b.inspect(raw,{**e,'sha256':'0'*64})
+        with self.assertRaisesRegex(c.Blocked,'^BATCH_STOPPED$'): b.inspect(raw,e)
         self.deny('SYNTHETIC_FIXTURE_LIMIT',b'x'*65537,e)
 
     def test_receipt_limit(self):
         raw,_=fixture();receipt=c.inspect_fixture(raw)
         with patch.object(n,'MAX_DOCUMENT',len(receipt)-1):
-            with self.assertRaisesRegex(c.Blocked,'^CANDIDATE_RECEIPT_LIMIT
-    def test_historical_pins_and_prior_five(self):
-        for path,expected in [
-            ('wheel_archive_inspector.py','aa5ab610d711fb8f9bc1fce1020c4999e53f3571'),
-            ('wheel_archive_inspector_v2.py','9bf91fb983bd354f0b6db20dbb4eec32c447f369'),
-            ('wheel_notice_evidence.py','141f069706d0c597214829eea90a48197c381e2c'),
-            ('wheel_notice_evidence_v2.py','81693017a1f287cafe521e6a7e958831cfd9dc6a'),
-            ('wheel_license_policy.py','876bb701544cee28e5f06851bc85c05acb74af35'),
-            ('wheel_settlement_core.py','263d2565d744f4e53289fb973ff0a205561e4a7c'),
-            ('wheel_hosted_final.py','e0501942a15d61f50bb9f3429bdee3721456461b'),
-            ('wheel_prior_notice_preservation_45729307962.json','1adcd112c54ffa90ee638bcd7598d879e01798bc')]:
-            raw=git_blob('qa/c5_wheel_metadata/'+path)
-            self.assertEqual(hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest(),expected)
-        self.assertEqual(len(p.prior_placements()),5)
-        root=Path(__file__).resolve().parent
-        self.assertFalse((root/'APPROVAL_WHEEL_PUBLIC_DISCOVERY_20261126.txt').exists())
-        self.assertFalse((root/'APPROVAL_WHEEL_POLICY_V3_HOSTED_20261126.txt').exists())
-
-if __name__=='__main__':
-    unittest.main(verbosity=2)
-): c.inspect_fixture(raw)
+            with self.assertRaisesRegex(c.Blocked,'^CANDIDATE_RECEIPT_LIMIT$'): c.inspect_fixture(raw)
         with patch.object(n,'MAX_DOCUMENT',len(receipt)-1):
-            with self.assertRaisesRegex(c.Blocked,'^CANDIDATE_RECEIPT_LIMIT
-    def test_historical_pins_and_prior_five(self):
-        for path,expected in [
-            ('wheel_archive_inspector.py','aa5ab610d711fb8f9bc1fce1020c4999e53f3571'),
-            ('wheel_archive_inspector_v2.py','9bf91fb983bd354f0b6db20dbb4eec32c447f369'),
-            ('wheel_notice_evidence.py','141f069706d0c597214829eea90a48197c381e2c'),
-            ('wheel_notice_evidence_v2.py','81693017a1f287cafe521e6a7e958831cfd9dc6a'),
-            ('wheel_license_policy.py','876bb701544cee28e5f06851bc85c05acb74af35'),
-            ('wheel_settlement_core.py','263d2565d744f4e53289fb973ff0a205561e4a7c'),
-            ('wheel_hosted_final.py','e0501942a15d61f50bb9f3429bdee3721456461b'),
-            ('wheel_prior_notice_preservation_45729307962.json','1adcd112c54ffa90ee638bcd7598d879e01798bc')]:
-            raw=git_blob('qa/c5_wheel_metadata/'+path)
-            self.assertEqual(hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest(),expected)
-        self.assertEqual(len(p.prior_placements()),5)
-        root=Path(__file__).resolve().parent
-        self.assertFalse((root/'APPROVAL_WHEEL_PUBLIC_DISCOVERY_20261126.txt').exists())
-        self.assertFalse((root/'APPROVAL_WHEEL_POLICY_V3_HOSTED_20261126.txt').exists())
-
-if __name__=='__main__':
-    unittest.main(verbosity=2)
-):
+            with self.assertRaisesRegex(c.Blocked,'^CANDIDATE_RECEIPT_LIMIT$'):
                 c.verify_fixture(raw,receipt,c.sha(receipt),source_sha())
 
     def test_historical_pins_and_prior_five(self):
@@ -327,6 +205,8 @@ if __name__=='__main__':
             ('wheel_license_policy.py','876bb701544cee28e5f06851bc85c05acb74af35'),
             ('wheel_settlement_core.py','263d2565d744f4e53289fb973ff0a205561e4a7c'),
             ('wheel_hosted_final.py','e0501942a15d61f50bb9f3429bdee3721456461b'),
+            ('wheel_hosted_policy_v3.py','939bb94802311a45a7f8e3f23183100c857df3be'),
+            ('wheel_hosted_runtime.py','e20cc3f4f11c2d5a4659e9537d565687687a2f49'),
             ('wheel_prior_notice_preservation_45729307962.json','1adcd112c54ffa90ee638bcd7598d879e01798bc')]:
             raw=git_blob('qa/c5_wheel_metadata/'+path)
             self.assertEqual(hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest(),expected)
