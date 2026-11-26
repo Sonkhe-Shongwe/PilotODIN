@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | BLOCKED |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 672982d6bc54caedc0eb7adfabeba1375ddf8063 |
+| Observed starting HEAD | 7ccbd5121f95b6ed91afa9cd7e895cb5abf20feb |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | Revised C5-A/B development reproducibility and build safety; D prerequisites and P8 release-only allocation. No restricted acquisition, native, owner data, install, packaging, phase activation or release. |
-| Operation ID | C5-PORTABLE-ATTESTATION-LOOKUP-V2-PREP-20261126 |
-| Operation state | RECONCILED PREPARATION: public API example confirms repository_id, bundle_url, initiator. Detached exact revised candidate 8b0069294b643f5dc7cdc3b2e8f017c3f4a3bf1a, workflow blob 6ac9261c37e8bb357bc70d8edea8f39793d06c7e, parent main 64bb85676f50ec507e8d0614f1cf9293f04c9291; zero matching runs, not on any activated QA branch. Integrated successful diagnostic fields with original strict parser; 8/8 local synthetic filter cases PASS, not hosted/actual response verification. |
-| Intended files | Documentation-only checkpoint; detached one-use workflow candidate prepared. Request fresh owner approval for exact anonymous two-GET metadata lookup, 1 MiB body and 64 KiB headers per request (2 MiB body plus 128 KiB headers total), one five-minute job, no retry/redirect/bundle follow, no archive or interpreter/product execution. |
-| Approval | One diagnostic approval consumed by run #45872939351; 27 restricted approvals consumed/disarmed, zero active. No authentication, repeat lookup, bundle follow, archive acquisition, installation, interpreter/product execution or cutover authorised. Independent final-use provenance unchanged. |
+| Operation ID | C5-PORTABLE-ATTESTATION-LOOKUP-V2-ONCE-20261126 |
+| Operation state | PREPARED, not issued. Exact approved candidate 8b0069294b643f5dc7cdc3b2e8f017c3f4a3bf1a, workflow blob 6ac9261c37e8bb357bc70d8edea8f39793d06c7e, parent main 64bb85676f50ec507e8d0614f1cf9293f04c9291. Zero matching runs. Isolated branch qa/c5-portable-attestation-lookup-v2-20261126. |
+| Intended files | Write-ahead journal then isolated QA activation of sole approved workflow. Two literal digest GETs maximum, 1 MiB body and 64 KiB headers each, 30 seconds/request, five-minute job; no credentials, redirects, retries, pagination, bundle follow, checkout, installation or interpreter/product execution. Disarm after terminal result. |
+| Approval | Owner explicitly approves corrected one-use anonymous Windows/Linux metadata lookup at exact 8b0069294b643f5dc7cdc3b2e8f017c3f4a3bf1a, maximum two GETs, 2 MiB response bodies plus 128 KiB headers, five minutes, limited hosted tool bootstrap trust for discovery only. No authentication, retries, redirects, bundle URL follows, archive acquisition, installation, interpreter execution or product execution. All final-use provenance/acceptance requirements preserved. 27 prior approvals consumed/disarmed; current one-use approval unissued. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | None. Exact #45872939351 terminal SUCCESS, one job, one attempt. Isolated activation removed; exactly one branch run verified. |
+| Pending runs | None at preparation; verify exact candidate before issuing once, never replay uncertain dispatch. |
 | Unpublished work | 5e149a034c7bb37dd3afe4945026d1a581af3ed3 remains off live development branch; reachable in isolated QA ancestry. Owner-local tree untouched/uninspected. |
-| Recovery action | [Corrected lookup preparation](./PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md#26-november--c5-corrected-portable-attestation-lookup-preparation). Await fresh explicit two-digest lookup approval; verify exact candidate, write-ahead intent, create isolated branch at exact main then single expected-SHA update, reconcile and disarm. If no approval do not activate. Metadata lookup is not signed subject verification; no arbitrary bundle host approval, archive acquisition, trust-root/verifier/builder waiver, or product cutover. |
+| Recovery action | Verify prepared journal and exact candidate/QA branch; if unissued, create branch at exact main and expected-SHA advance once. If issued or uncertain, reconcile run/job/logs, remove only activation workflow via expected-SHA update and verify branch/run count. Preserve safe metadata/diagnostics only. No automatic replay or further acquisition. |
 | Resume after closure | D only after revised C5 source closure, G2 resolution and separately approved scope; every native prerequisite before its use. P8 release-only obligations retained; installer frozen. |
 
 ## Prior operation
