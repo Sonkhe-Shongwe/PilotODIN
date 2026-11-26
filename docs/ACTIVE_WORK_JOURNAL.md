@@ -9,17 +9,17 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
 | State | READY |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 4fee58ef40a4b4209f9903e44c3e2f6c7a5fd7e2 |
+| Observed starting HEAD | 227966c9a333e07a8a200b42c14913cb26ac67aa |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
-| Operation ID | C5-R2-EXISTING-REPOSITORY-ROUTE-20261126 |
-| Operation state | RECONCILED: owner reconfirmed current repository public during development, full repository private and separate public demonstration repository at project completion. Superseded default private execution/vault recommendation. Exact 63 remaining wheels/51 package versions triaged: 36 declare expression, 27 absent, 8 no declared notice path. No blanket redistribution clearance or new authority. |
-| Intended files | C5 specification, decision index, final audit supersession note, compact handoff, active journal, C ledger, focused per-wheel disclosure review. |
+| Operation ID | C5-R2-EXACT-UPSTREAM-LICENCE-20261126 |
+| Operation state | RECONCILED: read-only exact upstream release-tag licence evidence for 10 package versions / 15 remaining wheels, all eight without declared paths included; no exact wheel notice match or publication clearance. Existing public route retained; proposed all-or-nothing gate, not implemented. |
+| Intended files | Existing public-route licence review section 5, compact handoff, active journal, C ledger (documentation only). |
 | Approval | Routine source/synthetic CI only. All 18 restricted approvals consumed/disarmed; no actual wheels, retrieval, installation, owner tree or execution. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | None; documentation-only, unchanged workflows. |
+| Pending runs | None known; existing synthetic/resource runs successful; earlier acquisition failed and disarm succeeded; documentation-only checkpoint, no workflow change. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
-| Recovery action | Next focused public-route implementation/readiness: use existing repository only; resolve per-file permitted notice publication and durable replay with minimum change, review exact upstream licensing evidence (especially legacy/multi-licence exceptions) and provision independent activation expectation via authorised operator when needed. Public metadata-only receipt is a fallback proposal, not equivalent to raw-notice replay or approved evidence-method change; no blanket publication, no extra private repo, no new infrastructure by default. R3 remains disarmed pending exact scoped proposal and fresh approval. Continue allowed read-only provenance work in parallel. |
+| Recovery action | C5-R2: establish exact raw-document identity/path candidates and synthetic all-or-nothing public upload refusal gate without changing independent raw replay; see public-route review section 5. No manifest clearance from upstream declarations alone. If unresolved actual notice identities require discovery or changed evidence method, present a distinct narrow owner decision before any restricted attempt. Independent expectation provisioning/readback/removal still needs authorised operator; R3 disarmed pending viable publication/replay and fresh exact approval. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
