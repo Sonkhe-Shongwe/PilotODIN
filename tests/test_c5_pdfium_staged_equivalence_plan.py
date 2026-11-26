@@ -28,38 +28,90 @@ def test_exact_plan_and_standard_tool_commands():
     args = stages.pip_arguments("python", "wheelhouse", "lock", "report")
     assert "--dry-run" in args["dry_run"] and "--dry-run" not in args["install"]
     assert all("--isolated" in command for command in args.values())
+    assert "--ignore-installed" in args["dry_run"] and "--ignore-installed" not in args["install"]
+    assert all("--keyring-provider" in command and "disabled" in command for command in args.values())
+    assert len(stages.pure_rehearsal_arguments(plan, "python")) == 10
     assert stages.stage_a_arguments(plan, "python")[-1] == plan["stage_a"]["test_file"]
     assert len(stages.stage_b_arguments(plan, "python")) == 19
     with pytest.raises(RuntimeError, match="DISARMED"):
         stages.require_live_authority()
 
 
-def test_only_complete_same_generation_stage_a_is_eligible_not_authorised():
+def _terminal(plan, report):
+    pid = report["profile"]
+    selections = (plan["stage_b"]["regular_modules"] + plan["stage_b"]["contract_modules"] +
+                  plan["stage_b"]["selected_nodes"])
+    rows = {}
+    for selection in selections:
+        nodes = [selection if "::" in selection else selection + "::test_fixture"]
+        rows[selection] = {"collected": nodes, "passed": list(nodes), "state": "PASS"}
+    for kind, count in (("contract", 3), ("mixed", 9)):
+        nodes = [f"mixed_{kind}.test_{i}" for i in range(count)]
+        rows["mixed:" + kind] = {"collected": nodes, "passed": list(nodes), "state": "PASS"}
+    rows["font:equivalence"] = {"collected": list(stages.FONT_REQUIRED_NODES),
+                                "passed": list(stages.FONT_REQUIRED_NODES), "state": "PASS"}
+    totals = stages.PROFILE_TOTALS[pid]
+    return {"profile": pid, "generation": report["generation"], "source": report["source"],
+            "attempt": 1, "state": "PASS", "stage_a": report, "stage_b": rows,
+            "archive_uses": 51, "body_bytes": totals["A"][1] + totals["B"][1],
+            "requests": 52, "cleanup": "OWNED_SCRATCH_REMOVED"}
+
+
+def test_local_stage_a_gate_and_mandatory_combined_acceptance():
     plan = stages.read_plan()
     reports = _reports(plan)
-    assert stages.stage_b_eligible(plan, reports, generation="a" * 64, source="b" * 40)
-    for mutation in ("missing", "duplicate", "foreign", "failed", "skip", "xfail",
+    gen, source = "a" * 64, "b" * 40
+    windows, linux = stages.PROFILE_IDS
+    assert stages.stage_b_eligible(plan, reports[0], profile=windows, generation=gen, source=source)
+    assert stages.stage_b_eligible(plan, reports[1], profile=linux, generation=gen, source=source)
+    for mutation in ("missing", "foreign_profile", "foreign", "failed", "skip", "xfail",
                      "partial", "wrong_native", "wrong_source"):
-        bad = copy.deepcopy(reports)
+        bad = copy.deepcopy(reports[0])
         if mutation == "missing":
-            bad.pop()
-        elif mutation == "duplicate":
-            bad[1]["profile"] = bad[0]["profile"]
+            bad = None
+        elif mutation == "foreign_profile":
+            bad["profile"] = linux
         elif mutation == "foreign":
-            bad[0]["generation"] = "d" * 64
+            bad["generation"] = "d" * 64
         elif mutation == "failed":
-            bad[0]["state"] = "FAIL"
+            bad["state"] = "FAIL"
         elif mutation == "skip":
-            bad[0]["skipped"] = [bad[0]["passed"][0]]
+            bad["skipped"] = [bad["passed"][0]]
         elif mutation == "xfail":
-            bad[0]["xfailed"] = [bad[0]["passed"][0]]
+            bad["xfailed"] = [bad["passed"][0]]
         elif mutation == "partial":
-            bad[0]["passed"].pop()
+            bad["passed"].pop()
         elif mutation == "wrong_native":
-            bad[0]["native_sha256"] = "d" * 64
+            bad["native_sha256"] = "d" * 64
         elif mutation == "wrong_source":
+            bad["source"] = "d" * 40
+        with pytest.raises(ValueError):
+            stages.stage_b_eligible(plan, bad, profile=windows, generation=gen, source=source)
+    terminals = [_terminal(plan, report) for report in reports]
+    assert stages.linux_eligible(plan, terminals[0], generation=gen, source=source)
+    assert stages.final_eligible(plan, terminals, generation=gen, source=source)
+    for bad in (terminals[:1], terminals[::-1], [terminals[0], terminals[0]]):
+        with pytest.raises(ValueError):
+            stages.final_eligible(plan, bad, generation=gen, source=source)
+    for mutation in ("missing_b", "font", "cleanup", "attempt", "budget", "partial", "foreign"):
+        bad = copy.deepcopy(terminals)
+        if mutation == "missing_b":
+            bad[0]["stage_b"].pop("mixed:mixed")
+        elif mutation == "font":
+            bad[0]["stage_b"].pop("font:equivalence")
+        elif mutation == "cleanup":
+            bad[0]["cleanup"] = "UNKNOWN"
+        elif mutation == "attempt":
+            bad[0]["attempt"] = 2
+        elif mutation == "budget":
+            bad[0]["body_bytes"] += 1
+        elif mutation == "partial":
+            bad[0]["stage_b"]["mixed:mixed"]["passed"].pop()
+        elif mutation == "foreign":
             bad[0]["source"] = "d" * 40
         with pytest.raises(ValueError):
-            stages.stage_b_eligible(plan, bad, generation="a" * 64, source="b" * 40)
+            stages.linux_eligible(plan, bad[0], generation=gen, source=source)
+        with pytest.raises(ValueError):
+            stages.final_eligible(plan, bad, generation=gen, source=source)
     with pytest.raises(RuntimeError, match="DISARMED"):
         stages.require_live_authority()

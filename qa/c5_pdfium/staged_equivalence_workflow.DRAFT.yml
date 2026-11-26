@@ -1,0 +1,107 @@
+# Detached review template only. NOT under .github/workflows.
+# No trigger registration; all jobs literally disabled. A separately approved
+# exact activation must bind source, workflow, approved use and one-use run.
+name: C5 PDFium staged equivalence DRAFT
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  # Separate immutable disarmed-source rehearsal, never an implicit activation.
+  rehearsal:
+    if: ${{ false }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        env:
+          GIT_CONFIG_COUNT: "1"
+          GIT_CONFIG_KEY_0: core.autocrlf
+          GIT_CONFIG_VALUE_0: "false"
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Existing reviewed pytest only; no setup or install
+        env:
+          PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+          PYTHONDONTWRITEBYTECODE: "1"
+        shell: bash
+        run: |
+          set -euo pipefail
+          python="$RUNNER_TOOL_CACHE/Python/3.11.18/x64/bin/python3.11"
+          test -f "$python"
+          "$python" -B -m pytest -p no:cacheprovider -q tests/test_c5_pdfium_staged_equivalence_plan.py tests/test_c5_pdfium_inspection_equivalence.py::test_disarmed_gate_refuses_before_metadata_or_native_import tests/test_c5_pdfium_staged_executor.py
+  windows:
+    if: ${{ false }}
+    runs-on: windows-2022
+    timeout-minutes: 60
+    outputs:
+      receipt: ${{ steps.verify.outputs.receipt }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        env:
+          GIT_CONFIG_COUNT: "1"
+          GIT_CONFIG_KEY_0: core.autocrlf
+          GIT_CONFIG_VALUE_0: "false"
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Detached staged verification (DISARMED)
+        id: verify
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $python = Join-Path $env:RUNNER_TOOL_CACHE 'Python/3.11.9/x64/python.exe'
+          if (-not (Test-Path -LiteralPath $python -PathType Leaf)) { throw 'Existing bootstrap missing' }
+          & $python -B -m qa.c5_pdfium.staged_executor --profile windows-x64-cp311-source-test
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+  linux:
+    if: ${{ false }}
+    needs: windows
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    outputs:
+      receipt: ${{ steps.verify.outputs.receipt }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        env:
+          GIT_CONFIG_COUNT: "1"
+          GIT_CONFIG_KEY_0: core.autocrlf
+          GIT_CONFIG_VALUE_0: "false"
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Detached staged verification (DISARMED)
+        id: verify
+        env:
+          C5_WINDOWS_RECEIPT: ${{ needs.windows.outputs.receipt }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python="$RUNNER_TOOL_CACHE/Python/3.11.18/x64/bin/python3.11"
+          test -f "$python"
+          "$python" -B -m qa.c5_pdfium.staged_executor --profile linux-x64-cp311-source-test
+  final:
+    if: ${{ false }}
+    needs: [windows, linux]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        env:
+          GIT_CONFIG_COUNT: "1"
+          GIT_CONFIG_KEY_0: core.autocrlf
+          GIT_CONFIG_VALUE_0: "false"
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Mandatory both-platform acceptance (DISARMED)
+        env:
+          C5_WINDOWS_RECEIPT: ${{ needs.windows.outputs.receipt }}
+          C5_LINUX_RECEIPT: ${{ needs.linux.outputs.receipt }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python="$RUNNER_TOOL_CACHE/Python/3.11.18/x64/bin/python3.11"
+          test -f "$python"
+          "$python" -B -m qa.c5_pdfium.staged_executor --final

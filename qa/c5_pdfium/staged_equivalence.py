@@ -13,7 +13,7 @@ import re
 
 ROOT = Path(__file__).resolve().parents[2]
 PLAN_PATH = "qa/c5_pdfium/staged_equivalence_plan_20261126.json"
-PLAN_PIN = "d411a9fd04e9711a7fff043710bf6bac7505b103"
+PLAN_PIN = "f81c0bfe8b09cc226f1d566d8366f454a9f4dd4e"
 LIVE_ENABLED = False
 PROFILE_IDS = ("windows-x64-cp311-source-test", "linux-x64-cp311-source-test")
 SHA1 = re.compile(r"[0-9a-f]{40}")
@@ -26,6 +26,11 @@ PROFILE_TOTALS = {
 }
 SMOKE_ROOTS = frozenset(("pytest", "packaging", "iniconfig", "pluggy", "pygments",
                          "pillow", "pypdfium2"))
+FONT_REQUIRED_NODES = ("font:scoped_cmap_unit", "font:baseline_extraction_mismatch",
+                       "font:corrected_extraction_exact", "font:same_engine_rgb_identity",
+                       "font:actual_unicode_exact", "font:actual_unicode_continuation",
+                       "font:actual_unicode_line_bounds", "font:context_order_and_bounds",
+                       "font:coverage_outcomes")
 REQUIRED_ENV = {"PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1", "PYTHONDONTWRITEBYTECODE": "1",
                 "PIP_NO_INDEX": "1", "PIP_DISABLE_PIP_VERSION_CHECK": "1"}
 
@@ -57,9 +62,14 @@ def strict_json(raw):
 
 def read_plan():
     plan = strict_json(pinned(PLAN_PATH, PLAN_PIN))
-    need(plan["schema"] == 1 and plan["status"] == "DISARMED_PROPOSAL_ONLY",
+    need(plan["schema"] == 2 and plan["status"] == "DISARMED_PROPOSAL_ONLY",
          "PLAN_NOT_DISARMED")
     need(tuple(p["id"] for p in plan["profiles"]) == PROFILE_IDS, "PROFILE_SET")
+    need(plan["scheduling"] == {"mode": "WINDOWS_A_B_THEN_LINUX_A_B",
+         "local_stage_a_required": True, "linux_requires_windows_terminal_pass": True,
+         "final_requires_both_complete": True, "shared_binary_artifacts": False}, "SCHEDULING")
+    need(plan["pre_use_disposition"] == {"status": "UNRESOLVED", "pin": None,
+         "mandatory_before_any_consumption": True}, "DISPOSITION_NOT_DISARMED")
     for path, digest in plan["source_pins"].items():
         pinned(path, digest)
     for stage, (count, size, gets) in TOTALS.items():
@@ -119,10 +129,10 @@ def smoke_lock(plan, profile_id):
 def pip_arguments(python, wheelhouse, lock, report):
     """Exact argument templates; executor must verify absolute isolated paths."""
     base = (str(python), "-I", "-B", "-m", "pip", "--isolated",
-            "--disable-pip-version-check", "--no-input")
+            "--disable-pip-version-check", "--no-input", "--keyring-provider", "disabled")
     install = base + ("install", "--no-index", "--only-binary=:all:", "--require-hashes",
                       "--no-cache-dir", "--find-links", str(wheelhouse), "-r", str(lock))
-    return {"dry_run": install + ("--dry-run", "--report", str(report)),
+    return {"dry_run": install + ("--dry-run", "--ignore-installed", "--report", str(report)),
             "install": install, "check": base + ("check",)}
 
 
@@ -144,39 +154,94 @@ def stage_b_arguments(plan, python):
                  stage["regular_modules"] + stage["contract_modules"] + stage["selected_nodes"])
 
 
-def stage_b_eligible(plan, reports, *, generation, source):
-    """Validate status structure only; future executor must authenticate receipts.
+def pure_rehearsal_arguments(plan, python):
+    base = (str(python), "-B", "-m", "pytest", "-p", "no:cacheprovider", "-q")
+    p = plan["pure_rehearsal"]
+    return base + (p["test_file"], p["guard_node"], p["executor_tests"])
 
-    Both targets must pass every exact Stage A node in the same generation.
-    A report, even one matching this shape, grants NO execution authority.
-    """
+
+def stage_b_eligible(plan, report, *, profile, generation, source):
+    """Local Stage A must pass completely before local Stage B. No authority."""
     need(isinstance(generation, str) and SHA256.fullmatch(generation) and
          isinstance(source, str) and SHA1.fullmatch(source), "GENERATION_IDENTITY")
-    need(isinstance(reports, list) and len(reports) == 2, "STAGE_A_REPORT_SET")
     expected = {plan["stage_a"]["test_file"] + "::" + node
                 for node in plan["stage_a"]["expected_node_ids"]}
-    seen = set()
-    for report in reports:
-        need(set(report) == {"profile", "generation", "source", "stage", "state",
-                             "collected", "passed", "failed", "skipped", "xfailed",
-                             "native_sha256", "pre_use_disposition_sha256"}, "REPORT_FIELDS")
-        pid = report["profile"]
-        need(pid in PROFILE_IDS and pid not in seen, "REPORT_PROFILE")
-        seen.add(pid)
-        need(report["generation"] == generation and report["source"] == source and
-             report["stage"] == "A" and report["state"] == "PASS", "REPORT_IDENTITY")
-        for key in ("collected", "passed"):
-            nodes = report[key]
-            need(isinstance(nodes, list) and len(nodes) == len(expected) and set(nodes) == expected,
-                 "REPORT_NODE_SET")
-        need(report["failed"] == report["skipped"] == report["xfailed"] == [],
-             "REPORT_NOT_PASS")
-        profile = next(p for p in plan["profiles"] if p["id"] == pid)
-        need(len(profile["native"]) == 1 and
-             report["native_sha256"] == profile["native"][0]["sha256"] and
-             isinstance(report["pre_use_disposition_sha256"], str) and
-             SHA256.fullmatch(report["pre_use_disposition_sha256"]), "REPORT_NATIVE_IDENTITY")
-    return seen == set(PROFILE_IDS)
+    need(isinstance(report, dict) and set(report) == {
+        "profile", "generation", "source", "stage", "state", "collected", "passed",
+        "failed", "skipped", "xfailed", "native_sha256", "pre_use_disposition_sha256"
+    }, "REPORT_FIELDS")
+    need(profile in PROFILE_IDS and report["profile"] == profile, "REPORT_PROFILE")
+    need(report["generation"] == generation and report["source"] == source and
+         report["stage"] == "A" and report["state"] == "PASS", "REPORT_IDENTITY")
+    for key in ("collected", "passed"):
+        nodes = report[key]
+        need(isinstance(nodes, list) and len(nodes) == len(expected) and set(nodes) == expected,
+             "REPORT_NODE_SET")
+    need(report["failed"] == report["skipped"] == report["xfailed"] == [], "REPORT_NOT_PASS")
+    target = next(p for p in plan["profiles"] if p["id"] == profile)
+    need(len(target["native"]) == 1 and
+         report["native_sha256"] == target["native"][0]["sha256"] and
+         isinstance(report["pre_use_disposition_sha256"], str) and
+         SHA256.fullmatch(report["pre_use_disposition_sha256"]), "REPORT_NATIVE_IDENTITY")
+    return True
+
+
+def terminal_profile(plan, receipt, *, profile, generation, source):
+    """Reconcile complete A and B status shape; authentic provenance is separate."""
+    need(isinstance(receipt, dict) and set(receipt) == {
+        "profile", "generation", "source", "attempt", "state", "stage_a",
+        "stage_b", "archive_uses", "body_bytes", "requests", "cleanup"
+    }, "TERMINAL_FIELDS")
+    need(receipt["profile"] == profile and receipt["generation"] == generation and
+         receipt["source"] == source and type(receipt["attempt"]) is int and
+         receipt["attempt"] == 1 and receipt["state"] == "PASS" and
+         receipt["cleanup"] == "OWNED_SCRATCH_REMOVED", "TERMINAL_IDENTITY")
+    stage_b_eligible(plan, receipt["stage_a"], profile=profile,
+                     generation=generation, source=source)
+    commands = (plan["stage_b"]["regular_modules"] + plan["stage_b"]["contract_modules"] +
+                plan["stage_b"]["selected_nodes"])
+    expected = commands + ["mixed:contract", "mixed:mixed", "font:equivalence"]
+    b = receipt["stage_b"]
+    need(isinstance(b, dict) and set(b) == set(expected), "STAGE_B_CASE_SET")
+    all_nodes = set()
+    for selection in expected:
+        row = b[selection]
+        need(isinstance(row, dict) and set(row) == {"collected", "passed", "state"} and
+             row["state"] == "PASS", "STAGE_B_STATE")
+        nodes = row["collected"]
+        need(isinstance(nodes, list) and nodes and all(isinstance(n, str) and n for n in nodes)
+             and len(nodes) == len(set(nodes)) and row["passed"] == nodes, "STAGE_B_NODE_SET")
+        need(not all_nodes.intersection(nodes), "STAGE_B_DUPLICATE")
+        all_nodes.update(nodes)
+        if selection.startswith("tests/"):
+            need(all(n.startswith(selection + "::") or n == selection or
+                     ("::" in selection and n.startswith(selection + "["))
+                     for n in nodes), "STAGE_B_FOREIGN_NODE")
+        if selection.startswith("mixed:"):
+            need(len(nodes) == (3 if selection.endswith("contract") else 9), "MIXED_COUNT")
+        if selection == "font:equivalence":
+            need(tuple(nodes) == FONT_REQUIRED_NODES, "FONT_PREDICATE_SET")
+    totals = PROFILE_TOTALS[profile]
+    need(type(receipt["archive_uses"]) is int and receipt["archive_uses"] == 51 and
+         type(receipt["body_bytes"]) is int and
+         receipt["body_bytes"] == totals["A"][1] + totals["B"][1] and
+         type(receipt["requests"]) is int and 51 <= receipt["requests"] <= 52,
+         "TERMINAL_BUDGET")
+    return True
+
+
+def linux_eligible(plan, windows, *, generation, source):
+    return terminal_profile(plan, windows, profile=PROFILE_IDS[0],
+                            generation=generation, source=source)
+
+
+def final_eligible(plan, receipts, *, generation, source):
+    need(isinstance(receipts, list) and len(receipts) == 2, "TERMINAL_SET")
+    for profile, receipt in zip(PROFILE_IDS, receipts):
+        terminal_profile(plan, receipt, profile=profile, generation=generation, source=source)
+    need(receipts[0]["stage_a"]["pre_use_disposition_sha256"] ==
+         receipts[1]["stage_a"]["pre_use_disposition_sha256"], "DISPOSITION_GENERATION")
+    return True
 
 
 def require_live_authority():

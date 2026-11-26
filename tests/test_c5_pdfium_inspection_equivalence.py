@@ -223,6 +223,7 @@ def test_distinct_crop_and_user_unit_refused():
 
 
 def test_malformed_with_eof_requires_reader_refusal():
+    qa.require_pdfium()
     from pypdfium2 import PdfiumError
     malformed = b"%PDF-1.4\nnot a PDF object or page tree\n%%EOF\n"
     # A valid suffix alone cannot make this a generated report.

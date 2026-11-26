@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "status": "DISARMED_PROPOSAL_ONLY",
   "operation": "C5-PDFIUM-STAGED-EQUIVALENCE-20261126",
   "source_pins": {
@@ -32,7 +32,20 @@
     "max_wheel_expanded_bytes": 1073741824,
     "max_profile_wheels_expanded_bytes": 4294967296,
     "max_notice_bytes_per_file": 1048576,
-    "max_notice_bytes_total": 33554432
+    "max_notice_bytes_total": 33554432,
+    "interpreter_archive": {
+      "max_members": 50000,
+      "max_member_bytes": 536870912,
+      "max_expanded_bytes": 1073741824
+    },
+    "per_platform": {
+      "min_free_scratch_bytes": 8589934592,
+      "max_process_seconds": 180,
+      "max_wheel_get_seconds": 30,
+      "max_interpreter_get_seconds": 120,
+      "max_job_seconds": 3600,
+      "max_status_bytes": 4194304
+    }
   },
   "profiles": [
     {
@@ -1267,7 +1280,7 @@
     "native PE/ELF linkage and applicable usage conditions resolved before import",
     "all applicable notices retained and use rights resolved",
     "isolated disposable scratch, offline wheelhouse and no ambient config",
-    "verified per-platform Stage A results from same generation before Stage B"
+    "local complete Stage A result before local B; Windows terminal PASS before Linux; both complete for acceptance"
   ],
   "prohibitions": [
     "live branch cutover",
@@ -1280,5 +1293,22 @@
     "fallback",
     "raw archive upload",
     "Node/npm/Rust/browser/font acquisition"
-  ]
+  ],
+  "scheduling": {
+    "mode": "WINDOWS_A_B_THEN_LINUX_A_B",
+    "local_stage_a_required": true,
+    "linux_requires_windows_terminal_pass": true,
+    "final_requires_both_complete": true,
+    "shared_binary_artifacts": false
+  },
+  "pure_rehearsal": {
+    "test_file": "tests/test_c5_pdfium_staged_equivalence_plan.py",
+    "guard_node": "tests/test_c5_pdfium_inspection_equivalence.py::test_disarmed_gate_refuses_before_metadata_or_native_import",
+    "executor_tests": "tests/test_c5_pdfium_staged_executor.py"
+  },
+  "pre_use_disposition": {
+    "status": "UNRESOLVED",
+    "pin": null,
+    "mandatory_before_any_consumption": true
+  }
 }
