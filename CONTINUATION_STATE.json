@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-PORTABLE-DOCKER-READER-API-ONCE-20261126",
-    "parent_sha": "6df2978845a5dd4edfc0018aab3da99d44bc8b4f",
-    "previous_snapshot_sha": "17409892153c58d942b94d8c450b2e9f3ab0c29e",
-    "scope": "Reconcile exact LLVM correction attempt, preserve preflight and verification passes and case collision refusal; restore false guard",
+    "operation_id": "C5-MEMBER-CASE-DIAGNOSTIC-PREP-20261126",
+    "parent_sha": "b6ebd081ef68f92527fc15f7a3b017dc91ab65a4",
+    "previous_snapshot_sha": "b6ebd081ef68f92527fc15f7a3b017dc91ab65a4",
+    "scope": "Read-only exact archive collision diagnosis; prepare inert fail-closed diagnostic and retain previous refusal",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "26-november--c5-llvm-correction-passed-preflights-and-both-verifications-member-case-collision-refused",
-      "blob_sha": "2e2ac5fa4d76a5358d79095b9bc147b9549f849b",
-      "start_line": 2758,
-      "end_line": 2760
+      "anchor": "26-november--c5-archive-case-collision-source-review-and-inert-diagnostic",
+      "blob_sha": "9b609f5c6ad1b9babd25d94143240febcbcede58",
+      "start_line": 2762,
+      "end_line": 2764
     }
   },
   "product": {
@@ -117,16 +117,23 @@
   },
   "task": {
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
-    "status": "READY",
+    "status": "BLOCKED",
     "scope": "C-D08 revised C5-A/B development reproducibility and build safety only; D retains native prerequisites, P8 release-only",
-    "blocker": "Runtime BLOCKED: MEMBER_CASE_COLLISION during authenticated archive path reconciliation; exact profile/member pair unknown. All preflights, both verifier calls and 84 static reader calls passed; complete inventory, final accounting and receipt not available.",
-    "next_action": "Read-only review exact reconcile_paths predicate and public authenticated release source/layout evidence for legitimate platform-specific case collisions. Preserve exact duplicate, traversal, containment, Windows case-insensitive extraction and all other safety boundaries. Prepare narrow fail-closed diagnostic or correction only if justified; explicit owner authority for changed method/scope, no new acquisition, activation or replay.",
-    "next_action_kind": "SOURCE_PREPARATION",
+    "blocker": "MEMBER_CASE_COLLISION remains unresolved; exact profile and colliding member pair unavailable. Inert diagnostic 9653f9137c1c42232342464bc24c17b33d56d79f preserves refusal but changes failure evidence retention. No justified exception; fresh owner decision required.",
+    "next_action": "Obtain explicit owner authority for the bounded first-collision encoded public member-path diagnostic (no casefold exception, no new acquisition or execution yet); then prepare fresh complete pinned inert integrated candidate, regenerate activation template and manifest, verify exact 18-method gate and unchanged finite-image/no-pull/transport safeguards before requesting separate fresh exact one-use execution authority.",
+    "next_action_kind": "OWNER_DECISION",
     "after": [
-      "Review justified inert correction or diagnostic proposal, obtain fresh explicit execution authority; reconcile evidence without replay.",
-      "Complete C5 rows 5–7 and row 8 exact regression/source closure only on qualifying evidence; D only after C5 closure, G2 resolution and separate authority."
+      "Only after fresh exact execution approval, run once within unchanged safeguards; reconcile actual first collision evidence or complete result and restore false guard. No replay or assumed cleanup.",
+      "Review exact authenticated colliding profile/pair and upstream evidence; any exception requires explicit authority and independently verified platform safety. Complete C5 rows 5–7 and row 8 only on qualifying evidence; D remains gated by C5, G2 and separate authority."
     ],
     "read": [
+      {
+        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
+        "anchor": "26-november--c5-archive-case-collision-source-review-and-inert-diagnostic",
+        "blob_sha": "9b609f5c6ad1b9babd25d94143240febcbcede58",
+        "start_line": 2762,
+        "end_line": 2764
+      },
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "26-november--c5-llvm-correction-passed-preflights-and-both-verifications-member-case-collision-refused",
@@ -361,17 +368,17 @@
     ]
   },
   "operation": {
-    "id": "C5-PORTABLE-DOCKER-READER-API-ONCE-20261126",
+    "id": "C5-MEMBER-CASE-DIAGNOSTIC-PREP-20261126",
     "state": "RECONCILED",
-    "starting_sha": "a909829f4a222497ef201509e604bd0976f66ff8",
-    "outcome": "Run 45895815977 attempt 1/job 140169305392 FAILURE MEMBER_CASE_COLLISION after 17/17 synthetic, all preflights, acquisition, both offline verifier calls and 84/84 static reader calls passed; no final receipt or accounting. One-use approval consumed; false guard restored.",
+    "starting_sha": "b6ebd081ef68f92527fc15f7a3b017dc91ab65a4",
+    "outcome": "Read-only publisher/layout and exact source review completed; no justified casefold exception. Detached candidate 9653f9137c1c42232342464bc24c17b33d56d79f prepared; 1 exact mocked synthetic method PASS, four snippets SHA256 matched. Full suite and live diagnostic untested; no restricted execution; 36 consumed/disarmed.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "26-november--c5-llvm-correction-passed-preflights-and-both-verifications-member-case-collision-refused",
-      "blob_sha": "2e2ac5fa4d76a5358d79095b9bc147b9549f849b",
-      "start_line": 2758,
-      "end_line": 2760
+      "anchor": "26-november--c5-archive-case-collision-source-review-and-inert-diagnostic",
+      "blob_sha": "9b609f5c6ad1b9babd25d94143240febcbcede58",
+      "start_line": 2762,
+      "end_line": 2764
     }
   },
   "authority": {
@@ -471,6 +478,10 @@
       {
         "sha": "72e11429adf316316d71084a5eb6f3fd3da048df",
         "scope": "Inert exact LLVM 18 option correction, five QA paths, one new exact snippet test PASS, 22/22 refreshed pins and ten source files read back; updated full 17-method suite NOT RUN, zero candidate runs; execution needs fresh exact owner approval."
+      },
+      {
+        "sha": "9653f9137c1c42232342464bc24c17b33d56d79f",
+        "scope": "Inert two-file case-collision diagnostic source proposal; one new exact mocked synthetic method PASS, four snippet SHA256 matches, full 18-method suite NOT RUN, activation template/manifest stale, no candidate runs or workflow changes; diagnostic evidence scope and future exact execution require fresh explicit owner approvals."
       }
     ]
   },
