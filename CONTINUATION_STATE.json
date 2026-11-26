@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-MEMBER-CASE-DIAGNOSTIC-INTEGRATION-PREP-20261126",
-    "parent_sha": "1807300bd0804122cfc70ca05273f24fe94f4dd2",
-    "previous_snapshot_sha": "1807300bd0804122cfc70ca05273f24fe94f4dd2",
-    "scope": "Record owner-approved bounded diagnostic preparation and fully pinned inert integrated candidate; no execution",
-    "state": "RECONCILED",
+    "operation_id": "C5-PORTABLE-DOCKER-CASE-DIAGNOSTIC-ONCE-20261126",
+    "parent_sha": "03b173e21bbb61ef92dd7d867f9b547ae352e048",
+    "previous_snapshot_sha": "03b173e21bbb61ef92dd7d867f9b547ae352e048",
+    "scope": "One fresh exact 05866bc9 no-pull Docker data-only verification on exactly 20261122.23.1 or 20261116.376.1 and Docker 28.0.4; approved bounded first collision diagnostic, all prior safeguards; full 18-method gate and preflights before acquisition; no retry/fallback.",
+    "state": "PREPARED",
     "receipt": {
-      "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "26-november--c5-bounded-case-collision-diagnostic-integrated-and-pinned-inert-candidate",
-      "blob_sha": "58d924311326801bf23666f261689d7743811a11",
-      "start_line": 2766,
-      "end_line": 2768
+      "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
+      "anchor": "owner-approved-exact-bounded-case-collision-diagnostic-one-use-integrated-docker-execution",
+      "blob_sha": "242c1a50b3b699e859d1a717c7677be39d0cbda4",
+      "start_line": 778,
+      "end_line": 780
     }
   },
   "product": {
@@ -117,16 +117,23 @@
   },
   "task": {
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
-    "status": "BLOCKED",
+    "status": "PREPARED",
     "scope": "C-D08 revised C5-A/B development reproducibility and build safety only; D retains native prerequisites, P8 release-only",
-    "blocker": "MEMBER_CASE_COLLISION still unresolved; exact colliding profile and member pair not retained. Complete inert integrated diagnostic candidate 05866bc9bcbf405a6c3da9e403c745164d5707a6 prepared under explicit preparation-only authority. No fresh restricted execution authority.",
-    "next_action": "Obtain fresh explicit owner approval of exact candidate 05866bc9bcbf405a6c3da9e403c745164d5707a6 for one bounded integrated no-pull Docker data-only verification attempt with approved first-collision diagnostic, unchanged finite image policy and all existing safeguards. Before activation independently reverify exact template/manifest, guard, workflow trigger scope, pending runs and source pins; persist write-ahead authority/intent. Full 18-method synthetic gate must pass before any Docker invocation or acquisition.",
-    "next_action_kind": "OWNER_DECISION",
+    "blocker": "Exact collision evidence unresolved; one fresh bounded diagnostic attempt approved, write-ahead only.",
+    "next_action": "Activate sole owned workflow from exact approved candidate with only two substitutions at verified write-ahead HEAD. Observe and reconcile actual run; disarm without replay.",
+    "next_action_kind": "APPROVED_EXECUTION",
     "after": [
       "Only after fresh exact execution approval, run once within unchanged safeguards; reconcile first collision diagnostic or complete evidence, restore false guard, no replay or assumed cleanup.",
       "Review exact authenticated colliding profile/pair and upstream evidence; any exception requires explicit authority and independently verified platform safety. Complete C5 rows 5–7 and row 8 only on qualifying evidence; D remains gated by C5, G2 and separate authority."
     ],
     "read": [
+      {
+        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
+        "anchor": "owner-approved-exact-bounded-case-collision-diagnostic-one-use-integrated-docker-execution",
+        "blob_sha": "242c1a50b3b699e859d1a717c7677be39d0cbda4",
+        "start_line": 778,
+        "end_line": 780
+      },
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "26-november--c5-bounded-case-collision-diagnostic-integrated-and-pinned-inert-candidate",
@@ -382,23 +389,49 @@
     ]
   },
   "operation": {
-    "id": "C5-MEMBER-CASE-DIAGNOSTIC-INTEGRATION-PREP-20261126",
-    "state": "RECONCILED",
-    "starting_sha": "1807300bd0804122cfc70ca05273f24fe94f4dd2",
-    "outcome": "Complete detached inert integrated candidate 05866bc9bcbf405a6c3da9e403c745164d5707a6; 22/22 payload pins, ten exact source matches, exact read-back, one new mocked synthetic method PASS and four exact snippet hashes matched. Full 18-method gate integrated NOT RUN; no restricted execution or acquisition.",
+    "id": "C5-PORTABLE-DOCKER-CASE-DIAGNOSTIC-ONCE-20261126",
+    "state": "PREPARED",
+    "starting_sha": "03b173e21bbb61ef92dd7d867f9b547ae352e048",
+    "scope": "One fresh exact 05866bc9 no-pull Docker data-only verification on exactly 20261122.23.1 or 20261116.376.1 and Docker 28.0.4; approved bounded first collision diagnostic, all prior safeguards; full 18-method gate and preflights before acquisition; no retry/fallback.",
+    "intended_paths": [
+      ".github/workflows/c5-portable-provenance-once.yml"
+    ],
+    "authority_ref": {
+      "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
+      "anchor": "owner-approved-exact-bounded-case-collision-diagnostic-one-use-integrated-docker-execution",
+      "blob_sha": "242c1a50b3b699e859d1a717c7677be39d0cbda4",
+      "start_line": 778,
+      "end_line": 780
+    },
+    "expected_evidence": "Exact activation parent/message, sole owned first-attempt workflow, terminal job/step logs, bounded first-collision diagnostic or complete verified receipt if present, exact false guard restored.",
+    "recovery": "Inspect live HEAD, exact commit/diff/message and actual run/attempt before retry; approval unavailable on uncertainty; disarm exact owned workflow with expected HEAD after reconciliation. Never replay.",
     "reconcile_before_retry": false,
-    "receipt": {
-      "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "26-november--c5-bounded-case-collision-diagnostic-integrated-and-pinned-inert-candidate",
-      "blob_sha": "58d924311326801bf23666f261689d7743811a11",
-      "start_line": 2766,
-      "end_line": 2768
-    }
+    "source_sha": "05866bc9bcbf405a6c3da9e403c745164d5707a6",
+    "template_sha256": "9b3d7eacfdced2036d3d2f6653bd838a1d51d0e720fe92ec1e376fe31b64e945",
+    "expected_activation_message": "C5-PORTABLE-DOCKER-CASE-DIAGNOSTIC-ONCE-20261126 owner approved exact bounded first-collision diagnostic no-pull data-only operation",
+    "run_attempt": 1
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next.",
     "preparation_only": "Owner approved consolidated shared-bundle disarmed acquisition-before-signature source and exact limited existing host bootstrap; owner approved proposed limited local Docker control-plane and host-derived rootfs trust/no-pull isolation method for preparation only. Authentication before extraction/use; no Docker invocation, acquisition, verification execution, installation or live cutover authorised. Owner approved bounded first-collision encoded public member-path diagnostic preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-bounded-first-collision-diagnostic-preparation-only. No restricted execution authority.",
-    "restricted_active": [],
+    "restricted_active": [
+      {
+        "id": "C5-PORTABLE-DOCKER-CASE-DIAGNOSTIC-ONCE-20261126",
+        "state": "APPROVED",
+        "source_sha": "05866bc9bcbf405a6c3da9e403c745164d5707a6",
+        "scope": "One fresh exact 05866bc9 no-pull Docker data-only verification on exactly 20261122.23.1 or 20261116.376.1 and Docker 28.0.4; approved bounded first collision diagnostic, all prior safeguards; full 18-method gate and preflights before acquisition; no retry/fallback.",
+        "owner_authority_ref": {
+          "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
+          "anchor": "owner-approved-exact-bounded-case-collision-diagnostic-one-use-integrated-docker-execution",
+          "blob_sha": "242c1a50b3b699e859d1a717c7677be39d0cbda4",
+          "start_line": 778,
+          "end_line": 780
+        },
+        "reconcile_before_retry": false,
+        "template_sha256": "9b3d7eacfdced2036d3d2f6653bd838a1d51d0e720fe92ec1e376fe31b64e945",
+        "run_attempt": 1
+      }
+    ],
     "consumed_disarmed_count": 36,
     "consumed_history": {
       "commit": "b9864b70fb9bb5a72d0f79c37f15b94100722192",
@@ -418,7 +451,7 @@
       "release",
       "replay of consumed or uncertain approval"
     ],
-    "guards": "36 consumed/disarmed including LLVM reader correction attempt; approved finite policy exactly 20261122.23.1 and 20261116.376.1 remains normative, no execution approval remains; owned workflow false job guard restored with exact activation parent/message retained; no fallback/replay. Three C1/C2 workflows and OWNED_RESOURCE_ENABLED false; three consumed variables owner cleanup unverified.",
+    "guards": "36 prior consumed/disarmed; exact one-use owner approval recorded PREPARED for 05866bc9 only, not yet activated. Existing finite image list and all bounds remain; no replay/fallback. Owned workflow false guard until exact activation. Three C1/C2 workflows and OWNED_RESOURCE_ENABLED false; three consumed variables owner cleanup unverified.",
     "last_consumed": {
       "id": "C5-PORTABLE-DOCKER-READER-API-ONCE-20261126",
       "source_sha": "72e11429adf316316d71084a5eb6f3fd3da048df",
