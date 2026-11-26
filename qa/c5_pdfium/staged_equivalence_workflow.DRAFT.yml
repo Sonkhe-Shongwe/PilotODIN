@@ -21,16 +21,19 @@ jobs:
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
-      - name: Existing reviewed pytest only; no setup or install
+      - name: Existing reviewed standard-library Python only; no setup or install
         env:
-          PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
           PYTHONDONTWRITEBYTECODE: "1"
         shell: bash
         run: |
           set -euo pipefail
           python="$RUNNER_TOOL_CACHE/Python/3.11.18/x64/bin/python3.11"
           test -f "$python"
-          "$python" -B -m pytest -p no:cacheprovider -q tests/test_c5_pdfium_staged_equivalence_plan.py tests/test_c5_pdfium_inspection_equivalence.py::test_disarmed_gate_refuses_before_metadata_or_native_import tests/test_c5_pdfium_staged_executor.py
+          # Deliberate refusal until independent bootstrap identity is bound.
+          # A separately approved rehearsal-only workflow must replace this stop.
+          exit 2
+          "$python" -I -B -S qa/c5_pdfium/pure_rehearsal.py --collect-only
+          "$python" -I -B -S qa/c5_pdfium/pure_rehearsal.py
   windows:
     if: ${{ false }}
     runs-on: windows-2022

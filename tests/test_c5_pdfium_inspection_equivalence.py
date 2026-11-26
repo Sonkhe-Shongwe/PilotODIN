@@ -73,11 +73,8 @@ def _within(page, tolerance=0):
 
 
 def test_disarmed_gate_refuses_before_metadata_or_native_import():
-    with patch.object(qa, "PDFIUM_TEST_EXECUTION_ENABLED", False), \
-            patch("importlib.metadata.version") as version:
-        with pytest.raises(RuntimeError, match="C5_PDFIUM_TEST_EXECUTION_DISARMED"):
-            qa.require_pdfium()
-        version.assert_not_called()
+    from tests.c5_pdfium_fixture_helpers import disarmed_gate_check
+    disarmed_gate_check()
 
 
 def test_ordered_text_numbers_revision_and_raster():
@@ -223,13 +220,8 @@ def test_distinct_crop_and_user_unit_refused():
 
 
 def test_malformed_with_eof_requires_reader_refusal():
-    qa.require_pdfium()
-    from pypdfium2 import PdfiumError
-    malformed = b"%PDF-1.4\nnot a PDF object or page tree\n%%EOF\n"
-    # A valid suffix alone cannot make this a generated report.
-    qa._check_generated_pdf(malformed)
-    with pytest.raises((PdfiumError, ValueError)):
-        qa.inspect_pdf(malformed)
+    from tests.c5_pdfium_fixture_helpers import malformed_eof_check
+    malformed_eof_check()
 
 
 def _footer_stream(split: bool) -> bytes:

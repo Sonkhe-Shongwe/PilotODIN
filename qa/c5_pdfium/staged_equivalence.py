@@ -175,9 +175,10 @@ def stage_b_arguments(plan, python):
 
 
 def pure_rehearsal_arguments(plan, python):
-    base = (str(python), "-B", "-m", "pytest", "-p", "no:cacheprovider", "-q")
-    p = plan["pure_rehearsal"]
-    return base + (p["test_file"], p["guard_node"], p["executor_tests"])
+    # Keep the historical pytest selectors as exact predicate lineage. The
+    # pure rehearsal uses standard-library unittest, no site or plugins.
+    need(plan["pure_rehearsal"]["expected_count"] == 11, "PURE_CASE_COUNT")
+    return (str(python), "-I", "-B", "-S", str(ROOT / "qa/c5_pdfium/pure_rehearsal.py"))
 
 
 def stage_b_eligible(plan, report, *, profile, generation, source):

@@ -1,9 +1,10 @@
 """Pure source and fixture contracts for the disarmed staged executor."""
 import json
+import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
-import pytest
+import unittest
 
 from qa.c5_pdfium import staged_executor as executor
 from qa.c5_pdfium import staged_equivalence as stages
@@ -29,16 +30,16 @@ def test_disarmed_executor_refuses_before_side_effects():
             lambda: executor.verify_loaded_native(None, None, None, None),
             lambda: executor.resolve_install(None, None, None, None, None, None),
         ):
-            with pytest.raises(RuntimeError, match="DISARMED"):
+            with unittest.TestCase().assertRaisesRegex(RuntimeError, "DISARMED"):
                 action()
         process.assert_not_called()
         scratch.assert_not_called()
-    with pytest.raises(RuntimeError, match="FONT_EQUIVALENCE_UNRESOLVED"):
+    with unittest.TestCase().assertRaisesRegex(RuntimeError, "FONT_EQUIVALENCE_UNRESOLVED"):
         executor.require_font_authority()
 
 
 def test_malformed_fixture_refuses_before_direct_native_import():
-    from tests import test_c5_pdfium_inspection_equivalence as fixture
+    from tests.c5_pdfium_fixture_helpers import malformed_eof_check
     import builtins
     original = builtins.__import__
     calls = []
@@ -51,8 +52,8 @@ def test_malformed_fixture_refuses_before_direct_native_import():
 
     with patch.object(pdf, "PDFIUM_TEST_EXECUTION_ENABLED", False), \
             patch("builtins.__import__", side_effect=track):
-        with pytest.raises(RuntimeError, match="DISARMED"):
-            fixture.test_malformed_with_eof_requires_reader_refusal()
+        with unittest.TestCase().assertRaisesRegex(RuntimeError, "DISARMED"):
+            malformed_eof_check()
     assert not calls
 
 
@@ -65,45 +66,48 @@ def test_response_framing_and_archive_paths():
         b"HTTP/1.1 200 OK\r\nContent-Length: 1\r\nContent-Encoding: gzip\r\n\r\n",
         b"HTTP/1.1 200 OK\r\nContent-Length: 1\r\n\r\nHTTP/1.1 200 OK\r\nContent-Length: 1\r\n\r\n",
     ):
-        with pytest.raises(ValueError):
+        with unittest.TestCase().assertRaises(ValueError):
             executor.response_headers(raw)
     assert executor.archive_member_path("python/bin/python") == "python/bin/python"
     for name in ("../bad", "/root", "foo\\bar", "a/CON", "a/alternate:stream"):
-        with pytest.raises(ValueError):
+        with unittest.TestCase().assertRaises(ValueError):
             executor.archive_member_path(name)
 
 
-def test_resolution_requires_exact_local_archive_and_complete_graph(tmp_path):
-    house = tmp_path / "wheels"
-    house.mkdir()
-    row = {"name": "pytest", "version": "9.2.0", "filename": "pytest-9.2.0-py3-none-any.whl",
-           "sha256": "f" * 64}
-    item = {"metadata": {"name": "pytest", "version": "9.2.0"},
-            "download_info": {"url": (house / row["filename"]).as_uri(),
-                              "archive_info": {"hashes": {"sha256": row["sha256"]}}},
-            "is_direct": False}
-    report = tmp_path / "report.json"
-    report.write_text(json.dumps({"install": [item]}), encoding="ascii")
-    assert executor.reconcile_resolution(report, [row], house)
-    for wrong in ([], [item, item], [dict(item, is_direct=True)],
-                  [dict(item, download_info=dict(item["download_info"],
-                                                  url="https://example.invalid/" + row["filename"]))]):
-        report.write_text(json.dumps({"install": wrong}), encoding="ascii")
-        with pytest.raises(ValueError):
-            executor.reconcile_resolution(report, [row], house)
+def test_resolution_requires_exact_local_archive_and_complete_graph():
+    with tempfile.TemporaryDirectory(prefix="c5-pure-") as directory:
+        tmp_path = Path(directory)
+        house = tmp_path / "wheels"
+        house.mkdir()
+        row = {"name": "pytest", "version": "9.2.0", "filename": "pytest-9.2.0-py3-none-any.whl",
+               "sha256": "f" * 64}
+        item = {"metadata": {"name": "pytest", "version": "9.2.0"},
+                "download_info": {"url": (house / row["filename"]).as_uri(),
+                                  "archive_info": {"hashes": {"sha256": row["sha256"]}}},
+                "is_direct": False}
+        report = tmp_path / "report.json"
+        report.write_text(json.dumps({"install": [item]}), encoding="ascii")
+        assert executor.reconcile_resolution(report, [row], house)
+        for wrong in ([], [item, item], [dict(item, is_direct=True)],
+                      [dict(item, download_info=dict(item["download_info"],
+                                                      url="https://example.invalid/" + row["filename"]))]):
+            report.write_text(json.dumps({"install": wrong}), encoding="ascii")
+            with unittest.TestCase().assertRaises(ValueError):
+                executor.reconcile_resolution(report, [row], house)
 
 
-def test_status_hook_rejects_incomplete_setup_call_teardown(tmp_path, monkeypatch):
+def test_status_hook_rejects_incomplete_setup_call_teardown():
     node = "tests/test_fixture.py::test_one"
-    monkeypatch.setattr(receipt_hook, "_collected", [node])
-    monkeypatch.setattr(receipt_hook, "_reports", {node: [
-        ("setup", "passed", False), ("call", "passed", False)]})
-    monkeypatch.setattr(receipt_hook, "_errors", False)
-    path = tmp_path / "receipt.json"
-    monkeypatch.setenv("C5_PDFIUM_TEST_STATUS", str(path))
-    receipt_hook.pytest_sessionfinish(None, 0)
-    data = json.loads(path.read_text(encoding="ascii"))
-    assert data["failed"] == [node] and data["passed"] == []
+    with tempfile.TemporaryDirectory(prefix="c5-pure-") as directory:
+        path = Path(directory) / "receipt.json"
+        with patch.object(receipt_hook, "_collected", [node]), \
+                patch.object(receipt_hook, "_reports", {node: [
+                    ("setup", "passed", False), ("call", "passed", False)]}), \
+                patch.object(receipt_hook, "_errors", False), \
+                patch.dict("os.environ", {"C5_PDFIUM_TEST_STATUS": str(path)}):
+            receipt_hook.pytest_sessionfinish(None, 0)
+        data = json.loads(path.read_text(encoding="ascii"))
+        assert data["failed"] == [node] and data["passed"] == []
 
 
 def test_completion_inventory_never_acquires_python_installer():
@@ -119,27 +123,29 @@ def test_completion_inventory_never_acquires_python_installer():
             row["filename"] for row in profile["rows"]}
 
 
-def test_supplemental_identity_algorithms(tmp_path):
-    import hashlib
-    path = tmp_path / "test.tgz"
-    raw = b"synthetic fixture"
-    path.write_bytes(raw)
-    for row in (
-        {"kind": "npm", "bytes": len(raw), "sha512": hashlib.sha512(raw).hexdigest()},
-        {"kind": "node", "bytes": len(raw), "sha256": hashlib.sha256(raw).hexdigest()},
-        {"kind": "font", "bytes": len(raw), "git_blob_sha1": hashlib.sha1(
-            b"blob " + str(len(raw)).encode("ascii") + b"\0" + raw).hexdigest()},
-    ):
-        executor.exact_file(path, row)
-        algorithm, _ = executor.identity(row)
-        invalid = dict(row, **{algorithm: "0" * len(row[algorithm])})
-        with pytest.raises(ValueError, match="ARTIFACT_IDENTITY"):
-            executor.exact_file(path, invalid)
+def test_supplemental_identity_algorithms():
+    with tempfile.TemporaryDirectory(prefix="c5-pure-") as directory:
+        tmp_path = Path(directory)
+        import hashlib
+        path = tmp_path / "test.tgz"
+        raw = b"synthetic fixture"
+        path.write_bytes(raw)
+        for row in (
+            {"kind": "npm", "bytes": len(raw), "sha512": hashlib.sha512(raw).hexdigest()},
+            {"kind": "node", "bytes": len(raw), "sha256": hashlib.sha256(raw).hexdigest()},
+            {"kind": "font", "bytes": len(raw), "git_blob_sha1": hashlib.sha1(
+                b"blob " + str(len(raw)).encode("ascii") + b"\0" + raw).hexdigest()},
+        ):
+            executor.exact_file(path, row)
+            algorithm, _ = executor.identity(row)
+            invalid = dict(row, **{algorithm: "0" * len(row[algorithm])})
+            with unittest.TestCase().assertRaisesRegex(ValueError, "ARTIFACT_IDENTITY"):
+                executor.exact_file(path, invalid)
 
 
 def test_font_worker_refuses_before_native_or_owner_path():
     from qa.c5_pdfium import font_witness
     with patch.object(pdf, "require_pdfium") as native:
-        with pytest.raises(RuntimeError, match="DISARMED"):
+        with unittest.TestCase().assertRaisesRegex(RuntimeError, "DISARMED"):
             font_witness.run("actual", None)
         native.assert_not_called()

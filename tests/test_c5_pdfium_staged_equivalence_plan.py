@@ -1,7 +1,7 @@
 """Pure staged plan contracts; no transport, installation or native imports."""
 import copy
 
-import pytest
+import unittest
 
 from qa.c5_pdfium import staged_equivalence as stages
 
@@ -30,10 +30,11 @@ def test_exact_plan_and_standard_tool_commands():
     assert all("--isolated" in command for command in args.values())
     assert "--ignore-installed" in args["dry_run"] and "--ignore-installed" not in args["install"]
     assert all("--keyring-provider" in command and "disabled" in command for command in args.values())
-    assert len(stages.pure_rehearsal_arguments(plan, "python")) == 10
+    assert stages.pure_rehearsal_arguments(plan, "python") == (
+        "python", "-I", "-B", "-S", str(stages.ROOT / "qa/c5_pdfium/pure_rehearsal.py"))
     assert stages.stage_a_arguments(plan, "python")[-1] == plan["stage_a"]["test_file"]
     assert len(stages.stage_b_arguments(plan, "python")) == 19
-    with pytest.raises(RuntimeError, match="DISARMED"):
+    with unittest.TestCase().assertRaisesRegex(RuntimeError, "DISARMED"):
         stages.require_live_authority()
 
 
@@ -87,13 +88,13 @@ def test_local_stage_a_gate_and_mandatory_combined_acceptance():
             bad["native_sha256"] = "d" * 64
         elif mutation == "wrong_source":
             bad["source"] = "d" * 40
-        with pytest.raises(ValueError):
+        with unittest.TestCase().assertRaises(ValueError):
             stages.stage_b_eligible(plan, bad, profile=windows, generation=gen, source=source)
     terminals = [_terminal(plan, report) for report in reports]
     assert stages.linux_eligible(plan, terminals[0], generation=gen, source=source)
     assert stages.final_eligible(plan, terminals, generation=gen, source=source)
     for bad in (terminals[:1], terminals[::-1], [terminals[0], terminals[0]]):
-        with pytest.raises(ValueError):
+        with unittest.TestCase().assertRaises(ValueError):
             stages.final_eligible(plan, bad, generation=gen, source=source)
     for mutation in ("missing_b", "font", "frontend", "cleanup", "attempt", "budget", "partial", "foreign"):
         bad = copy.deepcopy(terminals)
@@ -113,9 +114,9 @@ def test_local_stage_a_gate_and_mandatory_combined_acceptance():
             bad[0]["stage_b"]["mixed:mixed"]["passed"].pop()
         elif mutation == "foreign":
             bad[0]["source"] = "d" * 40
-        with pytest.raises(ValueError):
+        with unittest.TestCase().assertRaises(ValueError):
             stages.linux_eligible(plan, bad[0], generation=gen, source=source)
-        with pytest.raises(ValueError):
+        with unittest.TestCase().assertRaises(ValueError):
             stages.final_eligible(plan, bad, generation=gen, source=source)
-    with pytest.raises(RuntimeError, match="DISARMED"):
+    with unittest.TestCase().assertRaisesRegex(RuntimeError, "DISARMED"):
         stages.require_live_authority()
