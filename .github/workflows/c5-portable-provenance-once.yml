@@ -7,7 +7,7 @@ on:
 permissions: {}
 jobs:
   provenance-once:
-    if: ${{ true && github.event_name == 'push' && github.run_attempt == 1 && github.event.before == '87941d0b9b9f362bd9a7138330a6653cf94c82e5' && github.event.head_commit.message == 'C5-PORTABLE-DOCKER-CASE-DIAGNOSTIC-ONCE-20261126 owner approved exact bounded first-collision diagnostic no-pull data-only operation' }}
+    if: ${{ false && github.event_name == 'push' && github.run_attempt == 1 && github.event.before == '87941d0b9b9f362bd9a7138330a6653cf94c82e5' && github.event.head_commit.message == 'C5-PORTABLE-DOCKER-CASE-DIAGNOSTIC-ONCE-20261126 owner approved exact bounded first-collision diagnostic no-pull data-only operation' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
