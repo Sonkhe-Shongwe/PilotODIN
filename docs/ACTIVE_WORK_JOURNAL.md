@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | VERIFYING |
+| State | READY |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | ce850a5657a34af6e4e085cd1c260d1ee558bdcb |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
 | Operation ID | C5-R2-LICENCE-COMPATIBILITY-20261126 |
-| Operation state | PREPARED: audit found v2 accepts legacy root location for metadata 2.4+; PyPA requires licenses/ relative path. New separate policy layer using 62 pinned candidate sidecars and six pinned freezer receipt declarations, no historical inspector/codec modification. Synthetic producer and independent replay checks; bounded unsupported format fixtures. |
+| Operation state | RECONCILED: exact b1f9998 run 45761471566 SUCCESS; Ubuntu 139712228941 and Windows 139712229304 each 103 existing +22 new tests; three CLI refusals, historical pins, 68 version bindings and prior five licence placement replay PASS. Initial 7a992f5 run 45761394010 passed 20 policy tests per platform; source review corrected unpublished refusal accounting before integration. All 18 prior approvals consumed/disarmed. |
 | Intended files | qa/c5_wheel_metadata/wheel_license_policy.py, test_wheel_license_policy.py, .github/workflows/c5-wheel-licence-policy-review.yml, journal/handoff/ledger and C5 implementation specification. |
 | Approval | Routine source/synthetic CI only. All 18 restricted approvals consumed/disarmed; no actual wheels, retrieval, installation, owner tree or execution. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | Initial exact 7a992f5 run 45761394010 SUCCESS both platforms 103 historical +20 policy tests, all 68 bindings and prior five placements PASS. Found producer accounting gap in review; correction with refusal accounting regressions, exact new CI pending. |
+| Pending runs | None; exact final synthetic CI reconciled. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
-| Recovery action | Bind independently pinned metadata versions by exact filename+metadata hash+declared files, enforce modern location and preserve legacy exact-one rule; verify v2 evidence independently before accepting policy. Check prior five preserved evidence separately without rewriting/replaying downloads; test format refusal and no historical drift. Then shared settlement core only after exact CI. No R3 approval yet. |
+| Recovery action | Next C5-R2 source-only shared schema-3 settlement core: explicit residual cap contract, independently bound metadata policy on producer and verifier, policy refusal allowlist, separate fixture and disabled hosted frontdoors. Integrate prior-five durable evidence, artifact/gate tests, retention plan and representative synthetic resource measurements before fresh R3 proposal. Avoid private-counter coupling in new core; no live requests, no historical pin changes. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
