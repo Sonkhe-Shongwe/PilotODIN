@@ -89,7 +89,7 @@ def self_test():
         meta={'id':123,'name':record['artifact_name'],'expired':False,'size_in_bytes':len(raw),
               'digest':'sha256:'+w.sha(raw),'workflow_run':{'id':12345,'head_sha':'1'*40,
               'head_branch':h.BRANCH.removeprefix('refs/heads/')}}
-        _,receipt=g.replay_artifact(raw,meta,record,'12345','1'*40',rows,
+        _,receipt=g.replay_artifact(raw,meta,record,'12345','1'*40,rows,
                                    'synthetic-transfer-v1',Path(d),scope=a.SCOPE)
         need(receipt['verified_count']==1 and receipt['production_ready'] is False,'FIXTURE_REPLAY')
     if not ENABLED:
@@ -154,6 +154,22 @@ def read_response(resp, cap, *, exact=None):
     return raw
 
 
+def read_metadata(resp):
+    # GitHub API JSON may use chunked framing; only the small metadata
+    # endpoint permits it. The actual artifact still requires exact length.
+    need(resp.status==200,'ARTIFACT_HTTP_STATUS')
+    enc=resp.headers.get_all('Content-Encoding',[])
+    need(not enc or enc==['identity'],'ARTIFACT_ENCODING')
+    transfer=resp.headers.get_all('Transfer-Encoding',[])
+    lengths=resp.headers.get_all('Content-Length',[])
+    if lengths:
+        return read_response(resp,65536)
+    need(not transfer or transfer==['chunked'],'ARTIFACT_FRAMING')
+    raw=resp.read(65536)
+    need(0<len(raw)<65536,'ARTIFACT_METADATA_LIMIT')
+    return raw
+
+
 def get_request(url,token=None):
     from urllib.request import Request
     headers={'Accept-Encoding':'identity','User-Agent':'PilotODIN-C5-synthetic-receipt/1'}
@@ -177,7 +193,7 @@ def verify_transfer():
     # Read exactly the associated artifact metadata; never enumerate other artifacts.
     with deadline():
         with opener.open(get_request(url,token),timeout=15) as resp:
-            meta=json.loads(read_response(resp,65536),object_pairs_hook=n.unique)
+            meta=json.loads(read_metadata(resp),object_pairs_hook=n.unique)
     ident=g.verify_artifact_metadata(meta,record,run,sha)
     need(str(ident['id'])==artifact_id and ident['sha256']==upload_digest
          and ident['bytes']<=69599232,'ARTIFACT_UPLOAD_IDENTITY')

@@ -18,7 +18,7 @@ jobs:
           persist-credentials: false
       - name: Verify source and synthetic receipt preflight
         run: |
-          test "$(git hash-object qa/c5_wheel_metadata/synthetic_receipt_transfer.py)" = "48d3b2aefd5bf6cf850ea3bcf3ba6272cb3646c1"
+          test "$(git hash-object qa/c5_wheel_metadata/synthetic_receipt_transfer.py)" = "9dd872b7b1d9caf4b930ff4fcc115fef27f3281d"
           python3 -I -B qa/c5_wheel_metadata/synthetic_receipt_transfer.py --self-test
   upload-once:
     if: ${{ false }}
@@ -42,7 +42,7 @@ jobs:
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
           test "$(git show -s --format=%P HEAD)" = "$EXPECTED_PARENT"
           test "$(git diff-tree --no-commit-id --name-status -r HEAD)" = "$(printf 'A\tqa/c5_wheel_metadata/APPROVAL_SYNTHETIC_RECEIPT_TRANSFER_20261126.txt')"
-          test "$(git hash-object qa/c5_wheel_metadata/synthetic_receipt_transfer.py)" = "48d3b2aefd5bf6cf850ea3bcf3ba6272cb3646c1"
+          test "$(git hash-object qa/c5_wheel_metadata/synthetic_receipt_transfer.py)" = "9dd872b7b1d9caf4b930ff4fcc115fef27f3281d"
           test "$(git show -s --format=%B HEAD)" = "C5-SYNTHETIC-RECEIPT-TRANSFER-ONCE-20261126 owner approved synthetic evidence only"
       - id: produce
         run: python3 -I -B qa/c5_wheel_metadata/synthetic_receipt_transfer.py --produce
@@ -72,7 +72,7 @@ jobs:
           persist-credentials: false
       - name: Independent exact artifact ZIP replay
         run: |
-          test "$(git hash-object qa/c5_wheel_metadata/synthetic_receipt_transfer.py)" = "48d3b2aefd5bf6cf850ea3bcf3ba6272cb3646c1"
+          test "$(git hash-object qa/c5_wheel_metadata/synthetic_receipt_transfer.py)" = "9dd872b7b1d9caf4b930ff4fcc115fef27f3281d"
           python3 -I -B qa/c5_wheel_metadata/synthetic_receipt_transfer.py --retrieve
         env:
           C5_APPROVED_ONCE: C5-SYNTHETIC-RECEIPT-TRANSFER-ONCE-20261126
