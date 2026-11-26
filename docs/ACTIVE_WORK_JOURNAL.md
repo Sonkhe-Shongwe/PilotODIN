@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | READY |
+| State | PUBLISHED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 0458d55ca84dac4473f0a40a698992424993f288 |
+| Observed starting HEAD | 3f4bb73f57e21635e47a287b07cbf32be4dcd86b |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | Revised C5-A/B development reproducibility and build safety; D prerequisites and P8 release-only allocation. No restricted acquisition, native, owner data, install, packaging, phase activation or release. |
 | Operation ID | C5-PDFIUM-TWO-WHEEL-EVIDENCE-ONCE-20261126 |
-| Operation state | RECONCILED DETACHED_DRAFT_CREATED; a64306a two new QA files only, both live gates disabled; no CI or live run. Scope approval unconsumed, exact activation not granted. |
-| Intended files | Detached draft [a64306a](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/a64306a044077a34270e0aa476a18ba73434d70b); QA adapter and disarmed workflow only. Live branch documentation-only; no dependency, product or lock change. |
+| Operation state | PUBLISHED DISARMED_REHEARSAL; exact child of 3f4bb73 with two QA files and canonical records, CI not yet reconciled. Scope approval unconsumed; no live activation. |
+| Intended files | qa/c5_pdfium/pdfium_evidence_draft.py; .github/workflows/c5-pdfium-evidence-draft.yml; canonical journal, handoff and C ledger. No product/dependency/lock edits. |
 | Approval | Owner explicitly stated: "I approve C5-PDFIUM-TWO-WHEEL-EVIDENCE-ONCE-20261126 as proposed in commit 0458d55. Maximum five HTTPS requests and 8994854 response bytes, zero retries. Preserve existing staging and activation safeguards. No installation, downloaded code execution, owner-data access, native application execution, installer generation or release. Proceed with bounded preparation." Approval unconsumed; exact activation not granted. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | None. #45827293999 SUCCESS acquisition 139934619797, rehearsal/header skipped. #45827352794 SUCCESS rehearsal 139934819535 34/34; both restricted jobs skipped. |
-| Unpublished work | Owner-local tree uninspected; detached QA draft a64306a not on branch, zero CI, exact parent and file blobs recorded in C ledger. |
-| Recovery action | [Bounded preparation receipt](./PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md#26-november--c5-pdfium-bounded-preparation-and-disarmed-detached-candidate). Recover exact detached a64306a, overlay only reviewed QA files on current documentation HEAD after complete matching-workflow audit. Complete synthetic archive/metadata tests and static inventory/rehearsal; implement narrow transport and exact one-use gate in disarmed form. No live activation; scope approval unconsumed. |
+| Pending runs | New exact child of 3f4bb73: dedicated disarmed rehearsal expected; query exact SHA and jobs before reporting outcome. Prior restricted runs reconciled, 23 approvals consumed/disarmed. |
+| Unpublished work | Owner-local tree uninspected; detached draft a64306a preserved historically, reviewed overlay published with added synthetic coverage. |
+| Recovery action | [Disarmed rehearsal publication](./PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md#26-november--c5-pdfium-disarmed-rehearsal-and-static-inventory-publication). Reconcile exact run/jobs/logs, 16 fixture test methods and git inventory; classify matches and correct any failure. Then narrow transport/one-use gate review, no live activation. |
 | Resume after closure | D only after revised C5 source closure, G2 resolution and separately approved scope; every native prerequisite before its use. P8 release-only obligations retained; installer frozen. |
 
 ## Prior operation
