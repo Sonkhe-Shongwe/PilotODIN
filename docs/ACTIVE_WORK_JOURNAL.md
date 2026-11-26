@@ -7,9 +7,9 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | READY |
+| State | BLOCKED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 5fe4e8230f692aa4b7b472705157f071ca60841c |
+| Observed starting HEAD | 069ffb307d08254edd590c738d200cc6bffe6a16 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | Revised C5-A/B development reproducibility and build safety; D prerequisites and P8 release-only allocation. No restricted acquisition, native, owner data, install, packaging, phase activation or release. |
 | Operation ID | C5-REMAINING-DEV-INPUT-CORRECTED-ONCE-20261126 |
@@ -19,7 +19,7 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
 | Pending runs | None. #45827293999 SUCCESS acquisition 139934619797, rehearsal/header skipped. #45827352794 SUCCESS rehearsal 139934819535 34/34; both restricted jobs skipped. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
-| Recovery action | Reuse verified 45 archive identities and previous 62 unique source-test wheel receipts. Reconcile remaining applicable development-use licence/actual notice dispositions and standard hash-enforced consumption/Windows browser-dev compatibility design against eight-row C5 checklist; no repeat downloads solely for identity, no extraction/install/native activity without separately approved finite scope. Raw scratch not retained; actual use-time integrity still mandatory. Then row 8 exact regression/closure audit. |
+| Recovery action | Read [26 November consumption boundary](./PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md#26-november--c5-windows-browser-development-consumption-boundary-read-only-reconciliation). 98/98 wheel-lock and 30/30 Windows npm joins verified; proposed 82 archive Windows browser-dev witness (201444657 prior observed bytes), not armed or approved. Complete applicable licence/actual notice dispositions, particularly PyMuPDF hosted use and npm/toolchain components; review exact use-time standard offline tool route and caps before fresh restricted scope. No repeat identity-only downloads, extraction, installation or execution without authority. Linux/Rust actual use gaps remain separately assessed. Row 8 follows verified readiness. |
 | Resume after closure | D only after revised C5 source closure, G2 resolution and separately approved scope; every native prerequisite before its use. P8 release-only obligations retained; installer frozen. |
 
 ## Prior operation
