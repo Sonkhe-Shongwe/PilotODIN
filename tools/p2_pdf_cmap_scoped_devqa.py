@@ -51,10 +51,7 @@ def render_child(mode):
     from reportlab.pdfbase import pdfmetrics
     from reportlab.pdfbase.ttfonts import TTFont
     from reportlab.platypus import Paragraph, SimpleDocTemplate
-    try:
-        import pymupdf as fitz
-    except ImportError:
-        import fitz
+    from tools.pdf_test_inspection import inspect_pdf, render_rgb
 
     font_path = candidate_font()
     name = "ODIN-P2-ISOLATED-FONT-" + mode.upper()
@@ -73,16 +70,16 @@ def render_child(mode):
     doc = SimpleDocTemplate(report, pageCompression=1)
     doc.build([Paragraph(EXPECTED, ParagraphStyle("ODIN_CMAP_TEST",
                                                  fontName=name, fontSize=18))])
-    with fitz.open(stream=report.getvalue(), filetype="pdf") as pdf:
-        if len(pdf) != 1:
-            raise ValueError("Unexpected scoped font experiment page count")
-        page = pdf[0]
-        extracted = page.get_text().strip()
-        pixels = page.get_pixmap(matrix=fitz.Matrix(1.5, 1.5), alpha=False).samples
-        return {"mode": mode, "exact": extracted == EXPECTED,
-                "extracted_codepoints": ["U+%04X" % ord(c) for c in extracted][:12],
-                "pixel_sha256": hashlib.sha256(pixels).hexdigest(),
-                "reportlab_version": reportlab_version}
+    pdf = inspect_pdf(report.getvalue(), max_pages=1)
+    if len(pdf) != 1:
+        raise ValueError("Unexpected scoped font experiment page count")
+    page = pdf[0]
+    extracted = page.text.strip()
+    pixels = render_rgb(report.getvalue(), 0, scale=1.5).rgb
+    return {"mode": mode, "exact": extracted == EXPECTED,
+            "extracted_codepoints": ["U+%04X" % ord(c) for c in extracted][:12],
+            "pixel_sha256": hashlib.sha256(pixels).hexdigest(),
+            "reportlab_version": reportlab_version}
 
 
 def run_unit_worker():

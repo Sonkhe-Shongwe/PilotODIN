@@ -20,7 +20,10 @@ from reportlab.lib.styles import ParagraphStyle
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import SimpleDocTemplate, Paragraph
-import fitz
+# Direct script and legacy top-level imports must share the same QA helper.
+if str(Path(__file__).resolve().parents[1]) not in sys.path:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from tools.pdf_test_inspection import inspect_pdf
 
 SAMPLES = {
     "latin": "café São Paulo R²",
@@ -102,8 +105,8 @@ def audit(paths):
             for family, segment in runs)
         try:
             doc.build([Paragraph(markup, style)])
-            with fitz.open(stream=output.getvalue(), filetype="pdf") as pdf:
-                extracted = " ".join(" ".join(page.get_text().split()) for page in pdf)
+            pdf = inspect_pdf(output.getvalue())
+            extracted = " ".join(" ".join(page.text.split()) for page in pdf)
         except Exception as exc:
             results[label] = {"state": "RENDER_ERROR",
                               "class": type(exc).__name__}

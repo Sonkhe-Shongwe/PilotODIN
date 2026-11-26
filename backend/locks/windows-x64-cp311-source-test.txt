@@ -1,7 +1,7 @@
 # PilotODIN C5 reviewed expected Python lock: windows-x64-cp311-source-test
 # Definition only; profile BLOCKED. Not installation or acquisition authority.
 # CPython 3.11 x64; reviewed metadata environment 3.11.9 (not selected interpreter distribution).
-# Expected hashes from pinned plan 1aa96a7172508f94b2cdc4b7aabd65e3b8f21f89.
+# Expected hashes from pinned plan 1aa96a7172508f94b2cdc4b7aabd65e3b8f21f89 plus PDFium receipt 270e49aff95923c2f4de6742336c80d55d476a5f.
 # Use only with separately authorised, verified local wheelhouse and preflight.
 --no-index
 --only-binary=:all:
@@ -37,7 +37,7 @@ pluggy==1.7.0 --hash=sha256:7dd7b0d8832ba3cb632c306926ded123429211b83641b35dc5c4
 pydantic==2.14.4 --hash=sha256:653a2ad9f6d8858529c77c72717d0ea991d6c6837fe683246b2f4b2bbfc3fadc
 pydantic-core==2.50.5 --hash=sha256:d4ebf349b1b60049e80df5d9ea6725b1b7e434a7d006474b0f664fa72a6b3c75
 pygments==2.21.0 --hash=sha256:2363c69b61c4a97c838da3b130dcd6468f4848992b21a82f2a63ec34377137d9
-pymupdf==1.28.2 --hash=sha256:ebd244918798502d7b4504c90410d1711a4d7675a32584ca30f1bab419ecbffe
+pypdfium2==5.15.2 --hash=sha256:74d1bace34fb01c660d0b64344d5a4b7d276942b7c6623c88ab59ea21c5acfbd
 pytest==9.2.0 --hash=sha256:07acdcf88ec174f907dc01af70bf52d49b014bbab03faeeade31c96b18c2e588
 python-dateutil==4.0.0 --hash=sha256:a5e246f79eb80475e691bf93862cead98decd8a498cf53ba0516fcdc0f50dc1c
 python-dotenv==1.2.4 --hash=sha256:42269a8a5b3fd54ffa6f3d84b18abed50064717576b4ecf03dc4a55d8aa04fdc

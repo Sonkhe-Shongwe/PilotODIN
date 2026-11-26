@@ -4,7 +4,7 @@ from __future__ import annotations
 import hashlib
 from pathlib import Path
 
-import fitz
+from tools.pdf_test_inspection import inspect_pdf
 from tests.fixture_http import fixture_client
 
 from backend.main import app
@@ -81,8 +81,7 @@ def test_explicit_quality_capture_is_read_only_and_reportable():
     html=client.get(f"/api/reports/{saved['id']}/export/html")
     pdf=client.get(f"/api/reports/{saved['id']}/export/pdf")
     assert html.status_code==200 and pdf.status_code==200
-    pdf_text=" ".join(page.get_text() for page in fitz.open(
-        stream=pdf.content,filetype="pdf"))
+    pdf_text=" ".join(page.text for page in inspect_pdf(pdf.content))
     for expected in ["Quality Audit","24","Findings"]:
         assert expected in html.text and expected in pdf_text
     assert PRIVATE_CATEGORY not in html.text and PRIVATE_CATEGORY not in pdf_text
@@ -203,9 +202,9 @@ def test_quality_pdf_does_not_orphan_findings_heading_with_one_row():
         "evidence": [artifact],
         "limitations": ["Statistical findings require human review."]
     }
-    pages = fitz.open(stream=reports.render_pdf(payload), filetype="pdf")
+    pages = inspect_pdf(reports.render_pdf(payload))
     assert len(pages) >= 2
-    page_text = [page.get_text() for page in pages]
+    page_text = [page.text for page in pages]
     assert sum(text.count("Ambiguous date formats") for text in page_text) == 9
     for text in page_text:
         if "Verified observations" in text:

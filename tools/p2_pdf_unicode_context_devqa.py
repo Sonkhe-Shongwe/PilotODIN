@@ -136,25 +136,21 @@ def inspect_synthetic_pdf_bytes(raw: bytes) -> dict:
     """Check actual PDF text extraction for paragraphs AND vector chart runs."""
     if not isinstance(raw, bytes) or not 0 < len(raw) <= MAX_PDF_BYTES:
         raise PDFUnicodePlanError("Invalid or excessive synthetic PDF output")
-    try:
-        import pymupdf as fitz
-    except ImportError:
-        import fitz
-    with fitz.open(stream=raw, filetype="pdf") as doc:
-        if len(doc) != 1:
-            raise PDFUnicodePlanError("Unexpected synthetic PDF pagination")
-        page = doc[0]
-        text = " ".join(page.get_text().split())
-        # Paragraph and vector chart must BOTH preserve these text cases.
-        if TEXT not in text:
-            raise PDFUnicodePlanError("Mixed paragraph Unicode extraction mismatch")
-        chart = text.split(TEXT, 1)[1].strip()
-        if CHART_LABEL not in chart:
-            raise PDFUnicodePlanError("Vector label Unicode extraction mismatch")
-        if any(not page.rect.contains(rect) for rect in
-               (fitz.Rect(line["bbox"]) for block in page.get_text("dict")["blocks"]
-                if block.get("type") == 0 for line in block.get("lines", []))):
-            raise PDFUnicodePlanError("Synthetic text outside page bounds")
+    from tools.pdf_test_inspection import inspect_pdf
+    doc = inspect_pdf(raw, geometry=True, max_pages=1)
+    if len(doc) != 1:
+        raise PDFUnicodePlanError("Unexpected synthetic PDF pagination")
+    page = doc[0]
+    text = " ".join(page.text.split())
+    # Paragraph and vector chart must BOTH preserve these text cases.
+    if TEXT not in text:
+        raise PDFUnicodePlanError("Mixed paragraph Unicode extraction mismatch")
+    chart = text.split(TEXT, 1)[1].strip()
+    if CHART_LABEL not in chart:
+        raise PDFUnicodePlanError("Vector label Unicode extraction mismatch")
+    if any(not (0 <= x0 <= x1 <= page.width and 0 <= y0 <= y1 <= page.height)
+           for x0, y0, x1, y1 in page.text_bounds):
+        raise PDFUnicodePlanError("Synthetic text outside page bounds")
     return {"paragraph_exact": True, "vector_label_exact": True,
             "one_page": True, "page_bounds_ok": True}
 

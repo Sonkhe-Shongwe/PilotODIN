@@ -12,7 +12,7 @@ from pathlib import Path
 import re
 import unittest
 
-import fitz
+from tools.pdf_test_inspection import inspect_pdf
 from backend import reports, report_charts
 
 ROWS = [{"label": "Synthetic Group " + str(i), "value": i + 1}
@@ -97,8 +97,8 @@ class P2DisplayQuality(unittest.TestCase):
         saved = report_fixture()
         before = copy.deepcopy(saved)
         html = reports.render_html(saved).decode("utf-8")
-        with fitz.open(stream=reports.render_pdf(saved), filetype="pdf") as pdf:
-            text = " ".join(" ".join(p.get_text().split()) for p in pdf)
+        pdf = inspect_pdf(reports.render_pdf(saved), geometry=True)
+        text = " ".join(" ".join(p.text.split()) for p in pdf)
         for marker in ("Showing 24 of 30 saved summary facts",
                        "Showing 40 of 45 saved observation entries",
                        "Showing 30 of 35 saved finding entries",
@@ -131,17 +131,17 @@ class P2DisplayQuality(unittest.TestCase):
                 copy_art["objective"] = ("Long synthetic investigation objective " * 5)
                 dense["evidence"].append(copy_art)
         self.assertEqual(len(dense["evidence"]), 12)
-        with fitz.open(stream=reports.render_pdf(dense), filetype="pdf") as pdf:
-            self.assertGreaterEqual(len(pdf), 3)
-            for page in pdf:
-                self.assertAlmostEqual(page.rect.width, 595.276, delta=1)
-                self.assertAlmostEqual(page.rect.height, 841.89, delta=1)
-                for box in page.get_text("blocks"):
-                    x0, y0, x1, y1 = box[:4]
-                    self.assertGreaterEqual(x0, -1)
-                    self.assertGreaterEqual(y0, -1)
-                    self.assertLessEqual(x1, page.rect.width + 1)
-                    self.assertLessEqual(y1, page.rect.height + 1)
+        pdf = inspect_pdf(reports.render_pdf(dense), geometry=True)
+        self.assertGreaterEqual(len(pdf), 3)
+        for page in pdf:
+            self.assertAlmostEqual(page.width, 595.276, delta=1)
+            self.assertAlmostEqual(page.height, 841.89, delta=1)
+            for box in page.text_bounds:
+                x0, y0, x1, y1 = box[:4]
+                self.assertGreaterEqual(x0, -1)
+                self.assertGreaterEqual(y0, -1)
+                self.assertLessEqual(x1, page.width + 1)
+                self.assertLessEqual(y1, page.height + 1)
         # Page bounds and extracted text do not certify glyph rendering,
         # baseline collisions, typeface coverage or human print readability.
         self.assertEqual(doc, originals)

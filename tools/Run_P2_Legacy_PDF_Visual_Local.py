@@ -114,7 +114,7 @@ def main() -> int:
     try:
         client = _visual_client(home)
         from backend import storage, pdf_release_font_loader
-        import fitz
+        from tools.pdf_test_inspection import inspect_pdf, render_rgb
 
         need(pdf_release_font_loader.RELEASE_APPROVAL_STATUS == "NOT_GRANTED"
              and pdf_release_font_loader.RELEASE_PINNED_FILES == ()
@@ -191,24 +191,24 @@ def main() -> int:
 
         pdf_path.write_bytes(pdf.content)
         html_path.write_bytes(html.content)
-        with fitz.open(stream=pdf.content, filetype="pdf") as doc:
-            pages = [page.get_text() for page in doc]
-            need(1 <= len(pages) <= 3 and all(len(text.strip()) >= 35 for text in pages),
-                 "Unexpected blank or excessive standard PDF pages after BE-030 layout fix")
-            chart_pages = [index for index, txt in enumerate(pages)
-                           if "Saved chart visualization" in txt]
-            value_pages = [index for index, txt in enumerate(pages)
-                           if "Verified observations" in txt and "710.0" in txt]
-            need(chart_pages == [2] and value_pages == [2],
-                 "Short saved chart and exact value table must share page three")
-            combined = " ".join(pages).replace("\n", " ")
-            for phrase in (TITLE, "Evidence register", "Saved chart visualization",
-                           "Methodology and limitations", frozen["content_sha256"]):
-                need(phrase in combined, f"Required legacy PDF content missing: {phrase}")
-            page_count = len(pages)
-            for index in range(min(page_count, 6)):
-                view = doc[index].get_pixmap(matrix=fitz.Matrix(1.3, 1.3), alpha=False)
-                view.save(str(outputs / f"P2_BE030_SYNTHETIC_PAGE_{index+1:02}.png"))
+        doc = inspect_pdf(pdf.content, max_pages=3)
+        pages = [page.text for page in doc]
+        need(1 <= len(pages) <= 3 and all(len(text.strip()) >= 35 for text in pages),
+             "Unexpected blank or excessive standard PDF pages after BE-030 layout fix")
+        chart_pages = [index for index, txt in enumerate(pages)
+                       if "Saved chart visualization" in txt]
+        value_pages = [index for index, txt in enumerate(pages)
+                       if "Verified observations" in txt and "710.0" in txt]
+        need(chart_pages == [2] and value_pages == [2],
+             "Short saved chart and exact value table must share page three")
+        combined = " ".join(pages).replace("\n", " ")
+        for phrase in (TITLE, "Evidence register", "Saved chart visualization",
+                       "Methodology and limitations", frozen["content_sha256"]):
+            need(phrase in combined, f"Required legacy PDF content missing: {phrase}")
+        page_count = len(pages)
+        for index in range(min(page_count, 6)):
+            view = render_rgb(pdf.content, index, scale=1.3)
+            view.save_png(str(outputs / f"P2_BE030_SYNTHETIC_PAGE_{index+1:02}.png"))
 
         need(source.read_bytes() == CSV
              and hashlib.sha256(source.read_bytes()).hexdigest() == original_sha,

@@ -4,7 +4,7 @@ from __future__ import annotations
 import io
 import re
 from tests.fixture_http import fixture_client
-import fitz
+from tools.pdf_test_inspection import inspect_pdf
 
 from backend.main import app
 from backend import storage, quality, reports
@@ -45,8 +45,8 @@ def test_report_save_reload_revision_and_html_pdf_same_snapshot():
     assert html.status_code==200 and pdf.status_code==200
     assert 'attachment;' in pdf.headers['content-disposition']
     assert pdf.content.startswith(b'%PDF')
-    rendered=fitz.open(stream=pdf.content,filetype='pdf')
-    txt=' '.join(page.get_text() for page in rendered)
+    rendered=inspect_pdf(pdf.content)
+    txt=' '.join(page.text for page in rendered)
     assert rid in html.text and rid in txt
     assert digest in html.text and digest in txt
     assert '345.75' in html.text and '345.75' in txt
@@ -209,10 +209,10 @@ def test_report_reorder_creates_new_revision_without_rewriting_prior_exports():
     ))
     assert html_old.text.index("Overview</h2>") < html_old.text.index("Compare</h2>")
     assert html_new.text.index("Compare</h2>") < html_new.text.index("Overview</h2>")
-    old_text = " ".join(page.get_text() for page in
-                        fitz.open(stream=pdf_old.content, filetype="pdf"))
-    new_text = " ".join(page.get_text() for page in
-                        fitz.open(stream=pdf_new.content, filetype="pdf"))
+    old_text = " ".join(page.text for page in
+                        inspect_pdf(pdf_old.content))
+    new_text = " ".join(page.text for page in
+                        inspect_pdf(pdf_new.content))
     assert old_text.index("Overview") < old_text.index("Compare")
     assert new_text.index("Compare") < new_text.index("Overview")
     assert first_hash in html_old.text and first_hash in old_text

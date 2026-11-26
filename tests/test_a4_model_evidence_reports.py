@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 
 from tests.fixture_http import fixture_client
-import fitz
+from tools.pdf_test_inspection import inspect_pdf
 
 from backend.main import app
 from backend import storage
@@ -99,8 +99,7 @@ def test_model_evaluation_is_available_only_after_selection_and_reported_without
     html = client.get(f"/api/reports/{report['id']}/export/html")
     pdf = client.get(f"/api/reports/{report['id']}/export/pdf")
     assert html.status_code == 200 and pdf.status_code == 200
-    pdf_text = " ".join(page.get_text() for page in fitz.open(
-        stream=pdf.content, filetype="pdf"))
+    pdf_text = " ".join(page.text for page in inspect_pdf(pdf.content))
     for visible in ("Selected Model Performance", "0.82", "0.73", "0.53"):
         assert visible in html.text and visible in pdf_text
     assert SECRET not in html.text and SECRET not in pdf_text
@@ -167,8 +166,7 @@ def test_a4_export_preserves_exhibit_order_and_reliability_cautions():
 
     html = client.get(f"/api/reports/{rid}/export/html").text
     pdf = client.get(f"/api/reports/{rid}/export/pdf")
-    pdf_text = " ".join(page.get_text() for page in fitz.open(
-        stream=pdf.content, filetype="pdf"))
+    pdf_text = " ".join(page.text for page in inspect_pdf(pdf.content))
     assert 'Evidence register' in html and 'Evidence register' in pdf_text
     assert html.index('Model Evaluation') < html.index('Overview')
     assert pdf_text.index('Model Evaluation') < pdf_text.index('Overview')

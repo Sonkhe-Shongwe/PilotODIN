@@ -85,7 +85,7 @@ class P2ActualReportExportRoute(unittest.TestCase):
     def test_real_ascii_pdf_and_html_use_same_immutable_synthetic_revision(self):
         """One actual non-mocked legacy renderer through the real HTTP API."""
         import copy
-        import fitz
+        from tools.pdf_test_inspection import inspect_pdf
         snapshot = {
             "id": self.report_id, "revision": 7,
             "title": "Synthetic Regional Revenue",
@@ -115,12 +115,12 @@ class P2ActualReportExportRoute(unittest.TestCase):
         self.assertEqual(pdf.status_code, 200)
         self.assertEqual(html.status_code, 200)
         self.assertTrue(pdf.content.startswith(b"%PDF"))
-        with fitz.open(stream=pdf.content, filetype="pdf") as doc:
-            extracted = " ".join(p.get_text() for p in doc)
-            self.assertIn(snapshot["title"], extracted)
-            self.assertIn(snapshot["content_sha256"], extracted)
-            self.assertIn("20.0", extracted)
-            self.assertIn("10.0", extracted)
+        doc = inspect_pdf(pdf.content)
+        extracted = " ".join(p.text for p in doc)
+        self.assertIn(snapshot["title"], extracted)
+        self.assertIn(snapshot["content_sha256"], extracted)
+        self.assertIn("20.0", extracted)
+        self.assertIn("10.0", extracted)
         self.assertIn(snapshot["title"], html.text)
         self.assertIn(snapshot["content_sha256"], html.text)
         self.assertEqual(snapshot, original)

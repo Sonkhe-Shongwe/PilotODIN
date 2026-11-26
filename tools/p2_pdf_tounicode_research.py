@@ -18,6 +18,8 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 from qa_foundation import default_root, safe_root
 from p2_pdf_font_asset_gate import verify
 
@@ -58,7 +60,7 @@ def local_experiment(root: Path, manifest: dict) -> dict:
     from reportlab.lib.styles import ParagraphStyle
     from reportlab.pdfbase import pdfmetrics, ttfonts
     from reportlab.platypus import Paragraph, SimpleDocTemplate
-    import fitz
+    from tools.pdf_test_inspection import inspect_pdf, render_rgb
 
     safe = safe_root(root, ROOT)
     if not safe.is_dir():
@@ -91,17 +93,16 @@ def local_experiment(root: Path, manifest: dict) -> dict:
         finally:
             ttfonts.makeToUnicodeCMap = original
 
-        with fitz.open(stream=target.getvalue(), filetype="pdf") as pdf:
-            if len(pdf) != 1 or len(pdf) > MAX_PAGES:
-                raise ValueError("Unexpected probe PDF geometry")
-            page = pdf[0]
-            result = {
-                "text": page.get_text().strip(),
-                "visual_sha256": hashlib.sha256(
-                    page.get_pixmap(matrix=fitz.Matrix(1.5, 1.5),
-                                    alpha=False).samples).hexdigest(),
-            }
-            return result
+        pdf = inspect_pdf(target.getvalue(), max_pages=1)
+        if len(pdf) != 1 or len(pdf) > MAX_PAGES:
+            raise ValueError("Unexpected probe PDF geometry")
+        page = pdf[0]
+        result = {
+            "text": page.text.strip(),
+            "visual_sha256": hashlib.sha256(
+                render_rgb(target.getvalue(), 0, scale=1.5).rgb).hexdigest(),
+        }
+        return result
 
     baseline = build(adjusted=False)
     adjusted = build(adjusted=True)

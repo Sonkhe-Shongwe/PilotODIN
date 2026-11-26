@@ -6,7 +6,7 @@ without embedding any uploaded insurance-claim data.
 """
 from __future__ import annotations
 
-import fitz
+from tools.pdf_test_inspection import inspect_pdf
 from backend import reports
 
 
@@ -102,9 +102,9 @@ def _report() -> dict:
 
 def test_combined_three_exhibit_pdf_has_no_orphaned_evidence_headings():
     blob=reports.render_pdf(_report())
-    pages=fitz.open(stream=blob,filetype="pdf")
+    pages=inspect_pdf(blob)
     assert 3 <= len(pages) <= 7
-    texts=[page.get_text() for page in pages]
+    texts=[page.text for page in pages]
     assert sum(text.count("Model Evaluation") for text in texts)>=1
     assert sum(text.count("Explore Snapshot") for text in texts)>=1
     assert "Median of synthetic_amount by synthetic_group" in " ".join(texts)
@@ -127,9 +127,7 @@ def test_combined_three_exhibit_pdf_has_no_orphaned_evidence_headings():
 def test_combined_three_exhibit_html_and_pdf_share_measure_semantics():
     sample=_report()
     html=reports.render_html(sample).decode("utf-8")
-    pdf=" ".join(page.get_text() for page in fitz.open(
-        stream=reports.render_pdf(sample),filetype="pdf"
-    ))
+    pdf=" ".join(page.text for page in inspect_pdf(reports.render_pdf(sample)))
     for shared in ("Quality Audit", "Model Evaluation", "Explore Snapshot",
                    "0.76505", "0.82", "Median of synthetic_amount by synthetic_group"):
         assert shared in html and shared in pdf

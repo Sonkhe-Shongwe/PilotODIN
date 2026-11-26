@@ -1,5 +1,5 @@
 """Report exports render reviewed exhibits rather than JSON dumps."""
-import fitz
+from tools.pdf_test_inspection import inspect_pdf
 from backend import reports
 
 def test_exhibit_renders_group_values_and_preserves_sources():
@@ -10,7 +10,7 @@ def test_exhibit_renders_group_values_and_preserves_sources():
     'limitations':['Descriptive statistics do not establish causation.']}
     html=reports.render_html(report).decode()
     pdf=reports.render_pdf(report)
-    txt=' '.join(page.get_text() for page in fitz.open(stream=pdf,filetype='pdf'))
+    txt=' '.join(page.text for page in inspect_pdf(pdf))
     assert '345.75' in html and '345.75' in txt
     assert 'Gauteng' in html and 'Gauteng' in txt
     assert 'f'*64 in html and 'f'*64 in txt

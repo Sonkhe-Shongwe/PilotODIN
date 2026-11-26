@@ -121,7 +121,7 @@ def child_worker():
         home = Path(os.environ["PILOTODIN_HOME"]).resolve()
         verified_home(run, home)
         stage = "fixture_import"
-        import fitz
+        from tools.pdf_test_inspection import inspect_pdf, render_rgb
         from backend import reports
         fixture = build_reports()
         if set(fixture) != set(SCENARIOS):
@@ -140,55 +140,52 @@ def child_worker():
                 target = run / "exports" / filename
                 with target.open("xb") as out:
                     out.write(pdf)
-                with fitz.open(stream=pdf, filetype="pdf") as document:
-                    n = len(document)
-                    if n < 1 or n > MAX_PAGES:
-                        raise AssertionError("Unexpected PDF page count")
-                    if name == "dense" and n < 3:
-                        raise AssertionError("Dense report did not paginate")
-                    outside = 0
-                    extracted = []
-                    for page in document:
-                        if abs(page.rect.width - 595.276) > 1 or abs(page.rect.height - 841.89) > 1:
-                            raise AssertionError("A4 geometry mismatch")
-                        extracted.append(page.get_text())
-                        for block in page.get_text("blocks"):
-                            if len(block) > 6 and block[6] != 0:
-                                continue
-                            x0, y0, x1, y1 = block[:4]
-                            if (x0 < -1 or y0 < -1 or
-                                    x1 > page.rect.width + 1 or y1 > page.rect.height + 1):
-                                outside += 1
-                    if outside:
-                        raise AssertionError("Extracted text extends beyond page bounds")
-                    full_text = "\n".join(extracted)
-                    for marker in ("Display limits", "Evidence register"):
-                        if marker not in full_text:
-                            raise AssertionError("Expected evidence or disclosure absent")
-                    # Regression from the actual owner PDF visual review:
-                    # standard/unicode used to orphan this heading one page
-                    # before the chart. Require each title and caption together.
-                    chart_count = {"standard": 1, "dense": 3, "unicode": 1}[name]
-                    headings = [i for i, txt in enumerate(extracted)
-                                if "Saved chart visualization" in txt]
-                    if len(headings) != chart_count or any(
-                            "Sum of Revenue by Region" not in extracted[i] or
-                            "Chart limitations:" not in extracted[i]
-                            for i in headings):
-                        raise AssertionError("Separated PDF chart heading, chart or limitations")
-                    glyph_checks = {}
-                    if name == "unicode":
-                        # An absence is a REVIEW signal, not a reason to claim
-                        # successful unsupported font substitution.
-                        for marker in ("café", "São Paulo", "R²", "Δ", "Москва", "漢字", "₹", "📈"):
-                            glyph_checks[marker] = marker in full_text
-                    chosen = sorted({0, n // 2, n - 1})
-                    for index in chosen:
-                        png_name = name + "-p" + format(index + 1, "02d") + ".png"
-                        pix = document[index].get_pixmap(matrix=fitz.Matrix(1.5, 1.5),
-                                                         alpha=False)
-                        pix.save(str(run / "exports" / png_name))
-                        outputs.append(png_name)
+                document = inspect_pdf(pdf, geometry=True, max_pages=MAX_PAGES)
+                n = len(document)
+                if n < 1 or n > MAX_PAGES:
+                    raise AssertionError("Unexpected PDF page count")
+                if name == "dense" and n < 3:
+                    raise AssertionError("Dense report did not paginate")
+                outside = 0
+                extracted = []
+                for page in document:
+                    if abs(page.width - 595.276) > 1 or abs(page.height - 841.89) > 1:
+                        raise AssertionError("A4 geometry mismatch")
+                    extracted.append(page.text)
+                    for box in page.text_bounds:
+                        x0, y0, x1, y1 = box
+                        if (x0 < -1 or y0 < -1 or
+                                x1 > page.width + 1 or y1 > page.height + 1):
+                            outside += 1
+                if outside:
+                    raise AssertionError("Extracted text extends beyond page bounds")
+                full_text = "\n".join(extracted)
+                for marker in ("Display limits", "Evidence register"):
+                    if marker not in full_text:
+                        raise AssertionError("Expected evidence or disclosure absent")
+                # Regression from the actual owner PDF visual review:
+                # standard/unicode used to orphan this heading one page
+                # before the chart. Require each title and caption together.
+                chart_count = {"standard": 1, "dense": 3, "unicode": 1}[name]
+                headings = [i for i, txt in enumerate(extracted)
+                            if "Saved chart visualization" in txt]
+                if len(headings) != chart_count or any(
+                        "Sum of Revenue by Region" not in extracted[i] or
+                        "Chart limitations:" not in extracted[i]
+                        for i in headings):
+                    raise AssertionError("Separated PDF chart heading, chart or limitations")
+                glyph_checks = {}
+                if name == "unicode":
+                    # An absence is a REVIEW signal, not a reason to claim
+                    # successful unsupported font substitution.
+                    for marker in ("café", "São Paulo", "R²", "Δ", "Москва", "漢字", "₹", "📈"):
+                        glyph_checks[marker] = marker in full_text
+                chosen = sorted({0, n // 2, n - 1})
+                for index in chosen:
+                    png_name = name + "-p" + format(index + 1, "02d") + ".png"
+                    pix = render_rgb(pdf, index, scale=1.5)
+                    pix.save_png(str(run / "exports" / png_name))
+                    outputs.append(png_name)
                 if report != original:
                     raise AssertionError("Report renderer mutated the synthetic fixture")
                 outputs.append(filename)

@@ -17,6 +17,8 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 from qa_foundation import create_run, default_root, scan_files
 
 EXPECTED = {"contract": 3, "mixed": 9}
@@ -91,7 +93,8 @@ def worker(kind):
         if kind == "mixed":
             phase = "dependency_import"
             # Imports of backend modules only occur when unittest loads tests.
-            import fitz
+            from tools.pdf_test_inspection import require_pdfium
+            require_pdfium()
             import fastapi
         phase = "test_discovery"
         suite, names = discover(PATTERNS[kind])

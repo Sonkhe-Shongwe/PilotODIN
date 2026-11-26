@@ -65,10 +65,7 @@ def synthetic_revision() -> dict:
 
 def proof_bytes(report: dict, context: UnicodePDFContext) -> tuple[bytes, dict]:
     """Use actual product renderer on immutable input; no persistent data read."""
-    try:
-        import pymupdf as fitz
-    except ImportError:
-        import fitz
+    from tools.pdf_test_inspection import inspect_pdf
     from backend import reports
 
     original = copy.deepcopy(report)
@@ -86,9 +83,9 @@ def proof_bytes(report: dict, context: UnicodePDFContext) -> tuple[bytes, dict]:
         "evidence": [], "limitations": ["No actual project records."],
     }
     ascii_pdf = reports.render_pdf(legacy)
-    with fitz.open(stream=ascii_pdf, filetype="pdf") as baseline:
-        if len(baseline) != 1 or "Synthetic ASCII baseline" not in baseline[0].get_text():
-            raise ValueError("Legacy default report rendering regression")
+    baseline = inspect_pdf(ascii_pdf)
+    if len(baseline) != 1 or "Synthetic ASCII baseline" not in baseline[0].text:
+        raise ValueError("Legacy default report rendering regression")
 
     raw = reports.render_pdf(report, unicode_context=context)
     html_after = reports.render_html(report)
@@ -99,37 +96,33 @@ def proof_bytes(report: dict, context: UnicodePDFContext) -> tuple[bytes, dict]:
         raise ValueError("Synthetic immutable report or HTML mutated")
     if not isinstance(raw, bytes) or not 0 < len(raw) <= MAX_PDF_BYTES:
         raise ValueError("Real renderer returned invalid or excessive PDF")
-    with fitz.open(stream=raw, filetype="pdf") as doc:
-        if not 1 <= len(doc) <= 4:
-            raise ValueError("Unexpected real renderer PDF page count")
-        # The previous real owner PDF put only parameters and two limitations
-        # on a nearly empty page 2. Text extraction passed but visual QA did
-        # not. Reject that exact sparse-continuation failure in future runs.
-        if len(doc) > 1:
-            last = doc[-1]
-            bounds = [block[:4] for block in last.get_text("blocks")
-                      if len(block) >= 5 and isinstance(block[4], str)
-                      and block[4].strip() and
-                      not block[4].strip().startswith("PilotODIN · Verified")]
-            if bounds and max(box[3] for box in bounds) < last.rect.height * 0.34:
-                raise ValueError("Sparse continuation page in synthetic Unicode PDF")
-        pages = [page.get_text() for page in doc]
-        text = " ".join(" ".join(pages).split())
-        for label in EXPECTED_LABELS:
-            if label not in text:
-                raise ValueError("Unicode report/chart extraction mismatch")
-        for item in ("20", "10", "f" * 64, "PilotODIN", "Page 1",
-                     "Synthetic-only evidence"):
-            if item not in text:
-                raise ValueError("Saved numeric/evidence/footer text missing")
-        for page in doc:
-            for block in page.get_text("dict")["blocks"]:
-                if block.get("type") != 0:
-                    continue
-                for line in block.get("lines", []):
-                    if not page.rect.contains(fitz.Rect(line["bbox"])):
-                        raise ValueError("Synthetic report text outside page bounds")
-        pages_count = len(doc)
+    doc = inspect_pdf(raw, geometry=True, max_pages=4)
+    if not 1 <= len(doc) <= 4:
+        raise ValueError("Unexpected real renderer PDF page count")
+    # The previous real owner PDF put only parameters and two limitations
+    # on a nearly empty page 2. Text extraction passed but visual QA did
+    # not. Reject that exact sparse-continuation failure in future runs.
+    if len(doc) > 1:
+        last = doc[-1]
+        bounds = [region.bounds for region in last.regions
+                  if region.text.strip() and
+                  not region.text.strip().startswith("PilotODIN · Verified")]
+        if bounds and max(box[3] for box in bounds) < last.height * 0.34:
+            raise ValueError("Sparse continuation page in synthetic Unicode PDF")
+    pages = [page.text for page in doc]
+    text = " ".join(" ".join(pages).split())
+    for label in EXPECTED_LABELS:
+        if label not in text:
+            raise ValueError("Unicode report/chart extraction mismatch")
+    for item in ("20", "10", "f" * 64, "PilotODIN", "Page 1",
+                 "Synthetic-only evidence"):
+        if item not in text:
+            raise ValueError("Saved numeric/evidence/footer text missing")
+    for page in doc:
+        for x0, y0, x1, y1 in page.text_bounds:
+            if not (0 <= x0 <= x1 <= page.width and 0 <= y0 <= y1 <= page.height):
+                raise ValueError("Synthetic report text outside page bounds")
+    pages_count = len(doc)
     return raw, {
         "real_backend_report_pdf": True,
         "legacy_default_report_preserved": True,

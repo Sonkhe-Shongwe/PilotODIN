@@ -12,7 +12,7 @@ import os
 from pathlib import Path
 import unittest
 
-import fitz
+from tools.pdf_test_inspection import inspect_pdf
 from tests.fixture_http import fixture_client
 from backend import reports, storage, quality, report_charts
 from backend.main import app
@@ -93,9 +93,9 @@ def exports(rid, revision):
     pdf = client.get(f"/api/reports/{rid}/export/pdf?revision={revision}")
     if html.status_code != 200 or pdf.status_code != 200 or not pdf.content.startswith(b"%PDF"):
         raise AssertionError("Synthetic report exports did not return valid HTML and PDF")
-    with fitz.open(stream=pdf.content, filetype="pdf") as doc:
-        text = "\n".join(page.get_text() for page in doc)
-        bounds = [(page.rect.width, page.rect.height) for page in doc]
+    doc = inspect_pdf(pdf.content)
+    text = "\n".join(page.text for page in doc)
+    bounds = [(page.width, page.height) for page in doc]
     return html.text, text, bounds
 
 
@@ -265,14 +265,13 @@ class MixedReportContract(unittest.TestCase):
         # This validates caps, NOT reader-facing disclosure of the 5 omitted rows.
 
     def test_mr07_pdf_pages_and_source_stability(self):
-        with fitz.open(stream=client.get(
-                f"/api/reports/{self.report_id}/export/pdf?revision=1").content,
-                filetype="pdf") as document:
-            self.assertGreaterEqual(len(document), 1)
-            for page in document:
-                self.assertAlmostEqual(page.rect.width, 595.276, delta=1)
-                self.assertAlmostEqual(page.rect.height, 841.89, delta=1)
-            joined = "\n".join(page.get_text() for page in document)
+        document = inspect_pdf(client.get(
+                f"/api/reports/{self.report_id}/export/pdf?revision=1").content)
+        self.assertGreaterEqual(len(document), 1)
+        for page in document:
+            self.assertAlmostEqual(page.width, 595.276, delta=1)
+            self.assertAlmostEqual(page.height, 841.89, delta=1)
+        joined = "\n".join(page.text for page in document)
         for term in ("Quality Audit", "Explore Snapshot",
                      "Overview", "Model Evaluation", "540"):
             self.assertIn(term, joined)
@@ -297,15 +296,15 @@ class MixedReportContract(unittest.TestCase):
                         art["result"]["findings"] = (sample * 10)[:30]
                 dense["evidence"].append(art)
         self.assertEqual(len(dense["evidence"]), 12)
-        with fitz.open(stream=reports.render_pdf(dense), filetype="pdf") as pages:
-            self.assertGreaterEqual(len(pages), 3)
-            joined = "\n".join(page.get_text() for page in pages)
-            for label in ("Quality Audit", "Explore Snapshot", "Overview",
-                          "Model Evaluation", "Synthetic dense four-source"):
-                self.assertIn(label, joined)
-            for page in pages:
-                self.assertLess(abs(page.rect.width - 595.276), 1)
-                self.assertLess(abs(page.rect.height - 841.89), 1)
+        pages = inspect_pdf(reports.render_pdf(dense))
+        self.assertGreaterEqual(len(pages), 3)
+        joined = "\n".join(page.text for page in pages)
+        for label in ("Quality Audit", "Explore Snapshot", "Overview",
+                      "Model Evaluation", "Synthetic dense four-source"):
+            self.assertIn(label, joined)
+        for page in pages:
+            self.assertLess(abs(page.width - 595.276), 1)
+            self.assertLess(abs(page.height - 841.89), 1)
         # Text presence and page dimensions do NOT establish no glyph clipping.
 
 

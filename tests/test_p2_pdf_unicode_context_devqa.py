@@ -105,7 +105,7 @@ class P2UnicodeContextDevQAContracts(unittest.TestCase):
             guard.assert_not_called()
 
     def test_production_renderer_and_files_are_not_imported_by_adapter(self):
-        for name in ("reports", "report_charts", "desktop_runner", "fitz", "requests"):
+        for name in ("reports", "report_charts", "desktop_runner", "fitz", "pymupdf", "pypdfium2", "pypdfium2_raw", "requests"):
             self.assertNotIn(name, qa.__dict__)
         self.assertEqual(qa.TEXT, "café São Paulo R² Δ Ω Москва 漢字 ₹ 📈")
 

@@ -1,7 +1,7 @@
 """Saved Explore evidence must be verified and reportable, without source-data copies."""
 from __future__ import annotations
 
-import fitz
+from tools.pdf_test_inspection import inspect_pdf
 from tests.fixture_http import fixture_client
 
 from backend import main, quality, reports, saved_analyses, storage
@@ -59,7 +59,7 @@ def test_saved_explore_appears_as_deliver_option_and_renders_same_verified_numbe
     assert rendered.status_code==200 and pdf.status_code==200
     assert "North" in rendered.text and "360" in rendered.text
     assert snap["sha256"] in rendered.text
-    text=" ".join(p.get_text() for p in fitz.open(stream=pdf.content,filetype="pdf"))
+    text=" ".join(p.text for p in inspect_pdf(pdf.content))
     assert "360" in text and "North" in text
     assert storage.get_project(pid) is not None
 

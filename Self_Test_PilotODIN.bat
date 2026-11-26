@@ -15,7 +15,7 @@ set npm_config_offline=true
 set npm_config_audit=false
 ".venv\Scripts\python.exe" -I -B -m pip --isolated --disable-pip-version-check --no-input check
 if errorlevel 1 exit /b 2
-".venv\Scripts\python.exe" -I -B -c "import importlib.metadata as m; m.version('pytest'); m.version('httpx'); m.version('httpx2'); m.version('PyMuPDF')"
+".venv\Scripts\python.exe" -I -B -c "import importlib.metadata as m; m.version('pytest'); m.version('httpx'); m.version('httpx2'); m.version('pypdfium2') == '5.15.2' or __import__('sys').exit(1)"
 if errorlevel 1 exit /b 2
 echo Checking Python tests...
 ".venv\Scripts\python.exe" -B -m pytest -q

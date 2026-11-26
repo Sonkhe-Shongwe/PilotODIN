@@ -8,10 +8,7 @@ from __future__ import annotations
 
 import unittest
 
-try:
-    import pymupdf as fitz
-except ImportError:
-    import fitz
+from tools.pdf_test_inspection import inspect_pdf
 
 from backend import reports, report_charts, pdf_release_font_loader
 
@@ -115,31 +112,31 @@ class P2BE030LegacyPDFPagination(unittest.TestCase):
         document = fixture()
         payload = reports.render_pdf_for_export(document)
         self.assertTrue(payload.startswith(b"%PDF-"))
-        with fitz.open(stream=payload, filetype="pdf") as pdf:
-            self.assertEqual(len(pdf), 3, "Small saved chart must not create a fourth page")
-            texts = [page.get_text() for page in pdf]
-            self.assertTrue(all(text.strip() for text in texts))
-            full_text = "\n".join(texts)
-            for phrase in (
-                document["title"], "Evidence register", "Overview",
-                "Compare", "Explore Snapshot", "Saved chart visualization",
-                "Source snapshot SHA-256", "Methodology and limitations",
-                SHA, "355.0", "202.5", "190.0", "155.0",
-                "710.0", "405.0", "380.0", "310.0"
-            ):
-                self.assertIn(phrase, full_text)
-            chart_pages = [i for i, text in enumerate(texts)
-                           if "Saved chart visualization" in text]
-            observation_pages = [i for i, text in enumerate(texts)
-                                 if "Label\nValue" in text]
-            self.assertEqual(chart_pages, [2])
-            self.assertEqual(observation_pages, [2])
-            # The document now continues the metric table across pages with
-            # a repeated header. It must not strand the chart/value table.
-            self.assertIn("Measure\nVerified value", texts[2])
-            self.assertIn("Methodology and limitations", texts[2])
-            self.assertEqual([f"Page {n}" in t for n, t in enumerate(texts, 1)],
-                             [True, True, True])
+        pdf = inspect_pdf(payload)
+        self.assertEqual(len(pdf), 3, "Small saved chart must not create a fourth page")
+        texts = [page.text for page in pdf]
+        self.assertTrue(all(text.strip() for text in texts))
+        full_text = "\n".join(texts)
+        for phrase in (
+            document["title"], "Evidence register", "Overview",
+            "Compare", "Explore Snapshot", "Saved chart visualization",
+            "Source snapshot SHA-256", "Methodology and limitations",
+            SHA, "355.0", "202.5", "190.0", "155.0",
+            "710.0", "405.0", "380.0", "310.0"
+        ):
+            self.assertIn(phrase, full_text)
+        chart_pages = [i for i, text in enumerate(texts)
+                       if "Saved chart visualization" in text]
+        observation_pages = [i for i, text in enumerate(texts)
+                             if "Label\nValue" in text]
+        self.assertEqual(chart_pages, [2])
+        self.assertEqual(observation_pages, [2])
+        # The document now continues the metric table across pages with
+        # a repeated header. It must not strand the chart/value table.
+        self.assertIn("Measure\nVerified value", texts[2])
+        self.assertIn("Methodology and limitations", texts[2])
+        self.assertEqual([f"Page {n}" in t for n, t in enumerate(texts, 1)],
+                         [True, True, True])
 
     def test_chart_default_size_and_opt_in_size_are_distinct(self):
         spec = report_charts.visual_spec(fixture()["evidence"][2]["result"]["visual"])

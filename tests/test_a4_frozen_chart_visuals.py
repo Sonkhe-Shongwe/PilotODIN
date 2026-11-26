@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import json
 
-import fitz
+from tools.pdf_test_inspection import inspect_pdf
 import pytest
 from tests.fixture_http import fixture_client
 
@@ -71,8 +71,7 @@ def test_html_and_pdf_show_same_saved_aggregate_chart(kind, x, y, agg):
     html = client.get(f"/api/reports/{r['id']}/export/html?revision=1")
     pdf = client.get(f"/api/reports/{r['id']}/export/pdf?revision=1")
     assert html.status_code == 200 and pdf.status_code == 200
-    text = " ".join(page.get_text() for page in fitz.open(
-        stream=pdf.content, filetype="pdf"))
+    text = " ".join(page.text for page in inspect_pdf(pdf.content))
     assert html.text.count('<figure class="verified-chart">') == 1
     assert html.text.count('<svg') == 1
     assert "Saved chart visualization" in html.text
