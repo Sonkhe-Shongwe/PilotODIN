@@ -13,13 +13,13 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | Revised C5-A/B development reproducibility and build safety; D prerequisites and P8 release-only allocation. No restricted acquisition, native, owner data, install, packaging, phase activation or release. |
 | Operation ID | C5-STANDARD-LOCK-PREFLIGHT-20261126 |
-| Operation state | PUBLISHED existing lock integrity preflight and standard pip inert dry-run test, exact P4 verification pending. All profiles BLOCKED. |
+| Operation state | RECONCILED source 6e27188: existing preflight now pins all three reviewed locks; standard pip offline dry-run on inert fixture and refusal tests published; exact CI pending. [Evidence](./PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md#standard-lock-preflight-integration-26-november-2026). |
 | Intended files | Existing tools/build_input_preflight.py and tests/test_c5_build_input_preflight.py; no new workflow, real dependency acquisition, runtime/installer or machine policy changes. |
 | Approval | Owner explicitly stated: "I approve the revised C5 scope rationalisation. Prioritise development reproducibility and build safety, consolidate verification infrastructure, retain mandatory native prerequisites for D, and defer release-only packaging and distribution requirements to P8. Existing execution restrictions remain in force." This is a sequencing/acceptance-scope decision, not execution authority. All 19 restricted approvals remain consumed/disarmed. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | Exact routine P4 run expected at child of c1f854685c2dfaba2987f834106c9ffa94c9f71f; prior row 5 #45812275540 SUCCESS, full Windows browser-dev evidence still open. |
+| Pending runs | Exact P4 45813265824 at 6e27188: p4-r03-windows-local-answers 139886334864 in_progress; p4-synthetic-source-and-frontend 139886335041 in_progress; p4-disposable-real-http-browser 139886335247 in_progress; Exercise preservation/hash collector on synthetic Windows fixture ONLY 139886337215 completed/skipped. Prior 45812275540 toolchain witness SUCCESS. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
-| Recovery action | Publish minimal lock integrity gate and source tests; reconcile routine P4 CI. Row 5 browser compatibility and use-time provenance remain open; no actual lock use. |
+| Recovery action | Reconcile exact P4 45813265824; finish row 5 Windows browser compatibility and row 6/7 actual required development-input integrity/use licence disposition via one bounded existing route. No acquisition or owner inspection inferred. |
 | Resume after closure | D only after revised C5 source closure, G2 resolution and separately approved scope; every native prerequisite before its use. P8 release-only obligations retained; installer frozen. |
 
 ## Prior operation
