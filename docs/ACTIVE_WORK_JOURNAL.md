@@ -13,11 +13,11 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
 | Operation ID | C5-WHEEL-HOSTED-ONCE-20261126 |
-| Operation state | PREPARED: owner explicitly approved the immediately preceding bounded wheel acquisition proposal ('i approve'). Exact 6ccc04b offline CI SUCCESS. Arm driver and dedicated workflow only, marker absent until exact direct-child activation. |
+| Operation state | ARM PREPARED: exact approved driver flag and workflow pin, marker-only trigger, offline job disabled for activation; marker absent. Verify live arm HEAD and zero runs before issuing marker. |
 | Intended files | wheel_acquisition_driver.py exact ARMED flag, c5-wheel-hosted-one-use.yml exact driver pin and marker-only trigger, one exact APPROVAL_WHEEL_HOSTED_20261126.txt addition, then disarm; journal/handoff/ledger and result receipt. No adapter or product-source changes. |
 | Approval | Owner explicitly approved one actual hosted candidate-only attempt, maximum 68 exact pinned files.pythonhosted.org GETs/225699980 body bytes, 15s/request, 25min collector, zero wheel redirects/retries, stop first refusal. One receipt/notice-only upload and one independent exact retrieval, bundle cap 68550656, ZIP cap 69599232, 7-day retention, 6min verifier. No wheel upload/installation/execution/native/model/toolchain/owner data/installer. Fourteen previous approvals consumed/disarmed. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | None; verify arm commit and no matching workflow before exact marker-only activation. |
+| Pending runs | None expected on arm push. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
 | Recovery action | Reconcile exact activation run and available receipt even on refusal; restore driver/workflow original blobs and remove marker. Never replay this approval. Unsettled failure remains blocked; no production readiness or C5 closure. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
