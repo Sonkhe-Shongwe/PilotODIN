@@ -7,17 +7,17 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 38ef8ee3bdaec254b80b7eb51521378005813740 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
 | Operation ID | C5-WHEEL-ARCHIVE-V2-OFFLINE-20261126 |
-| Operation state | PREPARED: separate offline inspector v2 and inert fixtures, no changes to pinned historical inspector, receipts or restricted workflows. Prior 18 approvals consumed/disarmed. |
+| Operation state | PUBLISHED in this checkpoint: separate offline inspector v2 and inert fixtures; exact verification pending; no changes to pinned historical inspector, receipts or restricted workflows. Prior 18 approvals consumed/disarmed. |
 | Intended files | qa/c5_wheel_metadata/wheel_archive_inspector_v2.py, test_wheel_archive_inspector_v2.py, .github/workflows/c5-wheel-archive-v2-review.yml, journal/handoff/ledger and C5 implementation specification. |
 | Approval | Routine source/synthetic CI only. All 18 restricted approvals consumed/disarmed; no wheel GET, artifact retrieval, install, execution or production activation. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | None; dedicated synthetic Ubuntu/Windows review planned. |
+| Pending runs | Exact source commit and dedicated synthetic Ubuntu/Windows CI to reconcile after publication. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
 | Recovery action | Implement explicit-directory-only structural semantics and bounded specific refusal codes; preserve historical pinned code and prior evidence. Run legacy archive fixtures plus versioned positive/negative tests and CLI refusal; do not integrate live collector or claim actual wheel compatibility. Next versioned evidence/transport integration only after exact CI. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
