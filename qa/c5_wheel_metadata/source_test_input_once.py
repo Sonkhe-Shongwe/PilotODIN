@@ -131,7 +131,7 @@ def curl_tool(env):
 
 def curl_command(exe, row, path):
     return [exe, "-q", "--silent", "--show-error", "--fail", "--noproxy", "*",
-            "--proto", "=https", "--proto-redir", "=https", "--max-redirs", "0",
+            "--http1.1", "--proto", "=https", "--proto-redir", "=https", "--max-redirs", "0",
             "--retry", "0", "--connect-timeout", "10", "--max-time", "30",
             "--max-filesize", str(row["bytes"]), "--header", "Accept-Encoding: identity",
             "--output", str(path), "--write-out", "%{http_code} %{size_download}", row["url"]]
@@ -254,7 +254,7 @@ def rehearsal():
         lock.write_text("c5-inert-fixture==1.0 --hash=sha256:" + row["sha256"] + "\n", encoding="ascii")
         dry_run([row], lock, house, scratch, env)
         command = curl_command(exe, rows[0], scratch / rows[0]["filename"])
-        need("--location" not in command and command[1] == "-q"
+        need("--location" not in command and "--http1.1" in command and command[1] == "-q"
              and command[command.index("--retry")+1] == "0"
              and command[command.index("--max-filesize")+1] == str(rows[0]["bytes"]),
              "TRANSPORT_COMMAND")
