@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-CAPABILITY-QUALIFICATION-READONLY-DESIGN-20261127",
-    "parent_sha": "346b710fd8f1cfa43b124c35a834ead22451f04c",
-    "previous_snapshot_sha": "346b710fd8f1cfa43b124c35a834ead22451f04c",
-    "scope": "Read-only Approach C host qualification design; proposed bounded observation and independent package provenance, no trust-policy adoption or execution.",
+    "operation_id": "C5-HOST-OBSERVATION-PREP-20261127",
+    "parent_sha": "cfb1eadac8939830e1d430e535e143b238daa8e2",
+    "previous_snapshot_sha": "cfb1eadac8939830e1d430e535e143b238daa8e2",
+    "scope": "Prepare exact inert Approach C observation-only candidate and verify local synthetic fixtures and static source/template identity; no restricted execution or policy change.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "27-november--c5-approach-c-capability-based-host-qualification-read-only-design",
-      "blob_sha": "a555507ae6120322510953bcd91b7445ae07f5f8",
-      "start_line": 2798,
-      "end_line": 2800
+      "anchor": "27-november--c5-inert-approach-c-observation-candidate-prepared-and-synthetically-verified",
+      "blob_sha": "7dcd1ff956ae00f8fb8158b6eb3180530ba63313",
+      "start_line": 2802,
+      "end_line": 2804
     }
   },
   "product": {
@@ -119,14 +119,28 @@
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
     "status": "BLOCKED",
     "scope": "C-D08 revised C5-A/B development reproducibility and build safety only; D retains native prerequisites, P8 release-only",
-    "blocker": "Two unreviewed runner refusals; Approach C proposed but independent expected-byte provenance and explicit method scope not yet approved or proven.",
-    "next_action": "Owner decision: approve preparation/static and synthetic verification only of the exact bounded observation-only candidate design in Approach C step 1 (five minutes, 11 fixed roles, no network/Docker commands, no package manager, no actual execution). Separate exact approval required for diagnostic execution, any independent package acquisition and changed qualification policy.",
+    "blocker": "Exact observation-only candidate 68f40aa3cceef75eeae3b08e0934363a47b3760c prepared and statically/synthetically verified; actual host observation and independent expected-byte evidence unavailable; fresh exact diagnostic execution approval required.",
+    "next_action": "Obtain fresh explicit owner approval of exact candidate 68f40aa3cceef75eeae3b08e0934363a47b3760c for one bounded five-minute observation-only attempt, 11 fixed host roles, no network calls/acquisition/Docker commands/active policy change; before activation reverify template/source/manifest, current guard and pending runs, write-ahead; reconcile actual receipt/refusal and disarm without replay. Observation never qualifies host.",
     "next_action_kind": "OWNER_DECISION",
     "after": [
-      "After exact observation candidate review and separate execution approval, observe actual runner and reconcile/disarm; then seek bounded independent publisher provenance evidence and explicit trust-method approval.",
-      "Only after qualifying evidence and separate execution authority, prepare exact integrated candidate, close C5 rows 5–8 on evidence; retain G2/D/P5 and installer gates."
+      "After fresh exact authority, activate once and reconcile actual bounded receipt or refusal and disarm; no repeat or assumed identity; independent publisher provenance review separately authorised.",
+      "Only after qualifying independent evidence and explicit method and execution approval, prepare integrated qualification; close C5 rows 5–8 only on evidence, keep G2/D/P5 and installer gates."
     ],
     "read": [
+      {
+        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
+        "anchor": "27-november--c5-inert-approach-c-observation-candidate-prepared-and-synthetically-verified",
+        "blob_sha": "7dcd1ff956ae00f8fb8158b6eb3180530ba63313",
+        "start_line": 2802,
+        "end_line": 2804
+      },
+      {
+        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
+        "anchor": "owner-approved-bounded-approach-c-observation-candidate-preparation-only",
+        "blob_sha": "ee1181c795e7610f0300eee54cae63f3f8a2fb72",
+        "start_line": 813,
+        "end_line": 815
+      },
       {
         "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
         "anchor": "proposed-capability-based-host-qualification-approach-c-preparation-only",
@@ -473,22 +487,23 @@
     ]
   },
   "operation": {
-    "id": "C5-CAPABILITY-QUALIFICATION-READONLY-DESIGN-20261127",
+    "id": "C5-HOST-OBSERVATION-PREP-20261127",
     "state": "RECONCILED",
-    "starting_sha": "346b710fd8f1cfa43b124c35a834ead22451f04c",
-    "outcome": "Proposed bounded observation-only candidate preparation and independently authenticated expected-byte qualification; existing verifier reused; trust and actual bytes unresolved; no runtime execution or policy change.",
+    "starting_sha": "cfb1eadac8939830e1d430e535e143b238daa8e2",
+    "outcome": "Exact detached candidate 68f40aa3cceef75eeae3b08e0934363a47b3760c prepared; nine local synthetic methods PASS, YAML/pin/wrapper mocked/tamper checks PASS; no active probe or acquisition, live policy unchanged.",
+    "source_sha": "68f40aa3cceef75eeae3b08e0934363a47b3760c",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "27-november--c5-approach-c-capability-based-host-qualification-read-only-design",
-      "blob_sha": "a555507ae6120322510953bcd91b7445ae07f5f8",
-      "start_line": 2798,
-      "end_line": 2800
+      "anchor": "27-november--c5-inert-approach-c-observation-candidate-prepared-and-synthetically-verified",
+      "blob_sha": "7dcd1ff956ae00f8fb8158b6eb3180530ba63313",
+      "start_line": 2802,
+      "end_line": 2804
     }
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next.",
-    "preparation_only": "Owner approved consolidated shared-bundle disarmed acquisition-before-signature source and exact limited existing host bootstrap; owner approved proposed limited local Docker control-plane and host-derived rootfs trust/no-pull isolation method for preparation only. Authentication before extraction/use; no Docker invocation, acquisition, verification execution, installation or live cutover authorised. Owner approved bounded first-collision encoded public member-path diagnostic preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-bounded-first-collision-diagnostic-preparation-only. No restricted execution authority. Owner approved finite exact Linux data-only terminfo inventory policy and bounded receipt projection as proposed in 8cc1a696, preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-finite-exact-linux-terminfo-inventory-policy-and-bounded-receipt-preparation-only. Strict Windows/gh and other safeguards unchanged; no acquisition, extraction or restricted execution.",
+    "preparation_only": "Owner approved consolidated shared-bundle disarmed acquisition-before-signature source and exact limited existing host bootstrap; owner approved proposed limited local Docker control-plane and host-derived rootfs trust/no-pull isolation method for preparation only. Authentication before extraction/use; no Docker invocation, acquisition, verification execution, installation or live cutover authorised. Owner approved bounded first-collision encoded public member-path diagnostic preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-bounded-first-collision-diagnostic-preparation-only. No restricted execution authority. Owner approved finite exact Linux data-only terminfo inventory policy and bounded receipt projection as proposed in 8cc1a696, preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-finite-exact-linux-terminfo-inventory-policy-and-bounded-receipt-preparation-only. Strict Windows/gh and other safeguards unchanged; no acquisition, extraction or restricted execution. Owner explicitly approved preparation and static/synthetic verification only of Approach C observation-only candidate (11 fixed roles, five minutes); no restricted execution, acquisition, Docker invocation or active policy change. Exact reference in C5 spec owner-approved-bounded-approach-c-observation-candidate-preparation-only.",
     "restricted_active": [],
     "consumed_disarmed_count": 39,
     "consumed_history": {
@@ -607,6 +622,10 @@
       {
         "sha": "28181cf992ab6efd5156265e5ea7d4752b00e66f",
         "scope": "Exact inert candidate; 22/22 pins and 10 sources confirmed; one distinct activation 0e789c2/run 45907585039 refused unreviewed image before staging; full 19-method suite NOT RUN; consumed/disarmed, no replay."
+      },
+      {
+        "sha": "68f40aa3cceef75eeae3b08e0934363a47b3760c",
+        "scope": "Inert Approach C observation-only candidate, four QA files, 9 local synthetic methods PASS; exact source/test/template blob readback, wrapper mocked and tamper refusal PASS; no active probe, zero runs; fresh exact execution authority required."
       }
     ]
   },
