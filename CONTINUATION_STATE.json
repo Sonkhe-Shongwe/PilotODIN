@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-PORTABLE-DOCKER-REVIEWED-IMAGES-ONCE-20261126",
-    "parent_sha": "5a4742aeb2edbe9691896f47d5e27325c824595a",
-    "previous_snapshot_sha": "32443bd10b61f96bdc0efe650f11dfacffda7124",
-    "scope": "Reconcile finite-image attempt with rootfs/isolation passes and reader API refusal; restore false guard",
+    "operation_id": "C5-READER-API-PREP-20261126",
+    "parent_sha": "c8146b40e172f29fc9e45d9099ea6e60e00dc05b",
+    "previous_snapshot_sha": "c8146b40e172f29fc9e45d9099ea6e60e00dc05b",
+    "scope": "Read-only exact LLVM 18 source review and inert equivalent reader option correction; no activation",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "26-november--c5-finite-image-attempt-passed-rootfs-and-isolation-reader-api-refused",
-      "blob_sha": "13ca5150ecdd48d7db20949fb91c09dcbcd45d3f",
-      "start_line": 2750,
-      "end_line": 2752
+      "anchor": "26-november--c5-exact-llvm-18-native-reader-option-correction-prepared",
+      "blob_sha": "d596013898c341f4e00d637f0a1c0d5abe5f7e3b",
+      "start_line": 2754,
+      "end_line": 2756
     }
   },
   "product": {
@@ -117,16 +117,23 @@
   },
   "task": {
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
-    "status": "READY",
+    "status": "BLOCKED",
     "scope": "C-D08 revised C5-A/B development reproducibility and build safety only; D retains native prerequisites, P8 release-only",
-    "blocker": "Runtime BLOCKED: HOST_READER_API after llvm_readobj-help; exact missing flag unknown; full 16 tests, rootfs/import, actual offline probe and decoder passed. Acquisition and provenance remain unverified.",
-    "next_action": "Read-only review exact driver/child native reader flag contract and public Ubuntu LLVM 18/readelf source/help documentation. Identify narrow equivalent supported invocation preserving mandatory inspection criteria, or seek explicit method-change authority if needed. Prepare disarmed correction; no replay, new activation or acceptance changes.",
-    "next_action_kind": "SOURCE_PREPARATION",
+    "blocker": "Fresh exact owner approval required for 72e1142; upstream option contract corrected without reducing import coverage, actual runner help/readers, full 17-method suite and provenance still unverified.",
+    "next_action": "Obtain explicit owner approval of one fresh exact 72e1142 bounded integrated no-pull data-only Docker attempt, template SHA256 5694da0f8eadd1fe161c5fb14be0febf7d5061d0465ddae520db8736f65b4ff4, under unchanged approved finite image policy and safeguards. Verify live head/triggers/pins; write ahead; full disarmed 17-method suite and all preflights before first GET; one-use activation, reconcile/disarm. No fallback/replay.",
+    "next_action_kind": "OWNER_DECISION",
     "after": [
-      "Review and pin justified inert correction or diagnostic proposal; seek fresh exact execution authority before any new activation. Reconcile evidence without replay.",
+      "Reconcile exact run and receipt or refusal, preserving all earlier evidence; no replay or acceptance changes.",
       "Complete C5 rows 5–7 and row 8 exact regression/source closure only on qualifying evidence; D only after C5 closure, G2 resolution and separate authority."
     ],
     "read": [
+      {
+        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
+        "anchor": "26-november--c5-exact-llvm-18-native-reader-option-correction-prepared",
+        "blob_sha": "d596013898c341f4e00d637f0a1c0d5abe5f7e3b",
+        "start_line": 2754,
+        "end_line": 2756
+      },
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "26-november--c5-finite-image-attempt-passed-rootfs-and-isolation-reader-api-refused",
@@ -340,17 +347,17 @@
     ]
   },
   "operation": {
-    "id": "C5-PORTABLE-DOCKER-REVIEWED-IMAGES-ONCE-20261126",
+    "id": "C5-READER-API-PREP-20261126",
     "state": "RECONCILED",
-    "starting_sha": "8c6f7c85f5e1e1d6205db122e058c58974f86fba",
-    "outcome": "Run 45894807116 attempt 1/job 140165969818 terminal FAILURE: approved 20261122.23.1, 16/16 synthetic, engine/rootfs/import/isolation/decoder/help invocations passed; HOST_READER_API refusal before acquisition. No final receipt. One-use approval consumed; false guard restored.",
+    "starting_sha": "c8146b40e172f29fc9e45d9099ea6e60e00dc05b",
+    "outcome": "Detached 72e1142 exact inert correction; five QA paths, one new exact synthetic method passed locally, 22 SHA256 pins and ten source matches verified; full 17-method suite mandatory before driver, no Docker/acquisition.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "26-november--c5-finite-image-attempt-passed-rootfs-and-isolation-reader-api-refused",
-      "blob_sha": "13ca5150ecdd48d7db20949fb91c09dcbcd45d3f",
-      "start_line": 2750,
-      "end_line": 2752
+      "anchor": "26-november--c5-exact-llvm-18-native-reader-option-correction-prepared",
+      "blob_sha": "d596013898c341f4e00d637f0a1c0d5abe5f7e3b",
+      "start_line": 2754,
+      "end_line": 2756
     }
   },
   "authority": {
@@ -446,6 +453,10 @@
       {
         "sha": "c466b5b2faff2a7bb1b6df5020185b3de798952d",
         "scope": "Inert finite documented two-image compatibility proposal; six QA paths, two new exact methods PASS with mocked host, 22/22 refreshed pins and cross-layer binding read back; updated full 16-method suite NOT RUN, zero candidate runs; new policy and execution require explicit owner approval."
+      },
+      {
+        "sha": "72e11429adf316316d71084a5eb6f3fd3da048df",
+        "scope": "Inert exact LLVM 18 option correction, five QA paths, one new exact snippet test PASS, 22/22 refreshed pins and ten source files read back; updated full 17-method suite NOT RUN, zero candidate runs; execution needs fresh exact owner approval."
       }
     ]
   },
