@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | BLOCKED |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 83d8e1d8ab52fed386eb0feed6ba2891606ca171 |
+| Observed starting HEAD | aa575c3282d44e94938d28a9d55885ef9d9208cd |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
-| Operation ID | C5-WHEEL-DRIVER-EXCLUSIVE-ARM-20261126 |
-| Operation state | RECONCILED: exact hardened QA 6ccc04bc3cf7393edc537244c2d5d66c2aeeb15d run 45726661197 attempt 1 SUCCESS; offline 139598130008 27+16=43 tests and three CLI refusals PASS; collect-once 139598131739 and retrieve-once 139598131840 SKIPPED. All real wheel gates false. Blocked on fresh actual acquisition approval. |
-| Intended files | Existing wheel_acquisition_driver.py, test_wheel_acquisition_driver.py and dedicated c5-wheel-hosted-one-use.yml driver pin, journal/handoff/ledger only. No adapter source changes or actual activation. |
-| Approval | Both explicit approvals consumed/disarmed; checksum-only run 45725150647 SUCCESS, independent persisted receipt replay PASS; synthetic receipt transfer run 45725783645 SUCCESS, disarm verified. Fourteen total restricted approvals consumed/disarmed (six native, seven metadata, one synthetic). No actual wheel acquisition, new metadata/binaries, installs, native/model, owner data, installer or retries authorized. |
+| Operation ID | C5-WHEEL-HOSTED-ONCE-20261126 |
+| Operation state | PREPARED: owner explicitly approved the immediately preceding bounded wheel acquisition proposal ('i approve'). Exact 6ccc04b offline CI SUCCESS. Arm driver and dedicated workflow only, marker absent until exact direct-child activation. |
+| Intended files | wheel_acquisition_driver.py exact ARMED flag, c5-wheel-hosted-one-use.yml exact driver pin and marker-only trigger, one exact APPROVAL_WHEEL_HOSTED_20261126.txt addition, then disarm; journal/handoff/ledger and result receipt. No adapter or product-source changes. |
+| Approval | Owner explicitly approved one actual hosted candidate-only attempt, maximum 68 exact pinned files.pythonhosted.org GETs/225699980 body bytes, 15s/request, 25min collector, zero wheel redirects/retries, stop first refusal. One receipt/notice-only upload and one independent exact retrieval, bundle cap 68550656, ZIP cap 69599232, 7-day retention, 6min verifier. No wheel upload/installation/execution/native/model/toolchain/owner data/installer. Fourteen previous approvals consumed/disarmed. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | None for this operation. |
+| Pending runs | None; verify arm commit and no matching workflow before exact marker-only activation. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
-| Recovery action | Request fresh owner approval for one actual hosted candidate-only collection: 68 exact files.pythonhosted.org GETs maximum, 225699980 aggregate body bytes maximum, 15s absolute/request, 25min collection, no wheel redirects/retries, stop first refusal; one receipt/notice-only artifact upload and one independent exact artifact retrieval (max bundle 68550656 bytes, ZIP 69599232 bytes, 7-day retention, 6min verifier), no wheel upload/install/execute/native/model/owner data/installer. After explicit approval arm only driver flag and dedicated workflow behind marker-only push, pin exact driver blob and parent, skip disarmed offline tests on activation, verify no arm run, activate exact child attempt 1, reconcile and restore both source/workflow/remove marker even on failure. Preserve adapter source pin; temporary process-local gate only. No replay or C5 closure until remaining provenance and locks verified. |
+| Recovery action | Reconcile exact activation run and available receipt even on refusal; restore driver/workflow original blobs and remove marker. Never replay this approval. Unsettled failure remains blocked; no production readiness or C5 closure. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
