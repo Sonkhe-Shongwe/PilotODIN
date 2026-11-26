@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | READY |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | a31eb5a6bc7c8ff7758ffcb958e1fef162587b4d |
+| Observed starting HEAD | dacaf91db9a51f147e1f3c0f4b5456a266f73a7b |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
-| Operation ID | C5-ARCHITECTURE-READINESS-AUDIT-20261126 |
-| Operation state | RECONCILED: documentation-only architecture/readiness review at baseline a31eb5a, covering upstream research, seven responsibility layers, roadmap and risks. No product/QA/workflow changes, no new test credit; 18 prior approvals consumed/disarmed. |
-| Intended files | docs/C5_ARCHITECTURE_READINESS_REVIEW_2026-11-26.md, existing C5 implementation specification, journal, handoff, Package C evidence ledger and decision index as applicable. |
-| Approval | Read-only upstream documentation/source review and repository documentation only; no dependency/asset bytes, restricted artifact retrieval, installation, execution, build, owner machine or activation. |
+| Operation ID | C5-R1-DOCUMENTATION-CONSISTENCY-AUDIT-20261126 |
+| Operation state | PREPARED: owner-requested audit of new C5-R1 directive and navigation. Reconcile stale next steps, approval counts, sidecar evidence and strict closure/authority wording; preserve historical evidence. Documentation only. |
+| Intended files | Journal, handoff, C5 readiness review/specification, decision index, C ledger, README, Continue Here, documentation index, roadmap and current audit pointers; new dated C5-R1 consistency audit. |
+| Approval | Documentation-only audit under ordinary source authority; all 18 restricted approvals consumed/disarmed. No build, actual acquisition, artifact transfer, owner machine or new authority. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | None. Documentation-only checkpoint; no workflow activation. |
+| Pending runs | None; docs-only exact baseline had zero runs. No dispatch. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
-| Recovery action | Next C5-R2 source-only: follow docs/C5_ARCHITECTURE_READINESS_REVIEW_2026-11-26.md §1-3. Audit metadata-2.4 licence placement and bounded unsupported-format/refusal fixtures; design narrow shared schema-3 core with explicit caps, separate fixture and disabled hosted frontdoors, prior-five durable replay, exact gate/artifact verification, evidence retention plan and representative synthetic resource checks. Keep historical pins; fresh exact acquisition proposal only after readiness CI. No restricted action or score change. |
+| Recovery action | Publish coherent R2 next action and link audit, correct verified sidecar count and stale approval/authority wording, clarify proposed design vs actual verified implementation. Preserve immutable historical handoff. Verify relative file paths, critical anchors, exact changed files and CI scope; no score changes. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
