@@ -192,4 +192,84 @@ class Tests(unittest.TestCase):
         self.assertEqual(digest,sha)
         self.assertEqual((old/'wheel-001-evidence.json').read_bytes(),(path/'wheel-001-evidence.json').read_bytes())
 
+
+    def disclosure_fixture(self):
+        path,sha=f._collect(self.rows,'fixture',self.bindings,self.caps,f.FIXTURE_SCOPE,
+                            a.Replay({self.rows[0]['url']:wire(self.raw)}).get,nullcontext,self.parent)
+        receipt=json.loads((path/'wheel-001-evidence.json').read_bytes())['receipt']
+        doc={'schema_version':1,'audience':'public','plan_blob':'fixture','wheels':[
+            {'filename':self.rows[0]['filename'],'wheel_sha256':self.rows[0]['sha256'],
+             'decision':'synthetic-only','notices':[{**item,'source_blob':'a'*40}
+                                                    for item in receipt['notices']]}]}
+        self.assertTrue(doc['wheels'][0]['notices'])
+        return path,sha,doc
+    def public_pin(self,doc):
+        raw=n.canonical(doc)
+        return raw,w.sha(raw)
+    def export_public(self,path,sha,review):
+        return f.export_generation(path,sha,self.rows,'fixture',self.parent,
+                                   bindings=self.bindings,caps=self.caps,scope=f.FIXTURE_SCOPE,
+                                   public_review=review)
+    def test_public_review_exact_notice_and_independent_replay(self):
+        path,sha,doc=self.disclosure_fixture();review=self.public_pin(doc)
+        bundle,identity=self.export_public(path,sha,review)
+        imported,manifest=f.import_generation(bundle,identity,self.rows,'fixture',self.parent,
+                                             bindings=self.bindings,caps=self.caps,scope=f.FIXTURE_SCOPE)
+        self.assertEqual(f.verify_generation(imported,sha,self.rows,'fixture',scope=f.FIXTURE_SCOPE,
+                                            caps=self.caps,bindings=self.bindings,public_review=review),manifest)
+        self.assertEqual(manifest['verified_count'],1)
+    def test_public_review_pin_missing_or_wrong(self):
+        path,sha,doc=self.disclosure_fixture();before=set(self.parent.iterdir())
+        for pin in (None,'0'*64):
+            self.deny('PUBLIC_REVIEW_IDENTITY',lambda:self.export_public(path,sha,(n.canonical(doc),pin)))
+        self.assertEqual(set(self.parent.iterdir()),before)
+    def test_public_review_plan_audience_and_schema(self):
+        path,sha,doc=self.disclosure_fixture()
+        for changed in ({**doc,'plan_blob':'wrong'},{**doc,'audience':'private'},
+                        {**doc,'schema_version':True},{**doc,'extra':True}):
+            self.deny('PUBLIC_REVIEW_SCHEMA',lambda:self.export_public(path,sha,self.public_pin(changed)))
+    def test_public_review_wrong_wheel_or_missing_decision(self):
+        path,sha,doc=self.disclosure_fixture()
+        for changed in ({'wheel_sha256':'0'*64},{'filename':'wrong.whl'},{'decision':''}):
+            entry={**doc['wheels'][0],**changed}
+            self.deny('PUBLIC_REVIEW_WHEEL',lambda:self.export_public(
+                path,sha,self.public_pin({**doc,'wheels':[entry]})))
+    def test_public_review_missing_wheel_refused(self):
+        path,sha,doc=self.disclosure_fixture()
+        self.deny('PUBLIC_REVIEW_INVENTORY',lambda:self.export_public(
+            path,sha,self.public_pin({**doc,'wheels':[]})))
+    def test_public_review_missing_unknown_or_changed_notice_no_export(self):
+        path,sha,doc=self.disclosure_fixture();before=set(self.parent.iterdir())
+        entry=doc['wheels'][0];items=entry['notices'];first=items[0]
+        for changes in ([],[{**first,'sha256':'0'*64}]+items[1:],
+                        [{**first,'bytes':first['bytes']+1}]+items[1:],
+                        sorted(items+[{**first,'path':'zzz/LICENSE'}],key=lambda x:x['path'])):
+            review=self.public_pin({**doc,'wheels':[{**entry,'notices':changes}]})
+            self.deny('PUBLIC_NOTICE_INVENTORY_MISMATCH',lambda:self.export_public(path,sha,review))
+        self.assertEqual(set(self.parent.iterdir()),before)
+    def test_public_review_rejects_duplicate_notice(self):
+        path,sha,doc=self.disclosure_fixture();entry=doc['wheels'][0];items=entry['notices']
+        changed={**doc,'wheels':[{**entry,'notices':sorted(items+[items[0]],key=lambda x:x['path'])}]}
+        self.deny('MEMBER_INVENTORY',lambda:self.export_public(path,sha,self.public_pin(changed)))
+    def test_public_review_invalid_upstream_identity(self):
+        path,sha,doc=self.disclosure_fixture();entry=doc['wheels'][0];items=entry['notices']
+        changed={**doc,'wheels':[{**entry,'notices':[{**items[0],'source_blob':'not-a-blob'}]+items[1:]}]}
+        self.deny('PUBLIC_REVIEW_NOTICE',lambda:self.export_public(path,sha,self.public_pin(changed)))
+    def test_public_review_unpinned_live_path_refuses_before_network_or_output(self):
+        self.assertIsNone(f.PUBLIC_REVIEW_SHA256)
+        with patch.object(f,'authorize',return_value=Mock()),patch.object(f,'_live_fetch') as fetch,\
+             patch.object(f,'_produce') as produce,patch.object(f,'_download_exact') as download:
+            self.deny('PUBLIC_REVIEW_REQUIRED',f.produce)
+            self.deny('PUBLIC_REVIEW_REQUIRED',f.retrieve)
+            fetch.assert_not_called();produce.assert_not_called();download.assert_not_called()
+    def test_public_review_refusal_prevents_producer_bundle(self):
+        path,sha,doc=self.disclosure_fixture()
+        doc['wheels'][0]['notices']=[]
+        with patch.object(f,'export_generation') as export:
+            self.deny('PUBLIC_NOTICE_INVENTORY_MISMATCH',lambda:f._produce(
+                self.rows,self.bindings,self.caps,f.FIXTURE_SCOPE,'fixture',
+                a.Replay({self.rows[0]['url']:wire(self.raw)}).get,nullcontext,self.parent,
+                '12345','1'*40,public_review=self.public_pin(doc)))
+            export.assert_not_called()
+
 if __name__=='__main__':unittest.main(verbosity=2)

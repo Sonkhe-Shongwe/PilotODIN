@@ -28,6 +28,8 @@ import zipfile
 import zlib
 
 ARMED=False
+# No public raw-notice disclosure decision has been approved or pinned.
+PUBLIC_REVIEW_SHA256=None
 if __name__=='__main__' and ARMED is not True:
     raise SystemExit('FRESH_APPROVAL_REQUIRED: final hosted driver disabled')
 
@@ -254,9 +256,59 @@ def _collect(rows, plan_blob, bindings, caps, scope, fetch, deadline, parent):
 
 
 
-def verify_generation(path, manifest_sha, rows, plan_blob, *, scope, caps, bindings):
+PUBLIC_REVIEW_LIMIT=2*1024*1024
+PUBLIC_REVIEW_PATH=DIR+'wheel_public_notice_review.json'
+
+def public_notice_review(raw, expected_sha, rows, plan_blob):
+    """Validate independently pinned public disclosure identities, not legal rights."""
+    need(n.digest(expected_sha) and type(raw) is bytes
+         and 0<len(raw)<=PUBLIC_REVIEW_LIMIT and w.sha(raw)==expected_sha,
+         'PUBLIC_REVIEW_IDENTITY')
+    doc=_json(raw)
+    need(type(doc) is dict and set(doc)=={'schema_version','audience','plan_blob','wheels'}
+         and type(doc['schema_version']) is int and doc['schema_version']==1
+         and doc['audience']=='public' and doc['plan_blob']==plan_blob
+         and n.canonical(doc)==raw,'PUBLIC_REVIEW_SCHEMA')
+    entries=doc['wheels']
+    need(type(entries) is list and len(entries)==len(rows) and 1<=len(rows)<=63,
+         'PUBLIC_REVIEW_INVENTORY')
+    reviewed={}
+    for entry,row in zip(entries,rows):
+        need(type(entry) is dict and set(entry)=={'filename','wheel_sha256','decision','notices'}
+             and entry['filename']==row['filename'] and entry['wheel_sha256']==row['sha256']
+             and row['filename'] not in reviewed
+             and type(entry['decision']) is str
+             and re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]{0,127}',entry['decision']),
+             'PUBLIC_REVIEW_WHEEL')
+        items=entry['notices']
+        need(type(items) is list and len(items)<=w.MAX_MEMBERS,'PUBLIC_REVIEW_INVENTORY')
+        projected=[]
+        for item in items:
+            need(type(item) is dict and set(item)=={'path','bytes','sha256','source_blob'}
+                 and type(item['source_blob']) is str
+                 and re.fullmatch(r'[0-9a-f]{40}',item['source_blob']),
+                 'PUBLIC_REVIEW_NOTICE')
+            projected.append({k:item[k] for k in ('path','bytes','sha256')})
+        n.member_rows(projected,notice=True)
+        reviewed[row['filename']]=projected
+    return reviewed
+
+def _load_public_review(rows,plan_blob):
+    # A later exact review must pin the manifest digest in reviewed source.
+    # An environment variable or the collected archive cannot grant disclosure.
+    need(n.digest(PUBLIC_REVIEW_SHA256),'PUBLIC_REVIEW_REQUIRED')
+    path=ROOT/PUBLIC_REVIEW_PATH
+    need(path.is_file() and not path.is_symlink(),'PUBLIC_REVIEW_REQUIRED')
+    raw=read_bounded(path,PUBLIC_REVIEW_LIMIT)
+    public_notice_review(raw,PUBLIC_REVIEW_SHA256,rows,plan_blob)
+    return raw,PUBLIC_REVIEW_SHA256
+
+def verify_generation(path, manifest_sha, rows, plan_blob, *, scope, caps, bindings,
+                      public_review=None):
     """Independent read-only replay. Missing terminal manifest is unsettled."""
     rows,bindings,caps,policy_sha=prepare(rows,plan_blob,bindings,caps,scope)
+    reviewed=None if public_review is None else public_notice_review(
+        *public_review,rows,plan_blob)
     path = Path(path)
     need(path.is_dir() and not path.is_symlink(), 'GENERATION_PATH')
     manifest_path = path/'manifest.json'
@@ -344,6 +396,9 @@ def verify_generation(path, manifest_sha, rows, plan_blob, *, scope, caps, bindi
             evidence_bytes += len(evidence_raw)
             need(evidence_bytes <= caps['evidence'],'EVIDENCE_BATCH_LIMIT')
             receipt=p.verify_evidence(evidence_raw,filemap[evidence_name]['sha256'],row,plan_blob,bindings[row['filename']])
+            if reviewed is not None:
+                need(receipt['notices']==reviewed[row['filename']],
+                     'PUBLIC_NOTICE_INVENTORY_MISMATCH')
             expanded+=receipt['expanded_bytes']; notices+=receipt['notice_bytes']
             need(expanded<=caps['expanded'] and notices<=caps['notice'],'BATCH_EXPANSION_LIMIT')
             verified += 1
@@ -393,10 +448,12 @@ def verify_artifact_metadata(meta,record,expected_run,expected_sha,expected_id,u
     need(n.digest(upload_sha) and meta.get('digest')=='sha256:'+upload_sha,'ARTIFACT_UPLOAD_IDENTITY')
     return {'id':expected_id,'bytes':meta['size_in_bytes'],'sha256':upload_sha}
 
-def export_generation(path, manifest_sha, rows, plan_blob, parent, *, bindings, caps, scope):
+def export_generation(path, manifest_sha, rows, plan_blob, parent, *, bindings, caps, scope,
+                      public_review=None):
     """Verify before packaging; exclusive file in fresh disposable directory."""
     need(len(rows)<=63,'REMAINING_COUNT')
-    m = verify_generation(path,manifest_sha,rows,plan_blob,bindings=bindings,caps=caps,scope=scope)
+    m = verify_generation(path,manifest_sha,rows,plan_blob,bindings=bindings,caps=caps,scope=scope,
+                          public_review=public_review)
     names = sorted([x['name'] for x in m['files']]+['manifest.json'])
     need(len(names)<=h.MAX_FILES,'BUNDLE_COUNT')
     expected = {f['name']:f for f in m['files']}
@@ -566,16 +623,24 @@ def _download_exact(grant,record,run,sha,artifact_id,upload_digest,token,opener,
 def _settlement(path,manifest,sha,rows):
     return rt.settlement(path,manifest,sha,rows)
 
-def _produce(rows,bindings,caps,scope,plan_blob,fetch,deadline,parent,run,source):
+def _produce(rows,bindings,caps,scope,plan_blob,fetch,deadline,parent,run,source,*,public_review=None):
+    if public_review is not None:
+        public_notice_review(*public_review,rows,plan_blob)
     path,sha=_collect(rows,plan_blob,bindings,caps,scope,fetch,deadline,parent)
-    manifest=verify_generation(path,sha,rows,plan_blob,scope=scope,bindings=bindings,caps=caps)
-    bundle,ident=export_generation(path,sha,rows,plan_blob,parent,scope=scope,bindings=bindings,caps=caps)
+    manifest=verify_generation(path,sha,rows,plan_blob,scope=scope,bindings=bindings,caps=caps,
+                               public_review=public_review)
+    bundle,ident=export_generation(path,sha,rows,plan_blob,parent,scope=scope,bindings=bindings,caps=caps,
+                                   public_review=public_review)
     record=artifact_record(run,source,ident,rows,plan_blob,scope=scope,bindings=bindings,caps=caps)
     return bundle,record,_settlement(path,manifest,sha,rows)
 
-def _replay(raw,meta,record,expected,run,source,artifact_id,digest,rows,plan_blob,parent,*,bindings,caps,scope):
+def _replay(raw,meta,record,expected,run,source,artifact_id,digest,rows,plan_blob,parent,*,bindings,caps,scope,
+            public_review=None):
     path,manifest=replay_artifact(raw,meta,record,run,source,artifact_id,digest,rows,plan_blob,parent,
                                  bindings=bindings,caps=caps,scope=scope)
+    if public_review is not None:
+        verify_generation(path,record['bundle']['manifest_sha256'],rows,plan_blob,scope=scope,
+                          bindings=bindings,caps=caps,public_review=public_review)
     observed=_settlement(path,manifest,record['bundle']['manifest_sha256'],rows)
     need(type(expected) is dict and n.canonical(observed)==n.canonical(expected),'PRODUCER_VERIFIER_SETTLEMENT')
     return observed
@@ -583,9 +648,10 @@ def _replay(raw,meta,record,expected,run,source,artifact_id,digest,rows,plan_blo
 def produce():
     grant=authorize('collect-once')
     rows,bindings,caps=c.remaining_inputs()
+    public_review=_load_public_review(rows,diagnostic.MISSING_PLAN_BLOB)
     bundle,record,result=_produce(rows,bindings,caps,HOSTED_SCOPE,diagnostic.MISSING_PLAN_BLOB,
                                   _live_fetch(grant,rows),h.deadline,grant.runner,
-                                  grant.claim['run'],grant.claim['source_sha'])
+                                  grant.claim['run'],grant.claim['source_sha'],public_review=public_review)
     _check_grant(grant,'collect-once')
     print('C5_FINAL_PRODUCER '+json.dumps({'identity':record,'settlement':result},sort_keys=True),flush=True)
     with open(os.environ['GITHUB_OUTPUT'],'a',encoding='utf-8') as out:
@@ -595,6 +661,7 @@ def produce():
 def retrieve():
     grant=authorize('retrieve-once')
     rows,bindings,caps=c.remaining_inputs()
+    public_review=_load_public_review(rows,diagnostic.MISSING_PLAN_BLOB)
     record=_env_json('C5_BUNDLE_RECORD',16384)
     expected=_env_json('C5_PRODUCER_SETTLEMENT',65536)
     artifact=os.environ.get('C5_ARTIFACT_ID','')
@@ -608,7 +675,8 @@ def retrieve():
                              rows,diagnostic.MISSING_PLAN_BLOB,bindings=bindings,caps=caps,scope=HOSTED_SCOPE)
     with tempfile.TemporaryDirectory(dir=grant.runner) as tmp:
         observed=_replay(raw,meta,record,expected,run,source,int(artifact),digest,
-                         rows,diagnostic.MISSING_PLAN_BLOB,Path(tmp),bindings=bindings,caps=caps,scope=HOSTED_SCOPE)
+                         rows,diagnostic.MISSING_PLAN_BLOB,Path(tmp),bindings=bindings,caps=caps,scope=HOSTED_SCOPE,
+                         public_review=public_review)
     print('C5_FINAL_VERIFIER '+json.dumps({'identity':record,'settlement':observed,'artifact_id':artifact,
           'zip_bytes':len(raw),'zip_sha256':w.sha(raw),'status':'REPLAY_PASS','retrievals':1},sort_keys=True),flush=True)
     return 0 if observed['verified_count']==63 else 2
