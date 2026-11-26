@@ -7,7 +7,7 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 8e02a03575b1b1957368b0b4dfb907df11fe231d |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
@@ -17,7 +17,7 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Intended files | qa/c5_wheel_metadata/wheel_hosted_final.py, test_wheel_hosted_final.py, .github/workflows/c5-wheel-hosted-final-review.yml, journal/handoff/spec/ledger. |
 | Approval | Routine source/synthetic CI only. All 18 restricted approvals consumed/disarmed; no actual wheels, retrieval, installation, owner tree or execution. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | None; dedicated synthetic CI only; live jobs literally disabled. |
+| Pending runs | Exact dedicated CI pending reconciliation; live jobs and upload literally disabled. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
 | Recovery action | Implement final scope-aware shared collection/replay and receipt transfer, gate before live mutation and require independently reviewed external exact parent/child/driver/workflow and plan identity; marker absent, ARMED=False, no activation workflow trigger. Test with inert responses and local artifacts, including complete exact-plan refusal and strict digest/settlement comparisons. No new actual wheel, retrieval, upload, execution or install. Next bounded resource/retention review. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
