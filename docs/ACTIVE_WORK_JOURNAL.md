@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | READY |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | c934ed9b74c5c123fae178b9bbd11a3800e11855 |
+| Observed starting HEAD | 1c28be30b5482e09be49161bee5a10945fb7ffe4 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
-| Operation ID | C5-R2-DISABLED-HOSTED-TRANSFER-20261126 |
-| Operation state | RECONCILED: exact 9fbb272 run 45762373065 SUCCESS; Ubuntu 139715120187 and Windows 139715119044 each 150 existing +24 new tests, seven direct CLI refusals, exact remaining plan and prior-five replay, pure synthetic gate/claim and receipt artifact roundtrip PASS. Initial 2c01cc2 run 45762295177 failed test syntax; fixed extra quote only. Actual collect/retrieve hard refused; all 18 approvals consumed/disarmed. |
-| Intended files | qa/c5_wheel_metadata/wheel_hosted_policy_v3.py, test_wheel_hosted_policy_v3.py, .github/workflows/c5-wheel-hosted-policy-v3-review.yml, journal/handoff/specification/ledger. |
+| Operation ID | C5-R2-RUNTIME-GATE-TRANSPORT-20261126 |
+| Operation state | PREPARED: read-only runtime Git/event gate on disposable fixture checkout; exact pinned remaining inputs; sequenced bounded HTTPS adapter contract and independent producer/verifier settlement equality. No live socket, service calls or activation. Preserve verified core and transfer pins. |
+| Intended files | qa/c5_wheel_metadata/wheel_hosted_runtime.py, test_wheel_hosted_runtime.py, .github/workflows/c5-wheel-hosted-runtime-review.yml, journal/handoff/spec/ledger. |
 | Approval | Routine source/synthetic CI only. All 18 restricted approvals consumed/disarmed; no actual wheels, retrieval, installation, owner tree or execution. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | None; exact final synthetic CI reconciled. |
+| Pending runs | None; dedicated synthetic CI planned. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
-| Recovery action | Next C5-R2 source-only: wire reviewed runtime Git/event/checkout and independently pinned arm/activation context to a new disabled hosted capability, exact hosted core scope and bounded actual transport adapter design; no real marker or activation. Existing synthetic claim is not authority and cannot authorise live requests. Reuse shared core/transfer algorithms, exact independently observed service artifact ID/digest, fail-closed transport and independent settlement equality. Resource measurement and durable notice-retention plan before fresh R3 proposal. Preserve old pins, no restricted operations. |
+| Recovery action | Observe Git HEAD/parent/diff/message and working bytes versus Git blobs before claims; check independent expectations and exact pins, fresh marker only in inert fixture repo. Bind transport to ordered exact rows, one request per URL and stop after refusal, test TLS/factory with mocks only. Reconcile independent bundle replay and producer settlement equality. No hosted scope promotion or new live capability until separately reviewed arm-ready source; resource/retention review remains. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
