@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | READY |
+| State | BLOCKED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 03032f500b1a109d5b234e7ae70ea016527dcf92 |
+| Observed starting HEAD | b317ce1234780e837312fdaa5e1d4a4c7e09e899 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | Revised C5-A/B development reproducibility and build safety; D prerequisites and P8 release-only allocation. No restricted acquisition, native, owner data, install, packaging, phase activation or release. |
-| Operation ID | C5-PDFIUM-NOTICE-RECONCILIATION-20261126 |
-| Operation state | RECONCILED read-only notice provenance and declared Python compatibility; 74/74 notice hashes, all 22 unmapped rows resolved, one FreeType encoding reconstruction. Conditional use only, actual native linkage outstanding. |
-| Intended files | Documentation-only checkpoint; next exact read-only test-only migration proposal and finite equivalence scope. No product/dependency/lock edits or consumption. |
+| Operation ID | C5-PDFIUM-MIGRATION-PROPOSAL-20261126 |
+| Operation state | RECONCILED read-only exact migration design; 68/68 inventory blobs unchanged, 19 direct callers and 14 known workflows reviewed, prospective lock identities computed. No cutover or equivalence. |
+| Intended files | Documentation-only checkpoint. Proposed detached/disarmed QA-only draft requires specific owner approval; no active ref move, CI, acquisition, install or execution. |
 | Approval | Owner explicitly stated: "I approve exact one-use activation of C5-PDFIUM-TWO-WHEEL-EVIDENCE-ONCE-20261126, detached commit 6fe96595c8d5a699c14f14613b1bf0583895ba32, parent f3e55a078a9613f433b2aef283a97d25af2894c8. Maximum five HTTPS requests and 8994854 response bytes, zero retries or redirects. No installation, downloaded code execution, filesystem extraction, owner-data access, native application execution, installer generation or release. Execute once, reconcile the evidence and immediately disarm." CONSUMED; no replay or new live authority. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
 | Pending runs | None. #45840503532 acquisition SUCCESS; #45840727452 rehearsal SUCCESS and acquisition SKIPPED. |
 | Unpublished work | Owner-local tree uninspected; detached draft a64306a preserved historically, reviewed overlay published with added synthetic coverage. |
-| Recovery action | [notice/hash and conditional use disposition](./PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md#26-november--c5-pdfium-notice-hashes-and-conditional-development-use-disposition). Resume [immediate next work](./TAB_MIGRATION_HANDOFF_CURRENT.md#4-immediate-next-work-in-order): bounded read-only migration proposal and finite equivalence scope; actual native linkage/use disposition before any consumption. No acquisition/install/execution. |
+| Recovery action | [exact test-only migration proposal and finite equivalence boundary](./PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md#26-november--c5-exact-pdfium-test-only-migration-proposal-and-finite-equivalence-boundary). Specific owner approval required for detached/disarmed source implementation only; separate actual linkage/use disposition and exact equivalence activation required before consumption. Resume [immediate next work](./TAB_MIGRATION_HANDOFF_CURRENT.md#4-immediate-next-work-in-order). No acquisition/install/execution. |
 | Resume after closure | D only after revised C5 source closure, G2 resolution and separately approved scope; every native prerequisite before its use. P8 release-only obligations retained; installer frozen. |
 
 ## Prior operation
