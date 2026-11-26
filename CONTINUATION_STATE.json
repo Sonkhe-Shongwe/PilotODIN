@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-TERMINFO-POLICY-INTEGRATION-PREP-20261126",
-    "parent_sha": "629da1c7d1440cf6d4bebb6075c0c367ae6607fb",
-    "previous_snapshot_sha": "629da1c7d1440cf6d4bebb6075c0c367ae6607fb",
-    "scope": "Record owner-approved finite exact Linux terminfo policy and bounded receipt preparation; complete pinned inert integrated candidate, no execution",
-    "state": "RECONCILED",
+    "operation_id": "C5-PORTABLE-DOCKER-TERMINFO-POLICY-ONCE-20261126",
+    "parent_sha": "c6c3a7ff2df68eb88f3c5ea91b0c5e7a1f7811b1",
+    "previous_snapshot_sha": "c6c3a7ff2df68eb88f3c5ea91b0c5e7a1f7811b1",
+    "scope": "One fresh exact 76e60bc2 no-pull Docker data-only verification on exactly 20261122.23.1 or 20261116.376.1 and Docker 28.0.4; approved finite exact Linux terminfo policy and bounded receipt projection, all other safeguards; full 19-method gate and preflights before acquisition; no retry/fallback.",
+    "state": "PREPARED",
     "receipt": {
-      "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "26-november--c5-owner-approved-finite-linux-terminfo-policy-integrated-and-pinned-inert-candidate",
-      "blob_sha": "c10e8b3e8f17db8215248ad1855bf5777ad1d275",
-      "start_line": 2778,
-      "end_line": 2780
+      "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
+      "anchor": "owner-approved-exact-finite-linux-terminfo-policy-one-use-integrated-docker-execution",
+      "blob_sha": "7ceb6f7c56c00ed03b2861ba42d55f5c34b67a16",
+      "start_line": 786,
+      "end_line": 788
     }
   },
   "product": {
@@ -117,16 +117,23 @@
   },
   "task": {
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
-    "status": "BLOCKED",
+    "status": "PREPARED",
     "scope": "C-D08 revised C5-A/B development reproducibility and build safety only; D retains native prerequisites, P8 release-only",
-    "blocker": "Exact Linux terminfo collision policy approved for preparation and complete inert integrated candidate 76e60bc2a39e3eb795805f2efa717999464c8ce8 verified statically and in isolated synthetic method. Actual complete inventory/accounting/receipt still unavailable; no fresh restricted execution authority.",
-    "next_action": "Obtain fresh explicit owner approval of exact candidate 76e60bc2a39e3eb795805f2efa717999464c8ce8 for one bounded integrated no-pull Docker data-only verification attempt with approved finite Linux terminfo policy and bounded receipt projection, unchanged finite runner image policy and all other safeguards. Before activation independently reverify template/manifest, guard, workflow trigger scope, pending runs and source pins; persist write-ahead authority/intent. Full 19-method synthetic gate must pass before Docker invocation or acquisition.",
-    "next_action_kind": "OWNER_DECISION",
+    "blocker": "Complete inventory/accounting/receipt unverified; exact fresh one-use execution approved, write-ahead only.",
+    "next_action": "Activate sole owned workflow from exact approved candidate with only two substitutions at verified write-ahead HEAD. Observe and reconcile actual run; disarm without replay.",
+    "next_action_kind": "APPROVED_EXECUTION",
     "after": [
       "Only after fresh exact execution approval, run once under unchanged safeguards; reconcile observed case-sensitive inventory receipt or first unapproved collision and final accounting, independently verify receipt hashes/parts and approved policy fields, restore false guard; no replay or assumed cleanup.",
       "Complete C5 rows 5–7 and row 8 only on qualifying evidence; D after C5 closure, G2 resolution and separate authority."
     ],
     "read": [
+      {
+        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
+        "anchor": "owner-approved-exact-finite-linux-terminfo-policy-one-use-integrated-docker-execution",
+        "blob_sha": "7ceb6f7c56c00ed03b2861ba42d55f5c34b67a16",
+        "start_line": 786,
+        "end_line": 788
+      },
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "26-november--c5-owner-approved-finite-linux-terminfo-policy-integrated-and-pinned-inert-candidate",
@@ -417,23 +424,49 @@
     ]
   },
   "operation": {
-    "id": "C5-TERMINFO-POLICY-INTEGRATION-PREP-20261126",
-    "state": "RECONCILED",
-    "starting_sha": "629da1c7d1440cf6d4bebb6075c0c367ae6607fb",
-    "outcome": "Complete detached inert integrated candidate 76e60bc2a39e3eb795805f2efa717999464c8ce8; 22/22 payload pins, ten exact source matches, exact readback, isolated mocked test rerun PASS and three exact snippet hashes matched; staged receipt producer compatibility reviewed. Full 19-method gate integrated NOT RUN; no restricted execution or acquisition.",
+    "id": "C5-PORTABLE-DOCKER-TERMINFO-POLICY-ONCE-20261126",
+    "state": "PREPARED",
+    "starting_sha": "c6c3a7ff2df68eb88f3c5ea91b0c5e7a1f7811b1",
+    "scope": "One fresh exact 76e60bc2 no-pull Docker data-only verification on exactly 20261122.23.1 or 20261116.376.1 and Docker 28.0.4; approved finite exact Linux terminfo policy and bounded receipt projection, all other safeguards; full 19-method gate and preflights before acquisition; no retry/fallback.",
+    "intended_paths": [
+      ".github/workflows/c5-portable-provenance-once.yml"
+    ],
+    "authority_ref": {
+      "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
+      "anchor": "owner-approved-exact-finite-linux-terminfo-policy-one-use-integrated-docker-execution",
+      "blob_sha": "7ceb6f7c56c00ed03b2861ba42d55f5c34b67a16",
+      "start_line": 786,
+      "end_line": 788
+    },
+    "expected_evidence": "Exact activation parent/message, sole owned first-attempt job; terminal logs and independently verified bounded receipt or first refusal; restore false guard.",
+    "recovery": "Inspect live HEAD, exact commit/diff/message and actual run/attempt before retry; approval unavailable on uncertainty; disarm exact owned workflow with expected HEAD; never replay.",
     "reconcile_before_retry": false,
-    "receipt": {
-      "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "26-november--c5-owner-approved-finite-linux-terminfo-policy-integrated-and-pinned-inert-candidate",
-      "blob_sha": "c10e8b3e8f17db8215248ad1855bf5777ad1d275",
-      "start_line": 2778,
-      "end_line": 2780
-    }
+    "source_sha": "76e60bc2a39e3eb795805f2efa717999464c8ce8",
+    "template_sha256": "fb75ed875edd672b44628bb853a95cec2bc881e5d5d7ab5c9dd3c55b7a7d7624",
+    "expected_activation_message": "C5-PORTABLE-DOCKER-TERMINFO-POLICY-ONCE-20261126 owner approved exact finite Linux terminfo inventory policy no-pull data-only operation",
+    "run_attempt": 1
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next.",
     "preparation_only": "Owner approved consolidated shared-bundle disarmed acquisition-before-signature source and exact limited existing host bootstrap; owner approved proposed limited local Docker control-plane and host-derived rootfs trust/no-pull isolation method for preparation only. Authentication before extraction/use; no Docker invocation, acquisition, verification execution, installation or live cutover authorised. Owner approved bounded first-collision encoded public member-path diagnostic preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-bounded-first-collision-diagnostic-preparation-only. No restricted execution authority. Owner approved finite exact Linux data-only terminfo inventory policy and bounded receipt projection as proposed in 8cc1a696, preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-finite-exact-linux-terminfo-inventory-policy-and-bounded-receipt-preparation-only. Strict Windows/gh and other safeguards unchanged; no acquisition, extraction or restricted execution.",
-    "restricted_active": [],
+    "restricted_active": [
+      {
+        "id": "C5-PORTABLE-DOCKER-TERMINFO-POLICY-ONCE-20261126",
+        "state": "APPROVED",
+        "source_sha": "76e60bc2a39e3eb795805f2efa717999464c8ce8",
+        "scope": "One fresh exact 76e60bc2 no-pull Docker data-only verification on exactly 20261122.23.1 or 20261116.376.1 and Docker 28.0.4; approved finite exact Linux terminfo policy and bounded receipt projection, all other safeguards; full 19-method gate and preflights before acquisition; no retry/fallback.",
+        "owner_authority_ref": {
+          "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
+          "anchor": "owner-approved-exact-finite-linux-terminfo-policy-one-use-integrated-docker-execution",
+          "blob_sha": "7ceb6f7c56c00ed03b2861ba42d55f5c34b67a16",
+          "start_line": 786,
+          "end_line": 788
+        },
+        "reconcile_before_retry": false,
+        "template_sha256": "fb75ed875edd672b44628bb853a95cec2bc881e5d5d7ab5c9dd3c55b7a7d7624",
+        "run_attempt": 1
+      }
+    ],
     "consumed_disarmed_count": 37,
     "consumed_history": {
       "commit": "b9864b70fb9bb5a72d0f79c37f15b94100722192",
@@ -453,7 +486,7 @@
       "release",
       "replay of consumed or uncertain approval"
     ],
-    "guards": "37 consumed/disarmed including exact case diagnostic attempt; approved finite image policy exactly 20261122.23.1 and 20261116.376.1 remains normative; no execution approval remains; owned workflow false job guard restored with exact activation parent/message retained; no fallback/replay. Three C1/C2 workflows and OWNED_RESOURCE_ENABLED false; three consumed variables owner cleanup unverified.",
+    "guards": "37 previous consumed/disarmed; exact one-use owner approval recorded PREPARED for 76e60bc2 only. Existing finite image policy and all bounds remain, no replay/fallback. Owned workflow false guard until exact activation. Three C1/C2 workflows and OWNED_RESOURCE_ENABLED false; three consumed variables owner cleanup unverified.",
     "last_consumed": {
       "id": "C5-PORTABLE-DOCKER-CASE-DIAGNOSTIC-ONCE-20261126",
       "source_sha": "05866bc9bcbf405a6c3da9e403c745164d5707a6",
