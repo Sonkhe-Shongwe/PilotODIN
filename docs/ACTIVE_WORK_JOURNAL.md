@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | PREPARED |
+| State | PUBLISHED |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 8a32074fd2808a77a056ecafec971446af3bec79 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | Revised C5-A/B development reproducibility and build safety; D prerequisites and P8 release-only allocation. No restricted acquisition, native, owner data, install, packaging, phase activation or release. |
 | Operation ID | C5-PDFIUM-TWO-WHEEL-EVIDENCE-ONCE-20261126 |
-| Operation state | PREPARED; prelaunch corrections, tagged notice identity comparison and marker-absent staging; no activation permission. |
+| Operation state | PUBLISHED MARKER_ABSENT_STAGING; exact synthetic rehearsal pending. No activation marker, scope approval unconsumed, exact activation not granted. |
 | Intended files | qa/c5_pdfium/pdfium_evidence_draft.py; .github/workflows/c5-pdfium-evidence-draft.yml; canonical journal, handoff and C ledger. No product/dependency/lock edits. |
 | Approval | Owner explicitly stated: "I approve C5-PDFIUM-TWO-WHEEL-EVIDENCE-ONCE-20261126 as proposed in commit 0458d55. Maximum five HTTPS requests and 8994854 response bytes, zero retries. Preserve existing staging and activation safeguards. No installation, downloaded code execution, owner-data access, native application execution, installer generation or release. Proceed with bounded preparation." Approval unconsumed; exact activation not granted. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | None. Exact #45838185133 rehearsal 139972515284 SUCCESS, candidate-acquisition 139972517951 SKIPPED. |
+| Pending runs | Dedicated exact child of 43f826c expected rehearsal only; reconcile run/job/logs and acquisition skipped. |
 | Unpublished work | Owner-local tree uninspected; detached draft a64306a preserved historically, reviewed overlay published with added synthetic coverage. |
-| Recovery action | Review and publish narrow prelaunch fixes and marker-absent staging only, verify exact rehearsal and skipped acquisition. Prepare exact marker-only child for owner review without pushing it. |
+| Recovery action | [Marker-absent staging](./PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md#26-november--c5-pdfium-marker-absent-prelaunch-staging). Reconcile exact synthetic CI and verify marker absent; prepare detached exact marker-only child, verify diff and no dispatch, request owner activation approval. |
 | Resume after closure | D only after revised C5 source closure, G2 resolution and separately approved scope; every native prerequisite before its use. P8 release-only obligations retained; installer frozen. |
 
 ## Prior operation

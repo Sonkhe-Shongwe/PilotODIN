@@ -5,17 +5,19 @@ on:
     paths:
       - qa/c5_pdfium/pdfium_evidence_draft.py
       - .github/workflows/c5-pdfium-evidence-draft.yml
+      - qa/c5_pdfium/APPROVAL_PDFIUM_TWO_WHEEL_ONCE_20261126.json
 permissions:
   contents: read
 jobs:
   rehearsal:
+    if: ${{ github.event.head_commit.message != 'C5-PDFIUM-TWO-WHEEL-EVIDENCE-ONCE-20261126 owner approved exact acquisition only' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           ref: ${{ github.sha }}
-          fetch-depth: 8
+          fetch-depth: 16
           persist-credentials: false
       - name: Existing cached CP311 only, static inventory and fixtures
         shell: bash
@@ -28,10 +30,21 @@ jobs:
           rc=0
           "$python" -I -B qa/c5_pdfium/pdfium_evidence_draft.py --live || rc=$?
           test "$rc" -eq 2
+          test ! -e qa/c5_pdfium/APPROVAL_PDFIUM_TWO_WHEEL_ONCE_20261126.json
   candidate-acquisition:
-    if: ${{ false }}
+    if: ${{ github.event.head_commit.message == 'C5-PDFIUM-TWO-WHEEL-EVIDENCE-ONCE-20261126 owner approved exact acquisition only' && github.run_attempt == 1 }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - name: Explicitly disarmed; no live acquisition
-        run: exit 2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Exact approved one-use in-memory evidence only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python="$RUNNER_TOOL_CACHE/Python/3.11.18/x64/bin/python3.11"
+          test -f "$python"
+          "$python" -I -B qa/c5_pdfium/pdfium_evidence_draft.py --live

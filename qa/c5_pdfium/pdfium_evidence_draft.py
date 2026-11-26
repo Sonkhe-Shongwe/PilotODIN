@@ -1,4 +1,4 @@
-"""Disarmed two-wheel evidence adapter. Synthetic transport only until exact activation."""
+"""Marker-absent staged two-wheel evidence adapter; exact one-use gate required."""
 from __future__ import annotations
 import base64
 from contextlib import contextmanager
@@ -49,7 +49,41 @@ PINS = {
 }
 HEX = re.compile(r"[0-9a-f]{64}")
 URL = re.compile(r"https://files\.pythonhosted\.org/packages/[0-9a-f]{2}/[0-9a-f]{2}/[0-9a-f]{60}/[A-Za-z0-9_.-]+\.whl")
-LIVE_ENABLED = False
+LIVE_ENABLED = True
+
+# Exact upstream source tree notice identities, not a bundled licence clearance.
+NOTICE_SOURCE = "a618c900bc03ab071e5ee8aea3c196a935cfa8a7"
+NOTICE_PINS = {
+    "BUILD_LICENSES/abseil.txt": "fb1517cba75ad9cde517848cb967eb04198c90ca",
+    "BUILD_LICENSES/agg23.txt": "3040a2b5347e2a37545ed281bed18d5a289dec42",
+    "BUILD_LICENSES/all_except_musl/llvm-libc.txt": "416a2ffdd948024a9a3422cd8a680753581af972",
+    "BUILD_LICENSES/dragonbox-Apache2-LLVM.txt": "7f5c70ff8abe141beae536154d67e8b70b140d7a",
+    "BUILD_LICENSES/dragonbox-Boost.txt": "36b7cd93cdfbac762f5be4c6ce276df2ea6305c2",
+    "BUILD_LICENSES/fast_float.txt": "2fb2a37ad7fda521092c8b7b16911176c3f8a81b",
+    "BUILD_LICENSES/freetype.txt": "bbaba33f47d92ee4ed527582d96aeebf54cdcbb0",
+    "BUILD_LICENSES/harfbuzz.txt": "1dd917e9f2e72167de69e3b5dadbc4e7db417da1",
+    "BUILD_LICENSES/highway.txt": "c49c9784a90ad0e1107ddf29c5537d85dbb2c704",
+    "BUILD_LICENSES/icu.txt": "9f54372febca06e134bbc9d4700a1ebfeda13843",
+    "BUILD_LICENSES/lcms.txt": "25276b28f686cc0b3332a4ae04cdb9409baa25b1",
+    "BUILD_LICENSES/libjpeg_turbo.ijg": "dbf8070cac812bcfd7eb4d407062919f69c777c8",
+    "BUILD_LICENSES/libjpeg_turbo.md": "a785258bcdaeb20de639c6a060a7e3d5df17ae8f",
+    "BUILD_LICENSES/libopenjpeg.txt": "89df544ff5597e1a5e560f33ca0653d54884b2dc",
+    "BUILD_LICENSES/libpng.txt": "e0c5b531cf548d608e911c43c577cd4ba9a1526e",
+    "BUILD_LICENSES/libtiff.txt": "dc255dec69163021fec18c9d44a9946aa257d8b4",
+    "BUILD_LICENSES/pbin_and_sbuild/brotli.txt": "33b7cdd2dbaeddce1e35aa1a13f63d71154dc42f",
+    "BUILD_LICENSES/pbin_and_sbuild/libyuv.txt": "c911747a6b53f063503992c3903d932f54cf6c57",
+    "BUILD_LICENSES/pdfium-binaries.txt": "f0c5a25c8c215e647b776e8fb4498a36da326493",
+    "BUILD_LICENSES/pdfium.txt": "8b86eb001336e2a3731218c7c1314ab091b5c910",
+    "BUILD_LICENSES/SHARED/Apache-2.0.txt": "62589edd12a37dd28b6b6fed1e2d728ac9f05c8d",
+    "BUILD_LICENSES/simdutf.txt": "74c8302ba92830e170dfae35957468edd2e25271",
+    "BUILD_LICENSES/zlib.txt": "67bbd81f0b20647f257e074bf7054637cbdfccd1",
+    "LICENSES/Apache-2.0.txt": "d645695673349e3947e8e5ae42332d0ac3164cd7",
+    "LICENSES/BSD-3-Clause.txt": "7baa27a311ec3d9924a4e2e50451b64d97947656",
+    "LICENSES/CC-BY-4.0.txt": "49ce653bfc366fab544037dd1db759c9bb4c502b",
+}
+MAX_RECEIPT = 262144
+_GATE_PASSED = False
+
 
 class Refused(ValueError):
     pass
@@ -149,6 +183,21 @@ def inspector():
     module.MAX_PATH_BYTES = MAX_PATH_BYTES
     return module
 
+
+def notice_matches(contents):
+    results=[]
+    prefix="pypdfium2-"+VERSION+".dist-info/licenses/"
+    for path,raw in sorted(contents.items()):
+        rel=path[len(prefix):] if path.startswith(prefix) else None
+        expected=NOTICE_PINS.get(rel)
+        measured=hashlib.sha1(b"blob "+str(len(raw)).encode()+b"\0"+raw).hexdigest()
+        results.append({"path":path,"upstream_path":rel if expected else None,
+                        "upstream_git_blob":expected,"observed_git_blob":measured,
+                        "status":"EXACT_TAGGED_SOURCE_MATCH" if expected==measured else
+                        "TAGGED_SOURCE_MISMATCH" if expected else "UNMAPPED_REVIEW_REQUIRED"})
+    return results
+
+
 def inspect_archive(raw, row, module, budget, sidecar=None):
     """Independent outer archive pin first, then strict member/RECORD inspection.
     No extraction, and no independently advertised sidecar claim if absent.
@@ -187,7 +236,10 @@ def inspect_archive(raw, row, module, budget, sidecar=None):
                 "version":VERSION,"metadata_sha256":measured,"license_files":declared,
                 "license_expression":module.single(msg,"License-Expression",False),
                 "requires_python":module.single(msg,"Requires-Python",False)}
-    receipt = budget.inspect(raw, expected)
+    receipt, notice_contents = budget.inspect(raw, expected, capture_notices=True)
+    receipt["notice_source_commit"] = NOTICE_SOURCE
+    receipt["notice_comparison"] = notice_matches(notice_contents)
+    del notice_contents
     receipt.pop("license_expression",None)
     receipt["metadata_identity"] = "SIDECAR_MATCH" if expected_sidecar else "ARCHIVE_HASH_BOUND"
     receipt["requires_dist_count"] = 0
@@ -196,6 +248,7 @@ def inspect_archive(raw, row, module, budget, sidecar=None):
     receipt["requires_python"] = expected["requires_python"] if expected["requires_python"] in (">=3.6",">=3.7",">=3.8",">=3.9",">=3.10",">=3.11") else "REVIEW_REQUIRED"
     receipt["license_declaration"] = expected["license_expression"] if expected["license_expression"] in ("Apache-2.0 OR BSD-3-Clause","BSD-3-Clause OR Apache-2.0") else "REVIEW_REQUIRED"
     receipt["license_reviewed"] = False
+    need(len(json.dumps(receipt,sort_keys=True,ensure_ascii=True).encode()) <= MAX_RECEIPT,"RECEIPT_CAP")
     return receipt
 
 def inventory():
@@ -252,8 +305,8 @@ def gate_snapshot(enabled, env, head, parents, subject, changed, dirty, marker, 
     need(marker == {"operation":OP,"parent":parents[0],**pins}, "APPROVAL_PIN")
 
 def live_gate():
-    # Literal disarm currently refuses before accessing any marker or network.
-    need(LIVE_ENABLED, "DISARMED_DRAFT")
+    global _GATE_PASSED
+    need(LIVE_ENABLED and not _GATE_PASSED, "DISARMED_OR_CONSUMED")
     head = git("rev-parse","HEAD").decode().strip()
     parents = git("show","-s","--format=%P","HEAD").decode().split()
     need(len(parents)==1,"ACTIVATION_PARENT")
@@ -267,6 +320,7 @@ def live_gate():
                   git("diff","--name-status",parents[0],head).decode().splitlines(),
                   git("status","--porcelain","--untracked-files=all"),
                   strict_json(marker_path.read_bytes()),pins)
+    _GATE_PASSED = True
     return CAPABILITY
 
 @contextmanager
@@ -316,7 +370,7 @@ class Replay:
 class Transport:
     """Sequential, fixed plan, in-memory body caps; never retries after refusal."""
     def __init__(self,connection,record,capability=None):
-        need(connection is Replay or (LIVE_ENABLED and capability is CAPABILITY
+        need(connection is Replay or (LIVE_ENABLED and _GATE_PASSED and capability is CAPABILITY
              and connection is http.client.HTTPSConnection),"OFFLINE_FIXTURE_ONLY")
         self.connection,self.record=connection,record
         self.requests=self.body=0
@@ -397,7 +451,7 @@ class Transport:
                     if not chunk:
                         break
                 need(len(raw)>0 and (declared is None or len(raw)==declared)
-                     and (exact is None or len(raw)==exact),"INCOMPLETE_BODY")
+                     and (exact is None or len(raw)==exact) and response.isclosed(),"INCOMPLETE_BODY")
                 measured=sha(raw)
                 need(digest is None or measured==digest,"HASH_MISMATCH")
                 if self.requests==1:
@@ -414,11 +468,13 @@ class Transport:
 def collect(connection,record,capability=None):
     transport=Transport(connection,record,capability)
     verified=0
+    settled=False
     try:
+        with deadline(transport.remaining()):
+            module=inspector()
+            budget=module.InspectionBudget()
         metadata=transport.get()
         rows=transport.bind(metadata)
-        module=inspector()
-        budget=module.InspectionBudget()
         for row in rows:
             sidecar=transport.get() if row["sidecar_sha256"] else None
             raw=transport.get()
@@ -429,17 +485,20 @@ def collect(connection,record,capability=None):
             del raw,sidecar
         need(transport.bound and transport.requests==len(transport.plan)
              and verified==2 and transport.body<=MAX_BODY,"TERMINAL_SCOPE")
+        transport.remaining()
+        settled=True
         return 0
     finally:
         record("RESULT",{"requests":transport.requests,"response_bytes":transport.body,
-                        "verified":verified,"status":"INTEGRITY_PASS" if verified==2
-                        and not transport.failed and transport.requests==len(transport.plan) else "REFUSED",
+                        "verified":verified,"status":"INTEGRITY_PASS" if settled else "REFUSED",
                         "installed":False,"extracted":False,"license_reviewed":False})
 
 def live():
     capability=live_gate()
     def record(kind,value):
-        print("C5_PDFIUM_"+kind,json.dumps(value,sort_keys=True,ensure_ascii=True),flush=True)
+        encoded=json.dumps(value,sort_keys=True,ensure_ascii=True)
+        need(len(encoded.encode())<=MAX_RECEIPT,"RECEIPT_CAP")
+        print("C5_PDFIUM_"+kind,encoded,flush=True)
     return collect(http.client.HTTPSConnection,record,capability)
 
 def wire(body=b"",status="200 OK",headers=(),length=True):
@@ -485,7 +544,9 @@ class Synthetic(unittest.TestCase):
         self.assertEqual(m.MAX_MEMBERS,2048)
         self.assertEqual(m.MAX_TOTAL,128*1024**2)
     def test_disarmed(self):
-        self.assertFalse(LIVE_ENABLED)
+        self.assertTrue(LIVE_ENABLED)
+        self.assertFalse(_GATE_PASSED)
+        self.assertFalse((ROOT/MARKER).exists())
 
     def make_wheel(self, *, linux=False, dependency=False, wrong_record=False,
                    missing_notice=False, bad_tag=False, unsafe=False, duplicate=False):
@@ -630,7 +691,7 @@ class Synthetic(unittest.TestCase):
             mutated=args.copy();mutated[index]=value
             with self.subTest(index=index),self.assertRaises(Refused):
                 gate_snapshot(*mutated)
-        with self.assertRaisesRegex(Refused,"DISARMED_DRAFT"): live_gate()
+        with self.assertRaisesRegex(Refused,"MARKER"): live_gate()
 
     def test_transport_refuses_real_connection(self):
         with self.assertRaisesRegex(Refused,"OFFLINE_FIXTURE_ONLY"):
@@ -713,6 +774,28 @@ class Synthetic(unittest.TestCase):
                 collect(Replay,lambda k,v:logs.append((k,v)))
             self.assertEqual(Replay.calls,[VERSION_URL,u1+".metadata",u1])
             self.assertEqual(logs[-1][1]["status"],"REFUSED")
+
+    def test_inspector_preflight_before_any_request(self):
+        Replay.calls=[]
+        logs=[]
+        with mock.patch(__name__+".inspector",side_effect=Refused("INSPECTOR_PIN")):
+            with self.assertRaisesRegex(Refused,"INSPECTOR_PIN"):
+                collect(Replay,lambda k,v:logs.append((k,v)))
+        self.assertEqual(Replay.calls,[])
+        self.assertEqual(logs[-1][1]["status"],"REFUSED")
+        self.assertEqual(logs[-1][1]["requests"],0)
+
+    def test_notice_comparison_exact_mismatch_unmapped(self):
+        raw=b"fixture notice"
+        pin=hashlib.sha1(b"blob "+str(len(raw)).encode()+b"\0"+raw).hexdigest()
+        prefix="pypdfium2-"+VERSION+".dist-info/licenses/"
+        with mock.patch.dict(NOTICE_PINS,{"LICENSES/test.txt":pin}):
+            result=notice_matches({prefix+"LICENSES/test.txt":raw})
+            self.assertEqual(result[0]["status"],"EXACT_TAGGED_SOURCE_MATCH")
+            result=notice_matches({prefix+"LICENSES/test.txt":b"other"})
+            self.assertEqual(result[0]["status"],"TAGGED_SOURCE_MISMATCH")
+            result=notice_matches({prefix+"unknown.txt":raw})
+            self.assertEqual(result[0]["status"],"UNMAPPED_REVIEW_REQUIRED")
 
 if __name__ == "__main__":
     if sys.argv[1:] == ["--rehearse"]:
