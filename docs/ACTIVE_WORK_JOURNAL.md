@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | PREPARED |
+| State | BLOCKED |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 66c69d91835f312e982e495563806409489affa8 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | Revised C5-A/B development reproducibility and build safety; D prerequisites and P8 release-only allocation. No restricted acquisition, native, owner data, install, packaging, phase activation or release. |
 | Operation ID | C5-REMAINING-DEV-INPUT-ONCE-20261126 |
 | Operation state | RECONCILED REFUSED; one-use activation 5b5f87e / #45820796108 attempt 1 failed REDIRECT_FILENAME on first Python GitHub 302; 1 GET, 0 body bytes, 0/45 verified, 45 remaining. Approval consumed, disarmed 15c8a1c / #45820855514 SUCCESS. 21 total consumed/disarmed. |
-| Intended files | Existing disabled remaining_dev_input_once.py only for pure diagnosis fixtures, existing workflow unchanged; canonical continuity docs. Prior one-use marker remains absent; no live network or new permission. |
+| Intended files | Pure categorical projection in existing disarmed driver 0539b4d535b6e21272975bb216ca272f036212fd; no live diagnostic entrypoint or workflow changes. |
 | Approval | Owner explicitly stated: "I approve the bounded C5 acquisition-only proposal in commit 66c69d91835f312e982e495563806409489affa8, covering 45 archives, maximum 48 HTTPS requests and 928307900 body bytes, subject to the documented staging and activation safeguards. No installation, extraction, native execution, model activity, owner access, installer generation or release." Exact scope in proposal 66c69d9; staged readiness and exact activation safeguards mandatory. Approval consumed by 5b5f87e attempt 1, no replay or fresh acquisition authority. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | None. #45820796108 FAILURE, acquisition job 139912215321 exit 2, rehearsal skipped. #45820855514 SUCCESS, 25 synthetic tests, acquisition job 139912425567 skipped. Prior #45815459625 source-test input success and disarm #45815558611 preserved. |
+| Pending runs | None. #45821561489 exact d9de2f9 SUCCESS: 27/27 synthetic, live skipped; prior acquisition #45820796108 FAILURE/disarm #45820855514 SUCCESS preserved. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
-| Recovery action | C5-REDIRECT-FILENAME-DIAGNOSIS-20261126 source-only: exact failed logs and historical checksum receipt inspected; no raw Location retained, cannot infer actual disposition. Prepare pure bounded categorical projection and synthetic tests in existing disarmed driver; acceptance predicate unchanged, no diagnostic network route or activation. Scope proposal for two original header-only GETs only if needed, pending fresh explicit approval. |
+| Recovery action | Source-only diagnostic verified 27/27; historical logs and 156-record checksum receipt contain no signed Location, exact disposition unknown. [Proposed two header-only GETs](./PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md#26-november--c5-filename-diagnostic-and-bounded-header-only-proposal) awaiting fresh explicit approval. No body reads, no redirect follow, no acquisition, no retries. Stage separately pinned disarmed diagnostic route after approval; do not alter acceptance predicate or replay consumed grant. |
 | Resume after closure | D only after revised C5 source closure, G2 resolution and separately approved scope; every native prerequisite before its use. P8 release-only obligations retained; installer frozen. |
 
 ## Prior operation
