@@ -29,3 +29,5 @@ For a material design, safety, scope or evidence-method decision, record an ID, 
 ## Package C decision references
 
 [Integrated Package C specification](./PILOTODIN_PACKAGE_C_RESOURCE_TRUST_SPEC_2026-11-24.md) owns C-D01 through C-D09: coordinator, owned control bridge, data priority, async inference, explicit dev trust, settings writer, consent correction, build inputs and the owner-approved pinned own-job observation mechanism. These are bounded engineering design decisions with compatibility gates, not implementation/acceptance or new authority. [Evidence ledger](./PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md).
+
+C-D08 implementation refinement: [26 November C5 architecture/readiness review](./C5_ARCHITECTURE_READINESS_REVIEW_2026-11-26.md#2-layered-architecture-and-trust-boundary-specification) records responsibility separation, narrow shared-core proposal and evidence/byte-cache boundaries. Existing C-D08 remains normative; no new execution authority or score.
