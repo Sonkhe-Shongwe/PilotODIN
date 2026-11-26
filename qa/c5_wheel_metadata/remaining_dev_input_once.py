@@ -369,6 +369,138 @@ def wire(body=b"", status="200 OK", headers=(), length=True):
     return ("HTTP/1.1 "+status+"\r\n"+"".join(k+": "+v+"\r\n" for k,v in headers)
             +("Content-Length: "+str(len(body))+"\r\n" if length else "")+"\r\n").encode()+body
 
+HEADER_ENABLED = False
+HEADER_CAPABILITY = object()
+HEADER_OP = "C5-PYTHON-REDIRECT-HEADER-ONLY-20261126"
+HEADER_MARKER = "qa/c5_wheel_metadata/APPROVAL_PYTHON_REDIRECT_HEADER_ONLY_20261126.json"
+HEADER_MESSAGE = HEADER_OP + " owner approved headers only"
+
+
+def header_gate():
+    need(HEADER_ENABLED and not LIVE_ENABLED and os.environ.get("GITHUB_ACTIONS") == "true"
+         and os.environ.get("GITHUB_EVENT_NAME") == "push"
+         and os.environ.get("GITHUB_REF") == "refs/heads/feature/live-dev-workspace-20261023"
+         and os.environ.get("GITHUB_WORKFLOW") == "C5 remaining development input one-use"
+         and os.environ.get("GITHUB_RUN_ATTEMPT") == "1"
+         and re.fullmatch(r"[0-9]{1,20}", os.environ.get("GITHUB_RUN_ID","")), "HEADER_APPROVAL_REQUIRED")
+    head = git("rev-parse","HEAD")
+    need(head == os.environ.get("GITHUB_SHA") and git("log","-1","--format=%s") == HEADER_MESSAGE, "HEADER_ACTIVATION")
+    parent = git("rev-parse","HEAD^")
+    p = ROOT / HEADER_MARKER
+    need(p.is_file() and not p.is_symlink() and p.stat().st_size <= 4096 and not (ROOT / MARKER).exists(), "HEADER_MARKER")
+    need(strict_json(p.read_bytes()) == {
+        "operation": HEADER_OP, "parent": parent, "driver": git("rev-parse","HEAD:"+DRIVER),
+        "workflow": git("rev-parse","HEAD:"+WORKFLOW), "spec": SPEC_PIN, "lock": LOCK_PIN, "manifest": MANIFEST_PIN
+    }, "HEADER_PIN")
+    need(git("diff","--name-status",parent,head).splitlines() == ["A\t"+HEADER_MARKER], "HEADER_SCOPE")
+    need(not git("status","--porcelain","--untracked-files=all"), "CHECKOUT_DIRTY")
+    return HEADER_CAPABILITY
+
+
+def header_projection(row, location):
+    # Original gate remains authoritative; only its final two predicate failures
+    # allow a categorical diagnostic. Nothing here authorizes a redirected GET.
+    gate = "PASS"
+    try:
+        redirect(row, row.url, location)
+    except Refused as exc:
+        gate = str(exc)
+        if gate not in ("REDIRECT_FILENAME", "REDIRECT_SIGNATURE"):
+            raise
+    u = parts(location)
+    q = {k.lower():v for k,v in parse_qsl(u.query,keep_blank_values=True,strict_parsing=True,max_num_fields=32)}
+    shape = ("sig" in q and "se" in q) or all(k in q for k in ("x-amz-signature","x-amz-credential","x-amz-expires"))
+    # Additional finite structural categories, never the raw value.
+    aliases = ("rscd","response-content-disposition")
+    def form(key):
+        if key not in q:
+            return "ABSENT"
+        v = q[key]
+        if v in ("attachment; filename="+row.id,'attachment; filename="'+row.id+'"'):
+            return "LITERAL"
+        if re.fullmatch(r"(?i:attachment;[ \t]*filename[ \t]*=[ \t]*)" + re.escape(row.id),v):
+            return "ASCII_CASE_OR_SPACING"
+        if re.fullmatch(r"(?i:attachment;[ \t]*filename[ \t]*=[ \t]*)\"" + re.escape(row.id) + '"',v):
+            return "ASCII_CASE_OR_SPACING_QUOTED"
+        if re.fullmatch(r"(?i:attachment;[ \t]*filename\*[ \t]*=[ \t]*UTF-8'')" + re.escape(row.id),v):
+            return "EXTENDED_UTF8_ASCII"
+        if re.fullmatch(r"(?i:attachment;[ \t]*filename[ \t]*=[ \t]*)" + re.escape(row.id) +
+                        r";[ \t]*(?i:filename\*[ \t]*=[ \t]*UTF-8'')" + re.escape(row.id),v):
+            return "DUAL_MATCHING_ASCII_EXTENDED"
+        if re.fullmatch(r"(?i:attachment;[ \t]*filename[ \t]*=[ \t]*)\"" + re.escape(row.id) +
+                        r"\";[ \t]*(?i:filename\*[ \t]*=[ \t]*UTF-8'')" + re.escape(row.id),v):
+            return "DUAL_MATCHING_QUOTED_EXTENDED"
+        return "OTHER"
+    return {"gate":gate, "destination_host":u.netloc, "query_fields":len(q),
+            "filename_categories":filename_projection(row.id,q),
+            "filename_forms":{k:form(k) for k in aliases}, "signature_shape":shape}
+
+
+def header_collect(connection, record, capability=None):
+    need(connection is Replay or (HEADER_ENABLED and not LIVE_ENABLED and capability is HEADER_CAPABILITY
+         and connection is http.client.HTTPSConnection), "HEADER_OFFLINE_ONLY")
+    rows = [r for r in plan() if r.asset is not None]
+    need(len(rows)==2 and [r.asset for r in rows]==[179768229,676813336], "HEADER_PLAN")
+    requests = 0
+    diagnosed = []
+    failure = None
+    end = time.monotonic()+270
+    for row in rows:
+        conn = resp = None
+        item = {"id":row.id,"asset":row.asset,"origin":"github.com","status":None,"declared":None,
+                "body_bytes":0,"redirects_followed":0}
+        try:
+            u = parts(row.url)
+            need(requests<2 and u.netloc=="github.com" and not u.query, "HEADER_BUDGET")
+            remaining = end-time.monotonic()
+            need(remaining>0, "JOB_DEADLINE")
+            with deadline(min(120,remaining)):
+                conn = connection("github.com",443,timeout=120,context=ssl.create_default_context())
+                requests += 1
+                conn.request("GET",u.path,headers={"Accept-Encoding":"identity","Connection":"close",
+                            "User-Agent":"PilotODIN-C5-acquisition/1"})
+                resp = conn.getresponse()
+                item["status"] = resp.status
+                need(resp.status in (301,302,303,307,308),"HEADER_STATUS")
+                enc = header(resp,"Content-Encoding")
+                need(enc is None or enc.lower()=="identity","CONTENT_ENCODING")
+                length = header(resp,"Content-Length")
+                if length is not None and re.fullmatch(r"[0-9]{1,10}",length):
+                    item["declared"]=int(length)
+                need(item["declared"]==0 and header(resp,"Transfer-Encoding") is None,"REDIRECT_FRAMING")
+                item.update(header_projection(row,header(resp,"Location",8192)))
+                need(item["signature_shape"],"REDIRECT_SIGNATURE")
+                need(item["gate"] in ("PASS","REDIRECT_FILENAME"),"HEADER_GATE")
+                diagnosed.append(row.id)
+        except Refused as exc:
+            # Only fixed source refusal codes, never third-party exception text.
+            failure = str(exc)
+        except Exception:
+            failure = "HEADER_TRANSPORT_REFUSED"
+        finally:
+            try:
+                if resp is not None: resp.close()
+                if conn is not None: conn.close()
+            except Exception:
+                failure = "HEADER_CLOSE_REFUSED"
+            item["failure"] = failure
+            record("ROW",item)
+        if failure is not None:
+            break
+    return {"status":"DIAGNOSTIC_COMPLETE" if len(diagnosed)==2 and failure is None else "REFUSED",
+            "requests":requests,"diagnosed":diagnosed,"body_bytes":0,"redirects_followed":0,
+            "archive_acquisition":False,"failure":failure}
+
+
+def header_live():
+    cap = header_gate()
+    def record(kind,data):
+        print("C5_HEADER_"+kind,json.dumps(data,sort_keys=True,ensure_ascii=True),flush=True)
+    result = header_collect(http.client.HTTPSConnection,record,cap)
+    record("RESULT",result)
+    return 0 if result["status"]=="DIAGNOSTIC_COMPLETE" else 2
+
+
 def self_test():
     import unittest
     rows = plan()
@@ -534,6 +666,45 @@ def self_test():
                       {"rscd":"attachment; filename=untrusted.zip"}]:
                 with self.subTest(keys=sorted(q)),self.assertRaisesRegex(Refused,"REDIRECT_FILENAME"):
                     redirect(row,row.url,prefix+("&"+urlencode(q) if q else ""))
+        def test_header_only_two_original_requests(self):
+            from unittest.mock import patch
+            from urllib.parse import urlencode
+            python_rows=[r for r in rows if r.asset]
+            for row in python_rows:
+                location="https://release-assets.githubusercontent.com/github-production-release-asset/250077933/00000000-0000-0000-0000-000000000001?"+urlencode({"sig":"fixture-secret","se":"fixture","rscd":"attachment; filename="+row.id+"; filename*=UTF-8''"+row.id})
+                Replay.responses[row.url]=wire(status="302 Found",headers=(("Location",location),))
+            with patch.object(http.client.HTTPResponse,"read",side_effect=AssertionError("body read")),patch.object(http.client.HTTPResponse,"read1",side_effect=AssertionError("body read")):
+                result=header_collect(Replay,lambda k,v:self.records.append((k,v)))
+            self.assertEqual(result["status"],"DIAGNOSTIC_COMPLETE")
+            self.assertEqual(Replay.calls,[r.url for r in python_rows])
+            self.assertEqual(result["requests"],2)
+            self.assertEqual(result["body_bytes"],0)
+            self.assertEqual(result["redirects_followed"],0)
+            self.assertTrue(all(v["gate"]=="REDIRECT_FILENAME" and v["signature_shape"] for _,v in self.records))
+            self.assertTrue(all(v["filename_forms"]["rscd"]=="DUAL_MATCHING_ASCII_EXTENDED" for _,v in self.records))
+            self.assertNotIn("fixture-secret",str(self.records))
+            self.assertNotIn("00000000-",str(self.records))
+        def test_header_only_stops_on_framing_or_origin(self):
+            from unittest.mock import patch
+            row=next(r for r in rows if r.asset)
+            for raw, reason in [(wire(b"x",status="302 Found"),"REDIRECT_FRAMING"),
+                                (wire(status="302 Found",headers=(("Location","https://example.invalid/fixture"),)),"URL_ORIGIN"),
+                                (wire(b"x"),"HEADER_STATUS")]:
+                Replay.responses={row.url:raw}; Replay.calls=[]
+                with patch.object(http.client.HTTPResponse,"read",side_effect=AssertionError("body read")),patch.object(http.client.HTTPResponse,"read1",side_effect=AssertionError("body read")):
+                    result=header_collect(Replay,lambda *_:None)
+                self.assertEqual((result["status"],result["failure"],result["requests"]),("REFUSED",reason,1))
+                self.assertEqual(Replay.calls,[row.url])
+        def test_header_only_signature_refusal(self):
+            row=next(r for r in rows if r.asset)
+            location="https://release-assets.githubusercontent.com/github-production-release-asset/250077933/00000000-0000-0000-0000-000000000001?rscd=attachment%3B%20filename%3D"+row.id
+            Replay.responses[row.url]=wire(status="302 Found",headers=(("Location",location),))
+            result=header_collect(Replay,lambda k,v:self.records.append((k,v)))
+            self.assertEqual((result["status"],result["failure"],result["requests"]),("REFUSED","REDIRECT_SIGNATURE",1))
+            self.assertFalse(self.records[0][1]["signature_shape"])
+        def test_header_gate_disarmed(self):
+            with self.assertRaisesRegex(Refused,"HEADER_APPROVAL_REQUIRED"): header_gate()
+            with self.assertRaisesRegex(Refused,"HEADER_OFFLINE_ONLY"): header_collect(http.client.HTTPSConnection,lambda *_:None)
         def test_disarmed(self):
             with self.assertRaisesRegex(Refused,"FRESH_APPROVAL_REQUIRED"): live_gate()
             with self.assertRaisesRegex(Refused,"OFFLINE_FIXTURE_ONLY"): Transport(Path(self.tmp.name),http.client.HTTPSConnection,lambda *_:None)
@@ -558,6 +729,7 @@ if __name__=="__main__":
     try:
         if sys.argv[1:]==["--rehearse"]: self_test()
         elif sys.argv[1:]==["--live"]: raise SystemExit(live())
+        elif sys.argv[1:]==["--header-live"]: raise SystemExit(header_live())
         else: raise Refused("COMMAND_REFUSED")
     except Refused as exc:
         print("C5_REMAINING_INPUT_REFUSED",str(exc),flush=True)
