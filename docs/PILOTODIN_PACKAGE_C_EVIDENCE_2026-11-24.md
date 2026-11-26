@@ -1986,3 +1986,8 @@ Prepared [7a4a72e](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/7a4a72e58b
 ### 26 November | C5 row 4 exact CI terminal success and row 5 preparation
 
 Exact P4 45810872770 attempt 1 at 0df12bb SUCCESS: Ubuntu source 139878104688 (1243 Python passed/6 skipped/552 subtests, 15 Rust, 161 Node, 3 refusal); HTTP 139878104430 (13 passed); Windows 139878103977 (156 C5 passed/1 skipped, 3 refusal, 68/133 subtests); restricted 139878106517 skipped. Three reviewed lock definitions verified. 4/8 scoped checklist deliverables, not an official score. Row 5 prepare minimal read-only toolchain witnesses in existing routine workflow; preserve dependency setup, all machine BLOCKED statuses, restricted skip and prior 19 consumed approvals. No new acquisition, native or owner authority. Source 14/17, P4 14/20.
+
+
+### 26 November | C5 row 5 existing routine toolchain witness published
+
+[Exact evidence and remaining scope](./PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md#development-toolchain-witness-26-november-2026). Prepared d93fc19; 7674552 adds only two local version/ABI/dependency compatibility steps to existing P4 CI, no new workflow or changed setup, 114 other workflow blobs identical; restricted collector skipped. Exact #45812275540 in_progress; row 5 still open. Existing historical publisher checksum receipts reused, actual binary provenance and full browser-dev environment not certified. No lock consumption, native/installer/owner/actual acquisition, all profiles BLOCKED, 19 approvals consumed/disarmed. C5 4/8 scoped, source 14/17, P4 14/20. Next exact reconciliation then minimal standard verification; no score change.

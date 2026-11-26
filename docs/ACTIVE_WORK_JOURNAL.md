@@ -13,13 +13,13 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | Revised C5-A/B development reproducibility and build safety; D prerequisites and P8 release-only allocation. No restricted acquisition, native, owner data, install, packaging, phase activation or release. |
 | Operation ID | C5-DEVELOPMENT-TOOLCHAIN-20261126 |
-| Operation state | PUBLISHED row 5 existing routine CI exact toolchain and hosted Python compatibility witnesses; CI pending. Row 4 verified. |
+| Operation state | RECONCILED source 7674552: existing routine CI toolchain witnesses published, exact verification pending. [Evidence](./PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md#development-toolchain-witness-26-november-2026). Row 4 complete. |
 | Intended files | Existing P4 routine workflow only (version witness steps; no changed dependency setup, trigger, restricted job, installer, model or native scope); canonical checkpoint. |
 | Approval | Owner explicitly stated: "I approve the revised C5 scope rationalisation. Prioritise development reproducibility and build safety, consolidate verification infrastructure, retain mandatory native prerequisites for D, and defer release-only packaging and distribution requirements to P8. Existing execution restrictions remain in force." This is a sequencing/acceptance-scope decision, not execution authority. All 19 restricted approvals remain consumed/disarmed. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | Exact routine P4 run expected for row 5 child of d93fc1962765891da9f05b3bba17953c428823f8. Prior row 4 45810872770 SUCCESS. |
+| Pending runs | Exact P4 45812275540 at 7674552: p4-disposable-real-http-browser 139882885600 in_progress; p4-synthetic-source-and-frontend 139882885911 in_progress; p4-r03-windows-local-answers 139882886050 in_progress; Exercise preservation/hash collector on synthetic Windows fixture ONLY 139882887960 completed/skipped. Prior row 4 45810872770 SUCCESS. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
-| Recovery action | Reconcile row 5 exact version witness and existing toolchain compatibility facts. Owner/browser full installed-tree evidence remains separate; no migration or acquisition. |
+| Recovery action | Reconcile exact P4 45812275540 version witnesses and compatibility; row 5 still open. Then standard verification rows 6–7; no actual acquisition, owner inspection, install or native authority. |
 | Resume after closure | D only after revised C5 source closure, G2 resolution and separately approved scope; every native prerequisite before its use. P8 release-only obligations retained; installer frozen. |
 
 ## Prior operation
