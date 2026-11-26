@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-HOST-OBSERVATION-ONCE-20261127",
-    "parent_sha": "5e5a35b23fcdc5176ffc407771519561334bbdb8",
-    "previous_snapshot_sha": "5e5a35b23fcdc5176ffc407771519561334bbdb8",
-    "scope": "Exact one-use Approach C observation succeeded on already approved image; canonical receipt verified and original disabled workflow restored; no qualification or policy change.",
+    "operation_id": "C5-APPROACH-C-PUBLISHER-FEASIBILITY-20261127",
+    "parent_sha": "e3e03e55d3a33a1fbdb5bd7e8f6726f014e0c782",
+    "previous_snapshot_sha": "e3e03e55d3a33a1fbdb5bd7e8f6726f014e0c782",
+    "scope": "Read-only independent publisher provenance feasibility review for ten observed packages, proposed bounded signed metadata preparation only.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "27-november--c5-approach-c-bounded-host-observation-succeeded-on-approved-image",
-      "blob_sha": "1d5b281266346e39bfaf30adbcf1f27265c5aa42",
-      "start_line": 2806,
-      "end_line": 2808
+      "anchor": "27-november--c5-approach-c-independent-publisher-provenance-feasibility-reviewed",
+      "blob_sha": "cbcff38f5b5be03b5b063bac05da7df202d2b79b",
+      "start_line": 2810,
+      "end_line": 2812
     }
   },
   "product": {
@@ -117,16 +117,30 @@
   },
   "task": {
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
-    "status": "READY",
+    "status": "BLOCKED",
     "scope": "C-D08 revised C5-A/B development reproducibility and build safety only; D retains native prerequisites, P8 release-only",
-    "blocker": "Actual observations available for 11 roles on approved image only; independent publisher expected-byte evidence, generated CA and dependency closure, live host/daemon trust and previously refused image evidence remain unresolved.",
-    "next_action": "Read-only review of independent publisher metadata feasibility and exact observed ten package identities, signing anchors, generated CA bundle and dependency closure; propose finite independent evidence acquisition scope only if justified. No package downloads/acquisition, workflow activation or trust change without separate explicit authority.",
-    "next_action_kind": "READ_ONLY",
+    "blocker": "Independent expected bytes unavailable; nine publisher catalogue matches and one third-party corroboration; exact signed metadata, anchors, generated CA and dependency closure unresolved.",
+    "next_action": "Owner decision: approve inert preparation/static and synthetic review of the bounded metadata-only feasibility candidate in the C5 spec (13 GETs max proposed, fixed Ubuntu snapshot and Docker noble stable signed metadata, no .deb downloads, no execution or active policy change). Separate exact execution approval required after candidate review; no widening/replay.",
+    "next_action_kind": "OWNER_DECISION",
     "after": [
-      "Obtain separate bounded authority for any independent publisher package acquisition or changed evidence method; no self-qualification or assumed future runner identity.",
-      "Only after qualifying evidence and explicit method/execution approval prepare integrated qualification; close C5 rows 5–8 only on evidence, preserve G2/D/P5 and installer gates."
+      "If separately approved, prepare and review exact metadata-only candidate; obtain independent trust anchors and separate execution approval before any acquisition. Stop on missing/ambiguous records or insufficient trust.",
+      "Even signed package digests do not prove file bytes; separate data-only package inspection, CA and dependency closure review as justified. No integrated verification or new trust policy without separate authority. Preserve all C5 and phase gates."
     ],
     "read": [
+      {
+        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
+        "anchor": "27-november--c5-approach-c-independent-publisher-provenance-feasibility-reviewed",
+        "blob_sha": "cbcff38f5b5be03b5b063bac05da7df202d2b79b",
+        "start_line": 2810,
+        "end_line": 2812
+      },
+      {
+        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
+        "anchor": "approach-c-independent-publisher-provenance-feasibility-read-only",
+        "blob_sha": "0ec7512ad7a0177503dc09e9f1c922f9b6aa250b",
+        "start_line": 821,
+        "end_line": 827
+      },
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "27-november--c5-approach-c-bounded-host-observation-succeeded-on-approved-image",
@@ -507,24 +521,17 @@
     ]
   },
   "operation": {
-    "id": "C5-HOST-OBSERVATION-ONCE-20261127",
+    "id": "C5-APPROACH-C-PUBLISHER-FEASIBILITY-20261127",
     "state": "RECONCILED",
-    "starting_sha": "39e306b73a7ada3c525ea5f03c734c786ba01d8c",
-    "outcome": "SUCCESS_OBSERVATION_ONLY_11_ROLES_APPROVED_IMAGE_20261122_23_1_NOT_INDEPENDENT_PROVENANCE",
-    "source_sha": "68f40aa3cceef75eeae3b08e0934363a47b3760c",
-    "activation_sha": "2a16c6b6734302111b20c2e7c90c5996f2df2c05",
-    "run_id": 45909617464,
-    "run_attempt": 1,
-    "job_id": 140214530795,
-    "disarm_sha": "5e5a35b23fcdc5176ffc407771519561334bbdb8",
-    "disarm_run_id": 45909666740,
+    "starting_sha": "e3e03e55d3a33a1fbdb5bd7e8f6726f014e0c782",
+    "outcome": "Nine exact publisher catalogue matches, tenth third-party corroboration only; zero authenticated expected bytes, generated CA and dependency closure unresolved; proposed finite metadata-only preparation for owner decision.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "27-november--c5-approach-c-bounded-host-observation-succeeded-on-approved-image",
-      "blob_sha": "1d5b281266346e39bfaf30adbcf1f27265c5aa42",
-      "start_line": 2806,
-      "end_line": 2808
+      "anchor": "27-november--c5-approach-c-independent-publisher-provenance-feasibility-reviewed",
+      "blob_sha": "cbcff38f5b5be03b5b063bac05da7df202d2b79b",
+      "start_line": 2810,
+      "end_line": 2812
     }
   },
   "authority": {
