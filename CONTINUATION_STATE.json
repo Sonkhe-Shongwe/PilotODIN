@@ -6,16 +6,16 @@
   },
   "checkpoint": {
     "operation_id": "C5-PORTABLE-DOCKER-TERMINFO-POLICY-ONCE-20261127",
-    "parent_sha": "d4ca962b34b8d6b45d8d2b3677cb50f7205cb043",
-    "previous_snapshot_sha": "d4ca962b34b8d6b45d8d2b3677cb50f7205cb043",
-    "scope": "One fresh exact 28181cf992ab6efd5156265e5ea7d4752b00e66f no-pull Docker data-only verification on exactly 20261122.23.1 or 20261116.376.1 and Docker 28.0.4; approved finite exact Linux terminfo policy and bounded receipt projection, all other safeguards; full 19-method gate and preflights before acquisition; no retry/fallback.",
-    "state": "PREPARED",
+    "parent_sha": "d72c00b93130b27d4e289bc23ab11734110db199",
+    "previous_snapshot_sha": "d72c00b93130b27d4e289bc23ab11734110db199",
+    "scope": "Distinct exact one-use C5 terminfo attempt refused at unchanged finite image guard before staging; observed terminal failure, disarm and skipped disarm run reconciled.",
+    "state": "RECONCILED",
     "receipt": {
-      "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
-      "anchor": "owner-approved-distinct-exact-finite-linux-terminfo-one-use-integrated-docker-execution",
-      "blob_sha": "d0fd85c982eb31168e1d8ee7e61984c68bda51d0",
-      "start_line": 790,
-      "end_line": 792
+      "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
+      "anchor": "27-november--c5-distinct-terminfo-attempt-again-refused-unreviewed-runner-before-staging",
+      "blob_sha": "0d7d2645b825eefa2513fa1e1d1f7f004770fde9",
+      "start_line": 2794,
+      "end_line": 2796
     }
   },
   "product": {
@@ -117,16 +117,23 @@
   },
   "task": {
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
-    "status": "PREPARED",
+    "status": "BLOCKED",
     "scope": "C-D08 revised C5-A/B development reproducibility and build safety only; D retains native prerequisites, P8 release-only",
-    "blocker": "Await exact one-use activation and verified terminal outcome; nondeterministic runner assignment.",
-    "next_action": "Activate sole owned workflow from exact approved candidate with only two substitutions at verified write-ahead HEAD. Observe and reconcile actual run; disarm without replay.",
-    "next_action_kind": "APPROVED_EXECUTION",
+    "blocker": "Second distinct exact terminfo attempt refused unreviewed runner 20261116.133.1 before staging; no complete inventory/accounting/receipt; full 19-method gate not reached; exact authoritative runner manifest/tool/engine/isolation evidence unavailable; nondeterministic runner assignment.",
+    "next_action": "Owner decision: recommend avoid further blind attempts; obtain authoritative exact 20261116.133.1 manifest/source evidence or authorise bounded preparation/review of a distinct host qualification/evidence approach. No policy expansion, changed method, acquisition or execution without separate explicit authority. A future distinct attempt under unchanged policy requires fresh preparation and exact one-use approval; no replay.",
+    "next_action_kind": "OWNER_DECISION",
     "after": [
-      "Only after fresh exact authority, activate once with unique marker and exact two substitutions; reconcile observed receipt or refusal and final accounting; independently verify receipt and restore false guard; no replay or assumed cleanup.",
+      "Only after explicit scoped authority, prepare and verify any new method or distinct inert candidate, then obtain separate exact execution approval as required; record write-ahead, reconcile and disarm.",
       "Complete C5 rows 5–7 and row 8 only on qualifying evidence; D after C5 closure, G2 resolution and separate authority."
     ],
     "read": [
+      {
+        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
+        "anchor": "27-november--c5-distinct-terminfo-attempt-again-refused-unreviewed-runner-before-staging",
+        "blob_sha": "0d7d2645b825eefa2513fa1e1d1f7f004770fde9",
+        "start_line": 2794,
+        "end_line": 2796
+      },
       {
         "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
         "anchor": "owner-approved-distinct-exact-finite-linux-terminfo-one-use-integrated-docker-execution",
@@ -453,49 +460,30 @@
   },
   "operation": {
     "id": "C5-PORTABLE-DOCKER-TERMINFO-POLICY-ONCE-20261127",
-    "state": "PREPARED",
+    "state": "RECONCILED",
     "starting_sha": "d4ca962b34b8d6b45d8d2b3677cb50f7205cb043",
-    "scope": "One fresh exact 28181cf992ab6efd5156265e5ea7d4752b00e66f no-pull Docker data-only verification on exactly 20261122.23.1 or 20261116.376.1 and Docker 28.0.4; approved finite exact Linux terminfo policy and bounded receipt projection, all other safeguards; full 19-method gate and preflights before acquisition; no retry/fallback.",
-    "intended_paths": [
-      ".github/workflows/c5-portable-provenance-once.yml"
-    ],
-    "authority_ref": {
-      "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
-      "anchor": "owner-approved-distinct-exact-finite-linux-terminfo-one-use-integrated-docker-execution",
-      "blob_sha": "d0fd85c982eb31168e1d8ee7e61984c68bda51d0",
-      "start_line": 790,
-      "end_line": 792
-    },
-    "expected_evidence": "Exact activation parent/message, sole owned first-attempt job; terminal logs and independently verified bounded receipt or first refusal; restore false guard.",
-    "recovery": "Inspect live HEAD, exact commit/diff/message and actual run/attempt before retry; approval unavailable on uncertainty; disarm exact owned workflow with expected HEAD; never replay.",
-    "reconcile_before_retry": false,
+    "outcome": "FAILURE_UNREVIEWED_RUNNER_IMAGE_20261116_133_1_BEFORE_STAGING_NO_SYNTHETIC_DOCKER_ACQUISITION_OR_RECEIPT",
     "source_sha": "28181cf992ab6efd5156265e5ea7d4752b00e66f",
-    "template_sha256": "1d6ea96944fc88558b6fdabaa06ff336ba51db39392378cbeef4ded333a8aca8",
-    "expected_activation_message": "C5-PORTABLE-DOCKER-TERMINFO-POLICY-ONCE-20261127 owner approved exact finite Linux terminfo inventory policy no-pull data-only operation",
-    "run_attempt": 1
+    "activation_sha": "0e789c220e0b8bbbc2d83b161d192006c64cc361",
+    "run_id": 45907585039,
+    "run_attempt": 1,
+    "job_id": 140207931214,
+    "disarm_sha": "d72c00b93130b27d4e289bc23ab11734110db199",
+    "disarm_run_id": 45907637329,
+    "reconcile_before_retry": false,
+    "receipt": {
+      "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
+      "anchor": "27-november--c5-distinct-terminfo-attempt-again-refused-unreviewed-runner-before-staging",
+      "blob_sha": "0d7d2645b825eefa2513fa1e1d1f7f004770fde9",
+      "start_line": 2794,
+      "end_line": 2796
+    }
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next.",
     "preparation_only": "Owner approved consolidated shared-bundle disarmed acquisition-before-signature source and exact limited existing host bootstrap; owner approved proposed limited local Docker control-plane and host-derived rootfs trust/no-pull isolation method for preparation only. Authentication before extraction/use; no Docker invocation, acquisition, verification execution, installation or live cutover authorised. Owner approved bounded first-collision encoded public member-path diagnostic preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-bounded-first-collision-diagnostic-preparation-only. No restricted execution authority. Owner approved finite exact Linux data-only terminfo inventory policy and bounded receipt projection as proposed in 8cc1a696, preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-finite-exact-linux-terminfo-inventory-policy-and-bounded-receipt-preparation-only. Strict Windows/gh and other safeguards unchanged; no acquisition, extraction or restricted execution.",
-    "restricted_active": [
-      {
-        "id": "C5-PORTABLE-DOCKER-TERMINFO-POLICY-ONCE-20261127",
-        "state": "APPROVED",
-        "source_sha": "28181cf992ab6efd5156265e5ea7d4752b00e66f",
-        "scope": "One fresh exact 28181cf992ab6efd5156265e5ea7d4752b00e66f no-pull Docker data-only verification on exactly 20261122.23.1 or 20261116.376.1 and Docker 28.0.4; approved finite exact Linux terminfo policy and bounded receipt projection, all other safeguards; full 19-method gate and preflights before acquisition; no retry/fallback.",
-        "owner_authority_ref": {
-          "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
-          "anchor": "owner-approved-distinct-exact-finite-linux-terminfo-one-use-integrated-docker-execution",
-          "blob_sha": "d0fd85c982eb31168e1d8ee7e61984c68bda51d0",
-          "start_line": 790,
-          "end_line": 792
-        },
-        "reconcile_before_retry": false,
-        "template_sha256": "1d6ea96944fc88558b6fdabaa06ff336ba51db39392378cbeef4ded333a8aca8",
-        "run_attempt": 1
-      }
-    ],
-    "consumed_disarmed_count": 38,
+    "restricted_active": [],
+    "consumed_disarmed_count": 39,
     "consumed_history": {
       "commit": "b9864b70fb9bb5a72d0f79c37f15b94100722192",
       "path": "docs/TAB_MIGRATION_HANDOFF_CURRENT.md",
@@ -514,21 +502,21 @@
       "release",
       "replay of consumed or uncertain approval"
     ],
-    "guards": "38 consumed/disarmed; one fresh exact approved candidate 28181cf992ab6efd5156265e5ea7d4752b00e66f only. Finite two-image list unchanged. Existing owned false guard; no replay/fallback. Three C1/C2 workflows and OWNED_RESOURCE_ENABLED false; three consumed variables owner cleanup unverified.",
+    "guards": "39 consumed/disarmed including second exact terminfo attempt refused before staging; finite image list exactly 20261122.23.1 and 20261116.376.1 remains normative; 20261116.133.1 twice refused. No execution approval remains; owned false guard restored with exact activation parent/message; disarm run skipped; no fallback/replay. Three C1/C2 workflows and OWNED_RESOURCE_ENABLED false; three consumed variables owner cleanup unverified.",
     "last_consumed": {
-      "id": "C5-PORTABLE-DOCKER-TERMINFO-POLICY-ONCE-20261126",
-      "source_sha": "76e60bc2a39e3eb795805f2efa717999464c8ce8",
-      "activation_sha": "6e14f1a850104073e7d084751e131efeb2d2f974",
-      "run_id": 45902300063,
+      "id": "C5-PORTABLE-DOCKER-TERMINFO-POLICY-ONCE-20261127",
+      "source_sha": "28181cf992ab6efd5156265e5ea7d4752b00e66f",
+      "activation_sha": "0e789c220e0b8bbbc2d83b161d192006c64cc361",
+      "run_id": 45907585039,
       "run_attempt": 1,
-      "job_id": 140190741362,
+      "job_id": 140207931214,
       "outcome": "FAILURE_UNREVIEWED_RUNNER_IMAGE_20261116_133_1_BEFORE_STAGING_NO_SYNTHETIC_DOCKER_ACQUISITION_OR_RECEIPT",
       "receipt": {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "27-november--c5-finite-linux-terminfo-attempt-refused-unreviewed-runner-before-staging",
-        "blob_sha": "9c79c80d97a50bd5cd841c66bb67dc1f74f9227e",
-        "start_line": 2782,
-        "end_line": 2784
+        "anchor": "27-november--c5-distinct-terminfo-attempt-again-refused-unreviewed-runner-before-staging",
+        "blob_sha": "0d7d2645b825eefa2513fa1e1d1f7f004770fde9",
+        "start_line": 2794,
+        "end_line": 2796
       }
     }
   },
@@ -611,7 +599,7 @@
       },
       {
         "sha": "28181cf992ab6efd5156265e5ea7d4752b00e66f",
-        "scope": "Fresh distinct inert unchanged-policy candidate; only two QA template/manifest paths vs 76e60bc2, 22/22 payload pins and 10 exact sources, full 19-method suite NOT RUN, zero candidate runs; fresh execution approval required."
+        "scope": "Exact inert candidate; 22/22 pins and 10 sources confirmed; one distinct activation 0e789c2/run 45907585039 refused unreviewed image before staging; full 19-method suite NOT RUN; consumed/disarmed, no replay."
       }
     ]
   },
