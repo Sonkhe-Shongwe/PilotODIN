@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-APPROACH-C-PUBLISHER-FEASIBILITY-20261127",
-    "parent_sha": "e3e03e55d3a33a1fbdb5bd7e8f6726f014e0c782",
-    "previous_snapshot_sha": "e3e03e55d3a33a1fbdb5bd7e8f6726f014e0c782",
-    "scope": "Read-only independent publisher provenance feasibility review for ten observed packages, proposed bounded signed metadata preparation only.",
+    "operation_id": "C5-APPROACH-C-METADATA-CORE-PREP-20261127",
+    "parent_sha": "0b33bb7c8fce05bddea6e15c8fcb95f8fae73bc7",
+    "previous_snapshot_sha": "0b33bb7c8fce05bddea6e15c8fcb95f8fae73bc7",
+    "scope": "Approved preparation/static and synthetic review of bounded metadata-only core; no actual acquisition, live adapter, or policy change.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "27-november--c5-approach-c-independent-publisher-provenance-feasibility-reviewed",
-      "blob_sha": "cbcff38f5b5be03b5b063bac05da7df202d2b79b",
-      "start_line": 2810,
-      "end_line": 2812
+      "anchor": "27-november--c5-approach-c-metadata-only-synthetic-core-prepared",
+      "blob_sha": "d4676f72129c31436d92d09cafb4c503d7e97eb6",
+      "start_line": 2814,
+      "end_line": 2816
     }
   },
   "product": {
@@ -117,16 +117,30 @@
   },
   "task": {
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
-    "status": "BLOCKED",
+    "status": "READY",
     "scope": "C-D08 revised C5-A/B development reproducibility and build safety only; D retains native prerequisites, P8 release-only",
-    "blocker": "Independent expected bytes unavailable; nine publisher catalogue matches and one third-party corroboration; exact signed metadata, anchors, generated CA and dependency closure unresolved.",
-    "next_action": "Owner decision: approve inert preparation/static and synthetic review of the bounded metadata-only feasibility candidate in the C5 spec (13 GETs max proposed, fixed Ubuntu snapshot and Docker noble stable signed metadata, no .deb downloads, no execution or active policy change). Separate exact execution approval required after candidate review; no widening/replay.",
-    "next_action_kind": "OWNER_DECISION",
+    "blocker": "Metadata core prepared, but independent key/subkey/keyring anchors and live verifier/transport/bootstrap remain unresolved; not execution ready.",
+    "next_action": "Read-only independent publisher signing anchor and subkey/keyring provenance review, feasibility of bounded trusted verifier and transport; if sufficiently justified complete disarmed adapters and static/synthetic verification under existing preparation-only authority. If not justified stop for owner decision. No key/metadata acquisition, restricted execution or active policy change.",
+    "next_action_kind": "READ_ONLY",
     "after": [
-      "If separately approved, prepare and review exact metadata-only candidate; obtain independent trust anchors and separate execution approval before any acquisition. Stop on missing/ambiguous records or insufficient trust.",
-      "Even signed package digests do not prove file bytes; separate data-only package inspection, CA and dependency closure review as justified. No integrated verification or new trust policy without separate authority. Preserve all C5 and phase gates."
+      "Only after independently justified anchors and exact fully reviewed disarmed candidate, request separate explicit one-use execution approval; no execution approval for synthetic core alone.",
+      "Even signed package hashes do not prove component bytes; subsequent package inspection, generated CA and closure require separate scope, and integrated qualification requires separate method/execution authority. Preserve C5 and phase gates."
     ],
     "read": [
+      {
+        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
+        "anchor": "27-november--c5-approach-c-metadata-only-synthetic-core-prepared",
+        "blob_sha": "d4676f72129c31436d92d09cafb4c503d7e97eb6",
+        "start_line": 2814,
+        "end_line": 2816
+      },
+      {
+        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
+        "anchor": "owner-approved-bounded-approach-c-metadata-only-preparation-and-synthetic-core",
+        "blob_sha": "d9c9861e8e270502a93183a60583a8c043919a85",
+        "start_line": 827,
+        "end_line": 831
+      },
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "27-november--c5-approach-c-independent-publisher-provenance-feasibility-reviewed",
@@ -139,7 +153,7 @@
         "anchor": "approach-c-independent-publisher-provenance-feasibility-read-only",
         "blob_sha": "0ec7512ad7a0177503dc09e9f1c922f9b6aa250b",
         "start_line": 821,
-        "end_line": 827
+        "end_line": 825
       },
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
@@ -521,22 +535,23 @@
     ]
   },
   "operation": {
-    "id": "C5-APPROACH-C-PUBLISHER-FEASIBILITY-20261127",
+    "id": "C5-APPROACH-C-METADATA-CORE-PREP-20261127",
     "state": "RECONCILED",
-    "starting_sha": "e3e03e55d3a33a1fbdb5bd7e8f6726f014e0c782",
-    "outcome": "Nine exact publisher catalogue matches, tenth third-party corroboration only; zero authenticated expected bytes, generated CA and dependency closure unresolved; proposed finite metadata-only preparation for owner decision.",
+    "starting_sha": "0b33bb7c8fce05bddea6e15c8fcb95f8fae73bc7",
+    "outcome": "Detached synthetic-only metadata core 8514efee89259b5303f4e62000309bef063c3724; 9 local synthetic tests and static/extra checks PASS; no executable live adapter or anchors, no real signature verification or acquisition.",
+    "source_sha": "8514efee89259b5303f4e62000309bef063c3724",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "27-november--c5-approach-c-independent-publisher-provenance-feasibility-reviewed",
-      "blob_sha": "cbcff38f5b5be03b5b063bac05da7df202d2b79b",
-      "start_line": 2810,
-      "end_line": 2812
+      "anchor": "27-november--c5-approach-c-metadata-only-synthetic-core-prepared",
+      "blob_sha": "d4676f72129c31436d92d09cafb4c503d7e97eb6",
+      "start_line": 2814,
+      "end_line": 2816
     }
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next.",
-    "preparation_only": "Owner approved consolidated shared-bundle disarmed acquisition-before-signature source and exact limited existing host bootstrap; owner approved proposed limited local Docker control-plane and host-derived rootfs trust/no-pull isolation method for preparation only. Authentication before extraction/use; no Docker invocation, acquisition, verification execution, installation or live cutover authorised. Owner approved bounded first-collision encoded public member-path diagnostic preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-bounded-first-collision-diagnostic-preparation-only. No restricted execution authority. Owner approved finite exact Linux data-only terminfo inventory policy and bounded receipt projection as proposed in 8cc1a696, preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-finite-exact-linux-terminfo-inventory-policy-and-bounded-receipt-preparation-only. Strict Windows/gh and other safeguards unchanged; no acquisition, extraction or restricted execution. Owner explicitly approved preparation and static/synthetic verification only of Approach C observation-only candidate (11 fixed roles, five minutes); no restricted execution, acquisition, Docker invocation or active policy change. Exact reference in C5 spec owner-approved-bounded-approach-c-observation-candidate-preparation-only.",
+    "preparation_only": "Owner approved consolidated shared-bundle disarmed acquisition-before-signature source and exact limited existing host bootstrap; owner approved proposed limited local Docker control-plane and host-derived rootfs trust/no-pull isolation method for preparation only. Authentication before extraction/use; no Docker invocation, acquisition, verification execution, installation or live cutover authorised. Owner approved bounded first-collision encoded public member-path diagnostic preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-bounded-first-collision-diagnostic-preparation-only. No restricted execution authority. Owner approved finite exact Linux data-only terminfo inventory policy and bounded receipt projection as proposed in 8cc1a696, preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-finite-exact-linux-terminfo-inventory-policy-and-bounded-receipt-preparation-only. Strict Windows/gh and other safeguards unchanged; no acquisition, extraction or restricted execution. Owner explicitly approved preparation and static/synthetic verification only of Approach C observation-only candidate (11 fixed roles, five minutes); no restricted execution, acquisition, Docker invocation or active policy change. Exact reference in C5 spec owner-approved-bounded-approach-c-observation-candidate-preparation-only. Owner approved Approach C metadata-only preparation/static/synthetic verification under 13 GET/10-minute proposed limits; no actual acquisition, package downloads, installation, Docker invocation, restricted execution or active trust policy change. Exact spec anchor owner-approved-bounded-approach-c-metadata-only-preparation-and-synthetic-core.",
     "restricted_active": [],
     "consumed_disarmed_count": 40,
     "consumed_history": {
@@ -659,6 +674,10 @@
       {
         "sha": "68f40aa3cceef75eeae3b08e0934363a47b3760c",
         "scope": "Exact inert observation candidate; one-use run 45909617464 SUCCESS on approved image, 11 observed roles; disarmed, consumed, no replay; not host qualification."
+      },
+      {
+        "sha": "8514efee89259b5303f4e62000309bef063c3724",
+        "scope": "Inert metadata-only synthetic core, 3 QA files, 9/9 local fixture tests and static/extra checks passed. No approved key anchors, live adapter or activation template; no execution authority."
       }
     ]
   },
