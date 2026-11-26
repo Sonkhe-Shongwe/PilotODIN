@@ -7,17 +7,17 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 3f92eb2785ebe92df75b496432d67f59abbfc24f |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | Revised C5-A/B development reproducibility and build safety; D prerequisites and P8 release-only allocation. No restricted acquisition, native, owner data, install, packaging, phase activation or release. |
 | Operation ID | C5-REVIEWED-PYTHON-LOCKS-20261126 |
-| Operation state | PREPARED: row 4 lock definition publication and existing preflight assertion update; all four machine profiles remain blocked. |
+| Operation state | PUBLISHED reviewed exact lock definitions and existing preflight regression; exact routine P4 CI pending, all four profiles BLOCKED. |
 | Intended files | Three backend/locks planned paths, existing tests/test_c5_build_input_preflight.py and canonical checkpoints; no workflow, resolver, active installer, runtime or policy change. |
 | Approval | Owner explicitly stated: "I approve the revised C5 scope rationalisation. Prioritise development reproducibility and build safety, consolidate verification infrastructure, retain mandatory native prerequisites for D, and defer release-only packaging and distribution requirements to P8. Existing execution restrictions remain in force." This is a sequencing/acceptance-scope decision, not execution authority. All 19 restricted approvals remain consumed/disarmed. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | None. Exact 45807039660 a9f9f75 Ubuntu 139864905469 and Windows 139864906049 SUCCESS 296 tests and CLI refusals each. Prior 45805506550 initial syntax failure retained; 45805589636 corrected 279 each SUCCESS. Prior disarm 085222b full 45801721107/dedicated 45801721259 SUCCESS all restricted jobs skipped. 19 approvals consumed/disarmed. |
+| Pending runs | New matching routine P4 run expected at exact child of 95ad967. Prior exact 45807039660 a9f9f75 Ubuntu 139864905469 and Windows 139864906049 SUCCESS 296 tests and CLI refusals each. Prior 45805506550 initial syntax failure retained; 45805589636 corrected 279 each SUCCESS. Prior disarm 085222b full 45801721107/dedicated 45801721259 SUCCESS all restricted jobs skipped. 19 approvals consumed/disarmed. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
 | Recovery action | Reconcile exact reviewed lock definitions and matching routine P4 CI; no lock consumption or actual acquisition authority. |
 | Resume after closure | D only after revised C5 source closure, G2 resolution and separately approved scope; every native prerequisite before its use. P8 release-only obligations retained; installer frozen. |

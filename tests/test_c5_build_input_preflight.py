@@ -146,7 +146,108 @@ def test_policy_source_pins_and_all_candidate_profiles_blocked(capsys):
         assert output["status"] == "BLOCKED"
         assert output["blockers"]
         if row["planned_lock"]:
-            assert not (ROOT / row["planned_lock"]).exists()
+            assert (ROOT / row["planned_lock"]).is_file()
+
+
+def test_reviewed_python_locks_match_pinned_graphs_and_stay_blocked():
+    from packaging.requirements import Requirement
+    from packaging.tags import cpython_tags, compatible_tags
+    from packaging.utils import parse_wheel_filename, canonicalize_name
+    from packaging.version import Version
+    from packaging.specifiers import SpecifierSet
+
+    def pinned(path, expected):
+        raw = (ROOT / path).read_bytes().replace(b"\r\n", b"\n")
+        assert hashlib.sha1(b"blob " + str(len(raw)).encode("ascii")
+                            + b"\0" + raw).hexdigest() == expected
+        return raw
+
+    directory = "qa/c5_wheel_metadata/"
+    plan_pin = "1aa96a7172508f94b2cdc4b7aabd65e3b8f21f89"
+    plan = json.loads(pinned(directory + "wheel_acquisition_plan_20261125.json", plan_pin))
+    candidates = json.loads(pinned(directory + "platform_lock_candidates_45703125465.json",
+                                   "6b27407f4b24942c385179bb253f692370f21df7"))
+    graphs = json.loads(pinned(directory + "combined_graph_receipt_45702239980.json",
+                               "6c95b4263e9d0f831aa00cfa68e9cb8268aebbd7"))
+    production = json.loads(pinned(directory + "production_graph_receipt_45705552265.json",
+                                   "70cdac979b732aadfad0c51d7e159a60840cc1ef"))
+    base = pinned("backend/requirements.txt", "30d347462aa29b4db9c7308079f231185f4c1703")
+    extra = pinned("backend/requirements-test.txt", "0ed0b88920a281167cf1dc8a3ca038096bf1e7b8")
+    roots = [Requirement(line) for line in base.decode().splitlines()
+             if line and not line.startswith("#")]
+    test_roots = roots + [Requirement(line) for line in extra.decode().splitlines()
+                          if line and not line.startswith(("#", "-r "))]
+    assert len(roots) == 10 and len(test_roots) == 14
+    assert len(plan["wheels"]) == 68 and plan["status"] == "PROPOSAL_ONLY_DISABLED"
+    assert production["declared_graph"] == "COMPATIBLE"
+    assert production["issues"] == production["unused"] == []
+    assert production["enabled_extras"] == {"uvicorn": ["standard"]}
+    assert {str(r) for r in roots + [Requirement("pyinstaller==6.22.3"),
+                                      Requirement("pyinstaller-hooks-contrib==2026.9")]} == set(production["roots"])
+    assert graphs["status"] == "DECLARED_GRAPH_COMPATIBLE_NOT_INSTALLABLE"
+    total = 0
+    for profile in preflight.audit_policy(ROOT)["profiles"]:
+        assert profile["status"] == "BLOCKED"
+        path = profile["planned_lock"]
+        if path is None:
+            continue
+        pid = profile["id"]
+        is_production = profile["purpose"] == "production-build"
+        windows = profile["platform"] == "windows"
+        python = "3.11.9" if windows else "3.11.18"
+        rows = sorted((r for r in plan["wheels"] if pid in r["profiles"]),
+                      key=lambda r: r["name"])
+        count = 43 if is_production else 49
+        assert len(rows) == len({r["name"] for r in rows}) == count
+        total += count
+        if is_production:
+            selected = production["nodes"]
+            assert production["reachable"] == count
+            assert production["unknown_requires_python"] == ["altgraph", "pytz"]
+        else:
+            candidate = next(c for c in candidates["candidates"]
+                             if c["profile"] == pid and c["scope"] == "source-test")
+            report = next(r for r in graphs["reports"]
+                          if r["profile"] == pid and r["scope"] == "source-test")
+            assert report["graph_status"] == "DECLARED_GRAPH_COMPATIBLE"
+            assert report["issues"] == report["unused_selected"] == []
+            assert report["reachable"] == count and report["roots"] == len(test_roots)
+            assert report["python"] == candidate["python_candidate"] == python
+            assert report["extras"] == candidate["extras"] == {"uvicorn": ["standard"]}
+            assert candidate["unknown_requires_python"] == ["pytz"]
+            selected = candidate["rows"]
+        assert {(r["name"], r["version"], r["filename"], r["bytes"], r["sha256"],
+                 r["metadata_sha256"]) for r in rows} == {
+                 (r["name"], r["version"], r["filename"], r["expected_wheel_bytes"],
+                  r["expected_wheel_sha256"], r["verified_metadata_sha256"]) for r in selected}
+        platforms = ["win_amd64"] if windows else (
+            [f"manylinux_2_{n}_x86_64" for n in range(28, 4, -1)]
+            + ["manylinux2014_x86_64", "manylinux2010_x86_64", "manylinux1_x86_64"])
+        tags = set(cpython_tags((3, 11), abis=["cp311"], platforms=platforms))
+        tags.update(compatible_tags((3, 11), interpreter="cp311", platforms=platforms))
+        names = {r["name"]: r for r in rows}
+        required = roots + [Requirement("pyinstaller==6.22.3"),
+                            Requirement("pyinstaller-hooks-contrib==2026.9")] if is_production else test_roots
+        for req in required:
+            assert req.specifier.contains(Version(names[canonicalize_name(req.name)]["version"]))
+        for r in rows:
+            name, version, _, wheel_tags = parse_wheel_filename(r["filename"])
+            assert name == r["name"] and version == Version(r["version"]) and wheel_tags & tags
+            if r["requires_python"] is not None:
+                assert SpecifierSet(r["requires_python"]).contains(Version(python))
+        header = (
+            f"# PilotODIN C5 reviewed expected Python lock: {pid}\n"
+            "# Definition only; profile BLOCKED. Not installation or acquisition authority.\n"
+            f"# CPython 3.11 x64; reviewed metadata environment {python} (not selected interpreter distribution).\n"
+            f"# Expected hashes from pinned plan {plan_pin}.\n"
+            "# Use only with separately authorised, verified local wheelhouse and preflight.\n"
+            "--no-index\n--only-binary=:all:\n--require-hashes\n\n"
+        )
+        expected = header + "".join(
+            f"{r['name']}{'[standard]' if r['name'] == 'uvicorn' else ''}=={r['version']}"
+            f" --hash=sha256:{r['sha256']}\n" for r in rows)
+        assert (ROOT / path).read_text(encoding="ascii") == expected
+    assert total == 141
 
 
 @pytest.mark.parametrize("change", [
