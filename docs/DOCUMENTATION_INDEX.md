@@ -1,12 +1,14 @@
 # PilotODIN | Documentation index
 
+**CURRENT START:** [AGENTS](../AGENTS.md) and [machine-readable state](../CONTINUATION_STATE.json). [Continuation v2 contract](./continuation/PROTOCOL.md) controls startup, operational ownership and checkpointing. The legacy handoff/journal are compatibility routes; full pre-migration contents are retained at [immutable snapshot b9864b7](https://github.com/Sonkhe-Shongwe/PilotODIN/tree/b9864b70fb9bb5a72d0f79c37f15b94100722192). All historic evidence and substantive governance remain available.
+
 **Live navigation.** One owner per fact; use the links below instead of loading entire historical documents.
 
 ## Current authoritative route, in reading order
 
 | Purpose | Canonical record |
 | --- | --- |
-| Start and resume | [AGENTS](../AGENTS.md), [migration handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md), [active journal](./ACTIVE_WORK_JOURNAL.md) |
+| Start and resume | [AGENTS](../AGENTS.md), [live state](../CONTINUATION_STATE.json), [v2 protocol](./continuation/PROTOCOL.md) |
 | Continuity and safe recovery | [Protocol](./CONTINUATION_PROTOCOL_CURRENT.md), [recovery checks](./CONTINUATION_RECOVERY_CHECKS.md) |
 | Authority and implementation order | [Live directive](./PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md), [phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md) |
 | Architecture and decisions | [Architecture review](./PILOTODIN_PRODUCT_ARCHITECTURE_REVIEW_AND_REMEDIATION_2026-11-24.md), [decision index](./ENGINEERING_DECISIONS_CURRENT.md), owner Master Reconstruction Blueprint |

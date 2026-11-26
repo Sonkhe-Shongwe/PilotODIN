@@ -1,0 +1,292 @@
+{
+  "schema_version": 2,
+  "repository": {
+    "name": "Sonkhe-Shongwe/PilotODIN",
+    "branch": "feature/live-dev-workspace-20261023"
+  },
+  "checkpoint": {
+    "operation_id": "CONT-V2-MIGRATION-20261126",
+    "parent_sha": "01768a1173dff8aafe4a855d8a2fa0677014aea3",
+    "previous_snapshot_sha": "b9864b70fb9bb5a72d0f79c37f15b94100722192",
+    "scope": "continuation documentation and isolated pure validation only; no product change",
+    "state": "RECONCILED",
+    "receipt": {
+      "path": "docs/continuation/MIGRATION_20261126.md"
+    }
+  },
+  "product": {
+    "sha": "8da7f33cb418e453a7b5c250b960fb6370e9e9d0",
+    "scope": "last paired product baseline; not latest documentation or QA SHA",
+    "verification": [
+      {
+        "run_id": 45693703789,
+        "sha": "8da7f33cb418e453a7b5c250b960fb6370e9e9d0",
+        "status": "SUCCESS",
+        "scope": "P4 source/synthetic and disposable browser; native collector skipped"
+      },
+      {
+        "run_id": 45693704390,
+        "sha": "8da7f33cb418e453a7b5c250b960fb6370e9e9d0",
+        "status": "SUCCESS",
+        "scope": "P1 frontend, TypeScript/Vite, Chromium"
+      }
+    ]
+  },
+  "phase": {
+    "active": "P4",
+    "closed_scoped": [
+      "P0",
+      "P1",
+      "P2",
+      "P3"
+    ],
+    "next_phase_authorized": false,
+    "installer_frozen": true,
+    "release_certified": false,
+    "source_progress": {
+      "A": [
+        5,
+        5
+      ],
+      "B": [
+        5,
+        5
+      ],
+      "C": [
+        4,
+        5
+      ],
+      "D": [
+        0,
+        2
+      ],
+      "total": [
+        14,
+        17
+      ]
+    },
+    "c5_checklist": [
+      4,
+      8
+    ],
+    "official_score_projection": {
+      "earned": 14,
+      "total": 20,
+      "open": [
+        "R02.5",
+        "R02.6",
+        "R03.3",
+        "R03.4",
+        "R06.1",
+        "R06.2"
+      ],
+      "owner": {
+        "path": "docs/PROJECT_STATUS_CURRENT.md",
+        "anchor": "p4-engineering-scorecard",
+        "blob_sha": "aa50bffe7b62aad25a69522da99d89237aa5547f",
+        "start_line": 31,
+        "end_line": 60
+      }
+    },
+    "other_gates": {
+      "R02_5": [
+        0,
+        5
+      ],
+      "N12": [
+        0,
+        2
+      ],
+      "four_gate": [
+        1,
+        4
+      ],
+      "mutation_preparation": [
+        3,
+        4
+      ],
+      "G2": "BLOCKED",
+      "G3": "PENDING",
+      "G4": "PENDING",
+      "gate_C": "UNVERIFIED_REQUIRED_FOR_REAL_PREDICTION_USE"
+    }
+  },
+  "task": {
+    "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
+    "status": "BLOCKED",
+    "scope": "C-D08 revised C5-A/B development reproducibility and build safety only; D retains native prerequisites, P8 release-only",
+    "blocker": "Independently expected existing host-tool hashes are not established. Exact prior runner manifest supplies versions only; namespace, decoder and llvm-readobj availability unverified. Explicit owner disposition on limited hosted Ubuntu/distro bootstrap trust required.",
+    "next_action": "Ask only for the unresolved bootstrap trust decision documented at b9864b7. If accepted, prepare disarmed source/config and exact activation review. If declined, retain independent-pin gate and remain blocked; do not collect identity-only evidence again.",
+    "next_action_kind": "OWNER_DECISION",
+    "after": [
+      "Review exact activation and remaining trust dispositions (root, gh, exact Depot release job/run correlation, receipt custody).",
+      "Obtain one new combined bounded execution approval before acquisition or verifier launch.",
+      "Complete remaining C5 rows 5–7, then row 8 exact regression and source closure. D only after C5 closure, G2 resolution and separate authority."
+    ],
+    "read": [
+      {
+        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
+        "anchor": "host-bootstrap-boundary-read-only-review-owner-decision-required",
+        "blob_sha": "e36bb03bd65e937b9dfb0302afcc98df3b9beaf4",
+        "start_line": 676,
+        "end_line": 681
+      },
+      {
+        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
+        "anchor": "owner-approved-c5-delivery-checklist-26-november-2026",
+        "blob_sha": "e36bb03bd65e937b9dfb0302afcc98df3b9beaf4",
+        "start_line": 273,
+        "end_line": 298
+      },
+      {
+        "path": "docs/PILOTODIN_PACKAGE_C_RESOURCE_TRUST_SPEC_2026-11-24.md",
+        "anchor": "c-d08-rationalised-scope-owner-decision-26-november-2026",
+        "blob_sha": "e0c428ab105c409660c4530dc3e82e39d75b6fa9",
+        "start_line": 84,
+        "end_line": 96
+      },
+      {
+        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
+        "anchor": "26-november--c5-host-bootstrap-boundary-read-only-review",
+        "blob_sha": "4e3dfbe60ebeda34d84a0ce1ca73f6d39d3996f8",
+        "start_line": 2682,
+        "end_line": 2685
+      }
+    ]
+  },
+  "operation": {
+    "id": "C5-PORTABLE-HOST-BOUNDARY-20261126",
+    "state": "RECONCILED",
+    "starting_sha": "86ccc2aefd07d253166973be7021d0b0f0b3d420",
+    "outcome": "Read-only review documented in b9864b7; no independent expected host pins; no acquisition, test, activation or execution.",
+    "reconcile_before_retry": false,
+    "receipt": {
+      "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
+      "anchor": "26-november--c5-host-bootstrap-boundary-read-only-review",
+      "blob_sha": "4e3dfbe60ebeda34d84a0ce1ca73f6d39d3996f8",
+      "start_line": 2682,
+      "end_line": 2685
+    }
+  },
+  "authority": {
+    "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next.",
+    "preparation_only": "Owner approved consolidated shared-bundle source preparation and inert acquisition-before-signature design only; authentication before extraction/use; no acquisition, execution, installation or live cutover authorised.",
+    "restricted_active": [],
+    "consumed_disarmed_count": 28,
+    "consumed_history": {
+      "commit": "b9864b70fb9bb5a72d0f79c37f15b94100722192",
+      "path": "docs/TAB_MIGRATION_HANDOFF_CURRENT.md",
+      "anchor": "4-immediate-next-work-in-order"
+    },
+    "forbidden": [
+      "new restricted network/acquisition",
+      "native compilation or execution",
+      "model fitting/inference/download",
+      "owner data or owner workspace access/migration",
+      "OS/security changes",
+      "installer/packaging",
+      "workflow activation outside scope",
+      "evidence-method changes",
+      "phase activation",
+      "release",
+      "replay of consumed or uncertain approval"
+    ],
+    "guards": "Three C1/C2 one-use workflows and OWNED_RESOURCE_ENABLED false; portable draft LIVE_ENABLED false, plan/disposition pins unset; no fallback. Three consumed variables owner cleanup unverified."
+  },
+  "pending_runs": [],
+  "pending_operations": [],
+  "unpublished": {
+    "owner_local": "UNINSPECTED_PRESERVE; never infer clean or publish",
+    "detached": [
+      {
+        "sha": "5e149a034c7bb37dd3afe4945026d1a581af3ed3",
+        "scope": "prior standard-library pure rehearsal; not live product"
+      },
+      {
+        "sha": "ae673c4d5ba462bbece4252f4d5bc66db94e16d6",
+        "scope": "disarmed integrated portable source; five QA paths, 118 workflows unchanged, zero runs; untested"
+      }
+    ]
+  },
+  "remaining_risks": [
+    "All four C5 machine profiles blocked; applicable toolchain/npm/PDFium notice/linkage and installed readiness incomplete.",
+    "G2 original handle/physical destination/coverage proof unresolved; governing native runs 44838416004 and 45342345634 retain filesystem/network failures and unresolved credits; no new method or G2.x without owner decision.",
+    "Physical 8 GB bundled inference/coexistence, DPAPI, actual desktop egress/durability and production IPC/physical destination unverified; D prerequisites retained.",
+    "R06 original-data historical full-tree 74 differences, unknown writer; prospective preservation pending. No loss of original data permitted."
+  ],
+  "context": {
+    "protocol": {
+      "path": "docs/continuation/PROTOCOL.md"
+    },
+    "governance": [
+      {
+        "path": "docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md",
+        "anchor": "1-source-of-truth-hierarchy",
+        "blob_sha": "492aa4410cf24a7b5f24551b8c4956cdf888d396",
+        "start_line": 5,
+        "end_line": 12
+      },
+      {
+        "path": "docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md",
+        "anchor": "5-authority-verification-and-stopping-rules",
+        "blob_sha": "492aa4410cf24a7b5f24551b8c4956cdf888d396",
+        "start_line": 34,
+        "end_line": 62
+      },
+      {
+        "path": "docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md",
+        "anchor": "26-november-2026--owner-decision-on-c5-scope-rationalisation",
+        "blob_sha": "89233e2d314432fefc6635519d67aa2b65541c48",
+        "start_line": 7,
+        "end_line": 10
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md"
+      }
+    ],
+    "knowledge": [
+      {
+        "path": "docs/PILOTODIN_PRODUCT_ARCHITECTURE_REVIEW_AND_REMEDIATION_2026-11-24.md"
+      },
+      {
+        "path": "docs/PILOTODIN_CONSOLIDATED_ROADMAP_COMPLEXITY_LAST.md"
+      },
+      {
+        "path": "docs/DOCUMENTATION_INDEX.md"
+      }
+    ],
+    "evidence": [
+      {
+        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md"
+      },
+      {
+        "path": "docs/PROJECT_STATUS_CURRENT.md",
+        "anchor": "p4-engineering-scorecard",
+        "blob_sha": "aa50bffe7b62aad25a69522da99d89237aa5547f",
+        "start_line": 31,
+        "end_line": 60
+      },
+      {
+        "path": "docs/P4_R02_5_25_PERCENT_EXECUTION_TRACKER_2026-11-22.md"
+      },
+      {
+        "path": "docs/P4_R02_5_G2_CONSOLIDATED_CLOSURE_DECISION_2026-11-24.md"
+      },
+      {
+        "path": "docs/CONTINUATION_RECOVERY_CHECKS.md"
+      }
+    ],
+    "archive": {
+      "commit": "b9864b70fb9bb5a72d0f79c37f15b94100722192",
+      "paths": [
+        "AGENTS.md",
+        "docs/TAB_MIGRATION_HANDOFF_CURRENT.md",
+        "docs/ACTIVE_WORK_JOURNAL.md",
+        "docs/CONTINUATION_PROTOCOL_CURRENT.md",
+        "docs/CONTINUE_HERE.md",
+        "docs/DOCUMENTATION_INDEX.md"
+      ],
+      "note": "Full original bytes in reachable pre-migration Git commit; original product blueprint is a separate owner/Project attachment, not verified repository-contained. Use original if a normative requirement is not recoverable from repository."
+    }
+  }
+}

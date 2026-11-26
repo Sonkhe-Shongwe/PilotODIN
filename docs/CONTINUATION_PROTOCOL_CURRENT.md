@@ -1,5 +1,8 @@
 # PilotODIN | Seamless continuation protocol
 
+**Continuation v2:** the current startup route and operational state ownership are now defined by [AGENTS](../AGENTS.md), [state](../CONTINUATION_STATE.json) and [v2 contract](./continuation/PROTOCOL.md). The original detailed protocol below is preserved for substantive recovery, audit and safety rules. Its previous startup reading order, handoff/journal ownership and old prompt are superseded; no original safety rule or approval requirement is weakened. [Immutable original](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/b9864b70fb9bb5a72d0f79c37f15b94100722192/docs/CONTINUATION_PROTOCOL_CURRENT.md).
+
+
 **Standing process | 24 November 2026.** Applies to every meaningful engineering checkpoint, chat/tab/model change and Codex handoff. This is a continuity rule, not new execution authority or a change to product scope, phase, acceptance or approval requirements.
 
 ## 1. Recover before acting
