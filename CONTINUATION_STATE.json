@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-PORTABLE-DOCKER-ROOTFS-ONCE-20261126",
-    "parent_sha": "fd5364e8fc392848ddede5a557f75871175e9669",
-    "previous_snapshot_sha": "7187c8748dd781c502fe5681109bf5c79177bfa5",
-    "scope": "Reconcile corrected exact Docker attempt failure; restore false guard and preserve full synthetic/engine pass evidence",
+    "operation_id": "C5-STDLIB-ALIAS-PREP-20261126",
+    "parent_sha": "10817e876e3706f460e358463a137fcf33bfb541",
+    "previous_snapshot_sha": "10817e876e3706f460e358463a137fcf33bfb541",
+    "scope": "Investigate stdlib refusal and prepare exact inert narrow alias omission; no Docker activation",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "26-november--c5-corrected-docker-attempt-refused-at-stdlib-path-guard",
-      "blob_sha": "95e16909dcb047046af4bbc76076b791c7a513ca",
-      "start_line": 2734,
-      "end_line": 2736
+      "anchor": "26-november--c5-exact-stdlib-linker-alias-omission-candidate",
+      "blob_sha": "22c006a257005b4a66b976cd29cb1a83898d9104",
+      "start_line": 2738,
+      "end_line": 2740
     }
   },
   "product": {
@@ -117,16 +117,23 @@
   },
   "task": {
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
-    "status": "READY",
+    "status": "BLOCKED",
     "scope": "C-D08 revised C5-A/B development reproducibility and build safety only; D retains native prerequisites, P8 release-only",
-    "blocker": "Runtime BLOCKED: ROOTFS_STDLIB refusal during corrected host-derived rootfs construction; exact path/predicate unknown. Full synthetic 12/12 and engine preflight passed; no offline isolation or provenance evidence.",
-    "next_action": "Review exact stdlib traversal predicates and public distro source/package evidence for legitimate reviewed path/alias behavior; prepare narrow fail-closed source correction or fixed non-path diagnostic only if justified. Preserve existing path, ownership, exclusion, size, hash and trust boundaries; explicit owner decision required for any scope expansion or new execution. Never replay.",
-    "next_action_kind": "SOURCE_PREPARATION",
+    "blocker": "Fresh exact owner approval required for 5701ff8. Plausible build-only libpython linker alias identified but actual failed runner path/predicate, updated full synthetic suite, rootfs isolation and provenance not established.",
+    "next_action": "Obtain fresh exact one-use owner approval of 5701ff8 and template SHA256 4a4d33441cdc7e519349065e51b98e2733029b56b37a51d23dbde01db5ffdaef for unchanged reviewed bounded no-pull data-only attempt. Verify live head/triggers and pins; write ahead; full disarmed 14-method suite and all preflights before first GET; exact one-use activation, reconcile and disarm. No prior approval reuse or retry/fallback.",
+    "next_action_kind": "OWNER_DECISION",
     "after": [
-      "Review corrected disarmed source and exact pins; seek fresh execution authority only for justified exact candidate. Reconcile evidence without replay.",
-      "Complete C5 rows 5–7 and row 8 exact regression/source closure on qualifying evidence; D only after C5 closure, G2 resolution and separate authority."
+      "Reconcile exact run/receipt or refusal; disarm and preserve failure without replay. No broad trust expansion.",
+      "Complete C5 rows 5–7 and row 8 exact regression/source closure only on qualifying evidence; D only after C5 closure, G2 resolution and separate authority."
     ],
     "read": [
+      {
+        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
+        "anchor": "26-november--c5-exact-stdlib-linker-alias-omission-candidate",
+        "blob_sha": "22c006a257005b4a66b976cd29cb1a83898d9104",
+        "start_line": 2738,
+        "end_line": 2740
+      },
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "26-november--c5-corrected-docker-attempt-refused-at-stdlib-path-guard",
@@ -298,17 +305,17 @@
     ]
   },
   "operation": {
-    "id": "C5-PORTABLE-DOCKER-ROOTFS-ONCE-20261126",
+    "id": "C5-STDLIB-ALIAS-PREP-20261126",
     "state": "RECONCILED",
-    "starting_sha": "9aa581b4bcc1b686f8294ad6801d333b7c3be196",
-    "outcome": "Run 45891625178 attempt 1/job 140155442819 matched image, staged 31 parts, passed 12 full synthetic tests and Docker engine policy checks; ROOTFS_STDLIB refusal before import, offline checks or acquisition. No receipt. One-use approval consumed; false guard restored.",
+    "starting_sha": "10817e876e3706f460e358463a137fcf33bfb541",
+    "outcome": "Detached 5701ff8 exact inert candidate, five QA paths, two new exact snippet methods passed; 22 source pins refreshed and verified, updated full 14-method suite mandatory before driver. No Docker or acquisition.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "26-november--c5-corrected-docker-attempt-refused-at-stdlib-path-guard",
-      "blob_sha": "95e16909dcb047046af4bbc76076b791c7a513ca",
-      "start_line": 2734,
-      "end_line": 2736
+      "anchor": "26-november--c5-exact-stdlib-linker-alias-omission-candidate",
+      "blob_sha": "22c006a257005b4a66b976cd29cb1a83898d9104",
+      "start_line": 2738,
+      "end_line": 2740
     }
   },
   "authority": {
@@ -392,6 +399,14 @@
       {
         "sha": "3aeebbc9c9021f8d8810b82e0b2b9c148df172cd",
         "scope": "Corrected exact inert rootfs Docker proposal; five QA paths vs df35b97, 2 additional exact snippet methods PASS, 11/11 disarmed/active pins regenerated, full module suite NOT RUN, zero candidate runs; fresh exact execution approval required."
+      },
+      {
+        "sha": "3877bcda80a54f5f4b96ad9eaa2cdbfce459a1b1",
+        "scope": "Stdlib alias-only source correction, three QA files, 2 exact synthetic snippet methods PASS, template stale; no workflow activation."
+      },
+      {
+        "sha": "5701ff8ded08cf378b1fed8eee7e456267fe1c35",
+        "scope": "Exact inert stdlib alias omission Docker proposal; five QA paths vs 3aeebbc, 22/22 refreshed pins read back; full updated 14-method suite NOT RUN, zero candidate runs, fresh approval required."
       }
     ]
   },
