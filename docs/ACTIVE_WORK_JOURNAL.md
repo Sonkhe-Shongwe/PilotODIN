@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | VERIFYING |
+| State | READY |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | c934ed9b74c5c123fae178b9bbd11a3800e11855 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
 | Operation ID | C5-R2-DISABLED-HOSTED-TRANSFER-20261126 |
-| Operation state | PREPARED: versioned disabled hosted adapter, exact remaining plan/policy/caps and prior-five replay, synthetic activation contract and receipt-only artifact roundtrip using shared core. No live scope or network activation; old approvals immutable. |
+| Operation state | RECONCILED: exact 9fbb272 run 45762373065 SUCCESS; Ubuntu 139715120187 and Windows 139715119044 each 150 existing +24 new tests, seven direct CLI refusals, exact remaining plan and prior-five replay, pure synthetic gate/claim and receipt artifact roundtrip PASS. Initial 2c01cc2 run 45762295177 failed test syntax; fixed extra quote only. Actual collect/retrieve hard refused; all 18 approvals consumed/disarmed. |
 | Intended files | qa/c5_wheel_metadata/wheel_hosted_policy_v3.py, test_wheel_hosted_policy_v3.py, .github/workflows/c5-wheel-hosted-policy-v3-review.yml, journal/handoff/specification/ledger. |
 | Approval | Routine source/synthetic CI only. All 18 restricted approvals consumed/disarmed; no actual wheels, retrieval, installation, owner tree or execution. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | Initial exact 2c01cc2 run 45762295177 FAILURE both platforms: 150 existing tests PASS; new suite could not parse due to extra quote in test fixture at line 212. Correct test only; exact replacement CI pending. No workflow upload/retrieval steps. |
+| Pending runs | None; exact final synthetic CI reconciled. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
-| Recovery action | Implement exact new marker-only event/source/attempt/job contract and disposable fixture claim; live collect/retrieve hard-refuse. Reuse core fixture producer/verifier, bounded receipt framing and independently observed upload identity, strict outer ZIP and replay; no new live artifact retrieval or marker. Review hosted activation wiring separately before proposal; resource/retention review remains. |
+| Recovery action | Next C5-R2 source-only: wire reviewed runtime Git/event/checkout and independently pinned arm/activation context to a new disabled hosted capability, exact hosted core scope and bounded actual transport adapter design; no real marker or activation. Existing synthetic claim is not authority and cannot authorise live requests. Reuse shared core/transfer algorithms, exact independently observed service artifact ID/digest, fail-closed transport and independent settlement equality. Resource measurement and durable notice-retention plan before fresh R3 proposal. Preserve old pins, no restricted operations. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
