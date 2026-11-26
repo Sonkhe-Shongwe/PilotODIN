@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | BLOCKED |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 66c69d91835f312e982e495563806409489affa8 |
+| Observed starting HEAD | 11be374c96ad6ef4599637e8976b195f1b68f609 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | Revised C5-A/B development reproducibility and build safety; D prerequisites and P8 release-only allocation. No restricted acquisition, native, owner data, install, packaging, phase activation or release. |
-| Operation ID | C5-REMAINING-DEV-INPUT-ONCE-20261126 |
-| Operation state | RECONCILED REFUSED; one-use activation 5b5f87e / #45820796108 attempt 1 failed REDIRECT_FILENAME on first Python GitHub 302; 1 GET, 0 body bytes, 0/45 verified, 45 remaining. Approval consumed, disarmed 15c8a1c / #45820855514 SUCCESS. 21 total consumed/disarmed. |
-| Intended files | Pure categorical projection in existing disarmed driver 0539b4d535b6e21272975bb216ca272f036212fd; no live diagnostic entrypoint or workflow changes. |
-| Approval | Owner explicitly stated: "I approve the bounded C5 acquisition-only proposal in commit 66c69d91835f312e982e495563806409489affa8, covering 45 archives, maximum 48 HTTPS requests and 928307900 body bytes, subject to the documented staging and activation safeguards. No installation, extraction, native execution, model activity, owner access, installer generation or release." Exact scope in proposal 66c69d9; staged readiness and exact activation safeguards mandatory. Approval consumed by 5b5f87e attempt 1, no replay or fresh acquisition authority. |
+| Operation ID | C5-PYTHON-REDIRECT-HEADER-ONLY-20261126 |
+| Operation state | PREPARED; new header-only scope approved, unconsumed. Prior acquisition refused and disarmed, 21 consumed. No activation issued. |
+| Intended files | Existing driver and dedicated workflow only: independent header-only gate and fixtures; archive acquisition stays disabled. |
+| Approval | Owner explicitly stated: "I approve C5-PYTHON-REDIRECT-HEADER-ONLY-20261126 as documented in commit 11be374c96ad6ef4599637e8976b195f1b68f609. Maximum two original HTTPS GETs, zero response body reads, zero redirects followed, zero retries, no archive acquisition, installation, extraction or native execution. Preserve redaction and all existing safeguards." |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
 | Pending runs | None. #45821561489 exact d9de2f9 SUCCESS: 27/27 synthetic, live skipped; prior acquisition #45820796108 FAILURE/disarm #45820855514 SUCCESS preserved. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
-| Recovery action | Source-only diagnostic verified 27/27; historical logs and 156-record checksum receipt contain no signed Location, exact disposition unknown. [Proposed two header-only GETs](./PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md#26-november--c5-filename-diagnostic-and-bounded-header-only-proposal) awaiting fresh explicit approval. No body reads, no redirect follow, no acquisition, no retries. Stage separately pinned disarmed diagnostic route after approval; do not alter acceptance predicate or replay consumed grant. |
+| Recovery action | Stage source-only header diagnostic reusing exact plan, TLS transport and filename categories; test no body reads/no redirect follow, exact request scope, safe refusal/continuation and redaction. Then review exact marker-only activation and disarm. |
 | Resume after closure | D only after revised C5 source closure, G2 resolution and separately approved scope; every native prerequisite before its use. P8 release-only obligations retained; installer frozen. |
 
 ## Prior operation
