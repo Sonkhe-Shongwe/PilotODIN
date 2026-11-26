@@ -495,3 +495,72 @@ Remaining follow-through (not implied approval): applicable use-licence disposit
 
 
 **Bounded transaction outcome:** Exact #45815459625 attempt 1 at 345b216 SUCCESS: Windows 139893951063 and Linux 139894120940 each 49/49 actual wheel size/SHA256 and unique METADATA SHA256, target tags/declarations, exact local pip 26.3 dependency dry-run PASS; rehearsal skipped 139893953137. All 98 safe row receipts independently matched the pinned original plan; 62 unique wheels, 98 reported GETs, 230520362 retained body bytes (107014797 Windows, 123505565 Linux). No installation, licence clearance, retained wheelhouse or physical egress proof. [Safe receipts](./C5_SOURCE_TEST_INPUT_RECEIPTS_45815459625.json). Source-test Python byte identity/metadata/graph evidence satisfied for exact disposable transaction only; no retained cache, actual use or complete notice disposition. No repeat acquisition or approval replay. Row 5 full browser compatibility, applicable required-input/toolchain integrity and licence-use evidence, and actual readiness remain outstanding. All four profiles BLOCKED; 20 approvals consumed/disarmed.
+
+### Bounded remaining development input proposal (26 November 2026)
+
+**PROPOSAL ONLY / BLOCKED PENDING FRESH OWNER APPROVAL.** Operation C5-REMAINING-DEV-INPUT-ONCE-20261126. Source baseline documentation HEAD [8e09185](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/8e0918539837a26eb7837bb7abdc71d0052c79bc), prior product 8da7f33 and C5 source 6e27188. No workflow/collector/source changes, activation, dispatch or new network acquisition under this proposal. All 20 prior approvals consumed/disarmed. C-D08 rationalisation still governs. The 62 wheel identities and two 49-wheel dry-runs, three historical installation logs and prior checksum documents are reused; no repeat of the 98-GET Python wheel transaction. Previous acquisition did not retain a cache; any later consumption must still verify bytes before use. No installer, native, model, owner or release scope.
+
+**Purpose and alternatives.** Close the missing exact input archive identity portion of rows 5–7 using one deduplicated owned hosted scratch generation, ordinary bounded HTTP plus standard SHA256/SHA512, not another package resolver or custom custody/verification framework. Historical version observations and npm ci counts alone do not establish full actual archive identities. Read-only owner-machine observation alone would not establish publisher-archive provenance and requires separate permission. Separate per-platform acquisition would duplicate 26 shared npm inputs and pip; instead acquire once for both target candidates. This is an acquisition/identity-only operation, NOT a complete readiness or use-licence clearance transaction. Do not use any downloaded program, library or package-manager lifecycle script. Existing toolchain on runner is only the reviewed acquisition/verification tooling, not newly acquired executables. All raw inputs discarded in exclusive scratch after terminal receipt; no later reuse claim. If actual installed compatibility still needs proof, a separate reviewed scope must bind actual consumption, including necessary reacquisition if no approved verified cache remains. No broad new acquisition mandate.
+
+**Input set A: 11 toolchain archives.** Exact expected hashes reused from [prior independently replayed checksum evidence](./PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md#26-november--c5-existing-input-replay-and-development-use-boundary), prior Windows checksum recovery and pip publisher metadata. Python release asset metadata blob 7200bc2f37b2989b6d9f3a42707c45f27218987c; Rust manifest receipt blob 5c51fbf25b0b2a78cdc9a313758569aad9f53561. No checksum-document repeat. These are observed development candidates, not production toolchain selection.
+
+| Artifact | SHA256 | Exact expected bytes or hard cap (bytes) |
+| --- | --- | ---: |
+| python-3.11.9-win32-x64.zip | c92a530d9ac9539feea075bb033e7e03580412999d2e2833b7b62d948da60d03 | 25934523 exact |
+| python-3.11.18-linux-24.04-x64.tar.gz | 099ef30fc27f0d7067a67be5a5fb7fd66154cfa1e4186c88f71c3a3070c81abc | 92610561 exact |
+| pip-26.3-py3-none-any.whl | f3b60b20ffaadd4415ed7957212a38ac63fa4c5fa375bd0f4a797777940fad13 | 4194304 cap |
+| node-v22.23.5-win-x64.zip | 4a191082e9706866830379d577d2cc8a50c776fcd9436a8d061b063ed0d9a0e3 | 67108864 cap |
+| node-v22.23.5-linux-x64.tar.xz | cdeb8670a0c81f51b4dc4ac61919f9b1ad917b304bf8221eb939570663d240f8 | 67108864 cap |
+| rustc-1.100.0-x86_64-pc-windows-msvc.tar.xz | 4f1f70145ab94e1036b6a9fb0a1fa1393352999701699aedab4dd2724047149e | 134217728 cap |
+| rustc-1.100.0-x86_64-unknown-linux-gnu.tar.xz | f1d0b1dec81dab6f523cd098507763487b0d4bd7fd2c87582f154128719be03b | 134217728 cap |
+| cargo-1.100.0-x86_64-pc-windows-msvc.tar.xz | efb63c35df751dbd58b7aa73d6a43d75b00bd356bfdb925901e85379d0de108a | 33554432 cap |
+| cargo-1.100.0-x86_64-unknown-linux-gnu.tar.xz | 7e29ce07d7c6e92d1826870575ba27d57fff6cb3e754aa57d99099cb88fab35d | 33554432 cap |
+| rust-std-1.100.0-x86_64-pc-windows-msvc.tar.xz | 24ad2f28791e08a573b9c7df5efa3ace884eecd1fa7e7f5b62c65f4b49bb4532 | 67108864 cap |
+| rust-std-1.100.0-x86_64-unknown-linux-gnu.tar.xz | 4591b6486594ded52ecd6135db95bf9355bbd3ca7a380888b141528bbcf9a5d4 | 67108864 cap |
+
+Python exact URLs are https://github.com/actions/python-versions/releases/download/3.11.9-9947079978/python-3.11.9-win32-x64.zip and https://github.com/actions/python-versions/releases/download/3.11.18-40260280589/python-3.11.18-linux-24.04-x64.tar.gz (asset IDs 179768229/676813336). Node exact URL prefix https://nodejs.org/dist/v22.23.5/ and Rust https://static.rust-lang.org/dist/2026-11-12/ with exact filenames above. No installer formats. Node distribution includes npm 10.9.9; no separate npm CLI archive. Rustc and std support the existing standalone Rust source-test compile/object scopes; Cargo included only for observed source-tool identity, not crates or native build. No Cargo crate retrieval. Pip exact wheel URL/size not yet available in public reading route: one bounded GET of https://pypi.org/pypi/pip/26.3/json (262144 bytes maximum), select exactly one non-yanked binary wheel whose filename and SHA256 match the independently pinned row, require declared integer positive size <=4194304 and a canonical exact HTTPS files.pythonhosted.org package URL with matching terminal filename; no sdist, index resolution, other metadata, redirects or fallback. Record metadata response digest, selected URL and size in safe receipt; refuse any mismatch or ambiguity before wheel request. Public Node directory listing gives rounded sizes only, not exact byte pins; caps intentionally conservative, not measurements.
+
+**Input set B: 34 distinct npm archives.** Exact [lock](../frontend/package-lock.json) blob 845bc92192a1b77432f4d472c7a056f47ca3a3a7, [manifest](../frontend/package.json) blob fbb17a9f2e53eecb812498f02196fa7638f85299. Lock v3, filter the non-root entries by declared OS/CPU/libc for win32/x64 and linux/x64/glibc, retaining platform-neutral rows. Exactly 30 each, 26 shared, union 34, each resolved URL and full SHA512 SRI taken verbatim from that independently pinned blob, not reconstructed from package name. Reject additional, absent, ambiguous or changed rows, duplicate URLs/integrity ambiguity, non-HTTPS/non-registry URLs or unsupported selectors. Per archive 33554432-byte cap, combined npm compressed body cap 201326592. This conservative combined limit is not actual total size. Keep both Rollup Windows x64 variants because the existing lock admits both; Tauri CLI packages are locked dev candidates only and must never execute. Esbuild is the sole candidate marked hasInstallScript; no lifecycle scripts, binary execution or npm ci in this transaction.
+
+W=Windows candidate; L=Linux candidate.
+
+| Exact lock package | Version | Target | Declared licence |
+| --- | --- | --- | --- |
+| `@esbuild/linux-x64` | 0.25.12 | L | MIT |
+| `@esbuild/win32-x64` | 0.25.12 | W | MIT |
+| `@fontsource-variable/inter` | 5.3.0 | WL | OFL-1.1 |
+| `@fontsource-variable/manrope` | 5.2.8 | WL | OFL-1.1 |
+| `@napi-rs/lzma-linux-x64-gnu` | 1.5.1 | L | MIT |
+| `@playwright/test` | 1.64.1 | WL | Apache-2.0 |
+| `@rollup/rollup-linux-x64-gnu` | 4.65.0 | L | MIT |
+| `@rollup/rollup-win32-x64-gnu` | 4.65.0 | W | MIT |
+| `@rollup/rollup-win32-x64-msvc` | 4.65.0 | W | MIT |
+| `@tauri-apps/api` | 2.12.4 | WL | Apache-2.0 OR MIT |
+| `@tauri-apps/cli` | 2.12.4 | WL | Apache-2.0 OR MIT |
+| `@tauri-apps/cli-linux-x64-gnu` | 2.12.4 | L | Apache-2.0 OR MIT |
+| `@tauri-apps/cli-win32-x64-msvc` | 2.12.4 | W | Apache-2.0 OR MIT |
+| `@types/estree` | 1.0.9 | WL | MIT |
+| `@types/react` | 19.3.0 | WL | MIT |
+| `@types/react-dom` | 19.3.0 | WL | MIT |
+| `csstype` | 3.2.3 | WL | MIT |
+| `esbuild` | 0.25.12 | WL | MIT |
+| `fdir` | 6.5.0 | WL | MIT |
+| `lucide-react` | 0.468.0 | WL | ISC |
+| `nanoid` | 3.3.20 | WL | MIT |
+| `picocolors` | 1.1.1 | WL | ISC |
+| `picomatch` | 4.0.7 | WL | MIT |
+| `playwright` | 1.64.1 | WL | Apache-2.0 |
+| `playwright-core` | 1.64.1 | WL | Apache-2.0 |
+| `postcss` | 8.5.31 | WL | MIT |
+| `react` | 19.3.1 | WL | MIT |
+| `react-dom` | 19.3.1 | WL | MIT |
+| `rollup` | 4.65.0 | WL | MIT |
+| `scheduler` | 0.28.0 | WL | MIT |
+| `source-map-js` | 1.2.2 | WL | BSD-3-Clause |
+| `tinyglobby` | 0.2.17 | WL | MIT |
+| `typescript` | 5.9.3 | WL | Apache-2.0 |
+| `vite` | 6.4.5 | WL | MIT |
+
+**One-use maximum:** 45 exact artifact GETs (11 + 34), one pip version-metadata GET, at most two additional one-hop GitHub asset redirect GETs (one per pinned Python asset). Maximum 48 total HTTP requests including redirects, zero retry, 928307900 aggregate body bytes (118545084 exact Python + 134217728 Node + 268435456 rustc + 134217728 rust-std + 67108864 Cargo + 4194304 pip + 201326592 npm + 262144 metadata). Redirects allowed solely for the two Python release assets, only a validated HTTPS release-assets.githubusercontent.com/objects.githubusercontent.com destination bound to original release asset identity; no redirect body (zero bytes required), no arbitrary host, no opaque query retained or logged. If this binding cannot be independently demonstrated in staged preflight, do not arm; no alternative URL or extra request. No HEAD, retries, fallback, package index or automatic package-manager HTTP. Stream hard byte caps (including in-flight partial responses), validate HTTP 200, identity encoding, explicit Content-Length where available and exact received length, refuse missing length when required by pinned size/metadata, hash before accepting; count declared and observed sizes separately. 120 seconds/request, 30 minutes total job, <=2 GiB scratch, fresh runner-owned exclusive directory with >=2 GiB free preflight; no extraction, unpacking, installation, imported package, scripts, native compilation, OS changes, model/installer or owner access. No cross-run raw artifact transfer. Stop on first refusal/cap; no retry after interruption. No raw licence bytes, archives, credentials, signed URLs or private paths in public receipts. Emit only exact safe artifact identities/algorithm/digest/observed byte counts, per-request status and terminal failure/partial-set accounting. Cleanup owned scratch only; preserve failure receipt; no physical egress claim. No new full archive inspection/notice framework. Primary source licence evidence retained, applicable actual notice/use dispositions still separately open (including PyMuPDF, not reacquired here). Release distribution obligations preserved.
+
+**Before execution:** owner must explicitly approve this finite acquisition-only scope. Then review and stage the smallest existing bounded transport/hash route in disarmed state, reuse prior synthetic fixtures/approval gates as appropriate, check actual trigger/job scope and exact pins, negative cases (unexpected URL/hash/size, redirect, exhausted aggregate/request caps, no retry, no output raw, fail/disarm), publish exact staging evidence and obtain any required exact activation authority. One-use approval cannot be replayed or transferred. No action armed at proposal. After exact terminal settlement, disarm immediately and independently reconcile safe receipt against expected source and manifest. If prerequisites/transport/limits not feasible, report blocker without broader scope. Success would verify the 45 new archive identities only, not automatically close rows 5–7, license clearance, installed readiness, browser-dev equivalence or C5. Windows browser-dev use proof requires separately scoped installed Python/npm compatibility with exact hash-verified inputs, standard offline pip/npm verification, controlled esbuild lifecycle or no-script equivalent, existing Vite/TypeScript source witness, no desktop/installer. No hidden network fallback. Do not pre-approve those actions here.
