@@ -19,7 +19,7 @@ jobs:
           persist-credentials: false
       - name: Review missing-only producer and independent replay
         run: |
-          test "$(git hash-object qa/c5_wheel_metadata/wheel_missing_hosted.py)" = "1ebe63cf344ff5f9ecf72309da900c7ee071bf49"
+          test "$(git hash-object qa/c5_wheel_metadata/wheel_missing_hosted.py)" = "73311acf23aa6653c534678dd7710ff1a4e6a150"
           python3 -I -B qa/c5_wheel_metadata/test_wheel_diagnostic_offline.py
           python3 -I -B qa/c5_wheel_metadata/test_wheel_missing_hosted.py
           set +e
@@ -47,7 +47,7 @@ jobs:
       - id: collect
         run: python3 -I -B qa/c5_wheel_metadata/wheel_missing_hosted.py --collect
         env:
-          C5_DRIVER_BLOB: 1ebe63cf344ff5f9ecf72309da900c7ee071bf49
+          C5_DRIVER_BLOB: 73311acf23aa6653c534678dd7710ff1a4e6a150
           C5_APPROVED_ONCE: C5-WHEEL-MISSING-HOSTED-ONCE-20261126
       - id: upload
         if: ${{ false }}
@@ -75,7 +75,7 @@ jobs:
           persist-credentials: false
       - run: python3 -I -B qa/c5_wheel_metadata/wheel_missing_hosted.py --retrieve
         env:
-          C5_DRIVER_BLOB: 1ebe63cf344ff5f9ecf72309da900c7ee071bf49
+          C5_DRIVER_BLOB: 73311acf23aa6653c534678dd7710ff1a4e6a150
           C5_APPROVED_ONCE: C5-WHEEL-MISSING-HOSTED-ONCE-20261126
           C5_BUNDLE_RECORD: ${{ needs.collect-once.outputs.record }}
           C5_PRODUCER_SETTLEMENT: ${{ needs.collect-once.outputs.settlement }}

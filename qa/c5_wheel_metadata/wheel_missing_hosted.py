@@ -20,6 +20,8 @@ import zipfile
 import zlib
 from contextlib import nullcontext
 from urllib.request import build_opener, HTTPSHandler, ProxyHandler
+from urllib.error import HTTPError
+from urllib.parse import urlsplit
 
 ARMED=False
 if __name__=='__main__' and not ARMED:
@@ -96,6 +98,7 @@ def plan():
 
 def authorize(phase):
     need(ARMED is True,'FRESH_APPROVAL_REQUIRED')
+    need(os.name=='posix','HOSTED_PLATFORM')
     e=os.environ
     need(e.get('GITHUB_ACTIONS')=='true' and e.get('GITHUB_EVENT_NAME')=='push'
          and e.get('GITHUB_REPOSITORY')==d.REPO and e.get('GITHUB_REF')=='refs/heads/feature/live-dev-workspace-20261023'
@@ -103,7 +106,7 @@ def authorize(phase):
          and e.get('GITHUB_JOB')==phase and phase in ('collect-once','retrieve-once') and e.get('GITHUB_RUN_ATTEMPT')=='1'
          and e.get('GITHUB_WORKSPACE')==str(ROOT) and e.get('C5_APPROVED_ONCE')==OP
          and d.RUN.fullmatch(e.get('GITHUB_RUN_ID','')) and d.SHA1.fullmatch(e.get('C5_DRIVER_BLOB','')),
-         'DIAGNOSIS_CONTEXT')
+         'MISSING_CONTEXT')
     head=d.git(ROOT,'rev-parse','HEAD').decode().strip()
     parents=d.git(ROOT,'show','-s','--format=%P','HEAD').decode().split()
     event=json.loads(d.read_file(Path(e['GITHUB_EVENT_PATH'])),object_pairs_hook=n.unique)
@@ -112,19 +115,22 @@ def authorize(phase):
          and event.get('forced') is False and event.get('created') is False and event.get('deleted') is False
          and event.get('repository',{}).get('full_name')==d.REPO
          and event.get('head_commit',{}).get('id')==head
-         and event.get('head_commit',{}).get('message')==MESSAGE,'DIAGNOSIS_EVENT')
+         and event.get('head_commit',{}).get('message')==MESSAGE,'MISSING_EVENT')
     need(d.git(ROOT,'diff-tree','--no-commit-id','--name-status','--no-renames','-r','HEAD')
          ==('A\t'+MARKER+'\n').encode('ascii')
          and d.git(ROOT,'show','-s','--format=%B','HEAD').decode().rstrip('\n')==MESSAGE
-         and d.read_file(ROOT/MARKER,1024)==MARKER_BYTES,'DIAGNOSIS_MARKER')
+         and d.read_file(ROOT/MARKER,1024)==MARKER_BYTES,'MISSING_MARKER')
     for path in (SELF,WORKFLOW,MARKER):
         blob=d.git_blob(d.read_file(ROOT/path))
         need(blob==d.git(ROOT,'rev-parse','HEAD:'+path).decode().strip(),'CHECKOUT_PIN')
         if path==SELF: need(blob==e['C5_DRIVER_BLOB'],'SELF_PIN')
     runner=Path(e['RUNNER_TEMP'])
     need(runner.is_dir() and not runner.is_symlink(),'RUNNER_TEMP')
-    with (runner/('c5-missing-'+e['GITHUB_RUN_ID']+'-'+phase+'.claim')).open('xb') as f:
-        f.write(MARKER_BYTES); f.flush(); os.fsync(f.fileno())
+    try:
+        with (runner/('c5-missing-'+e['GITHUB_RUN_ID']+'-'+phase+'.claim')).open('xb') as f:
+            f.write(MARKER_BYTES); f.flush(); os.fsync(f.fileno())
+    except FileExistsError:
+        raise w.Blocked('ONE_USE_CLAIM_CONSUMED') from None
     return runner,e['GITHUB_RUN_ID'],head
 
 
@@ -475,6 +481,49 @@ def produce():
         f.write('receipt_bundle='+str(bundle)+'\nrecord='+json.dumps(record,separators=(',',':'))+'\nsettlement='+json.dumps(result,separators=(',',':'))+'\n')
 
 
+def download_exact(record,run,sha,artifact_id,upload_digest,token,opener,caps):
+    limit=bundle_cap(caps)+1024*1024
+    g.verify_identity(record,run,sha)
+    need(record['bundle']['bytes']<=bundle_cap(caps),'BUNDLE_LIMIT')
+    need(g.RUN.fullmatch(artifact_id) and n.digest(upload_digest),'UPLOAD_OUTPUT')
+    need(bool(token),'ARTIFACT_TOKEN')
+    url='https://api.github.com/repos/'+d.REPO+'/actions/artifacts/'+artifact_id
+    # Read exactly the associated artifact metadata; never enumerate other artifacts.
+    with t.deadline():
+        with opener.open(t.get_request(url,token),timeout=15) as resp:
+            meta=json.loads(t.read_metadata(resp),object_pairs_hook=n.unique)
+    ident=g.verify_artifact_metadata(meta,record,run,sha)
+    need(str(ident['id'])==artifact_id and ident['sha256']==upload_digest
+         and ident['bytes']<=limit,'ARTIFACT_UPLOAD_IDENTITY')
+    # One retrieval. The authenticated API redirect is the authority for the
+    # opaque short-lived storage URL. Do not forward the token or log Location.
+    with t.deadline():
+        try:
+            resp=opener.open(t.get_request(url+'/zip',token),timeout=15)
+        except HTTPError as exc:
+            try:
+                need(exc.code==302,'ARTIFACT_REDIRECT')
+                values=exc.headers.get_all('Location',[])
+                need(len(values)==1 and 0<len(values[0])<=8192,'ARTIFACT_REDIRECT')
+                location=values[0]
+            finally:
+                exc.close()
+            u=urlsplit(location)
+            need(u.scheme=='https' and u.hostname and u.netloc==u.hostname
+                 and (u.hostname.endswith('.blob.core.windows.net')
+                      or u.hostname.endswith('.actions.githubusercontent.com')
+                      or u.hostname.endswith('.githubusercontent.com'))
+                 and u.path.startswith('/') and not u.fragment and bool(u.query),
+                 'ARTIFACT_REDIRECT_ORIGIN')
+            with opener.open(t.get_request(location),timeout=15) as storage:
+                raw=t.read_response(storage,limit,exact=ident['bytes'])
+        else:
+            with resp:
+                raw=t.read_response(resp,limit,exact=ident['bytes'])
+    return raw,meta
+
+
+
 def retrieve():
     need(ARMED,'FRESH_APPROVAL_REQUIRED')
     rows,caps=plan()
@@ -486,7 +535,7 @@ def retrieve():
     g.verify_identity(record,run,sha)
     need(record['bundle']['bytes']<=bundle_cap(caps),'BUNDLE_LIMIT')
     opener=build_opener(ProxyHandler({}),t.NoRedirect(),HTTPSHandler(context=ssl.create_default_context()))
-    raw,meta=d.download_exact(record,run,sha,artifact,digest,os.environ['GH_TOKEN'],opener,MODS)
+    raw,meta=download_exact(record,run,sha,artifact,digest,os.environ['GH_TOKEN'],opener,caps)
     with tempfile.TemporaryDirectory(dir=runner) as temp:
         path,m=replay_artifact(raw,meta,record,run,sha,rows,diagnostic.MISSING_PLAN_BLOB,Path(temp),scope=HOSTED_SCOPE,caps=caps)
         result=settlement(path,m,rows)

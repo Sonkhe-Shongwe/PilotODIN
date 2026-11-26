@@ -7,17 +7,17 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 15f2a106efb71662be2c0941ec95871d88af04f5 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
 | Operation ID | C5-MISSING-HOSTED-DRIVER-20261126 |
-| Operation state | PREPARED hardening: initial 4024c95 run 45757472810 SUCCESS 18+11 tests, two direct refusals, collect/retrieve skipped. Tighten exact residual ZIP cap before body retrieval and add complete local inert Git/event/claim tests, no live calls. |
+| Operation state | PUBLISHED/VERIFYING: exact residual ZIP bound enforced before retrieval, inert marker/claim and API fixture regressions added. All live gates false. |
 | Intended files | New qa/c5_wheel_metadata/wheel_missing_hosted.py, test_wheel_missing_hosted.py, dedicated c5-wheel-missing-hosted.yml; journal/handoff/ledger. No existing gates changed. |
 | Approval | Receipt-only approval consumed/disarmed; sixteen total restricted approvals consumed/disarmed (six native, seven metadata, one synthetic transfer, one actual wheel attempt, one receipt-only retrieval). No additional retrieval or wheel acquisition authorized. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | Initial run reconciled; hardening not issued. |
+| Pending runs | Exact hardened offline CI pending; restricted jobs skip. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
 | Recovery action | Verify source and CI, reconcile. No new wheel GET, upload or retrieval without explicit fresh approval; historical five raw notices still require preservation. No production readiness or archive acceptance relaxation. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
