@@ -196,7 +196,8 @@ def redirect(row, original, location):
     q = {k.lower(): v for k, v in pairs}
     need(len(q) == len(pairs) and all(k and 0 < len(v) <= 4096 and all(32 <= ord(c) <= 126 for c in v) for k, v in pairs), "REDIRECT_QUERY")
     dispositions = [q[k] for k in ("rscd", "response-content-disposition") if k in q]
-    need(len(dispositions) == 1 and dispositions[0] in ("attachment; filename=" + row.id, 'attachment; filename="' + row.id + '"'), "REDIRECT_FILENAME")
+    allowed = ("attachment; filename=" + row.id, 'attachment; filename="' + row.id + '"')
+    need(1 <= len(dispositions) <= 2 and all(v in allowed for v in dispositions), "REDIRECT_FILENAME")
     need(("sig" in q and "se" in q) or all(k in q for k in ("x-amz-signature", "x-amz-credential", "x-amz-expires")), "REDIRECT_SIGNATURE")
     return location
 
@@ -662,7 +663,7 @@ def self_test():
             prefix="https://release-assets.githubusercontent.com/github-production-release-asset/250077933/00000000-0000-0000-0000-000000000001?sig=fixture&se=fixture"
             from urllib.parse import urlencode
             for q in [{},{"rscd":"Attachment;Filename = "+row.id},{"rscd":"attachment; filename*=UTF-8''"+row.id},
-                      {"rscd":"attachment; filename="+row.id,"response-content-disposition":"attachment; filename="+row.id},
+                      {"rscd":"attachment; filename="+row.id,"response-content-disposition":"attachment; filename=wrong.zip"},
                       {"rscd":"attachment; filename=untrusted.zip"}]:
                 with self.subTest(keys=sorted(q)),self.assertRaisesRegex(Refused,"REDIRECT_FILENAME"):
                     redirect(row,row.url,prefix+("&"+urlencode(q) if q else ""))
@@ -705,6 +706,58 @@ def self_test():
         def test_header_gate_disarmed(self):
             with self.assertRaisesRegex(Refused,"HEADER_APPROVAL_REQUIRED"): header_gate()
             with self.assertRaisesRegex(Refused,"HEADER_OFFLINE_ONLY"): header_collect(http.client.HTTPSConnection,lambda *_:None)
+        def test_two_literal_aliases_for_both_assets(self):
+            from urllib.parse import urlencode
+            for row in (r for r in rows if r.asset):
+                plain="attachment; filename="+row.id
+                quoted='attachment; filename="'+row.id+'"'
+                prefix="https://release-assets.githubusercontent.com/github-production-release-asset/250077933/00000000-0000-0000-0000-000000000001?"
+                for params in [{"rscd":plain},{"response-content-disposition":quoted},
+                               *[{"rscd":a,"response-content-disposition":b} for a in (plain,quoted) for b in (plain,quoted)]]:
+                    with self.subTest(asset=row.asset,params=params):
+                        location=prefix+urlencode(dict(params,sig="fixture",se="fixture"))
+                        self.assertEqual(redirect(row,row.url,location),location)
+                        self.assertEqual(header_projection(row,location)["gate"],"PASS")
+        def test_dual_alias_refusal_and_duplicate_keys(self):
+            from urllib.parse import urlencode
+            for row in (r for r in rows if r.asset):
+                plain="attachment; filename="+row.id
+                prefix="https://release-assets.githubusercontent.com/github-production-release-asset/250077933/00000000-0000-0000-0000-000000000001?"
+                for params, reason in [
+                    ([], "REDIRECT_FILENAME"),
+                    ([("rscd",plain),("response-content-disposition","attachment; filename=wrong.zip")],"REDIRECT_FILENAME"),
+                    ([("rscd","attachment; filename=wrong.zip"),("response-content-disposition",plain)],"REDIRECT_FILENAME"),
+                    ([("rscd",plain),("response-content-disposition","Attachment;Filename = "+row.id)],"REDIRECT_FILENAME"),
+                    ([("rscd",plain),("response-content-disposition","attachment; filename*=UTF-8''"+row.id)],"REDIRECT_FILENAME"),
+                    ([("rscd",plain),("RSCD",plain)],"REDIRECT_QUERY"),
+                    ([("rscd",plain),("response-content-disposition",plain),("Response-Content-Disposition",plain)],"REDIRECT_QUERY"),
+                ]:
+                    location=prefix+urlencode([("sig","fixture"),("se","fixture")]+params)
+                    with self.subTest(asset=row.asset,reason=reason),self.assertRaisesRegex(Refused,reason):
+                        redirect(row,row.url,location)
+                location=prefix+urlencode({"rscd":plain,"response-content-disposition":plain})
+                with self.assertRaisesRegex(Refused,"REDIRECT_SIGNATURE"):
+                    redirect(row,row.url,location)
+        def test_dual_alias_transport_still_checks_hash_and_size(self):
+            from urllib.parse import urlencode
+            row=next(r for r in rows if r.asset)
+            body=b"x"*row.exact
+            row=replace(row,digest=hashlib.sha256(body).hexdigest())
+            literal="attachment; filename="+row.id
+            location="https://release-assets.githubusercontent.com/github-production-release-asset/250077933/00000000-0000-0000-0000-000000000001?"+urlencode({"sig":"fixture","se":"fixture","rscd":literal,"response-content-disposition":literal})
+            Replay.responses={row.url:wire(status="302 Found",headers=(("Location",location),)),location:wire(body)}
+            self.assertEqual(self.t.get(row)[1:],(row.exact,row.digest))
+            self.assertEqual(self.t.requests,2)
+            self.assertEqual(self.t.body,row.exact)
+            self.assertNotIn("sig=fixture",str(self.records))
+            for response, reason in [(wire(b"x"),"BODY_LENGTH"),(wire(b"y"*row.exact),"HASH_MISMATCH")]:
+                with self.subTest(reason=reason),tempfile.TemporaryDirectory() as scratch:
+                    Replay.calls=[]
+                    Replay.responses[location]=response
+                    t=Transport(Path(scratch),Replay,lambda *_:None)
+                    with self.assertRaisesRegex(Refused,reason):
+                        t.get(row)
+                    self.assertEqual(t.requests,2)
         def test_disarmed(self):
             with self.assertRaisesRegex(Refused,"FRESH_APPROVAL_REQUIRED"): live_gate()
             with self.assertRaisesRegex(Refused,"OFFLINE_FIXTURE_ONLY"): Transport(Path(self.tmp.name),http.client.HTTPSConnection,lambda *_:None)
