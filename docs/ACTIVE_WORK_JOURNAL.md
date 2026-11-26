@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | VERIFYING |
+| State | READY |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 38ef8ee3bdaec254b80b7eb51521378005813740 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
 | Operation ID | C5-WHEEL-ARCHIVE-V2-OFFLINE-20261126 |
-| Operation state | PUBLISHED in this checkpoint: separate offline inspector v2 and inert fixtures; initial failure retained; test-only correction verification pending; no changes to pinned historical inspector, receipts or restricted workflows. Prior 18 approvals consumed/disarmed. |
+| Operation state | RECONCILED: separate v2 inspector source exact 9521e8f run 45759533296 SUCCESS. Ubuntu 139706013231 and Windows 139706012853 each 40 legacy +64 v2 tests and direct CLI refusal PASS; historical pins unchanged. Initial 45759402235 syntax and 45759465395 Windows fixture failures retained; both corrections test-only. Eighteen restricted approvals consumed/disarmed. |
 | Intended files | qa/c5_wheel_metadata/wheel_archive_inspector_v2.py, test_wheel_archive_inspector_v2.py, .github/workflows/c5-wheel-archive-v2-review.yml, journal/handoff/ledger and C5 implementation specification. |
 | Approval | Routine source/synthetic CI only. All 18 restricted approvals consumed/disarmed; no wheel GET, artifact retrieval, install, execution or production activation. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | Initial 45759402235 syntax failure corrected; 45759465395 Ubuntu 40+64 PASS and CLI refusal, Windows historical 40 PASS, v2 63/64 (ZipInfo normalized backslash). Repair inert fixture exact raw spelling only; replacement CI pending. |
+| Pending runs | None; exact v2 synthetic CI reconciled. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
-| Recovery action | Implement explicit-directory-only structural semantics and bounded specific refusal codes; preserve historical pinned code and prior evidence. Run legacy archive fixtures plus versioned positive/negative tests and CLI refusal; do not integrate live collector or claim actual wheel compatibility. Next versioned evidence/transport integration only after exact CI. |
+| Recovery action | Next source-only: versioned v2 receipt/notice evidence codec and refusal allowlist with exact schema, plan identity and directory count/digest binding; synthetic producer and independent verifier replay, preserve legacy pinned modules and five verified notices. Then review disabled remaining-only transport integration with strict residual caps and fresh approval proposal only after exact offline CI. No new wheel GET, artifact retrieval, install, execute or production activation. Actual prior refused member remains unknown; C5/G2/D unchanged. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
