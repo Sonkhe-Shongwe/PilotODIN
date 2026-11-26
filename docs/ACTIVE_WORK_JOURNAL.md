@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | READY |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 2e6d82cbffd35f52d2cd87a7412f8dafa3d181ed |
+| Observed starting HEAD | 448a10d185dc02a2204017f9a7caba07504d6fae |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | Revised C5-A/B development reproducibility and build safety; D prerequisites and P8 release-only allocation. No restricted acquisition, native, owner data, install, packaging, phase activation or release. |
-| Operation ID | C5-FINAL-PURE-REHEARSAL-PROPOSAL-20261126 |
-| Operation state | RECONCILED read-only bounded pure rehearsal proposal; exact 11 projected nodes; trusted existing interpreter/pytest availability not established. No dispatch. |
-| Intended files | Documentation-only checkpoint. Resolve existing trusted bootstrap and pure pytest closure or adapt to stdlib; exact separate execution approval. |
+| Operation ID | C5-STDLIB-REHEARSAL-20261126 |
+| Operation state | PREPARED detached standard-library rehearsal adaptation of exact eleven pure checks; no execution. |
+| Intended files | Detached QA tests, rehearsal entrypoint and draft template only; existing completion plan/production/workflows unchanged. |
 | Approval | Owner: "I approve the consolidated detached and disarmed executor implementation, including the identified guard corrections, reuse of existing standard verification tools, and sequential platform-local Stage A and Stage B verification. Both Windows and Linux must satisfy all existing acceptance criteria before final acceptance. No acquisition, installation, CI execution, native execution, live branch cutover or release is authorised. Proceed." Detached implementation preparation completed only; no transferable approval. 24 prior restricted approvals consumed/disarmed. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
 | Pending runs | None. #45840503532 acquisition SUCCESS; #45840727452 rehearsal SUCCESS and acquisition SKIPPED. |
 | Unpublished work | Detached corrected candidate ff9aa943df6f6364f897553a519a5be1b189a7d3; previous 05a9c74, 011cece and 605abd0 preserved. No ref advanced; owner-local tree untouched/uninspected. |
-| Recovery action | [bounded pure rehearsal proposal and bootstrap evidence](./PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md#26-november--c5-bounded-pure-rehearsal-proposal-and-bootstrap-evidence). Exact candidate ff9aa94 unchanged. Do not dispatch or acquire merely to check pytest availability; prefer standard-library adaptation if existing verified environment cannot qualify. Separate exact approval before any execution. |
+| Recovery action | Adapt exact ff9aa94 pure checks without pytest dependency; retain original native fixture semantics, verify exact tree and disarm. |
 | Resume after closure | D only after revised C5 source closure, G2 resolution and separately approved scope; every native prerequisite before its use. P8 release-only obligations retained; installer frozen. |
 
 ## Prior operation
