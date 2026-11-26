@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-PORTABLE-DOCKER-TERMINFO-POLICY-ONCE-20261126",
-    "parent_sha": "6e14f1a850104073e7d084751e131efeb2d2f974",
-    "previous_snapshot_sha": "abe05e8e9ffafbf9716f6ee6cc79474b277b80d3",
-    "scope": "Reconcile one-use terminfo policy attempt refused before staging and restore exact false guard",
+    "operation_id": "C5-RUNNER-20261116-133-READONLY-REVIEW-20261127",
+    "parent_sha": "514e16d4db63a2f9d3ff370fe2145d3872d433cf",
+    "previous_snapshot_sha": "514e16d4db63a2f9d3ff370fe2145d3872d433cf",
+    "scope": "Read-only exact refused runner image documentation/host/toolchain/Docker/isolation review; no justified finite policy amendment",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "27-november--c5-finite-linux-terminfo-attempt-refused-unreviewed-runner-before-staging",
-      "blob_sha": "9c79c80d97a50bd5cd841c66bb67dc1f74f9227e",
-      "start_line": 2782,
-      "end_line": 2784
+      "anchor": "27-november--c5-refused-runner-202611161331-read-only-review-insufficient-for-finite-policy-amendment",
+      "blob_sha": "cf173c03100cb86109f13a0373f3b744b6265279",
+      "start_line": 2786,
+      "end_line": 2788
     }
   },
   "product": {
@@ -119,14 +119,21 @@
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
     "status": "BLOCKED",
     "scope": "C-D08 revised C5-A/B development reproducibility and build safety only; D retains native prerequisites, P8 release-only",
-    "blocker": "Exact terminfo candidate 76e60bc2 not exercised: runner 20261116.133.1 refused before staging. Complete archive inventory/accounting/receipt still missing; no fresh restricted execution authority. Finite image policy unchanged.",
-    "next_action": "Obtain owner decision for a read-only review of specifically observed runner 20261116.133.1 and, only if supported, an inert finite-policy proposal; alternatively fresh distinct one-use attempt under unchanged two-image policy with unique operation marker and exact candidate preparation. No automatic rerun, image policy amendment, acquisition or activation. Any proposed changed policy requires explicit owner approval, exact integrated verification and separate fresh execution authority.",
+    "blocker": "Exact terminfo candidate 76e60bc2 remains unexercised; 20261116.133.1 exact authoritative manifest not recovered and required tool/engine/isolation evidence absent. No justified finite-image policy expansion; existing two-image policy unchanged and no restricted authority.",
+    "next_action": "Obtain authoritative exact 20261116.133.1 manifest/source evidence before any changed policy proposal, or owner decision to prepare a fresh distinct inert candidate under unchanged two-image policy with unique operation marker, followed by separate fresh exact execution authority. No automatic rerun or alternative host qualification method; separate explicit approval required for any changed evidence/trust method.",
     "next_action_kind": "OWNER_DECISION",
     "after": [
-      "After evidence-supported owner decision, prepare exact fresh inert integrated candidate or unchanged-policy new unique marker; verify source and all pins; fresh one-use execution authority required, full 19-method gate and preflights before acquisition. No replay.",
+      "After fresh authorised inert preparation, verify exact source and pins; fresh one-use execution authority required, full 19-method gate and all preflights before acquisition. Refuse unapproved images, no replay or fallback.",
       "Complete C5 rows 5–7 and row 8 only on qualifying evidence; D after C5 closure, G2 resolution and separate authority."
     ],
     "read": [
+      {
+        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
+        "anchor": "27-november--c5-refused-runner-202611161331-read-only-review-insufficient-for-finite-policy-amendment",
+        "blob_sha": "cf173c03100cb86109f13a0373f3b744b6265279",
+        "start_line": 2786,
+        "end_line": 2788
+      },
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "27-november--c5-finite-linux-terminfo-attempt-refused-unreviewed-runner-before-staging",
@@ -431,17 +438,17 @@
     ]
   },
   "operation": {
-    "id": "C5-PORTABLE-DOCKER-TERMINFO-POLICY-ONCE-20261126",
+    "id": "C5-RUNNER-20261116-133-READONLY-REVIEW-20261127",
     "state": "RECONCILED",
-    "starting_sha": "c6c3a7ff2df68eb88f3c5ea91b0c5e7a1f7811b1",
-    "outcome": "Run 45902300063 attempt 1/job 140190741362 terminal FAILURE unreviewed runner image 20261116.133.1 before staging; all staged source, 19-method suite, Docker, acquisition, inspection and final receipt skipped/not reached. No runtime terminfo result. Authority consumed; false guard restored.",
+    "starting_sha": "514e16d4db63a2f9d3ff370fe2145d3872d433cf",
+    "outcome": "Exact 20261116.133.1 runner manifest/tag/branch and commit not recovered; approved two manifests reverified; required actual host/tool/Docker/isolation evidence absent; no policy amendment or candidate prepared, no execution or acquisition; disarm run 45902416663 skipped.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "27-november--c5-finite-linux-terminfo-attempt-refused-unreviewed-runner-before-staging",
-      "blob_sha": "9c79c80d97a50bd5cd841c66bb67dc1f74f9227e",
-      "start_line": 2782,
-      "end_line": 2784
+      "anchor": "27-november--c5-refused-runner-202611161331-read-only-review-insufficient-for-finite-policy-amendment",
+      "blob_sha": "cf173c03100cb86109f13a0373f3b744b6265279",
+      "start_line": 2786,
+      "end_line": 2788
     }
   },
   "authority": {
