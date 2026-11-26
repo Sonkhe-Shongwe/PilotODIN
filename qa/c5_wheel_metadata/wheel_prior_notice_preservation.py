@@ -16,7 +16,7 @@ import tempfile
 from contextlib import nullcontext
 import zipfile
 
-ARMED=False
+ARMED=True
 ROOT=Path(__file__).resolve().parents[2]
 DIR='qa/c5_wheel_metadata/'
 SELF=DIR+'wheel_prior_notice_preservation.py'
