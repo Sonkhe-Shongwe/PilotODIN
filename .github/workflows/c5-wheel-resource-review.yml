@@ -1,0 +1,35 @@
+name: C5 final driver bounded resource review
+on:
+  push:
+    branches: [feature/live-dev-workspace-20261023]
+    paths:
+      - qa/c5_wheel_metadata/benchmark_wheel_hosted_final.py
+      - .github/workflows/c5-wheel-resource-review.yml
+permissions:
+  contents: read
+jobs:
+  resource:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Exact source and disarmed synthetic measurement
+        shell: bash
+        run: |
+          set -e
+          test "$(git rev-parse HEAD:qa/c5_wheel_metadata/wheel_hosted_final.py)" = c0c019c608660a93bcc88985b12f86e103926534
+          test "$(git rev-parse HEAD:.github/workflows/c5-wheel-hosted-final-review.yml)" = fb307867bcc7cd336a4f1ced979cab72ef4f7a74
+          test "$(git rev-parse HEAD:qa/c5_wheel_metadata/wheel_settlement_core.py)" = 263d2565d744f4e53289fb973ff0a205561e4a7c
+          test ! -e qa/c5_wheel_metadata/APPROVAL_WHEEL_POLICY_V3_HOSTED_20261126.txt
+          test ! -e qa/c5_wheel_metadata/APPROVAL_WHEEL_MISSING_HOSTED_20261126.txt
+          python --version
+          for scenario in stored dense notices63 boundaries; do
+            python -I -B qa/c5_wheel_metadata/benchmark_wheel_hosted_final.py "$scenario"
+          done
