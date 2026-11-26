@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | PREPARED |
+| State | BLOCKED |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | d7b0fd4703fc74febe2ba6e1776537dc22124fad |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | Revised C5-A/B development reproducibility and build safety; D prerequisites and P8 release-only allocation. No restricted acquisition, native, owner data, install, packaging, phase activation or release. |
 | Operation ID | C5-PORTABLE-CP311-DESIGN-20261126 |
-| Operation state | PREPARED: evaluate exact portable CPython candidates and publish design/decision only; no restricted operations issued. |
-| Intended files | Documentation-only journal preparation, then owning C5 specification, handoff and one ledger receipt. Preserve exact detached 5e149a0 and all workflows; no source activation. |
+| Operation state | RECONCILED DESIGN COMPLETE; exact two portable archive candidates, verified publisher release metadata, independent signature/data-only/extracted-file/compatibility design and projected 176-use budget documented. No code or workflow change; no execution/acquisition. Exact asset signatures, independently trusted verifier, notice/linkage and actual compatibility unresolved. |
+| Intended files | Terminal documentation-only checkpoint: C5 owning specification, handoff, journal, C ledger. Next exact bounded disarmed data-only provenance evidence preparation; no acquisition until fresh explicit approval. |
 | Approval | Owner: "I approve the evaluation and design of the pinned portable CPython 3.11.18 provenance route for Windows and Linux isolated development verification. Preserve independent provenance, exact file integrity, licensing and compatibility requirements. No acquisition, installation, execution, production selection or live branch cutover is authorised. Proceed with preparation." Design only; 25 restricted approvals consumed/disarmed; zero active restricted approvals. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
 | Pending runs | None for rehearsal; #45862485546 SUCCESS, one job and one attempt. Isolated branch activation removed, branch query exactly one run. |
 | Unpublished work | 5e149a034c7bb37dd3afe4945026d1a581af3ed3 remains off live development branch; reachable in isolated QA ancestry. Owner-local tree untouched/uninspected. |
-| Recovery action | Reconcile prepared documentation HEAD and complete bounded portable provenance design, including independently verified publisher identity, exact archive/file integrity, marker/ABI compatibility, applicable notices, immutable source pins and revised projected budgets. Stop before acquisition, installation, execution or any live code cutover. Preserve previous source, all acceptance predicates and restrictions. |
+| Recovery action | [Portable CP311 design](./PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md#portable-cp311-provenance-route-owner-approved-evaluationdesign-26-november-2026). Prepare exact minimal two-archive data-only evidence proposal and separately capped signed metadata, verifier/root/builder trust and redirect scope; no interpreter execution. Preserve historic 174-use plan and 11/11 pure result, all restrictions, no automatic source/production selection or activation. If provenance cannot be independently verified, refuse. |
 | Resume after closure | D only after revised C5 source closure, G2 resolution and separately approved scope; every native prerequisite before its use. P8 release-only obligations retained; installer frozen. |
 
 ## Prior operation
