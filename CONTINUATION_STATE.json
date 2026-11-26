@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-DOCKER-INTEGRATED-SOURCE-PREPARATION-20261126",
-    "parent_sha": "bae34d67cc8b13611a97a23d54ded78bd0d25496",
-    "previous_snapshot_sha": "bae34d67cc8b13611a97a23d54ded78bd0d25496",
-    "scope": "Owner-approved Docker boundary, exact detached integrated inert source and activation proposal, partial pure tests; no execution",
-    "state": "RECONCILED",
+    "operation_id": "C5-PORTABLE-DOCKER-ONCE-20261126",
+    "parent_sha": "1432f465808d26859e244ee676a1080d64afe3a5",
+    "previous_snapshot_sha": "1432f465808d26859e244ee676a1080d64afe3a5",
+    "scope": "Write-ahead exact owner-approved integrated Docker operation; no run yet",
+    "state": "PREPARED",
     "receipt": {
-      "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "26-november--c5-docker-integrated-source-preparation",
-      "blob_sha": "4bcc2e7c7f10bec23817381cdb8186e7cd2fb16b",
-      "start_line": 2718,
-      "end_line": 2720
+      "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
+      "anchor": "owner-approved-one-use-integrated-docker-execution",
+      "blob_sha": "50d6e57f6a4caec735a7f39b32f35b926a8f5262",
+      "start_line": 754,
+      "end_line": 756
     }
   },
   "product": {
@@ -117,11 +117,11 @@
   },
   "task": {
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
-    "status": "BLOCKED",
+    "status": "PREPARED",
     "scope": "C-D08 revised C5-A/B development reproducibility and build safety only; D retains native prerequisites, P8 release-only",
-    "blocker": "Exact integrated inert Docker candidate df35b97 prepared under owner-approved preparation-only trust boundary. Fresh one-use execution approval required; full pure suite, actual exact image/daemon/socket/rootfs/isolated preflight and receipt not established.",
-    "next_action": "Request combined explicit owner approval of exact df35b97 and one fresh bounded no-pull data-only integrated attempt under all documented safeguards. On approval record write-ahead, confirm exact template/11 source pins and existing disabled workflow/trigger map, activate by only two permitted template substitutions and expected-HEAD push. Full pure tests then Docker preflight before GET; reconcile actual first attempt, disarm, no replay.",
-    "next_action_kind": "OWNER_DECISION",
+    "blocker": "Integrated run not issued; verify exact activation diff and expected parent, then one conditional push.",
+    "next_action": "Replace existing disabled owned workflow with exact approved df35b97 template, changing only false job guard and expected-parent placeholder; verify exact live HEAD and diff, conditional non-force push once. Reconcile uncertainty before any retry.",
+    "next_action_kind": "RECONCILE",
     "after": [
       "Resolve actual integrated run and complete receipt if available; retain any refusal, no fallback or rerun without new authority. Complete source/synthetic regression and remaining evidence only if qualifying.",
       "Complete C5 rows 5–7 and row 8 exact regression/source closure; D only after C5 closure, G2 resolution and separate authority."
@@ -129,8 +129,15 @@
     "read": [
       {
         "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
+        "anchor": "owner-approved-one-use-integrated-docker-execution",
+        "blob_sha": "50d6e57f6a4caec735a7f39b32f35b926a8f5262",
+        "start_line": 754,
+        "end_line": 756
+      },
+      {
+        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
         "anchor": "owner-approved-docker-boundary-integrated-inert-candidate",
-        "blob_sha": "ce151ba32723c151f5fc21dd7876701de3f5ed8d",
+        "blob_sha": "50d6e57f6a4caec735a7f39b32f35b926a8f5262",
         "start_line": 742,
         "end_line": 752
       },
@@ -144,7 +151,7 @@
       {
         "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
         "anchor": "proposed-docker-local-rootfs-offline-boundary",
-        "blob_sha": "ce151ba32723c151f5fc21dd7876701de3f5ed8d",
+        "blob_sha": "50d6e57f6a4caec735a7f39b32f35b926a8f5262",
         "start_line": 724,
         "end_line": 740
       },
@@ -165,14 +172,14 @@
       {
         "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
         "anchor": "owner-approved-one-use-preflight-diagnostic",
-        "blob_sha": "ce151ba32723c151f5fc21dd7876701de3f5ed8d",
+        "blob_sha": "50d6e57f6a4caec735a7f39b32f35b926a8f5262",
         "start_line": 720,
         "end_line": 722
       },
       {
         "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
         "anchor": "bounded-preflight-only-diagnostic-proposal",
-        "blob_sha": "ce151ba32723c151f5fc21dd7876701de3f5ed8d",
+        "blob_sha": "50d6e57f6a4caec735a7f39b32f35b926a8f5262",
         "start_line": 712,
         "end_line": 718
       },
@@ -193,14 +200,14 @@
       {
         "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
         "anchor": "owner-approved-revised-image-one-use-execution",
-        "blob_sha": "ce151ba32723c151f5fc21dd7876701de3f5ed8d",
+        "blob_sha": "50d6e57f6a4caec735a7f39b32f35b926a8f5262",
         "start_line": 708,
         "end_line": 710
       },
       {
         "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
         "anchor": "exact-observed-ubuntu-image-revision-proposal",
-        "blob_sha": "ce151ba32723c151f5fc21dd7876701de3f5ed8d",
+        "blob_sha": "50d6e57f6a4caec735a7f39b32f35b926a8f5262",
         "start_line": 702,
         "end_line": 706
       },
@@ -214,28 +221,28 @@
       {
         "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
         "anchor": "owner-approved-one-use-portable-provenance-execution",
-        "blob_sha": "ce151ba32723c151f5fc21dd7876701de3f5ed8d",
+        "blob_sha": "50d6e57f6a4caec735a7f39b32f35b926a8f5262",
         "start_line": 698,
         "end_line": 700
       },
       {
         "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
         "anchor": "exact-inert-portable-provenance-activation-proposal",
-        "blob_sha": "ce151ba32723c151f5fc21dd7876701de3f5ed8d",
+        "blob_sha": "50d6e57f6a4caec735a7f39b32f35b926a8f5262",
         "start_line": 690,
         "end_line": 696
       },
       {
         "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
         "anchor": "owner-approved-limited-host-bootstrap-boundary",
-        "blob_sha": "ce151ba32723c151f5fc21dd7876701de3f5ed8d",
+        "blob_sha": "50d6e57f6a4caec735a7f39b32f35b926a8f5262",
         "start_line": 682,
         "end_line": 688
       },
       {
         "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
         "anchor": "owner-approved-c5-delivery-checklist-26-november-2026",
-        "blob_sha": "ce151ba32723c151f5fc21dd7876701de3f5ed8d",
+        "blob_sha": "50d6e57f6a4caec735a7f39b32f35b926a8f5262",
         "start_line": 273,
         "end_line": 298
       },
@@ -256,23 +263,48 @@
     ]
   },
   "operation": {
-    "id": "C5-DOCKER-INTEGRATED-SOURCE-PREPARATION-20261126",
-    "state": "RECONCILED",
-    "starting_sha": "bae34d67cc8b13611a97a23d54ded78bd0d25496",
-    "outcome": "Exact df35b97 integrated inert Docker source/activation proposal prepared, ten QA-only paths, 11/11 disarmed and active payload hashes matched; 4/4 exact snippet SHA256 and 28/28 pure assertions passed with stubbed need. Full source sandbox download blocked, full suite prepared not run and mandatory before driver. No Docker, acquisition or candidate CI.",
-    "reconcile_before_retry": false,
-    "receipt": {
-      "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "26-november--c5-docker-integrated-source-preparation",
-      "blob_sha": "4bcc2e7c7f10bec23817381cdb8186e7cd2fb16b",
-      "start_line": 2718,
-      "end_line": 2720
-    }
+    "id": "C5-PORTABLE-DOCKER-ONCE-20261126",
+    "state": "PREPARED",
+    "starting_sha": "1432f465808d26859e244ee676a1080d64afe3a5",
+    "scope": "One fresh first attempt of exact df35b97 integrated data-only verification, exact Ubuntu image 20261122.23.1 and local Docker 28.0.4; full disarmed pure tests, bounded rootfs and actual isolated preflights before first GET; zero registry pulls, original 9 GETs/122848440 body bytes/589824 header bytes/3 redirects, no retries, 25 minutes, exact owned cleanup and complete bounded receipt. No candidate/product execution, privileged container, OS/security changes, fallback, installation or release.",
+    "intended_paths": [
+      ".github/workflows/c5-portable-provenance-once.yml"
+    ],
+    "authority_ref": {
+      "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
+      "anchor": "owner-approved-one-use-integrated-docker-execution",
+      "blob_sha": "50d6e57f6a4caec735a7f39b32f35b926a8f5262",
+      "start_line": 754,
+      "end_line": 756,
+      "proposal_commit": "df35b972e0e32b33603e6c8be6d2ba190d8b84ba",
+      "owner_message": "I approve exact candidate df35b97 for one fresh bounded integrated no-pull Docker data-only verification attempt under all documented safeguards. Proceed."
+    },
+    "expected_evidence": "Exact first-attempt run/job; full pure suite, Docker engine/rootfs/import and actual offline preflight results, acquisition accounting and exact owned cleanup, complete receipt reconstruction with both hashes before use; any refusal retained.",
+    "recovery": "Inspect branch, exact activation commit and run before retry; never replay uncertain or consumed approval. Disarm exact owned workflow with expected HEAD. No alternate image, isolation, acquisition or fallback. If still active preserve exact run identity and reconcile on next turn; no replay.",
+    "reconcile_before_retry": true,
+    "approval_id": "C5-PORTABLE-DOCKER-ONCE-20261126",
+    "run_attempt": 1,
+    "proposal_commit": "df35b972e0e32b33603e6c8be6d2ba190d8b84ba"
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next.",
     "preparation_only": "Owner approved consolidated shared-bundle disarmed acquisition-before-signature source and exact limited existing host bootstrap; owner approved proposed limited local Docker control-plane and host-derived rootfs trust/no-pull isolation method for preparation only. Authentication before extraction/use; no Docker invocation, acquisition, verification execution, installation or live cutover authorised.",
-    "restricted_active": [],
+    "restricted_active": [
+      {
+        "id": "C5-PORTABLE-DOCKER-ONCE-20261126",
+        "state": "APPROVED",
+        "source_sha": "df35b972e0e32b33603e6c8be6d2ba190d8b84ba",
+        "scope": "One fresh first attempt of exact df35b97 integrated data-only verification, exact Ubuntu image 20261122.23.1 and local Docker 28.0.4; full disarmed pure tests, bounded rootfs and actual isolated preflights before first GET; zero registry pulls, original 9 GETs/122848440 body bytes/589824 header bytes/3 redirects, no retries, 25 minutes, exact owned cleanup and complete bounded receipt. No candidate/product execution, privileged container, OS/security changes, fallback, installation or release.",
+        "owner_authority_ref": {
+          "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
+          "anchor": "owner-approved-one-use-integrated-docker-execution",
+          "blob_sha": "50d6e57f6a4caec735a7f39b32f35b926a8f5262",
+          "start_line": 754,
+          "end_line": 756
+        },
+        "reconcile_before_retry": true
+      }
+    ],
     "consumed_disarmed_count": 31,
     "consumed_history": {
       "commit": "b9864b70fb9bb5a72d0f79c37f15b94100722192",
@@ -292,7 +324,7 @@
       "release",
       "replay of consumed or uncertain approval"
     ],
-    "guards": "31 consumed/disarmed; existing diagnostic workflow false guard and disarm skip verified. Exact inert df35b97 Docker candidate not execution-approved, zero runs. No Docker invocation/acquisition; new explicit one-use approval required. Three C1/C2 workflows and OWNED_RESOURCE_ENABLED false; three consumed variables owner cleanup unverified.",
+    "guards": "31 earlier approvals consumed/disarmed; C1/C2 guards unchanged. One exact integrated Docker operation prepared; existing owned workflow false guard; no replay or fallback. Three consumed variables owner cleanup unverified.",
     "last_consumed": {
       "id": "C5-PORTABLE-PREFLIGHT-DIAGNOSTIC-ONCE-20261126",
       "source_sha": "1e5267ff3ac7e39f02c62ec5dbce1be5ff32689e",
