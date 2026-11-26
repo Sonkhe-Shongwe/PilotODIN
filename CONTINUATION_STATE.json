@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-PORTABLE-DOCKER-CASE-DIAGNOSTIC-ONCE-20261126",
-    "parent_sha": "80d812e06b36c9791565aa1731672ad706b4dd2e",
-    "previous_snapshot_sha": "87941d0b9b9f362bd9a7138330a6653cf94c82e5",
-    "scope": "Reconcile exact one-use case diagnostic attempt, preserve identified authenticated Linux terminfo pair and all passed gates, disarm exact workflow",
+    "operation_id": "C5-NCURSES-TERMINFO-CASE-POLICY-PREP-20261126",
+    "parent_sha": "84900e5b0fe6302091e60d1d4ff3b911b68144e8",
+    "previous_snapshot_sha": "84900e5b0fe6302091e60d1d4ff3b911b68144e8",
+    "scope": "Read-only ncurses 6.5 source review and inert finite exact Linux terminfo case policy proposal; preserve live refusal",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "26-november--c5-authenticated-linux-terminfo-case-collision-identified-diagnostic-attempt-refused-and-disarmed",
-      "blob_sha": "b864a1ca6426f28a4ad93f45e405dc513b205129",
-      "start_line": 2770,
-      "end_line": 2772
+      "anchor": "26-november--c5-pinned-ncurses-terminfo-case-sensitive-data-only-inventory-proposal",
+      "blob_sha": "7f49013bff41ae3a84fce4d9e5c77c7d63891c75",
+      "start_line": 2774,
+      "end_line": 2776
     }
   },
   "product": {
@@ -117,16 +117,23 @@
   },
   "task": {
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
-    "status": "READY",
+    "status": "BLOCKED",
     "scope": "C-D08 revised C5-A/B development reproducibility and build safety only; D retains native prerequisites, P8 release-only",
-    "blocker": "Runtime BLOCKED: authenticated Linux portable archive MEMBER_CASE_COLLISION at python/share/terminfo/2/2621A vs python/share/terminfo/2/2621a; exact pair retained, complete inventory, final accounting and receipt unavailable. No established legitimate exception or authority to waive guard.",
-    "next_action": "Read-only review exact pinned publisher ncurses/terminfo build and public source/layout for the identified Linux case pair. Determine whether an exact, narrowly scoped exception is justifiable without weakening Windows case-insensitive extraction, exact duplicate, traversal, link and containment guards. Prepare inert proposal only if justified; obtain explicit owner decision for changed collision policy/evidence scope, then separate fresh exact execution authority. No new acquisition, activation or replay.",
-    "next_action_kind": "SOURCE_PREPARATION",
+    "blocker": "Authenticated Linux terminfo pair explained by ncurses 6.5 source; complete archive inventory/accounting still missing. Inert finite exact Linux data-only collision policy candidate 8cc1a6965fb6983d2fa0f4e07e603988d57ff059 requires explicit changed policy/receipt decision. No new restricted approval.",
+    "next_action": "Obtain explicit owner approval of proposed finite exact Linux data-only terminfo inventory policy and bounded success-receipt projection in 8cc1a696; no Windows/gh collision waiver, no extraction authority or other safeguard change. Then prepare exact complete inert integrated candidate; regenerate template and manifest, review receipt consumers and verify all pins/full 19-method gate before separate fresh exact one-use execution authority.",
+    "next_action_kind": "OWNER_DECISION",
     "after": [
-      "Review evidence-supported inert proposal and explicit owner decision before any changed case policy or fresh exact verification; do not infer complete inventory or legitimate exception from first collision alone.",
-      "Complete C5 rows 5–7 and row 8 only on qualifying evidence; D only after C5 closure, G2 resolution and separate authority."
+      "Only after explicit policy approval and fresh exact execution authority, run once within unchanged safeguards, retain observed accepted collision pairs or first unapproved collision, reconcile final accounting/receipt and disarm. No replay or assumed cleanup.",
+      "Complete C5 rows 5–7 and row 8 only on qualifying evidence; D after C5 closure, G2 resolution and separate authority."
     ],
     "read": [
+      {
+        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
+        "anchor": "26-november--c5-pinned-ncurses-terminfo-case-sensitive-data-only-inventory-proposal",
+        "blob_sha": "7f49013bff41ae3a84fce4d9e5c77c7d63891c75",
+        "start_line": 2774,
+        "end_line": 2776
+      },
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "26-november--c5-authenticated-linux-terminfo-case-collision-identified-diagnostic-attempt-refused-and-disarmed",
@@ -396,17 +403,17 @@
     ]
   },
   "operation": {
-    "id": "C5-PORTABLE-DOCKER-CASE-DIAGNOSTIC-ONCE-20261126",
+    "id": "C5-NCURSES-TERMINFO-CASE-POLICY-PREP-20261126",
     "state": "RECONCILED",
-    "starting_sha": "03b173e21bbb61ef92dd7d867f9b547ae352e048",
-    "outcome": "Run 45898361507 attempt 1/job 140177791357 terminal FAILURE MEMBER_CASE_COLLISION; 18/18 synthetic and all preflights, both offline verifier calls and 84/84 static readers passed. Exactly one bounded diagnostic identifies Linux SHA256 ef0764e884b5e123692281b91bf388f8ebfd0afb41d6a212bb4f2779e51abf0e pair python/share/terminfo/2/2621A and python/share/terminfo/2/2621a. No final receipt/accounting. One-use authority consumed; false guard restored.",
+    "starting_sha": "84900e5b0fe6302091e60d1d4ff3b911b68144e8",
+    "outcome": "Confirmed intentional same-entry HP2621 aliases from pinned upstream source; 25 leaf groups and eight directory groups derived; detached proposal 8cc1a6965fb6983d2fa0f4e07e603988d57ff059; corrected isolated synthetic method PASS, 3/3 snippet hashes matched; full 19-method gate NOT RUN, runtime untested, policy and execution unapproved.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "26-november--c5-authenticated-linux-terminfo-case-collision-identified-diagnostic-attempt-refused-and-disarmed",
-      "blob_sha": "b864a1ca6426f28a4ad93f45e405dc513b205129",
-      "start_line": 2770,
-      "end_line": 2772
+      "anchor": "26-november--c5-pinned-ncurses-terminfo-case-sensitive-data-only-inventory-proposal",
+      "blob_sha": "7f49013bff41ae3a84fce4d9e5c77c7d63891c75",
+      "start_line": 2774,
+      "end_line": 2776
     }
   },
   "authority": {
@@ -514,6 +521,14 @@
       {
         "sha": "05866bc9bcbf405a6c3da9e403c745164d5707a6",
         "scope": "Complete exact inert integrated case-collision diagnostic candidate; four QA files vs 72e1142, 22/22 pins and ten exact source matches, 34 staging/37 total, one exact mocked test PASS, full 18-method suite NOT RUN, zero candidate runs; no new workflow or product changes; exact one-use execution requires fresh owner approval."
+      },
+      {
+        "sha": "494e478fa2099592480cd1adade399c0c272ec15",
+        "scope": "Initial inert finite Linux terminfo proposal; isolated synthetic fixture failed because unlisted leaf collision generated; retained history, superseded by test-only corrected 8cc1a696; no activation."
+      },
+      {
+        "sha": "8cc1a6965fb6983d2fa0f4e07e603988d57ff059",
+        "scope": "Corrected inert two-file finite exact Linux terminfo case-policy proposal; one isolated mocked test PASS, three exact snippet SHA256 matches; full 19-method gate NOT RUN, stale inherited template/manifest, no candidate runs, changed policy and separate execution require fresh authority."
       }
     ]
   },
