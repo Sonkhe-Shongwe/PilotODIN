@@ -1,0 +1,74 @@
+name: C5 portable attestation diagnostic one use
+on:
+  push:
+    branches: [qa/c5-portable-attestation-diagnostic-20261126]
+    paths: ['.github/workflows/c5-portable-attestation-diagnostic-one-use.yml']
+permissions: {}
+jobs:
+  diagnostic-only:
+    if: ${{ github.event.before == '64bb85676f50ec507e8d0614f1cf9293f04c9291' && !github.event.created && github.run_attempt == 1 }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: One anonymous error diagnostic GET
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          export PATH=/usr/bin:/bin LC_ALL=C
+          [[ "$GITHUB_RUN_ATTEMPT" == 1 && "$GITHUB_REF" == refs/heads/qa/c5-portable-attestation-diagnostic-20261126 ]]
+          scratch="$(mktemp -d "$RUNNER_TEMP/c5-attestation-diagnostic.XXXXXXXX")"
+          trap 'rm -rf -- "$scratch"' EXIT
+          cd "$scratch"
+          for t in curl jq sha256sum head wc mkfifo grep awk tr; do
+            [[ -x "/usr/bin/$t" ]] || { echo "DIAG_REFUSED missing tool"; exit 1; }
+          done
+          read -r _ ver _ < <(/usr/bin/curl --version)
+          [[ "$ver" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]
+          (( BASH_REMATCH[1] > 8 || (BASH_REMATCH[1] == 8 && BASH_REMATCH[2] >= 4) )) || { echo 'DIAG_REFUSED streaming cap unavailable'; exit 1; }
+          echo "DIAG_BOOTSTRAP curl=$ver jq=$(/usr/bin/jq --version) source=$GITHUB_SHA"
+          mkfifo headers.pipe
+          head -c 16384 <headers.pipe >headers.txt & hpid=$!
+          rc=0
+          metrics="$(env -i PATH=/usr/bin:/bin LC_ALL=C HOME="$scratch" /usr/bin/curl -q --silent --noproxy '*' --proxy '' --proto '=https' --proto-redir '=https' --max-redirs 0 --retry 0 --http1.1 --connect-timeout 10 --max-time 30 --max-filesize 49152 --header 'Accept: application/vnd.github+json' --header 'X-GitHub-Api-Version: 2026-03-10' --header 'Accept-Encoding: identity' --output body.json --dump-header headers.pipe --write-out '%{http_code} %{size_download}' 'https://api.github.com/repos/astral-sh/python-build-standalone/attestations/sha256:3e4a35e3c238e5090d36bf95c041d9052bc82d6e298cb912ba7f70f6c66cf81a?per_page=10&predicate_type=provenance' 2>/dev/null)" || rc=$?
+          if (( rc != 0 )); then kill "$hpid" 2>/dev/null || true; wait "$hpid" 2>/dev/null || true; else wait "$hpid"; fi
+          rm -f headers.pipe
+          n=0; [[ ! -f body.json ]] || n="$(wc -c <body.json)"
+          h="$(wc -c <headers.txt)"
+          read -r code downloaded <<<"$metrics"
+          [[ "$code" =~ ^[0-9]{3}$ && "$downloaded" =~ ^[0-9]+$ ]] || { echo "DIAG_REFUSED transport"; exit 1; }
+          echo "DIAG_TRANSFER status=$code body_bytes=$n header_bytes=$h curl_exit=$rc"
+          (( rc == 0 && n > 0 && n <= 49152 && h < 16384 && downloaded == n )) || { echo "DIAG_REFUSED bounds_or_transport"; exit 1; }
+          if grep -Eiq '^(location):' headers.txt; then echo "DIAG_REFUSED redirect"; exit 1; fi
+          if grep -Ei '^content-encoding:' headers.txt | grep -Eivq '^content-encoding:[[:space:]]*identity[[:space:]]*$'; then echo "DIAG_REFUSED encoding"; exit 1; fi
+          [[ "$(grep -Eic "^HTTP/1\.[01] $code([[:space:]]|$)" headers.txt)" == 1 ]]
+          lengths="$(grep -Ei '^content-length:' headers.txt | tr -d '\r' | awk '{print $2}' || true)"
+          transfers="$(grep -Ei '^transfer-encoding:' headers.txt | tr -d '\r' | awk '{print tolower($2)}' || true)"
+          if [[ -n "$lengths" ]]; then [[ "$lengths" =~ ^[0-9]+$ && "$lengths" == "$n" && -z "$transfers" ]]; else [[ "$transfers" == chunked ]]; fi
+          echo "DIAG_BODY_SHA256 $(sha256sum body.json | awk '{print $1}')"
+          for key in x-ratelimit-limit x-ratelimit-remaining x-ratelimit-used x-ratelimit-reset retry-after; do
+            v="$(awk -v k="$key" 'tolower($1)==k":" { sub(/\r$/,""); sub(/^[^:]+:[ \t]*/,""); print }' headers.txt)"
+            if [[ "$v" =~ ^[0-9]{1,12}$ ]]; then echo "DIAG_HEADER $key=$v"; elif [[ -z "$v" ]]; then echo "DIAG_HEADER $key=ABSENT"; else echo "DIAG_HEADER $key=OTHER_OR_AMBIGUOUS"; fi
+          done
+          v="$(awk 'tolower($1)=="x-ratelimit-resource:" { sub(/\r$/,""); sub(/^[^:]+:[ \t]*/,""); print }' headers.txt)"
+          case "$v" in core|search|graphql|integration_manifest|code_search|dependency_snapshots|scim|source_import|code_scanning_upload|actions_runner_registration) echo "DIAG_HEADER x-ratelimit-resource=$v";; "") echo "DIAG_HEADER x-ratelimit-resource=ABSENT";; *) echo "DIAG_HEADER x-ratelimit-resource=OTHER";; esac
+          # Never print arbitrary upstream text, credentials, bundle URLs, or response JSON.
+          # Classify the exact message via fixed output labels, even on HTTP error.
+          jq -ers '
+            if length!=1 or (.[0]|type)!="object" then error("shape") else .[0] end |
+            if (.message|type)=="string" then
+              .message|ascii_downcase |
+              if test("secondary rate limit|abuse detection") then "SECONDARY_RATE_LIMIT"
+              elif test("api rate limit exceeded|primary rate limit|rate limit exceeded") then "PRIMARY_RATE_LIMIT_MESSAGE"
+              elif test("resource not accessible by integration") then "RESOURCE_NOT_ACCESSIBLE_BY_INTEGRATION"
+              elif test("resource not accessible by personal access token") then "RESOURCE_NOT_ACCESSIBLE_BY_TOKEN"
+              elif test("requires authentication|authentication required|must be authenticated") then "AUTHENTICATION_REQUIRED"
+              elif test("bad credentials") then "BAD_CREDENTIALS"
+              elif test("api version|unsupported version") then "API_VERSION_ERROR"
+              elif test("not found") then "NOT_FOUND"
+              elif test("forbidden") then "GENERIC_FORBIDDEN"
+              else "OTHER_MESSAGE_REDACTED" end
+            elif (.attestations|type)=="array" then "ATTESTATION_LIST_PRESENT"
+            else "NO_RECOGNISED_MESSAGE" end' body.json >classification.txt 2>/dev/null || { echo "DIAG_CLASS INVALID_JSON_OR_SHAPE"; exit 1; }
+          echo "DIAG_CLASS $(cat classification.txt)"
+          echo 'C5_DIAGNOSTIC_COMPLETE one_request no_auth no_follow no_software no_interpreter'
