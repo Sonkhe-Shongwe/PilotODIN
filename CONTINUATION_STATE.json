@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-PORTABLE-PROVENANCE-IMAGE-20261122-ONCE-20261126",
-    "parent_sha": "0768c786e5106b65593338d5742568ba90db037b",
-    "previous_snapshot_sha": "0768c786e5106b65593338d5742568ba90db037b",
-    "scope": "Reconcile exact failed revised-image first attempt; disarm and preserve evidence",
+    "operation_id": "C5-PORTABLE-PREFLIGHT-DIAGNOSTIC-PROPOSAL-20261126",
+    "parent_sha": "a32e0352a5ab681dea072ab2d484590d3972b7d9",
+    "previous_snapshot_sha": "a32e0352a5ab681dea072ab2d484590d3972b7d9",
+    "scope": "Read-only failure review and detached inert diagnostic proposal; no execution",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "26-november--c5-revised-image-subprocess-refusal",
-      "blob_sha": "3789be8ab2a8878ea5120d1631c74f0fda49f962",
-      "start_line": 2702,
-      "end_line": 2704
+      "anchor": "26-november--c5-preflight-only-diagnostic-preparation",
+      "blob_sha": "29bce380ef004e355c1de3b7e9acf73c0a3619e6",
+      "start_line": 2706,
+      "end_line": 2708
     }
   },
   "product": {
@@ -119,67 +119,81 @@
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
     "status": "BLOCKED",
     "scope": "C-D08 revised C5-A/B development reproducibility and build safety only; D retains native prerequisites, P8 release-only",
-    "blocker": "Correct image and staging succeeded but exact driver refused a subprocess (PROCESS_REFUSED); likely first mandatory offline namespace preflight, not established. No completion receipt, exact failed stage or transfer accounting; approval consumed.",
-    "next_action": "Review exact driver/process failure and hosted unprivileged namespace constraints read-only; identify a minimal fail-closed stage-specific diagnostic proposal if necessary. No replay, sudo, OS/security changes, alternate isolation or acquisition without explicit authority. Preserve original mandatory namespace and acceptance gates.",
-    "next_action_kind": "MISSING_EVIDENCE",
+    "blocker": "Prior subprocess stage unknown; exact diagnostic-only 1e5267f proposal requires fresh explicit approval. Actual namespace capability unverified.",
+    "next_action": "Request explicit approval of exact 1e5267f one-use hosted preflight diagnostic, zero acquisition, original image and namespace constraints, five-minute limit. If granted record write-ahead, verify exact pins/trigger scope, conditional activation, reconcile stage evidence and disarm; no acquisition authority.",
+    "next_action_kind": "OWNER_DECISION",
     "after": [
-      "Resolve actual failed capability with bounded approved evidence; only then seek any distinct required owner decision and exact one-use authority for remaining verification.",
+      "Resolve actual stage refusal with diagnostic evidence; any different isolation method or full provenance run requires distinct authority.",
       "Complete C5 rows 5–7 and row 8 exact regression/source closure; D only after C5 closure, G2 resolution and separate authority."
     ],
     "read": [
       {
+        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
+        "anchor": "bounded-preflight-only-diagnostic-proposal",
+        "blob_sha": "4bfe6124d4a77064615297fd51e3326c4e816f26",
+        "start_line": 712,
+        "end_line": 718
+      },
+      {
+        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
+        "anchor": "26-november--c5-preflight-only-diagnostic-preparation",
+        "blob_sha": "29bce380ef004e355c1de3b7e9acf73c0a3619e6",
+        "start_line": 2706,
+        "end_line": 2708
+      },
+      {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "26-november--c5-revised-image-subprocess-refusal",
-        "blob_sha": "3789be8ab2a8878ea5120d1631c74f0fda49f962",
+        "blob_sha": "29bce380ef004e355c1de3b7e9acf73c0a3619e6",
         "start_line": 2702,
         "end_line": 2704
       },
       {
         "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
         "anchor": "owner-approved-revised-image-one-use-execution",
-        "blob_sha": "438d905c34c6626a19c5103aa5a5dc470da1ef4a",
+        "blob_sha": "4bfe6124d4a77064615297fd51e3326c4e816f26",
         "start_line": 708,
         "end_line": 710
       },
       {
         "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
         "anchor": "exact-observed-ubuntu-image-revision-proposal",
-        "blob_sha": "438d905c34c6626a19c5103aa5a5dc470da1ef4a",
+        "blob_sha": "4bfe6124d4a77064615297fd51e3326c4e816f26",
         "start_line": 702,
         "end_line": 706
       },
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "26-november--c5-runner-image-revision-read-only-review",
-        "blob_sha": "3789be8ab2a8878ea5120d1631c74f0fda49f962",
+        "blob_sha": "29bce380ef004e355c1de3b7e9acf73c0a3619e6",
         "start_line": 2698,
         "end_line": 2700
       },
       {
         "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
         "anchor": "owner-approved-one-use-portable-provenance-execution",
-        "blob_sha": "438d905c34c6626a19c5103aa5a5dc470da1ef4a",
+        "blob_sha": "4bfe6124d4a77064615297fd51e3326c4e816f26",
         "start_line": 698,
         "end_line": 700
       },
       {
         "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
         "anchor": "exact-inert-portable-provenance-activation-proposal",
-        "blob_sha": "438d905c34c6626a19c5103aa5a5dc470da1ef4a",
+        "blob_sha": "4bfe6124d4a77064615297fd51e3326c4e816f26",
         "start_line": 690,
         "end_line": 696
       },
       {
         "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
         "anchor": "owner-approved-limited-host-bootstrap-boundary",
-        "blob_sha": "438d905c34c6626a19c5103aa5a5dc470da1ef4a",
+        "blob_sha": "4bfe6124d4a77064615297fd51e3326c4e816f26",
         "start_line": 682,
         "end_line": 688
       },
       {
         "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
         "anchor": "owner-approved-c5-delivery-checklist-26-november-2026",
-        "blob_sha": "438d905c34c6626a19c5103aa5a5dc470da1ef4a",
+        "blob_sha": "4bfe6124d4a77064615297fd51e3326c4e816f26",
         "start_line": 273,
         "end_line": 298
       },
@@ -193,24 +207,24 @@
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "26-november--c5-one-use-portable-provenance-image-refusal",
-        "blob_sha": "3789be8ab2a8878ea5120d1631c74f0fda49f962",
+        "blob_sha": "29bce380ef004e355c1de3b7e9acf73c0a3619e6",
         "start_line": 2694,
         "end_line": 2696
       }
     ]
   },
   "operation": {
-    "id": "C5-PORTABLE-PROVENANCE-IMAGE-20261122-ONCE-20261126",
+    "id": "C5-PORTABLE-PREFLIGHT-DIAGNOSTIC-PROPOSAL-20261126",
     "state": "RECONCILED",
-    "starting_sha": "04f860ff88059d15da0e104760e9021815993229",
-    "outcome": "Exact approved run 45885206163 attempt 1/job 140134087234 failed PROCESS_REFUSED in final driver step after matching image and all staging passed. Exact failing subprocess/transfer count unverified; no receipt or acceptance. Approval consumed; false guard restored in checkpoint.",
+    "starting_sha": "a32e0352a5ab681dea072ab2d484590d3972b7d9",
+    "outcome": "Exact source review confirms ambiguous PROCESS_REFUSED; official namespace restriction evidence supports hypothesis only; inert 1e5267f diagnostic proposal prepared, three embedded payloads read back, zero runs. Prior failure and disarm verified.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "26-november--c5-revised-image-subprocess-refusal",
-      "blob_sha": "3789be8ab2a8878ea5120d1631c74f0fda49f962",
-      "start_line": 2702,
-      "end_line": 2704
+      "anchor": "26-november--c5-preflight-only-diagnostic-preparation",
+      "blob_sha": "29bce380ef004e355c1de3b7e9acf73c0a3619e6",
+      "start_line": 2706,
+      "end_line": 2708
     }
   },
   "authority": {
@@ -236,7 +250,7 @@
       "release",
       "replay of consumed or uncertain approval"
     ],
-    "guards": "30 consumed/disarmed including both portable attempts; portable workflow false job guard restored, exact parent/message retained, detached driver pins unset, no fallback. Three C1/C2 one-use workflows and OWNED_RESOURCE_ENABLED false; three consumed variables owner cleanup unverified.",
+    "guards": "30 consumed/disarmed; existing portable workflow false guard and disarm skip verified. Inert 1e5267f diagnostic proposal not approved, zero runs, no acquisition. Three C1/C2 workflows and OWNED_RESOURCE_ENABLED false; three consumed variables owner cleanup unverified.",
     "last_consumed": {
       "id": "C5-PORTABLE-PROVENANCE-IMAGE-20261122-ONCE-20261126",
       "source_sha": "393679c51c3752e2e6204ad77e57c229b25e7633",
@@ -248,7 +262,7 @@
       "receipt": {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "26-november--c5-revised-image-subprocess-refusal",
-        "blob_sha": "3789be8ab2a8878ea5120d1631c74f0fda49f962",
+        "blob_sha": "29bce380ef004e355c1de3b7e9acf73c0a3619e6",
         "start_line": 2702,
         "end_line": 2704
       }
@@ -278,6 +292,10 @@
       {
         "sha": "393679c51c3752e2e6204ad77e57c229b25e7633",
         "scope": "Inert observed-image revision only; five QA paths changed from c2264da, seven embedded payloads read-back exact, no workflow changes, zero runs; fresh owner approval required"
+      },
+      {
+        "sha": "1e5267ff3ac7e39f02c62ec5dbce1be5ff32689e",
+        "scope": "Inert preflight-only stage diagnostic; three added QA paths; three embedded payloads read-back exact; zero runs, fresh approval required"
       }
     ]
   },
