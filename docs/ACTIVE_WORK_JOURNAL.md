@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | READY |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 9ecfd3e02cf5a77b89a59f7a28ad35a9cc5a528e |
+| Observed starting HEAD | 487c2b1ad45dc6ffb4f6c4c8d1ba2780524dbf04 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | Revised C5-A/B development reproducibility and build safety; D prerequisites and P8 release-only allocation. No restricted acquisition, native, owner data, install, packaging, phase activation or release. |
 | Operation ID | C5-PDFIUM-TWO-WHEEL-EVIDENCE-ONCE-20261126 |
-| Operation state | RECONCILED SYNTHETIC_PASS; 9ecfd3e / #45836658676 attempt 1 SUCCESS, rehearsal 16/16, acquisition skipped; 68/68 static matches joined to 0458d55. Scope approval unconsumed; no live activation. |
+| Operation state | PREPARED; add narrow in-memory HTTPS transport and marker-only one-use gate, synthetic tests only; both live switches remain disabled. |
 | Intended files | qa/c5_pdfium/pdfium_evidence_draft.py; .github/workflows/c5-pdfium-evidence-draft.yml; canonical journal, handoff and C ledger. No product/dependency/lock edits. |
 | Approval | Owner explicitly stated: "I approve C5-PDFIUM-TWO-WHEEL-EVIDENCE-ONCE-20261126 as proposed in commit 0458d55. Maximum five HTTPS requests and 8994854 response bytes, zero retries. Preserve existing staging and activation safeguards. No installation, downloaded code execution, owner-data access, native application execution, installer generation or release. Proceed with bounded preparation." Approval unconsumed; exact activation not granted. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
 | Pending runs | None. Exact #45836658676 rehearsal 139967204093 SUCCESS, acquisition 139967206202 SKIPPED; all earlier restricted runs reconciled. |
 | Unpublished work | Owner-local tree uninspected; detached draft a64306a preserved historically, reviewed overlay published with added synthetic coverage. |
-| Recovery action | [Exact rehearsal and inventory reconciliation](./PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md#26-november--c5-pdfium-exact-disarmed-rehearsal-pass-and-caller-inventory-reconciliation). Implement narrow fixed-origin HTTPS transport and one-use gate in disarmed adapter, test synthetic response and activation refusals, verify exact new CI before proposing activation. Scope approval unconsumed; no live action. Preserve 11+8 direct QA callers and indirect checks, source/lock/production unchanged. |
+| Recovery action | Implement/review fixed plan transport and exact marker-only gate in existing QA adapter; publish only reviewed disarmed synthetic workflow, reconcile exact CI. No live authority; current preparation approval unconsumed. |
 | Resume after closure | D only after revised C5 source closure, G2 resolution and separately approved scope; every native prerequisite before its use. P8 release-only obligations retained; installer frozen. |
 
 ## Prior operation
