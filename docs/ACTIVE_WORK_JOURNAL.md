@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | VERIFYING |
+| State | READY |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 7e22408c449c809f42726898d5bd0e3eaa5252a1 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
 | Operation ID | C5-R2-DISCOVERY-INTEGRATION-20261126 |
-| Operation state | PUBLISHED candidate integrated discovery workflow and separate guarded frontdoors; exact synthetic checks pending. |
+| Operation state | RECONCILED: dedicated disarmed discovery integration; all exact synthetic jobs reconciled. Live execution disabled. |
 | Intended files | Existing final driver and tests, new discovery-only workflow with literal false live jobs and uploads, journal/handoff/ledger. |
 | Approval | Routine source/synthetic CI only. All 18 restricted approvals consumed/disarmed; no actual wheels, retrieval, installation, owner tree or execution. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | Exact final review and dedicated discovery review workflows expected; reconcile both by source SHA. All live jobs and uploads literal false. |
+| Pending runs | None; Exact [source 4fa436d](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/4fa436da1e426741c67b50ce9e2207315b0c5534); [full-evidence regression 45798480496](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45798480496): Ubuntu job 139835180215 SUCCESS 238 tests including five new integration tests, eleven prior CLI refusals. Full-evidence Windows job 139835179839 success; 238 tests observed, 5 new integration tests passed; CLI step successful. Collector 139835182131 and retriever 139835182466 SKIPPED. [Dedicated discovery 45798480480](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45798480480): Ubuntu 139835179503 and Windows 139835179998 SUCCESS, 47 final-driver tests per platform including five new integration tests (overlaps full regression, not unique count). Discover 139835182248 and verifier 139835182288 SKIPPED. Driver blob e0501942a15d61f50bb9f3429bdee3721456461b; test blob 1950ef0c9ff48e0a21dee0494b07baac41fc27a0; dedicated workflow 235e559087f54fceab2ca8e46ea1b5f644b64c5e; previous workflow unchanged fb307867bcc7cd336a4f1ced979cab72ef4f7a74. Both source arms false, no public review pin, four literal false guards in new workflow. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
-| Recovery action | Reconcile exact source and both synthetic workflows, no arm/marker/variables or real transfer. Distinct public discovery scope only. |
+| Recovery action | Next final prelaunch readiness and independent provisioning/disarm plan; resolve connector variable-write limitation and marker-trigger synthetic test isolation before exact one-use approval. No live acquisition, no raw-replay waiver or private architecture prerequisite. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
