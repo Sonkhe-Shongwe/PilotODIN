@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | PREPARED |
+| State | BLOCKED |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 7ccbd5121f95b6ed91afa9cd7e895cb5abf20feb |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | Revised C5-A/B development reproducibility and build safety; D prerequisites and P8 release-only allocation. No restricted acquisition, native, owner data, install, packaging, phase activation or release. |
 | Operation ID | C5-PORTABLE-ATTESTATION-LOOKUP-V2-ONCE-20261126 |
-| Operation state | PREPARED, not issued. Exact approved candidate 8b0069294b643f5dc7cdc3b2e8f017c3f4a3bf1a, workflow blob 6ac9261c37e8bb357bc70d8edea8f39793d06c7e, parent main 64bb85676f50ec507e8d0614f1cf9293f04c9291. Zero matching runs. Isolated branch qa/c5-portable-attestation-lookup-v2-20261126. |
-| Intended files | Write-ahead journal then isolated QA activation of sole approved workflow. Two literal digest GETs maximum, 1 MiB body and 64 KiB headers each, 30 seconds/request, five-minute job; no credentials, redirects, retries, pagination, bundle follow, checkout, installation or interpreter/product execution. Disarm after terminal result. |
-| Approval | Owner explicitly approves corrected one-use anonymous Windows/Linux metadata lookup at exact 8b0069294b643f5dc7cdc3b2e8f017c3f4a3bf1a, maximum two GETs, 2 MiB response bodies plus 128 KiB headers, five minutes, limited hosted tool bootstrap trust for discovery only. No authentication, retries, redirects, bundle URL follows, archive acquisition, installation, interpreter execution or product execution. All final-use provenance/acceptance requirements preserved. 27 prior approvals consumed/disarmed; current one-use approval unissued. |
+| Operation state | RECONCILED METADATA DISCOVERY SUCCESS: isolated #45874133476 attempt 1 exact 8b0069294b643f5dc7cdc3b2e8f017c3f4a3bf1a, job 140096798712; both HTTP 200, one attestation record each, repo 162334160, common host tmaproduction.blob.core.windows.net and path /attestations/162334160/2026/11/24/71759865.json.sn. 1058 body +2553 header bytes; no follow or signature verification. Disarmed 2d1cf9e3c16df6e20b62dbdaff3414b2dada9b95; exact original main tree restored, one run. |
+| Intended files | Terminal docs-only reconciliation. Next prepare consolidated bounded shared-bundle provenance review, including actual signer/verifier/trust root and builder policy, safe transient signed query handling, explicit caps and independent signature check. No new request or use without fresh exact authority. |
+| Approval | Corrected exact two-digest lookup approval consumed by #45874133476; 28 restricted approvals consumed/disarmed, zero active. No bundle follow, credentials, archive acquisition, installation, interpreter/product execution or cutover authorised. Independent final-use provenance/acceptance unchanged. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | None at preparation; verify exact candidate before issuing once, never replay uncertain dispatch. |
+| Pending runs | None. Exact #45874133476 terminal SUCCESS, sole job, attempt 1. Isolated activation removed, original main tree and exactly one branch run verified. |
 | Unpublished work | 5e149a034c7bb37dd3afe4945026d1a581af3ed3 remains off live development branch; reachable in isolated QA ancestry. Owner-local tree untouched/uninspected. |
-| Recovery action | Verify prepared journal and exact candidate/QA branch; if unissued, create branch at exact main and expected-SHA advance once. If issued or uncertain, reconcile run/job/logs, remove only activation workflow via expected-SHA update and verify branch/run count. Preserve safe metadata/diagnostics only. No automatic replay or further acquisition. |
+| Recovery action | [Exact corrected lookup success](./PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md#26-november--c5-corrected-portable-attestation-lookup-success-and-disarm). Both exact digest queries returned the same sanitized bundle path and repo, matching upstream attestation publication 71759865. No raw bundle or signed query retained; signed subject binding unverified. Prepare a single consolidated evidence retrieval/verification route for both subjects, independently review verifier/root/builder trust and cap all metadata/transfer/decompression; no arbitrary host, fallback, credentials, binary archive or interpreter execution. Obtain fresh bounded approval before any further restricted operation. |
 | Resume after closure | D only after revised C5 source closure, G2 resolution and separately approved scope; every native prerequisite before its use. P8 release-only obligations retained; installer frozen. |
 
 ## Prior operation
@@ -28,4 +28,4 @@ C4-RESEARCH-AND-IMPLEMENTATION-PLAN-20261125: [`bd7c163`](https://github.com/Son
 
 ## Unresolved or interrupted operations
 
-A/B and C1–C4 source closed; C5 outstanding. Source 14/17 (82.4%), official P4 14/20 (70%). Native DPAPI, actual desktop/physical egress and durability, physical 8 GB and G2/D evidence deferred. Owner-local tree uninspected. Twenty-seven restricted approvals consumed/disarmed; preserve local work, installer freeze unchanged. Historical failures and exact receipts retained in C ledger.
+A/B and C1–C4 source closed; C5 outstanding. Source 14/17 (82.4%), official P4 14/20 (70%). Native DPAPI, actual desktop/physical egress and durability, physical 8 GB and G2/D evidence deferred. Owner-local tree uninspected. Twenty-eight restricted approvals consumed/disarmed; preserve local work, installer freeze unchanged. Historical failures and exact receipts retained in C ledger.
