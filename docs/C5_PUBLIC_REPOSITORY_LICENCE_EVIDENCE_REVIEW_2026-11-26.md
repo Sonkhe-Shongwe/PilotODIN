@@ -219,3 +219,34 @@ Owner explicitly approved exact staging 898cd4bf1d5292bccc252c804f4070d3a31430e4
 ### Durable public retention and disarm reconciliation
 
 Disarm [085222b](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/085222b43002c454abb0449282b07bd26fbfee27) restored exact disabled driver and workflow, marker absent. [Full 45801721107](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45801721107) SUCCESS 240 tests per platform (Windows 139846380643, Ubuntu 139846381640); [dedicated 45801721259](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45801721259) SUCCESS 49 tests per platform (Ubuntu 139846381448, Windows 139846382024); all four restricted jobs skipped. Exact 37592-byte canonical public retention envelope transferred byte-identically to Git blob 9eb11ff031ea7ff3b73ffd503ea499c7d4e290ba (local SHA1 matches returned Git SHA1, read-back length 37592), SHA256 6ffd441a4f9ec686c6ab26ce9e917848ea06b256780b8f5e917b064447c5e7bd, [durable public evidence](./C5_PUBLIC_DISCOVERY_RETENTION_45801369045.json). No raw notices or wheel bytes retained; no additional acquisition. Owner/admin must remove three consumed configuration variables; connector cannot change settings. 19 approvals consumed/disarmed. Next reconcile and diagnose exact UNSAFE_PATH refusal using retained projection and pinned source, no retry/acquisition or scope relaxation without fresh approval. Discovery receipt is not complete independent raw replay. Actual offending archive member remains unknown; no claim of malicious content. Prior five unaffected. No licence clearance or production acceptance.
+
+
+## 16. Targeted path and fingerprint diagnosis (26 November)
+
+Operation C5-R2-PATH-FINGERPRINT-DIAGNOSIS-20261126. Read-only diagnosis against exact documentation HEAD [c72fbc1](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/c72fbc1b22da0fa8da8a3e6f6fed643545c21312) and disarmed source [085222b](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/085222b43002c454abb0449282b07bd26fbfee27). Exact retained canonical JSON independently recomputed: 37592 ASCII bytes, SHA256 6ffd441a4f9ec686c6ab26ce9e917848ea06b256780b8f5e917b064447c5e7bd; SHA256 implementation checked against standard abc vector. 49 results, 48 inspected, row 49 refusal, 14 unattempted, 102 notice fingerprints. Exact disarm jobs re-read: full 45801721107 both synthetic SUCCESS, 139846382889/139846383335 SKIPPED; dedicated 45801721259 both synthetic SUCCESS, 139846384507/139846384629 SKIPPED. No pending run for c72fbc1 (exact all-event API zero). No fresh restricted action.
+
+**Strong candidate cause, not confirmed offending wheel member:** pinned inspector blob aa5ab610d711fb8f9bc1fce1020c4999e53f3571, name() rejects spaces via COMPONENT [A-Za-z0-9_.+!@=-]{1,255}; UNSAFE_PATH can also arise from ASCII/length/depth, empty/dot components, trailing dot or DOS device prefix; used in wheel identity, central member, RECORD and licence paths. Upstream SciPy v1.17.1 recursive [tree 527eb7fd7953a1de068f94bf8b322f249b9405ae](https://api.github.com/repos/scipy/scipy/git/trees/527eb7fd7953a1de068f94bf8b322f249b9405ae?recursive=1) returned 3407 entries, not truncated; exactly one blob path fails the tested component allowlist: scipy/io/tests/data/Transparent Busy.ani (blob 3be500032786398c3efdbd9f873f705b6c1636bd, 4362 bytes). Exact upstream [meson.build](https://github.com/scipy/scipy/blob/v1.17.1/scipy/io/tests/meson.build) blob 8813f8e4702004a6326cb1d97f22d4b457c2e8 explicitly installs that fixture under scipy/io/tests/data with install_tag tests. Whether the exact refused wheel includes it, and whether it was the first refusing path, remain unproven because the projection omitted offending member and wheel bytes were not retained. No maliciousness claim, no parser change or live retry.
+
+Compared section 7 verified source byte identities and candidate canonical member path hashes to the retained projection. 15 observed candidate members: seven exact path+size+SHA256 matches across five wheels; eight path matches with different content. Five of nine declared member candidates match; HTTPX and Windows pandas match heuristic paths. Paths below are relative to filename-derived dist-info, not recovered raw filenames. Candidate matching is diagnostic only: no full independent raw replay, licence clearance, or manifest pin.
+
+| Row | Candidate path | Observed bytes | Comparison |
+| --- | --- | ---: | --- |
+| 13 HTTPX | licenses/LICENSE.md | 1508 | exact |
+| 19 NumPy Linux | licenses/LICENSE.txt | 46794 | differs |
+| 20 NumPy Windows | licenses/LICENSE.txt | 45831 | differs |
+| 23 packaging | licenses/LICENSE | 197 | exact |
+| 23 packaging | licenses/LICENSE.BSD | 1344 | exact |
+| 23 packaging | licenses/LICENSE.APACHE | 10174 | exact |
+| 24 pandas Linux | LICENSE | 62399 | differs |
+| 25 pandas Windows | LICENSE | 1634 | exact |
+| 27 Pillow Linux | licenses/LICENSE | 70307 | differs |
+| 28 Pillow Windows | licenses/LICENSE | 78481 | differs |
+| 34 PyInstaller | licenses/COPYING.txt | 32604 | exact |
+| 35 hooks-contrib | licenses/LICENSE | 27666 | exact |
+| 36 PyMuPDF Linux | COPYING | 64 | differs |
+| 37 PyMuPDF Windows | COPYING | 64 | differs |
+| 43 pywin32-ctypes | LICENSE.txt | 1644 | differs |
+
+SciPy rows 49–50 remain uninspected; two upstream source candidates cannot be matched. 95 of 102 projected fingerprints not matched to exact source identities in this targeted comparison, including unreviewed candidates; not a claim all are mismatches. Distinct platform-generated licences cannot be replaced with upstream source-only bytes. Exact fingerprints are preserved in [retention envelope](./C5_PUBLIC_DISCOVERY_RETENTION_45801369045.json).
+
+**Next bounded work (proposal, not adopted):** prepare a synthetic-only path-compatibility design and negative test matrix for interior ASCII spaces, explicitly prohibit leading/trailing spaces, device aliases (including basename before dot), traversal, controls, normalization ambiguities and case/file-directory collisions, preserve identical exact path across central/local/RECORD/declared licences, no extraction, preserve all CRC/hash/size/expansion/receipt checks. Assess downstream evidence validators and Windows portability; add safe fixed-category diagnostic if appropriate without leaking raw unsafe names. Any broader acceptance-policy change or real acquisition requires distinct authority; current inspector and prior evidence stay unchanged. Public-only route still controls. Owner clears consumed C5_DISCOVERY_EXPECTATION, C5_DISCOVERY_DRIVER_BLOB, C5_DISCOVERY_WORKFLOW_BLOB; direct settings access unavailable. No fresh replay or private infrastructure. C5 remains blocked (5/68 raw archive receipts, four profiles blocked); source 14/17, official P4 14/20. No code or CI change.
