@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | BLOCKED |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 145260699504a283b25a1a26a80f866e02bd23a8 |
+| Observed starting HEAD | ea12fad419750f2d3991f378b7f965c04fee918e |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | Revised C5-A/B development reproducibility and build safety; D prerequisites and P8 release-only allocation. No restricted acquisition, native, owner data, install, packaging, phase activation or release. |
-| Operation ID | C5-PORTABLE-SHARED-BUNDLE-DESIGN-20261126 |
-| Operation state | RECONCILED PREPARATION: owner approved inert acquisition-before-signature design only. Detached e031f0949acf326561dd8755643d0bf42d18b84d two new QA files, all 118 workflows unchanged, zero runs. Exact timestamped staging subjects and release transformation verified from upstream code/logs; pinned gh/root validation, URL and disabled bounded decoder helpers prepared. Full transport, network isolation, archive inspection integration and signed predicate/builder disposition remain open. No execution. |
-| Intended files | Documentation checkpoint plus detached two-file preparation. Continue source-only integration and exact review, no acquisition or activation; no fresh design permission required. One combined future bounded execution approval must cover explicit independent verifier/root/host and narrow Depot trust, not silently grant them. |
+| Operation ID | C5-PORTABLE-SHARED-BUNDLE-INTEGRATION-20261126 |
+| Operation state | PREPARED source-only integration at detached e031f0949acf326561dd8755643d0bf42d18b84d; no acquisition, execution, activation or cutover. Zero candidate runs. |
+| Intended files | Detached QA-only source: bounded transport, isolated verifier launch, data-only member inventory and safe receipts, exact predicate policy. Preserve 118 workflows. No tests or execution under current authority. |
 | Approval | Owner approves preparation of consolidated GH shared-bundle verification/data-only inspection; inert archive bytes may precede signature verification, authentication before extraction/use. No acquisition, installation, execution or live cutover authorised. 28 earlier restricted approvals consumed/disarmed; zero active execution approvals. Verifier/root/host and Depot trust disposition not granted. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
 | Pending runs | None. Exact #45874133476 terminal SUCCESS, sole job, attempt 1. Isolated activation removed, original main tree and exactly one branch run verified. |
 | Unpublished work | 5e149a034c7bb37dd3afe4945026d1a581af3ed3 remains off live development branch; reachable in isolated QA ancestry. Owner-local tree untouched/uninspected. |
-| Recovery action | [Owner-approved consolidated design preparation](./PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md#owner-approved-consolidated-design-preparation-not-execution-authority). Continue remaining source-only integration on detached e031f09: bounded transfer/headers, network-isolated offline verifier launch, exact predicate/builder policy and portable member/notice/linkage receipt custody. Review actual gaps before one combined bounded execution approval with explicit trust choices; no new design approval required, no acquisition/launch or live cutover. |
+| Recovery action | Reconcile detached candidate and exact diff; keep live guard false, no workflow activation; checkpoint incomplete conditions explicitly. No trust or execution inferred. |
 | Resume after closure | D only after revised C5 source closure, G2 resolution and separately approved scope; every native prerequisite before its use. P8 release-only obligations retained; installer frozen. |
 
 ## Prior operation
