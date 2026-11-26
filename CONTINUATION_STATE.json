@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-RUNNER-20261116-133-READONLY-REVIEW-20261127",
-    "parent_sha": "514e16d4db63a2f9d3ff370fe2145d3872d433cf",
-    "previous_snapshot_sha": "514e16d4db63a2f9d3ff370fe2145d3872d433cf",
-    "scope": "Read-only exact refused runner image documentation/host/toolchain/Docker/isolation review; no justified finite policy amendment",
+    "operation_id": "C5-TERMINFO-DISTINCT-UNCHANGED-POLICY-PREP-20261127",
+    "parent_sha": "976044860585f2ed4a663e8857fe9baa7a27c677",
+    "previous_snapshot_sha": "976044860585f2ed4a663e8857fe9baa7a27c677",
+    "scope": "Prepare distinct exact inert terminfo one-use candidate under unchanged two-image policy; static verification only",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "27-november--c5-refused-runner-202611161331-read-only-review-insufficient-for-finite-policy-amendment",
-      "blob_sha": "cf173c03100cb86109f13a0373f3b744b6265279",
-      "start_line": 2786,
-      "end_line": 2788
+      "anchor": "27-november--c5-distinct-inert-terminfo-one-use-candidate-under-unchanged-two-image-policy",
+      "blob_sha": "7cadd5cfaa421e0ad0a05d9c44265763542b9d62",
+      "start_line": 2790,
+      "end_line": 2792
     }
   },
   "product": {
@@ -119,14 +119,21 @@
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
     "status": "BLOCKED",
     "scope": "C-D08 revised C5-A/B development reproducibility and build safety only; D retains native prerequisites, P8 release-only",
-    "blocker": "Exact terminfo candidate 76e60bc2 remains unexercised; 20261116.133.1 exact authoritative manifest not recovered and required tool/engine/isolation evidence absent. No justified finite-image policy expansion; existing two-image policy unchanged and no restricted authority.",
-    "next_action": "Obtain authoritative exact 20261116.133.1 manifest/source evidence before any changed policy proposal, or owner decision to prepare a fresh distinct inert candidate under unchanged two-image policy with unique operation marker, followed by separate fresh exact execution authority. No automatic rerun or alternative host qualification method; separate explicit approval required for any changed evidence/trust method.",
+    "blocker": "Distinct inert candidate 28181cf992ab6efd5156265e5ea7d4752b00e66f statically verified; complete actual terminfo inventory/accounting/receipt unavailable; fresh exact execution authority required; GitHub runner assignment remains nondeterministic.",
+    "next_action": "Obtain fresh explicit owner approval of exact candidate 28181cf992ab6efd5156265e5ea7d4752b00e66f for one distinct bounded integrated no-pull Docker data-only verification attempt under unchanged two-image policy, approved finite Linux terminfo policy and all documented safeguards. Before activation reverify source/template/manifest and live guards/pending runs; persist exact write-ahead. Full 19-method synthetic gate and all preflights before first GET; refuse all unapproved images, no replay or fallback.",
     "next_action_kind": "OWNER_DECISION",
     "after": [
-      "After fresh authorised inert preparation, verify exact source and pins; fresh one-use execution authority required, full 19-method gate and all preflights before acquisition. Refuse unapproved images, no replay or fallback.",
+      "Only after fresh exact authority, activate once with unique marker and exact two substitutions; reconcile observed receipt or refusal and final accounting; independently verify receipt and restore false guard; no replay or assumed cleanup.",
       "Complete C5 rows 5–7 and row 8 only on qualifying evidence; D after C5 closure, G2 resolution and separate authority."
     ],
     "read": [
+      {
+        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
+        "anchor": "27-november--c5-distinct-inert-terminfo-one-use-candidate-under-unchanged-two-image-policy",
+        "blob_sha": "7cadd5cfaa421e0ad0a05d9c44265763542b9d62",
+        "start_line": 2790,
+        "end_line": 2792
+      },
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "27-november--c5-refused-runner-202611161331-read-only-review-insufficient-for-finite-policy-amendment",
@@ -438,17 +445,17 @@
     ]
   },
   "operation": {
-    "id": "C5-RUNNER-20261116-133-READONLY-REVIEW-20261127",
+    "id": "C5-TERMINFO-DISTINCT-UNCHANGED-POLICY-PREP-20261127",
     "state": "RECONCILED",
-    "starting_sha": "514e16d4db63a2f9d3ff370fe2145d3872d433cf",
-    "outcome": "Exact 20261116.133.1 runner manifest/tag/branch and commit not recovered; approved two manifests reverified; required actual host/tool/Docker/isolation evidence absent; no policy amendment or candidate prepared, no execution or acquisition; disarm run 45902416663 skipped.",
+    "starting_sha": "976044860585f2ed4a663e8857fe9baa7a27c677",
+    "outcome": "Detached candidate 28181cf992ab6efd5156265e5ea7d4752b00e66f prepared, only marker/scratch template substitutions and manifest metadata changes; 22/22 pins, 10 exact source matches, 36 staging/39 total; full 19-method gate NOT RUN; no restricted execution or acquisition.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "27-november--c5-refused-runner-202611161331-read-only-review-insufficient-for-finite-policy-amendment",
-      "blob_sha": "cf173c03100cb86109f13a0373f3b744b6265279",
-      "start_line": 2786,
-      "end_line": 2788
+      "anchor": "27-november--c5-distinct-inert-terminfo-one-use-candidate-under-unchanged-two-image-policy",
+      "blob_sha": "7cadd5cfaa421e0ad0a05d9c44265763542b9d62",
+      "start_line": 2790,
+      "end_line": 2792
     }
   },
   "authority": {
@@ -568,6 +575,10 @@
       {
         "sha": "76e60bc2a39e3eb795805f2efa717999464c8ce8",
         "scope": "Complete exact inert integrated finite Linux terminfo policy candidate; four QA paths vs 05866bc9, 22/22 pins, ten exact source matches, 36 staging/39 total, one exact mocked test rerun PASS, full 19-method suite NOT RUN, receipt producer reviewed, zero candidate runs, no workflow/product changes; separate exact one-use execution approval required."
+      },
+      {
+        "sha": "28181cf992ab6efd5156265e5ea7d4752b00e66f",
+        "scope": "Fresh distinct inert unchanged-policy candidate; only two QA template/manifest paths vs 76e60bc2, 22/22 payload pins and 10 exact sources, full 19-method suite NOT RUN, zero candidate runs; fresh execution approval required."
       }
     ]
   },
