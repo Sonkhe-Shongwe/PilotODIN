@@ -544,6 +544,183 @@ def discover_fixture(rows,bindings,caps,scope,plan_blob,replay,deadline,parent):
         verify_discovery(raw,digest,rows,plan_blob,bindings=bindings,caps=caps,scope=scope)
     return raw,digest
 
+
+# Separate discovery identity: an old raw-evidence approval is never reusable.
+DISCOVERY_OP='C5-WHEEL-PUBLIC-DISCOVERY-ONCE-20261126'
+DISCOVERY_MARKER=DIR+'APPROVAL_WHEEL_PUBLIC_DISCOVERY_20261126.txt'
+DISCOVERY_MESSAGE=DISCOVERY_OP+' owner approved exact discovery only'
+DISCOVERY_WORKFLOW_NAME='C5 public wheel discovery one-use'
+DISCOVERY_ARTIFACT_PREFIX='c5-public-wheel-discovery-'
+DISCOVERY_ZIP_LIMIT=DISCOVERY_LIMIT+1024*1024
+DISCOVERY_RETENTION_LIMIT=DISCOVERY_LIMIT+65536
+DISCOVERY_PINS={**rt.RUNTIME_PINS,**EXTRA_PINS,
+                DIR+'review_input_proposals.py':'092b806e11badc9ad8d559cf1a2d1660ef95de07'}
+
+def discovery_inputs():
+    return {**rt.input_identity(),'scope':DISCOVERY_SCOPE,
+            'projection_limit':DISCOVERY_LIMIT,'raw_replay_available':False}
+
+def discovery_marker(inputs):
+    return (DISCOVERY_OP+'\n'+w.sha(n.canonical(inputs))+'\n'
+            '63 exact wheel GETs; discovery projection only; zero redirects or retries.\n').encode('ascii')
+
+def discovery_gate(event,context,observed,expected,phase):
+    """Pure independently provisioned one-use contract; returns no live grant."""
+    need(phase in ('discover-once','verify-discovery-once'),'DISCOVERY_GATE_PHASE')
+    need(type(expected) is dict and set(expected)=={'parent','head','driver_blob','workflow_blob','inputs'}
+         and all(type(expected[k]) is str and SHA1.fullmatch(expected[k])
+                 for k in ('parent','head','driver_blob','workflow_blob'))
+         and expected['parent']!=expected['head']
+         and n.canonical(expected['inputs'])==n.canonical(discovery_inputs()),'DISCOVERY_GATE_EXPECTATION')
+    need(type(context) is dict and all(context.get(k)==v for k,v in {
+        'GITHUB_ACTIONS':'true','GITHUB_EVENT_NAME':'push','GITHUB_REPOSITORY':REPO,
+        'GITHUB_REF':BRANCH,'GITHUB_WORKFLOW':DISCOVERY_WORKFLOW_NAME,'GITHUB_JOB':phase,
+        'GITHUB_RUN_ATTEMPT':'1','C5_APPROVED_ONCE':DISCOVERY_OP,'GITHUB_SHA':expected['head'],
+        'C5_DRIVER_BLOB':expected['driver_blob'],'C5_WORKFLOW_BLOB':expected['workflow_blob']}.items())
+        and type(context.get('GITHUB_RUN_ID')) is str and RUN.fullmatch(context['GITHUB_RUN_ID']),
+        'DISCOVERY_GATE_CONTEXT')
+    need(type(event) is dict and event.get('ref')==BRANCH and event.get('before')==expected['parent']
+         and event.get('after')==expected['head']
+         and all(event.get(k) is False for k in ('forced','created','deleted'))
+         and type(event.get('repository')) is dict and event['repository'].get('full_name')==REPO
+         and type(event.get('head_commit')) is dict and event['head_commit'].get('id')==expected['head']
+         and event['head_commit'].get('message')==DISCOVERY_MESSAGE,'DISCOVERY_GATE_EVENT')
+    marker=discovery_marker(expected['inputs'])
+    need(type(observed) is dict and observed.get('head')==expected['head']
+         and observed.get('parents')==[expected['parent']]
+         and observed.get('message')==DISCOVERY_MESSAGE
+         and observed.get('changes')==[('A',DISCOVERY_MARKER)]
+         and observed.get('marker')==marker and observed.get('marker_blob')==rt.git_blob(marker)
+         and observed.get('driver_blob')==expected['driver_blob']
+         and observed.get('workflow_blob')==expected['workflow_blob']
+         and observed.get('legacy_markers_absent') is True,'DISCOVERY_GATE_CHECKOUT')
+    return {'scope':DISCOVERY_SCOPE,'run':context['GITHUB_RUN_ID'],'phase':phase,
+            'source_sha':expected['head'],'inputs_sha256':w.sha(n.canonical(expected['inputs']))}
+
+def observe_discovery_checkout(root):
+    """Read-only Git identity, exact pinned inputs and clean marker-only child."""
+    root=Path(root)
+    need(root.is_dir() and not root.is_symlink(),'DISCOVERY_GATE_ROOT')
+    top=Path(os.fsdecode(rt.git(root,'rev-parse','--show-toplevel')).strip()).resolve()
+    need(top==root.resolve(),'DISCOVERY_GATE_ROOT')
+    head=rt.git(root,'rev-parse','HEAD').decode('ascii').strip()
+    parents=rt.git(root,'show','-s','--format=%P','HEAD').decode('ascii').split()
+    need(SHA1.fullmatch(head) and len(parents)==1 and SHA1.fullmatch(parents[0]),'DIRECT_CHILD')
+    need(rt.git(root,'status','--porcelain=v1','--untracked-files=all')==b'','DIRTY_CHECKOUT')
+    changes=rt.git(root,'diff-tree','--no-commit-id','--name-status','--no-renames','-r','-z','HEAD')
+    need(changes==b'A\0'+DISCOVERY_MARKER.encode('ascii')+b'\0','MARKER_ONLY_DIFF')
+    for path,pin in DISCOVERY_PINS.items():
+        need(rt.checkout_blob(root,path)==pin,'SOURCE_PIN')
+    for path in (*m.LEGACY_MARKERS,MARKER):
+        item=root/path
+        need(not item.exists() and not item.is_symlink(),'LEGACY_MARKER')
+    blob=rt.checkout_blob(root,DISCOVERY_MARKER)
+    return {'head':head,'parents':parents,
+            'message':rt.git(root,'show','-s','--format=%B','HEAD').decode('utf-8').rstrip('\n'),
+            'changes':[('A',DISCOVERY_MARKER)],'marker':p.pinned_text(root/DISCOVERY_MARKER,blob),
+            'marker_blob':blob,'driver_blob':rt.checkout_blob(root,SELF),
+            'workflow_blob':rt.checkout_blob(root,WORKFLOW),'legacy_markers_absent':True}
+
+def discovery_fixture_claim(parent,root,event,context,expected,phase):
+    claim=discovery_gate(event,context,observe_discovery_checkout(root),expected,phase)
+    parent=Path(parent)
+    need(parent.is_dir() and not parent.is_symlink()
+         and not parent.resolve().is_relative_to(Path(root).resolve()),'CLAIM_SCOPE')
+    path=parent/('discovery-fixture-'+claim['run']+'-'+phase+'.claim')
+    try:
+        with path.open('xb') as out:
+            raw=n.canonical(claim)
+            need(out.write(raw)==len(raw),'CLAIM_WRITE')
+            out.flush();os.fsync(out.fileno())
+    except FileExistsError:
+        raise w.Blocked('ONE_USE_CLAIM_CONSUMED') from None
+    a.sync_dir(parent)
+    return claim
+
+def discovery_record(raw,sha,run,source,rows,plan_blob,*,bindings,caps,scope):
+    doc=verify_discovery(raw,sha,rows,plan_blob,bindings=bindings,caps=caps,scope=scope)
+    need(type(run) is str and RUN.fullmatch(run) and type(source) is str
+         and SHA1.fullmatch(source),'DISCOVERY_ARTIFACT_CONTEXT')
+    return {'schema_version':1,'scope':DISCOVERY_SCOPE,'input_scope':scope,'run_id':run,
+            'run_attempt':1,'source_sha':source,'artifact_name':DISCOVERY_ARTIFACT_PREFIX+run+'-1',
+            'plan_blob':plan_blob,'rows_sha256':doc['rows_sha256'],'policy_sha256':doc['policy_sha256'],
+            'projection_bytes':len(raw),'projection_sha256':sha}
+
+def replay_discovery_artifact(raw,meta,record,expected_run,expected_source,expected_id,upload_sha,
+                              rows,plan_blob,*,bindings,caps,scope):
+    """Verify exact one-member ZIP in memory; never extract or retain raw ZIP."""
+    need(type(raw) is bytes and 0<len(raw)<=DISCOVERY_ZIP_LIMIT and n.digest(upload_sha)
+         and w.sha(raw)==upload_sha,'DISCOVERY_ARTIFACT_HASH')
+    need(type(meta) is dict and n.bounded_int(expected_id,1,2**63-1)
+         and type(meta.get('id')) is int and meta['id']==expected_id
+         and meta.get('expired') is False and type(meta.get('size_in_bytes')) is int
+         and meta['size_in_bytes']==len(raw) and meta.get('digest')=='sha256:'+upload_sha,
+         'DISCOVERY_ARTIFACT_IDENTITY')
+    run=meta.get('workflow_run')
+    need(type(run) is dict and type(run.get('id')) is int and str(run['id'])==expected_run
+         and run.get('head_sha')==expected_source
+         and run.get('head_branch')==BRANCH.removeprefix('refs/heads/'),'DISCOVERY_ARTIFACT_RUN')
+    need(type(record) is dict and n.bounded_int(record.get('projection_bytes'),1,DISCOVERY_LIMIT)
+         and n.digest(record.get('projection_sha256')),'DISCOVERY_ARTIFACT_RECORD')
+    try:
+        with zipfile.ZipFile(io.BytesIO(raw)) as z:
+            infos=z.infolist()
+            need(len(infos)==1 and not z.comment,'DISCOVERY_ARTIFACT_INVENTORY')
+            item=infos[0]
+            need(item.filename==item.orig_filename=='discovery.json' and not item.is_dir()
+                 and not item.flag_bits & 1 and item.compress_type in (0,8)
+                 and not item.external_attr & (0x400|0x08|0x10|0x40)
+                 and not (item.external_attr>>16)&(stat.S_ISUID|stat.S_ISGID|stat.S_ISVTX)
+                 and stat.S_IFMT(item.external_attr>>16) in (0,stat.S_IFREG)
+                 and item.file_size==record['projection_bytes'],'DISCOVERY_ARTIFACT_MEMBER')
+            with z.open(item) as stream:
+                projection=stream.read(item.file_size+1)
+                need(len(projection)==item.file_size and not stream.read(1),'DISCOVERY_ARTIFACT_MEMBER')
+    except (zipfile.BadZipFile,NotImplementedError,RuntimeError,EOFError,zlib.error):
+        raise w.Blocked('DISCOVERY_ARTIFACT_ZIP') from None
+    reviewed=discovery_record(projection,record['projection_sha256'],expected_run,expected_source,
+                             rows,plan_blob,bindings=bindings,caps=caps,scope=scope)
+    need(n.canonical(record)==n.canonical(reviewed)
+         and meta.get('name')==reviewed['artifact_name'],'DISCOVERY_ARTIFACT_RECORD')
+    return projection
+
+def discovery_retention(raw,meta,record,run,source,artifact_id,upload_sha,rows,plan_blob,*,bindings,caps,scope):
+    """Retain only the verified public projection and allowlisted receipt fields."""
+    projection=replay_discovery_artifact(raw,meta,record,run,source,artifact_id,upload_sha,
+                                        rows,plan_blob,bindings=bindings,caps=caps,scope=scope)
+    envelope=n.canonical({'schema_version':1,'scope':DISCOVERY_SCOPE,'record':record,
+                          'artifact':{'id':artifact_id,'zip_bytes':len(raw),'zip_sha256':upload_sha},
+                          'projection':_json(projection),'raw_replay_available':False})
+    need(len(envelope)<=DISCOVERY_RETENTION_LIMIT,'DISCOVERY_RETENTION_LIMIT')
+    return envelope,w.sha(envelope)
+
+def verify_discovery_retention(raw,expected_sha,run,source,artifact_id,upload_sha,rows,plan_blob,*,bindings,caps,scope):
+    need(type(raw) is bytes and 0<len(raw)<=DISCOVERY_RETENTION_LIMIT
+         and n.digest(expected_sha) and w.sha(raw)==expected_sha,'DISCOVERY_RETENTION_IDENTITY')
+    doc=_json(raw)
+    need(type(doc) is dict and set(doc)=={'schema_version','scope','record','artifact',
+         'projection','raw_replay_available'} and n.canonical(doc)==raw
+         and type(doc['schema_version']) is int and doc['schema_version']==1
+         and doc['scope']==DISCOVERY_SCOPE and doc['raw_replay_available'] is False,'DISCOVERY_RETENTION_SCHEMA')
+    art=doc['artifact']
+    need(type(art) is dict and set(art)=={'id','zip_bytes','zip_sha256'}
+         and n.bounded_int(artifact_id,1,2**63-1) and type(art['id']) is int and art['id']==artifact_id
+         and n.bounded_int(art['zip_bytes'],1,DISCOVERY_ZIP_LIMIT)
+         and n.digest(upload_sha) and art['zip_sha256']==upload_sha,'DISCOVERY_RETENTION_ARTIFACT')
+    projection=n.canonical(doc['projection'])
+    record=doc['record']
+    need(type(record) is dict and n.digest(record.get('projection_sha256')),'DISCOVERY_ARTIFACT_RECORD')
+    reviewed=discovery_record(projection,record['projection_sha256'],run,source,
+                             rows,plan_blob,bindings=bindings,caps=caps,scope=scope)
+    need(n.canonical(record)==n.canonical(reviewed),'DISCOVERY_ARTIFACT_RECORD')
+    return doc
+
+def discover_once():
+    raise w.Blocked('FRESH_APPROVAL_REQUIRED')
+
+def verify_discovery_once():
+    raise w.Blocked('FRESH_APPROVAL_REQUIRED')
+
 def artifact_record(run,source,bundle,rows,plan_blob,*,bindings,caps,scope):
     rows,bindings,caps,policy_sha=prepare(rows,plan_blob,bindings,caps,scope)
     need(len(rows)<=63,'REMAINING_COUNT')

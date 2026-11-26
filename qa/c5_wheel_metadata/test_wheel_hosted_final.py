@@ -329,4 +329,92 @@ class Tests(unittest.TestCase):
             self.deny('DISCOVERY_IDENTITY',self.discovery)
         self.assertEqual(list(self.parent.iterdir()),[])
 
+
+    def discovery_gate_fixture(self):
+        root=self.parent/'disc-checkout';root.mkdir();self.git(root,'init','-q')
+        for path,pin in f.DISCOVERY_PINS.items():
+            dest=root/path;dest.parent.mkdir(parents=True,exist_ok=True)
+            dest.write_bytes(p.pinned_text(f.ROOT/path,pin))
+        for path in (f.SELF,f.WORKFLOW):
+            dest=root/path;dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(b'discovery inert fixture\n')
+        self.git(root,'add','.');self.git(root,'commit','-qm','fixture parent')
+        parent=self.git(root,'rev-parse','HEAD');inputs=f.discovery_inputs()
+        (root/f.DISCOVERY_MARKER).write_bytes(f.discovery_marker(inputs))
+        self.git(root,'add',f.DISCOVERY_MARKER);self.git(root,'commit','-qm',f.DISCOVERY_MESSAGE)
+        head=self.git(root,'rev-parse','HEAD');pin=rt.git_blob(b'discovery inert fixture\n')
+        expected={'parent':parent,'head':head,'driver_blob':pin,'workflow_blob':pin,'inputs':inputs}
+        context={'GITHUB_ACTIONS':'true','GITHUB_EVENT_NAME':'push','GITHUB_REPOSITORY':f.REPO,
+                 'GITHUB_REF':f.BRANCH,'GITHUB_WORKFLOW':f.DISCOVERY_WORKFLOW_NAME,'GITHUB_JOB':'discover-once',
+                 'GITHUB_RUN_ATTEMPT':'1','C5_APPROVED_ONCE':f.DISCOVERY_OP,'GITHUB_SHA':head,
+                 'C5_DRIVER_BLOB':pin,'C5_WORKFLOW_BLOB':pin,'GITHUB_RUN_ID':'12345'}
+        event={'ref':f.BRANCH,'before':parent,'after':head,'forced':False,'created':False,'deleted':False,
+               'repository':{'full_name':f.REPO},'head_commit':{'id':head,'message':f.DISCOVERY_MESSAGE}}
+        return root,event,context,expected
+    def test_discovery_operations_exact_checkout_claim(self):
+        root,event,context,expected=self.discovery_gate_fixture()
+        args=(self.parent,root,event,context,expected,'discover-once')
+        claim=f.discovery_fixture_claim(*args)
+        self.assertEqual(claim['scope'],f.DISCOVERY_SCOPE)
+        self.deny('ONE_USE_CLAIM_CONSUMED',lambda:f.discovery_fixture_claim(*args))
+        (root/f.SELF).write_bytes(b'drift')
+        self.deny('DIRTY_CHECKOUT',lambda:f.observe_discovery_checkout(root))
+    def test_discovery_operations_old_approval_and_rerun(self):
+        root,event,context,expected=self.discovery_gate_fixture();observed=f.observe_discovery_checkout(root)
+        for changes in ({'C5_APPROVED_ONCE':f.m.OP},{'GITHUB_RUN_ATTEMPT':'2'},
+                        {'GITHUB_WORKFLOW':f.rt.WORKFLOW_NAME},{'GITHUB_JOB':'collect-once'}):
+            self.deny('DISCOVERY_GATE_CONTEXT',lambda:f.discovery_gate(event,{**context,**changes},observed,expected,'discover-once'))
+    def test_discovery_operations_independent_expected_and_marker(self):
+        root,event,context,expected=self.discovery_gate_fixture();observed=f.observe_discovery_checkout(root)
+        self.deny('DISCOVERY_GATE_EXPECTATION',lambda:f.discovery_gate(event,context,observed,
+                  {**expected,'inputs':{**expected['inputs'],'count':62}},'discover-once'))
+        self.deny('DISCOVERY_GATE_CHECKOUT',lambda:f.discovery_gate(event,context,
+                  {**observed,'changes':[('A',f.MARKER)]},expected,'discover-once'))
+        self.deny('DISCOVERY_GATE_EVENT',lambda:f.discovery_gate({**event,'forced':True},context,observed,expected,'discover-once'))
+    def discovery_artifact_fixture(self,member='discovery.json',extra=False):
+        raw,sha=self.discovery();record=f.discovery_record(raw,sha,'12345','1'*40,self.rows,'fixture',
+                                       bindings=self.bindings,caps=self.caps,scope=f.FIXTURE_SCOPE)
+        out=io.BytesIO()
+        with zipfile.ZipFile(out,'w',compression=zipfile.ZIP_STORED) as z:
+            z.writestr(member,raw)
+            if extra:z.writestr('unexpected',b'not public projection')
+        data=out.getvalue()
+        meta={'id':123,'name':record['artifact_name'],'expired':False,'size_in_bytes':len(data),
+              'digest':'sha256:'+w.sha(data),'workflow_run':{'id':12345,'head_sha':'1'*40,
+                          'head_branch':f.BRANCH.removeprefix('refs/heads/')}}
+        return data,meta,record,raw
+    def replay_discovery_artifact(self,data,meta,record):
+        return f.replay_discovery_artifact(data,meta,record,'12345','1'*40,123,w.sha(data),self.rows,
+                     'fixture',bindings=self.bindings,caps=self.caps,scope=f.FIXTURE_SCOPE)
+    def test_discovery_operations_artifact_roundtrip(self):
+        data,meta,record,raw=self.discovery_artifact_fixture()
+        self.assertEqual(self.replay_discovery_artifact(data,meta,record),raw)
+        self.assertEqual(list(self.parent.iterdir()),[])
+    def test_discovery_operations_artifact_scope_and_digest(self):
+        data,meta,record,_=self.discovery_artifact_fixture()
+        self.deny('DISCOVERY_ARTIFACT_IDENTITY',lambda:self.replay_discovery_artifact(data,{**meta,'digest':'sha256:'+'0'*64},record))
+        self.deny('DISCOVERY_ARTIFACT_RUN',lambda:self.replay_discovery_artifact(data,{**meta,'workflow_run':{**meta['workflow_run'],'id':999}},record))
+        self.deny('DISCOVERY_ARTIFACT_RECORD',lambda:self.replay_discovery_artifact(data,meta,{**record,'scope':f.HOSTED_SCOPE}))
+    def test_discovery_operations_artifact_members(self):
+        for member,extra,reason in [('receipts.odin',False,'DISCOVERY_ARTIFACT_MEMBER'),
+                                    ('../discovery.json',False,'DISCOVERY_ARTIFACT_MEMBER'),
+                                    ('discovery.json',True,'DISCOVERY_ARTIFACT_INVENTORY')]:
+            data,meta,record,_=self.discovery_artifact_fixture(member,extra)
+            self.deny(reason,lambda:self.replay_discovery_artifact(data,meta,record))
+    def test_discovery_operations_retention(self):
+        data,meta,record,projection=self.discovery_artifact_fixture()
+        kwargs={'bindings':self.bindings,'caps':self.caps,'scope':f.FIXTURE_SCOPE}
+        raw,sha=f.discovery_retention(data,{**meta,'untrusted_extra':'never retain me'},record,
+                        '12345','1'*40,123,w.sha(data),self.rows,'fixture',**kwargs)
+        doc=f.verify_discovery_retention(raw,sha,'12345','1'*40,123,w.sha(data),self.rows,'fixture',**kwargs)
+        self.assertEqual(n.canonical(doc['projection']),projection)
+        self.assertNotIn(b'never retain me',raw)
+        self.assertFalse(doc['raw_replay_available'])
+        self.deny('DISCOVERY_RETENTION_IDENTITY',lambda:f.verify_discovery_retention(raw,'0'*64,'12345','1'*40,123,w.sha(data),self.rows,'fixture',**kwargs))
+    def test_discovery_operations_live_frontdoors_refuse(self):
+        with patch.object(f.http.client,'HTTPSConnection') as conn,patch.object(f,'build_opener') as opener:
+            self.deny('FRESH_APPROVAL_REQUIRED',f.discover_once)
+            self.deny('FRESH_APPROVAL_REQUIRED',f.verify_discovery_once)
+            conn.assert_not_called();opener.assert_not_called()
+
+
 if __name__=='__main__':unittest.main(verbosity=2)
