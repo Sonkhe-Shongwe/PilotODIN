@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | READY |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 85bb66b2bd630900cada2c171c83ce0f8ac36eae |
+| Observed starting HEAD | c934ed9b74c5c123fae178b9bbd11a3800e11855 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
-| Operation ID | C5-R2-SHARED-SETTLEMENT-20261126 |
-| Operation state | RECONCILED: exact 11dd669 run 45761837913 SUCCESS; Ubuntu 139713413227 and Windows 139713413439 each 125 existing +25 new tests, five direct CLI refusals, historical pins, remaining 63 rows and five preserved evidence documents replay PASS. Shared core and inert fixture frontdoor only; no hosted activation. All 18 prior approvals consumed/disarmed. |
-| Intended files | qa/c5_wheel_metadata/wheel_settlement_core.py, wheel_settlement_fixture.py, test_wheel_settlement_core.py, .github/workflows/c5-wheel-settlement-core-review.yml, journal/handoff/ledger/spec. |
+| Operation ID | C5-R2-DISABLED-HOSTED-TRANSFER-20261126 |
+| Operation state | PREPARED: versioned disabled hosted adapter, exact remaining plan/policy/caps and prior-five replay, synthetic activation contract and receipt-only artifact roundtrip using shared core. No live scope or network activation; old approvals immutable. |
+| Intended files | qa/c5_wheel_metadata/wheel_hosted_policy_v3.py, test_wheel_hosted_policy_v3.py, .github/workflows/c5-wheel-hosted-policy-v3-review.yml, journal/handoff/specification/ledger. |
 | Approval | Routine source/synthetic CI only. All 18 restricted approvals consumed/disarmed; no actual wheels, retrieval, installation, owner tree or execution. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | None; exact final synthetic CI reconciled. |
+| Pending runs | None; dedicated synthetic CI only. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
-| Recovery action | Next C5-R2 source-only separately versioned disabled hosted adapter using the shared core producer/verifier (not a third copy); add explicit hosted scope only behind independently pinned exact plan/caps/policy and exact new one-use gate, no generic live flag. Reuse bounded artifact export/replay primitives with schema-3 policy manifest, exact parent/event/marker/attempt/job and no mutation before authorisation. Test synthetic artifact/gate refusals and first-refusal behavior, then resource and retention review before any fresh R3 proposal. No live requests/activation, no old pin or approval reuse. |
+| Recovery action | Implement exact new marker-only event/source/attempt/job contract and disposable fixture claim; live collect/retrieve hard-refuse. Reuse core fixture producer/verifier, bounded receipt framing and independently observed upload identity, strict outer ZIP and replay; no new live artifact retrieval or marker. Review hosted activation wiring separately before proposal; resource/retention review remains. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
