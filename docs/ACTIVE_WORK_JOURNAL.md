@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | READY |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 3cac203eba05c60a332b4ba2de18301760065080 |
+| Observed starting HEAD | aeda2d1f06e65cab15b6bd58e9467a0bec878c03 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | Revised C5-A/B development reproducibility and build safety; D prerequisites and P8 release-only allocation. No restricted acquisition, native, owner data, install, packaging, phase activation or release. |
-| Operation ID | C5-PDFIUM-TWO-WHEEL-EVIDENCE-ONCE-20261126 |
-| Operation state | RECONCILED ACQUISITION_SUCCESS_AND_DISARMED; 6fe9659 / #45840503532 SUCCESS 2/2, 5 GETs/8423254; disarm 3cac203 / #45840727452 SUCCESS 25/25 and acquisition skipped, marker absent. Approval consumed; no replay. |
-| Intended files | qa/c5_pdfium/pdfium_evidence_draft.py; .github/workflows/c5-pdfium-evidence-draft.yml; canonical journal, handoff and C ledger. No product/dependency/lock edits. |
+| Operation ID | C5-POST-PDFIUM-DOCUMENTATION-AUDIT-20261126 |
+| Operation state | PREPARED documentation-only audit requested by owner; PDFium exact acquisition/disarm settled, pause notice reconciliation and preserve next task. |
+| Intended files | Canonical handoff, journal, C ledger, current navigation/decision/specification pointers and dated audit record; Markdown only. |
 | Approval | Owner explicitly stated: "I approve exact one-use activation of C5-PDFIUM-TWO-WHEEL-EVIDENCE-ONCE-20261126, detached commit 6fe96595c8d5a699c14f14613b1bf0583895ba32, parent f3e55a078a9613f433b2aef283a97d25af2894c8. Maximum five HTTPS requests and 8994854 response bytes, zero retries or redirects. No installation, downloaded code execution, filesystem extraction, owner-data access, native application execution, installer generation or release. Execute once, reconcile the evidence and immediately disarm." CONSUMED; no replay or new live authority. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
 | Pending runs | None. #45840503532 acquisition SUCCESS; #45840727452 rehearsal SUCCESS and acquisition SKIPPED. |
 | Unpublished work | Owner-local tree uninspected; detached draft a64306a preserved historically, reviewed overlay published with added synthetic coverage. |
-| Recovery action | [Verified disarm](./PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md#26-november--c5-pdfium-one-use-disarm-verified). Next read-only notice/hash reconciliation against exact upstream source, review Python declaration and applicable use, then source-only migration proposal and separate equivalence scope; no acquisition, install or execution. |
+| Recovery action | Audit canonical records, exact source/CI/approval evidence, navigation and link targets; no acceptance or source changes. Resume read-only actual notice reconciliation after audit. |
 | Resume after closure | D only after revised C5 source closure, G2 resolution and separately approved scope; every native prerequisite before its use. P8 release-only obligations retained; installer frozen. |
 
 ## Prior operation
