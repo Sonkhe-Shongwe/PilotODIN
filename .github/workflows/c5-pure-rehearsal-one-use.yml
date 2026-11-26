@@ -1,0 +1,52 @@
+# C5-STDLIB-PURE-ONEUSE-20261126 | isolated orchestration branch only.
+# Limited owner bootstrap trust, not installed-byte provenance or final-use clearance.
+name: C5 pure standard-library rehearsal one use
+on:
+  push:
+    branches: [qa/c5-pure-rehearsal-20261126]
+    paths: ['.github/workflows/c5-pure-rehearsal-one-use.yml']
+permissions:
+  contents: read
+jobs:
+  rehearsal:
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/qa/c5-pure-rehearsal-20261126' && github.event.before == '64bb85676f50ec507e8d0614f1cf9293f04c9291' && github.run_attempt == 1 && !github.event.created }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        env:
+          GIT_CONFIG_COUNT: "1"
+          GIT_CONFIG_KEY_0: core.autocrlf
+          GIT_CONFIG_VALUE_0: "false"
+        with:
+          ref: 5e149a034c7bb37dd3afe4945026d1a581af3ed3
+          persist-credentials: false
+          fetch-depth: 1
+          lfs: false
+          submodules: false
+          path: source
+      - name: Record limited bootstrap identity and run exact isolated standard-library checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C source rev-parse HEAD)" = "5e149a034c7bb37dd3afe4945026d1a581af3ed3"
+          test "${RUNNER_OS:?}" = Linux
+          test "${RUNNER_ARCH:?}" = X64
+          printf 'C5_SOURCE=%s\nC5_IMAGE_OS=%s\nC5_IMAGE_VERSION=%s\n' '5e149a034c7bb37dd3afe4945026d1a581af3ed3' "${ImageOS:?}" "${ImageVersion:?}"
+          python="$RUNNER_TOOL_CACHE/Python/3.11.18/x64/bin/python3.11"
+          test -f "$python" && test -x "$python"
+          python="$(realpath "$python")"
+          cache="$(realpath "$RUNNER_TOOL_CACHE/Python/3.11.18/x64")"
+          case "$python" in "$cache"/*) ;; *) exit 2 ;; esac
+          printf 'C5_PYTHON_PATH=%s\n' "$python"
+          sha256sum "$python"
+          version="$("$python" -I -B -S --version)"
+          printf 'C5_PYTHON_VERSION=%s\n' "$version"
+          test "$version" = 'Python 3.11.18'
+          scratch="$(mktemp -d "$(realpath "$RUNNER_TEMP")/c5-pure.XXXXXXXX")"
+          trap 'rm -rf -- "$scratch"; test ! -e "$scratch"' EXIT
+          mkdir "$scratch/home"
+          export TMPDIR="$scratch" PILOTODIN_HOME="$scratch/home"
+          cd source
+          "$python" -I -B -S qa/c5_pdfium/pure_rehearsal.py --collect-only
+          "$python" -I -B -S qa/c5_pdfium/pure_rehearsal.py
