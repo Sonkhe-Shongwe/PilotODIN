@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 86b337e01904fe5ef8a3071b76d6bbb38c9bcec6 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | Revised C5-A/B development reproducibility and build safety; D prerequisites and P8 release-only allocation. No restricted acquisition, native, owner data, install, packaging, phase activation or release. |
 | Operation ID | C5-SOURCE-TEST-INPUT-ONCE-20261126 |
-| Operation state | PREPARED exact marker-only activation after both disarmed rehearsal jobs passed. Armed workflow will not trigger on its own change. Approval unconsumed until marker-only dispatch; never replay. |
+| Operation state | ISSUED exact 345b216 marker-only activation, run 45815459625 attempt 1 observed. Approval consumed; disarm now, no retry. |
 | Intended files | Minimal dedicated one-use source-test driver and workflow, inert rehearsal only initially, then independently pinned marker-only activation and immediate disarm only after readiness. |
 | Approval | Owner explicitly stated: "I approve one bounded C5 source-test dependency verification transaction covering the 62 unique pinned wheels, maximum 98 exact HTTPS GETs and 230520362 body bytes, Windows and Linux isolated wheelhouses, actual SHA256 and metadata verification and offline pip dry-run only. No redirects, retries, actual installation, native execution, owner access or installer build." Further exact limits in bounded proposal; 19 older approvals remain consumed/disarmed. Current approval unconsumed. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | Final disarmed #45815156277 at 976c5bc SUCCESS: Windows 139892874102 and Linux 139892874408 rehearsal PASS, restricted jobs 139892876441/139892876988 skipped. Initial #45814992088 SUCCESS. No live run yet. |
+| Pending runs | Exact live #45815459625 at 345b216 in progress; Windows 139893951063, rehearsal 139893953137 skipped, Linux gated by Windows success. Final disarmed rehearsal #45815156277 SUCCESS. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
-| Recovery action | Verify exact armed workflow and marker-only direct child commit, dispatch once, immediately restore disarmed workflow and remove marker after observing exact run. If uncertain reconcile first; no retries. |
+| Recovery action | Reconcile exact one-use run and safe receipts; no reactivation, retry, install or scope expansion. Confirm marker absent and both live jobs literal false at HEAD. |
 | Resume after closure | D only after revised C5 source closure, G2 resolution and separately approved scope; every native prerequisite before its use. P8 release-only obligations retained; installer frozen. |
 
 ## Prior operation
