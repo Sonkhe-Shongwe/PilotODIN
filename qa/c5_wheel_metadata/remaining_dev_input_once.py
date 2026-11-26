@@ -25,8 +25,8 @@ from urllib.parse import parse_qsl, urlsplit
 ROOT = Path(__file__).resolve().parents[2]
 DRIVER = "qa/c5_wheel_metadata/remaining_dev_input_once.py"
 WORKFLOW = ".github/workflows/c5-remaining-dev-input-once.yml"
-MARKER = "qa/c5_wheel_metadata/APPROVAL_REMAINING_DEV_INPUT_ONCE_20261126.json"
-OP = "C5-REMAINING-DEV-INPUT-ONCE-20261126"
+MARKER = "qa/c5_wheel_metadata/APPROVAL_REMAINING_DEV_INPUT_CORRECTED_ONCE_20261126.json"
+OP = "C5-REMAINING-DEV-INPUT-CORRECTED-ONCE-20261126"
 MESSAGE = OP + " owner approved acquisition only"
 LIVE_ENABLED = False
 CAPABILITY = object()
