@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | PREPARED |
+| State | BLOCKED |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 347954487b5417ae3d8240f953540a6177daee77 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | Revised C5-A/B development reproducibility and build safety; D prerequisites and P8 release-only allocation. No restricted acquisition, native, owner data, install, packaging, phase activation or release. |
 | Operation ID | C5-STDLIB-PURE-ONEUSE-20261126 |
-| Operation state | PREPARED; exact detached source 5e149a034c7bb37dd3afe4945026d1a581af3ed3; isolated workflow commit 215c680cf8b87b8d1b6507c8e9118ffc3083a88e; no dispatch or execution yet. |
-| Intended files | Journal-only live checkpoint; isolated branch qa/c5-pure-rehearsal-20261126 based on main 64bb85676f50ec507e8d0614f1cf9293f04c9291 (one existing manual-only workflow). Single new push workflow pinned to exact source; first-parent transition only, attempt 1, Ubuntu 24.04, five minutes. No live product cutover. |
-| Approval | Owner: "I approve the limited GitHub-hosted Ubuntu and cached CPython 3.11.18 bootstrap trust decision and one source-pinned standard-library C5 pure rehearsal, with eleven checks and a five-minute cap. No acquisition, installation, native product execution, live branch cutover or release. Preserve all existing acceptance and final-use provenance requirements. Proceed." One unused restricted rehearsal approval; 24 earlier consumed/disarmed. Limited bootstrap only. |
+| Operation state | RECONCILED SUCCESS: exact rehearsal 5e149a034c7bb37dd3afe4945026d1a581af3ed3, isolated run #45862485546 attempt 1, eleven of eleven passed; activation removed at b07ef3fcb874ab22c84a74bfeba74dbc57091d17; no replay. |
+| Intended files | Terminal documentation-only checkpoint. Next read-only reconciliation of remaining C5-A/B final-use prerequisites for rows 5–7; no platform Stage A/B execution until exact fresh authority. |
+| Approval | Owner-approved limited hosted Ubuntu/cached CP311 bootstrap and one pure rehearsal consumed; 25 total restricted approvals consumed/disarmed, zero active. Final-use installed interpreter provenance not waived. No acquisition, installation, native product execution, live branch cutover or release. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | None at preparation. Check exact isolated workflow commit 215c680cf8b87b8d1b6507c8e9118ffc3083a88e and branch before issuing or repeating anything. |
-| Unpublished work | Detached source 5e149a034c7bb37dd3afe4945026d1a581af3ed3 retained as second parent of isolated orchestration commit 215c680cf8b87b8d1b6507c8e9118ffc3083a88e; not promoted to live product branch. Owner-local tree untouched/uninspected. |
-| Recovery action | Reconcile isolated branch ref, exact workflow SHA and run attempt before any further action. If activation issued, never replay. Capture identity, collection and execution receipts; disarm isolated workflow; append one terminal evidence receipt and update handoff. No install, acquisition, Stage A/B or native authority. |
+| Pending runs | None for rehearsal; #45862485546 SUCCESS, one job and one attempt. Isolated branch activation removed, branch query exactly one run. |
+| Unpublished work | 5e149a034c7bb37dd3afe4945026d1a581af3ed3 remains off live development branch; reachable in isolated QA ancestry. Owner-local tree untouched/uninspected. |
+| Recovery action | [Exact pure rehearsal receipt](./PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md#26-november--c5-authorised-standard-library-pure-rehearsal-pass). Reconcile remaining existing independent interpreter provenance (Windows/Linux), applicable input/toolchain/npm licence and consumption disposition, then review exact platform-local Stage A/B plan and request fresh bounded authority only for unresolved restricted use. No duplicate pure rehearsal or identity-only collection. |
 | Resume after closure | D only after revised C5 source closure, G2 resolution and separately approved scope; every native prerequisite before its use. P8 release-only obligations retained; installer frozen. |
 
 ## Prior operation
@@ -28,4 +28,4 @@ C4-RESEARCH-AND-IMPLEMENTATION-PLAN-20261125: [`bd7c163`](https://github.com/Son
 
 ## Unresolved or interrupted operations
 
-A/B and C1–C4 source closed; C5 outstanding. Source 14/17 (82.4%), official P4 14/20 (70%). Native DPAPI, actual desktop/physical egress and durability, physical 8 GB and G2/D evidence deferred. Owner-local tree uninspected. Twenty-four restricted approvals consumed/disarmed; preserve local work, installer freeze unchanged. Historical failures and exact receipts retained in C ledger.
+A/B and C1–C4 source closed; C5 outstanding. Source 14/17 (82.4%), official P4 14/20 (70%). Native DPAPI, actual desktop/physical egress and durability, physical 8 GB and G2/D evidence deferred. Owner-local tree uninspected. Twenty-five restricted approvals consumed/disarmed; preserve local work, installer freeze unchanged. Historical failures and exact receipts retained in C ledger.
