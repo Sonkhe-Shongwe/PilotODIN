@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | READY |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | dacaf91db9a51f147e1f3c0f4b5456a266f73a7b |
+| Observed starting HEAD | ce850a5657a34af6e4e085cd1c260d1ee558bdcb |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
-| Operation ID | C5-R1-DOCUMENTATION-CONSISTENCY-AUDIT-20261126 |
-| Operation state | RECONCILED: C5-R1 documentation consistency audit; stale counts/next steps and navigation corrected, readiness/closure wording clarified, historical handoff preserved by immutable link. No product or QA changes, no new test or acceptance credit; all 18 approvals consumed/disarmed. |
-| Intended files | Journal, handoff, C5 readiness review/specification, decision index, C ledger, README, Continue Here, documentation index, roadmap and current audit pointers; new dated C5-R1 consistency audit. |
-| Approval | Routine source-only implementation, documentation and reviewed synthetic CI permitted under controlling directive; this audit was documentation only. All 18 restricted approvals consumed/disarmed; no actual acquisition, transfer, build, native execution, owner access or activation. |
+| Operation ID | C5-R2-LICENCE-COMPATIBILITY-20261126 |
+| Operation state | PREPARED: audit found v2 accepts legacy root location for metadata 2.4+; PyPA requires licenses/ relative path. New separate policy layer using 62 pinned candidate sidecars and six pinned freezer receipt declarations, no historical inspector/codec modification. Synthetic producer and independent replay checks; bounded unsupported format fixtures. |
+| Intended files | qa/c5_wheel_metadata/wheel_license_policy.py, test_wheel_license_policy.py, .github/workflows/c5-wheel-licence-policy-review.yml, journal/handoff/ledger and C5 implementation specification. |
+| Approval | Routine source/synthetic CI only. All 18 restricted approvals consumed/disarmed; no actual wheels, retrieval, installation, owner tree or execution. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | None; documentation-only audit, no workflow changes or dispatch. |
+| Pending runs | None; dedicated Ubuntu/Windows synthetic CI planned. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
-| Recovery action | C5-R2 source-only, first audit licence metadata 2.4+ placement and unsupported-format/refusal fixtures, then design shared schema-3 core with explicit caps and separate fixture/disabled hosted frontdoors. Complete prior-five durable replay, gate/artifact tests, retention plan and representative synthetic resource measurements; exact CI before fresh R3 approval proposal. See linked C5-R1 review and current audit; no speculative redesign or historical pin changes. |
+| Recovery action | Bind independently pinned metadata versions by exact filename+metadata hash+declared files, enforce modern location and preserve legacy exact-one rule; verify v2 evidence independently before accepting policy. Check prior five preserved evidence separately without rewriting/replaying downloads; test format refusal and no historical drift. Then shared settlement core only after exact CI. No R3 approval yet. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
