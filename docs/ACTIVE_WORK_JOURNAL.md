@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | VERIFYING |
+| State | BLOCKED |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 630a5a787915b35e05f8ba762ec7064196a19da2 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
 | Operation ID | C5-PRIOR-NOTICE-PRESERVATION-20261126 |
-| Operation state | PUBLISHED/VERIFYING: disarmed exact prior notice preservation workflow, bounded canonical document encoder and independent persisted replay; offline tests pending. No retrieval or notice publication. |
+| Operation state | RECONCILED: exact 3a717d0 run 45758009735 attempt 1 SUCCESS, Ubuntu offline 139701121634 six tests and disabled CLI refusal PASS, preserve-notices 139701123130 SKIPPED. Exact five-document evidence preservation source ready; no actual retrieval or publication. Await explicit preservation approval. |
 | Intended files | New qa/c5_wheel_metadata/wheel_prior_notice_preservation.py, test_wheel_prior_notice_preservation.py, dedicated .github/workflows/c5-wheel-prior-notice-preservation.yml, journal/handoff/ledger. Existing historical pins and gates unchanged. |
 | Approval | Receipt-only approval consumed/disarmed; sixteen total restricted approvals consumed/disarmed (six native, seven metadata, one synthetic transfer, one actual wheel attempt, one receipt-only retrieval). No additional retrieval or wheel acquisition authorized. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | Expect dedicated offline review only; preserve-notices literal false. |
+| Pending runs | None. Exact CI reconciled. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
-| Recovery action | Verify offline exact CI and prepare approval for one existing 20475-byte artifact retrieval and bounded publication of five canonical evidence documents (10909 bytes; 5241 raw notice bytes) in Git with independent offline replay. No wheel requests or retry. Artifact expires 2026-12-03T00:31:22Z. Separate 63-wheel collection approval still required. |
+| Recovery action | Await explicit approval for one metadata read and one exact existing artifact 15076022558 ZIP retrieval (20475 bytes, exact pinned SHA256, at most one authenticated service redirect with no token forwarded, no retries), emit only five verified canonical evidence documents (10909 encoded JSON bytes before outer base64, 5241 raw notice bytes), persist one canonical repository JSON envelope <=32768 bytes, verify independent offline replay. Artifact expires 2026-12-03T00:31:22Z. Arm exact source flag/workflow only behind marker-only trigger, verify exact parent/no arm run, activate attempt 1, reconcile and disarm even on refusal. No wheel GET, installation, execution, artifact upload or legal clearance. Separate 63-wheel collection approval required. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
