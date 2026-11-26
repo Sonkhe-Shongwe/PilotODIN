@@ -1,2 +1,0 @@
-C5-SYNTHETIC-RECEIPT-TRANSFER-ONCE-20261126
-One inert receipt-only artifact upload and retrieval; no actual wheels or retries.

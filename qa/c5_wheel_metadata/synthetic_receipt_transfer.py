@@ -40,7 +40,7 @@ MARKER_BYTES=(OP+'\nOne inert receipt-only artifact upload and retrieval; no act
 CHECKSUM_RECEIPT=n.ROOT/(n.DIR+'toolchain_remaining_checksum_receipt_45725150647.jsonl')
 CHECKSUM_SHA='ab853994195f51e7f57dcf792298436dd55a98f28efbbe8f2a5207f7b851e53f'
 CHECKSUM_BLOB='5c51fbf25b0b2a78cdc9a313758569aad9f53561'
-ENABLED=True  # One owner-approved synthetic transfer, disarm after terminal result.
+ENABLED=False
 
 
 def need(ok,reason):
