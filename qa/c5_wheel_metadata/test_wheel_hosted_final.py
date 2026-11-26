@@ -2,6 +2,10 @@
 from contextlib import nullcontext
 import io
 import json
+import os
+import subprocess
+from email.message import Message
+from unittest.mock import Mock
 from pathlib import Path
 import sys
 import tempfile
@@ -91,6 +95,95 @@ class Tests(unittest.TestCase):
     def test_exact_runtime_source_pin_observation(self):
         for path,pin in f.EXTRA_PINS.items():
             self.assertEqual(rt.git_blob(p.pinned_text(f.ROOT/path,pin)),pin)
+    def git(self,root,*args):
+        return subprocess.run(['git','-C',str(root),'-c','user.name=Fixture','-c','user.email=fixture@example.invalid',
+                               '-c','core.autocrlf=false','-c','commit.gpgsign=false',*args],
+                              check=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=10).stdout.decode().strip()
+
+    def test_final_gate_independent_checkout(self):
+        root=self.parent/'checkout';root.mkdir();self.git(root,'init','-q')
+        pins={**rt.RUNTIME_PINS,**f.EXTRA_PINS}
+        for path,pin in pins.items():
+            dest=root/path;dest.parent.mkdir(parents=True,exist_ok=True)
+            dest.write_bytes(p.pinned_text(f.ROOT/path,pin))
+        for path in (f.SELF,f.WORKFLOW):
+            dest=root/path;dest.parent.mkdir(parents=True,exist_ok=True)
+            dest.write_bytes(b'final inert fixture\n')
+        self.git(root,'add','.');self.git(root,'commit','-qm','fixture parent')
+        parent=self.git(root,'rev-parse','HEAD');inputs=rt.input_identity()
+        (root/f.MARKER).write_bytes(rt.marker_bytes(inputs))
+        self.git(root,'add',f.MARKER);self.git(root,'commit','-qm',rt.MESSAGE)
+        head=self.git(root,'rev-parse','HEAD');pin=rt.git_blob(b'final inert fixture\n')
+        expected={'parent':parent,'head':head,'driver_blob':pin,'workflow_blob':pin,'inputs':inputs}
+        context={'GITHUB_ACTIONS':'true','GITHUB_EVENT_NAME':'push','GITHUB_REPOSITORY':rt.REPO,
+                 'GITHUB_REF':rt.BRANCH,'GITHUB_WORKFLOW':rt.WORKFLOW_NAME,'GITHUB_JOB':'collect-once',
+                 'GITHUB_RUN_ATTEMPT':'1','C5_APPROVED_ONCE':rt.OP,'GITHUB_SHA':head,
+                 'C5_DRIVER_BLOB':pin,'C5_WORKFLOW_BLOB':pin,'GITHUB_RUN_ID':'12345'}
+        event={'ref':rt.BRANCH,'before':parent,'after':head,'forced':False,'created':False,'deleted':False,
+               'repository':{'full_name':rt.REPO},'head_commit':{'id':head,'message':rt.MESSAGE}}
+        got=f.review_checkout(root,event,context,expected,'collect-once')
+        self.assertEqual(got['scope'],f.m.TRANSFER_SCOPE)
+        self.deny('GATE_CONTEXT',lambda:f.review_checkout(root,event,{**context,'C5_DRIVER_BLOB':'0'*40},
+                                                           expected,'collect-once'))
+        self.deny('GATE_EVENT',lambda:f.review_checkout(root,event,context,{**expected,'parent':'0'*40},'collect-once'))
+        (root/f.SELF).write_bytes(b'changed')
+        self.deny('DIRTY_CHECKOUT',lambda:f.review_checkout(root,event,context,expected,'collect-once'))
+
+    def test_live_transport_exact_request_mock(self):
+        rows,_,_=c.remaining_inputs()
+        # Stub the already-reviewed grant check and the HTTPS constructor only.
+        # No real socket or real authorization is present.
+        conn=Mock();response=Mock();response.status=503;conn.getresponse.return_value=response
+        with patch.object(f,'_check_grant') as gate,patch.object(f.http.client,'HTTPSConnection',return_value=conn) as https:
+            fetch=f._live_fetch(object(),rows)
+            got=fetch(rows[0]['url']);got.close()
+            host,port,path,headers=f.h.request_parts(rows[0])
+            self.assertEqual(https.call_args.args,(host,port))
+            self.assertEqual(https.call_args.kwargs['timeout'],a.REQUEST_TIMEOUT)
+            tls=https.call_args.kwargs['context']
+            self.assertTrue(tls.check_hostname)
+            self.assertEqual(tls.verify_mode,f.ssl.CERT_REQUIRED)
+            conn.request.assert_called_once_with('GET',path,headers=headers)
+            conn.close.assert_called_once();response.close.assert_called_once()
+            self.deny('TRANSPORT_STOPPED',lambda:fetch(rows[1]['url']))
+            self.assertEqual(https.call_count,1);self.assertGreaterEqual(gate.call_count,2)
+
+    def test_live_transport_wrong_order_no_connection(self):
+        rows,_,_=c.remaining_inputs()
+        with patch.object(f,'_check_grant'),patch.object(f.http.client,'HTTPSConnection') as conn:
+            fetch=f._live_fetch(object(),rows)
+            self.deny('URL_SCOPE',lambda:fetch(rows[1]['url']))
+            self.deny('TRANSPORT_STOPPED',lambda:fetch(rows[0]['url']))
+            conn.assert_not_called()
+
+    def test_download_protocol_mock(self):
+        rows,bindings,caps=c.remaining_inputs();plan=f.diagnostic.MISSING_PLAN_BLOB
+        data=self.roundtrip(True);raw,meta,record=data[:3]
+        class Response:
+            def __init__(self,body):
+                self.body=io.BytesIO(body);self.status=200;self.headers=Message()
+                self.headers['Content-Length']=str(len(body))
+            def read(self,count):return self.body.read(count)
+            def __enter__(self):return self
+            def __exit__(self,*_):self.body.close()
+        class Opener:
+            def __init__(self):self.calls=[]
+            def open(self,req,timeout):
+                self.calls.append(req)
+                return Response(json.dumps(meta).encode('utf-8') if len(self.calls)==1 else raw)
+        opener=Opener();grant=Mock();grant.claim={'run':'12345','source_sha':'1'*40}
+        with patch.object(f,'_check_grant'),patch.object(f.t,'deadline',nullcontext):
+            got,observed=f._download_exact(grant,record,'12345','1'*40,'123',w.sha(raw),'inert-token',opener,
+                                           rows,plan,bindings=bindings,caps=caps,scope=f.HOSTED_SCOPE)
+            self.assertEqual(got,raw);self.assertEqual(observed,meta)
+            self.assertEqual([x.full_url.rsplit('/',1)[-1] for x in opener.calls],['123','zip'])
+            self.assertTrue(all(x.get_method()=='GET' for x in opener.calls))
+            bad=Opener()
+            self.deny('ARTIFACT_UPLOAD_IDENTITY',lambda:f._download_exact(
+                grant,record,'12345','1'*40,'123','0'*64,'inert-token',bad,
+                rows,plan,bindings=bindings,caps=caps,scope=f.HOSTED_SCOPE))
+            self.assertEqual(len(bad.calls),1)
+
     def test_fixture_core_compatible_receipts(self):
         replay=a.Replay({self.rows[0]['url']:wire(self.raw)})
         old,sha=c._collect(self.rows,'fixture',self.bindings,self.caps,c.FIXTURE_SCOPE,replay.get,nullcontext,self.parent)

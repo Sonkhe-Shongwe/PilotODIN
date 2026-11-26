@@ -31,6 +31,11 @@ ARMED=False
 if __name__=='__main__' and ARMED is not True:
     raise SystemExit('FRESH_APPROVAL_REQUIRED: final hosted driver disabled')
 
+# Python -I omits the script directory. Only the exact adjacent source tree
+# is added; the independently reviewed arm must pin it before execution.
+if __name__=='__main__':
+    sys.path.insert(0,str(Path(__file__).resolve().parent))
+
 import wheel_acquisition_offline as a
 import wheel_archive_inspector as w
 import wheel_notice_evidence_v2 as n
@@ -510,13 +515,14 @@ def replay_artifact(raw, meta, record, expected_run, expected_sha, expected_id, 
 
 def _download_exact(grant,record,run,sha,artifact_id,upload_digest,token,opener,rows,plan_blob,*,bindings,caps,scope):
     _check_grant(grant,'retrieve-once')
-    need(scope==HOSTED_SCOPE,'LIVE_SCOPE')
+    need(scope==HOSTED_SCOPE and grant.claim['run']==run and grant.claim['source_sha']==sha,'LIVE_SCOPE')
     limit=bundle_cap(caps)+1024*1024
     need(type(record) is dict and 'bundle' in record,'RECEIPT_CONTEXT')
     reviewed=artifact_record(run,sha,record['bundle'],rows,plan_blob,bindings=bindings,caps=caps,scope=scope)
     need(n.canonical(record)==n.canonical(reviewed),'RECEIPT_CONTEXT')
     need(record['bundle']['bytes']<=bundle_cap(caps),'BUNDLE_LIMIT')
-    need(RUN.fullmatch(artifact_id) and n.digest(upload_digest),'UPLOAD_OUTPUT')
+    need(type(artifact_id) is str and RUN.fullmatch(artifact_id) and int(artifact_id)<=2**63-1
+         and n.digest(upload_digest),'UPLOAD_OUTPUT')
     need(bool(token),'ARTIFACT_TOKEN')
     url='https://api.github.com/repos/'+REPO+'/actions/artifacts/'+artifact_id
     # Read exactly the associated artifact metadata; never enumerate other artifacts.
