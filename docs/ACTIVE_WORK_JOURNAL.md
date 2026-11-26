@@ -7,7 +7,7 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | ce850a5657a34af6e4e085cd1c260d1ee558bdcb |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
@@ -17,7 +17,7 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Intended files | qa/c5_wheel_metadata/wheel_license_policy.py, test_wheel_license_policy.py, .github/workflows/c5-wheel-licence-policy-review.yml, journal/handoff/ledger and C5 implementation specification. |
 | Approval | Routine source/synthetic CI only. All 18 restricted approvals consumed/disarmed; no actual wheels, retrieval, installation, owner tree or execution. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | None; dedicated Ubuntu/Windows synthetic CI planned. |
+| Pending runs | Dedicated exact Ubuntu/Windows synthetic CI pending reconciliation. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
 | Recovery action | Bind independently pinned metadata versions by exact filename+metadata hash+declared files, enforce modern location and preserve legacy exact-one rule; verify v2 evidence independently before accepting policy. Check prior five preserved evidence separately without rewriting/replaying downloads; test format refusal and no historical drift. Then shared settlement core only after exact CI. No R3 approval yet. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
