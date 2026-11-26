@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-APPROACH-C-TWO-STAGE-CUSTODY-PREP-20261127",
-    "parent_sha": "a8586927db0399acd582fad3ae5c3755b9fbb66e",
-    "previous_snapshot_sha": "a8586927db0399acd582fad3ae5c3755b9fbb66e",
-    "scope": "Owner-approved two-stage preparation, tested structural public-key custody/handoff and consolidation; no real acquisition or execution; stop before unjustified adapter.",
+    "operation_id": "C5-C-D08-NECESSITY-AUDIT-20261127",
+    "parent_sha": "95754d4a3ca486be1848fc8496f0049c2aba9072",
+    "previous_snapshot_sha": "95754d4a3ca486be1848fc8496f0049c2aba9072",
+    "scope": "Read-only C-D08 necessity audit and public custody correction; preserve all candidates, park further bespoke infrastructure, retain mandatory evidence.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "27-november--c5-approach-c-two-stage-preparation-and-synthetic-key-custody-consolidated",
-      "blob_sha": "c728f30096c506501223c4431b9795e6ef708c60",
-      "start_line": 2826,
-      "end_line": 2828
+      "anchor": "27-november--c5-focused-c-d08-necessity-audit-and-custody-correction",
+      "blob_sha": "9fe99d46959358e29ff790b77af50552ddddd1b8",
+      "start_line": 2830,
+      "end_line": 2832
     }
   },
   "product": {
@@ -119,14 +119,33 @@
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
     "status": "READY",
     "scope": "C-D08 revised C5-A/B development reproducibility and build safety only; D retains native prerequisites, P8 release-only",
-    "blocker": "Approach C not execution-ready: actual GnuPG dependency closure/helper containment, live transport, hard deadline and key binding/validity unresolved. No actual key acquisition or signer approval. C5 necessity audit required before more bespoke tooling.",
-    "next_action": "Focused read-only C-D08 necessity audit of C5 checklist rows 5–8: map existing exact qualifying source/development evidence and missing actual consumed inputs; determine whether portable CP311 provenance is indispensable or standard approved tooling can meet unchanged requirements. Preserve Approach C candidate and all evidence; no policy change, acquisition or execution; if distinct method necessary present one concrete owner decision. Do not request another generic preparation approval or execute incomplete candidate.",
+    "blocker": "Mandatory interpreter provenance and actual-use/compatibility/licence/font/browser/Rust/final regression gaps remain. Approach C optional and parked; current public repository unsuitable for proposed private custody. No interpreter route yet proven.",
+    "next_action": "Focused read-only reconciliation of applicable actual-use licence evidence for exact 62 original source-test wheel identities (24 originally lack expression), using existing retained receipts and declaration triage; distinguish live PyMuPDF from detached PDFium conditional evidence and identify only concrete unresolved source/notice/use facts. No new acquisition, legal clearance from labels, migration, execution or policy change. No more bespoke Approach C work; preserve candidates.",
     "next_action_kind": "READ_ONLY",
     "after": [
-      "If portable route remains indispensable, identify exact minimum closure/adapter evidence and present one bounded next decision; no blind retry or automatic trust adoption.",
-      "If standard route sufficient, propose exact scope with evidence mapping and necessary separate use/execution approval; no C5 credit until all eight rows proven. Keep D/G2/P5 and installer gates."
+      "Resolve specific mandatory interpreter provenance method via concrete owner decision if no independently supported existing route; standard-tool verification retained, no blind retries or new custody assumption.",
+      "Resolve remaining actual required input/font/toolchain/browser/Rust and PDF test-use conditions, then separately approved exact use/regression as justified; no C5 credit until all eight rows met. Preserve phase gates."
     ],
     "read": [
+      {
+        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
+        "anchor": "27-november--c5-focused-c-d08-necessity-audit-and-custody-correction",
+        "blob_sha": "9fe99d46959358e29ff790b77af50552ddddd1b8",
+        "start_line": 2830,
+        "end_line": 2832
+      },
+      {
+        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
+        "anchor": "focused-c-d08-necessity-audit-interpreter-evidence-is-mandatory-approach-c-is-not",
+        "blob_sha": "a764346faed8ed7d0526ab41eac2f13a5b22823d",
+        "start_line": 863,
+        "end_line": 878
+      },
+      {
+        "path": "docs/C5_PUBLIC_REPOSITORY_LICENCE_EVIDENCE_REVIEW_2026-11-26.md",
+        "blob_sha": "b0cb741a0ab4466478ae9f1546e03a125bf4367f",
+        "anchor": "1-exact-pinned-declaration-review"
+      },
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "27-november--c5-approach-c-two-stage-preparation-and-synthetic-key-custody-consolidated",
@@ -591,18 +610,17 @@
     ]
   },
   "operation": {
-    "id": "C5-APPROACH-C-TWO-STAGE-CUSTODY-PREP-20261127",
+    "id": "C5-C-D08-NECESSITY-AUDIT-20261127",
     "state": "RECONCILED",
-    "starting_sha": "a8586927db0399acd582fad3ae5c3755b9fbb66e",
-    "outcome": "Consolidated inert candidate 813f3f059c80a7a94e40133f6ef55e202e7f80f1; six new pure fixture tests PASS, prior 9+5 preserved; exact byte custody only, no live key/transport/GnuPG/closure verification; next focused necessity audit.",
-    "source_sha": "813f3f059c80a7a94e40133f6ef55e202e7f80f1",
+    "starting_sha": "95754d4a3ca486be1848fc8496f0049c2aba9072",
+    "outcome": "Approach C optional method; actual independently reviewed interpreter and use evidence mandatory, no proven full standard-only route. Public repository cannot satisfy proposed private key custody. Park bespoke infrastructure; reconcile live source-test licence-use gaps next.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "27-november--c5-approach-c-two-stage-preparation-and-synthetic-key-custody-consolidated",
-      "blob_sha": "c728f30096c506501223c4431b9795e6ef708c60",
-      "start_line": 2826,
-      "end_line": 2828
+      "anchor": "27-november--c5-focused-c-d08-necessity-audit-and-custody-correction",
+      "blob_sha": "9fe99d46959358e29ff790b77af50552ddddd1b8",
+      "start_line": 2830,
+      "end_line": 2832
     }
   },
   "authority": {
