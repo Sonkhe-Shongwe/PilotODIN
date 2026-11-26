@@ -65,7 +65,7 @@ def synthetic_revision() -> dict:
 
 def proof_bytes(report: dict, context: UnicodePDFContext) -> tuple[bytes, dict]:
     """Use actual product renderer on immutable input; no persistent data read."""
-    from tools.pdf_test_inspection import inspect_pdf
+    from tools.pdf_test_inspection import has_sparse_continuation, inspect_pdf
     from backend import reports
 
     original = copy.deepcopy(report)
@@ -104,10 +104,7 @@ def proof_bytes(report: dict, context: UnicodePDFContext) -> tuple[bytes, dict]:
     # not. Reject that exact sparse-continuation failure in future runs.
     if len(doc) > 1:
         last = doc[-1]
-        bounds = [region.bounds for region in last.regions
-                  if region.text.strip() and
-                  not region.text.strip().startswith("PilotODIN · Verified")]
-        if bounds and max(box[3] for box in bounds) < last.height * 0.34:
+        if has_sparse_continuation(last):
             raise ValueError("Sparse continuation page in synthetic Unicode PDF")
     pages = [page.text for page in doc]
     text = " ".join(" ".join(pages).split())

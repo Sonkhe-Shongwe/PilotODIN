@@ -136,9 +136,9 @@ def test_blank_wrong_size_and_page_count_malformed_truncated_controls():
     assert abs(page.width - 595.276) > 1 and abs(page.height - 841.89) > 1
     with pytest.raises(ValueError, match="Unexpected PDF page count"):
         qa.inspect_pdf(_pdf(_line("First"), _line("Second")), max_pages=1)
-    with pytest.raises(Exception):
+    with pytest.raises(ValueError, match="Incomplete generated PDF"):
         qa.inspect_pdf(b"%PDF-1.4\nmalformed")
-    with pytest.raises(Exception):
+    with pytest.raises(ValueError, match="Incomplete generated PDF"):
         qa.inspect_pdf(_pdf(_line("Complete"))[:-12])
 
 
@@ -156,3 +156,25 @@ def test_supplementary_unicode_map_and_same_engine_pixel_identity():
 def test_bmp_unicode_map():
     page, = qa.inspect_pdf(_pdf(_line("A"), unicode_hex=b"0394"))
     assert page.text.strip() == "Δ"
+
+
+def test_sparse_continuation_retains_nonfooter_extent_predicate():
+    # Exercise the actual shared predicate against independently specified boxes.
+    footer = qa.TextRegion((10, 185, 190, 195), "PilotODIN · Verified")
+    top = qa.TextRegion((20, 10, 100, 25), "Parameters")
+    body = qa.TextRegion((20, 90, 100, 104), "Substantial content")
+    sparse = qa.PageEvidence("", 200, 200, (top, footer), ())
+    filled = qa.PageEvidence("", 200, 200, (top, body, footer), ())
+    assert qa.has_sparse_continuation(sparse)
+    assert not qa.has_sparse_continuation(filled)
+    # A real generated two-page fixture independently exercises region geometry.
+    # Font-specific Unicode footer grouping remains a separate acceptance test.
+    first, last = qa.inspect_pdf(_pdf(_line("First", 20, 150),
+                                     _line("Parameters", 20, 180)), geometry=True)
+    assert "First" in first.text
+    assert "Parameters" in last.text
+    assert qa.has_sparse_continuation(last)
+    _, filled_last = qa.inspect_pdf(_pdf(_line("First"),
+                                         _line("Parameters", 20, 180) +
+                                         _line("Substantial content", 20, 80)), geometry=True)
+    assert not qa.has_sparse_continuation(filled_last)

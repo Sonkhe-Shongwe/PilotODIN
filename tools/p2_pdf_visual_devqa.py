@@ -20,6 +20,8 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 from qa_foundation import create_run, default_root, scan_files
 
 PHASE = "P2-PDF-VISUAL"

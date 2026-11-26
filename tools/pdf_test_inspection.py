@@ -59,6 +59,26 @@ def require_pdfium() -> None:
         import pypdfium2  # noqa: F401
 
 
+def has_sparse_continuation(page: PageEvidence) -> bool:
+    """Keep the original non-footer text bottom < 34% page-height predicate.
+
+    PDFium rectangle grouping is provisional until equivalence is evidenced.
+    """
+    bounds = [region.bounds for region in page.regions
+              if region.text.strip() and
+              not region.text.strip().startswith("PilotODIN · Verified")]
+    return bool(bounds and max(box[3] for box in bounds) < page.height * 0.34)
+
+
+def _check_generated_pdf(raw: bytes) -> None:
+    if not isinstance(raw, bytes) or not raw.startswith(b"%PDF"):
+        raise ValueError("Expected generated PDF bytes")
+    # Generated fixtures have a complete EOF marker; do not silently accept
+    # a repaired/truncated PDF solely because the reader can open it.
+    if not raw.rstrip().endswith(b"%%EOF"):
+        raise ValueError("Incomplete generated PDF")
+
+
 def _checked_box(box) -> Box:
     left, bottom, right, top = map(float, box)
     if not all(math.isfinite(v) for v in (left, bottom, right, top)):
@@ -128,8 +148,7 @@ def _inspect_page(page, geometry: bool) -> PageEvidence:
 def inspect_pdf(raw: bytes, *, geometry: bool = False,
                 max_pages: int | None = None) -> tuple[PageEvidence, ...]:
     """Return immutable evidence; no live native handles escape the lock."""
-    if not isinstance(raw, bytes) or not raw.startswith(b"%PDF"):
-        raise ValueError("Expected generated PDF bytes")
+    _check_generated_pdf(raw)
     require_pdfium()
     with _LOCK:
         import pypdfium2
@@ -152,8 +171,7 @@ def inspect_pdf(raw: bytes, *, geometry: bool = False,
 
 def render_rgb(raw: bytes, index: int, *, scale: float) -> RasterEvidence:
     """Render selected generated pages to independent packed RGB bytes."""
-    if not isinstance(raw, bytes) or not raw.startswith(b"%PDF"):
-        raise ValueError("Expected generated PDF bytes")
+    _check_generated_pdf(raw)
     if scale not in (1.3, 1.5):
         raise ValueError("Unexpected QA raster scale")
     require_pdfium()
