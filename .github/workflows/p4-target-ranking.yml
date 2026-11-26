@@ -262,6 +262,15 @@ jobs:
           rustc --edition=2021 --test frontend/src-tauri/src/storage_profile_tests.rs -o "$RUNNER_TEMP/pilotodin-storage-policy-tests"
           "$RUNNER_TEMP/pilotodin-storage-policy-tests"
           rm -f "$RUNNER_TEMP/pilotodin-storage-policy-tests"
+      - name: Record exact existing Linux development toolchain
+        run: |
+          python -I -B -c "import sys,struct,platform,importlib.metadata as m; assert sys.implementation.name == 'cpython' and sys.version_info[:2] == (3,11) and struct.calcsize('P') == 8; print('C5_TOOLCHAIN Python',platform.python_version(),platform.system(),platform.machine(),'pip',m.version('pip'))"
+          python -I -B -m pip --isolated --disable-pip-version-check --version
+          python -I -B -m pip --isolated --disable-pip-version-check --no-input check
+          node --version
+          npm --version
+          rustc -Vv
+          cargo --version
       - name: Verify Python-only workspace writer lease
         run: python -B -m unittest -v tests.test_workspace_boundary tests.test_owned_server
       - name: Compile changed backend code
@@ -410,6 +419,16 @@ jobs:
           } finally {
             if (Test-Path -LiteralPath $object) { Remove-Item -LiteralPath $object -Force }
           }
+      - name: Record exact existing Windows development toolchain and Python compatibility
+        run: |
+          python -I -B -c "import sys,struct,platform,importlib.metadata as m; assert sys.implementation.name == 'cpython' and sys.version_info[:2] == (3,11) and struct.calcsize('P') == 8; print('C5_TOOLCHAIN Python',platform.python_version(),platform.system(),platform.machine(),'pip',m.version('pip'))"
+          python -I -B -m pip --isolated --disable-pip-version-check --version
+          python -B -c "import sys; from pathlib import Path; from tools import live_dev; live_dev.verify_python_environment(Path(sys.executable),Path(sys.prefix),Path('backend/requirements.txt')); print('C5_HOSTED_PYTHON_DEV_COMPATIBILITY_PASS')"
+          node --version
+          npm --version
+          node frontend/scripts/verify-npm-lock.mjs
+          rustc -Vv
+          cargo --version
       - name: Parse C5 guarded Windows source entrypoints without running them
         shell: powershell
         run: |
