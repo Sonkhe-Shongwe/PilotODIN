@@ -1,0 +1,3 @@
+C5-WHEEL-PUBLIC-DISCOVERY-ONCE-20261126
+093c2553aa4b5be20d2324ca185789d5b4cbe98585ae9919e4ceb69127e38e38
+63 exact wheel GETs; discovery projection only; zero redirects or retries.
