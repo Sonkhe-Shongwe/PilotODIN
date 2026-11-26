@@ -1,5 +1,13 @@
 # PilotODIN | Active work journal
 
+## Prepared continuity migration
+
+Operation CONT-V2-MIGRATION-20261126 | PREPARED | owner requested continuation optimisation, including documentation restructuring, preserving full context. Starting HEAD b9864b70fb9bb5a72d0f79c37f15b94100722192; product baseline 8da7f33cb418e453a7b5c250b960fb6370e9e9d0. C5 is paused, not closed: all existing restrictions and 28 consumed approvals remain unchanged. Original live state below, immutable full snapshot at starting HEAD. Intended changes: compact root AGENTS/state, compatibility routing for the old current handoff/journal/protocol, targeted context index/decision record, read-only standard-library validator with synthetic tests. No product, dependency, workflow, scorecard or evidence deletion; no C5 acquisition/execution, no owner-local access. Expected evidence: exact changed-path/tree review, preservation of historical bytes via original commit, state and recovery tests, workflow trigger safety before non-force publication. If interrupted, reconcile actual branch and detached candidate; do not repeat publication or resume C5 until the migration is reconciled. If unable to establish safe publication, preserve original state and report candidate only.
+
+## Suspended C5 record (verbatim)
+
+# PilotODIN | Active work journal
+
 Replace this record in place. It owns in-flight task recovery, not project progress or historical receipts. Read [live handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md) and [protocol](./CONTINUATION_PROTOCOL_CURRENT.md).
 
 ## Active task
