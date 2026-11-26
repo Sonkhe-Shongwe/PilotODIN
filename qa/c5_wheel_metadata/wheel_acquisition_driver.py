@@ -19,7 +19,7 @@ from urllib.error import HTTPError
 from urllib.parse import urlsplit
 from urllib.request import build_opener, HTTPSHandler, ProxyHandler
 
-ARMED=True
+ARMED=False
 ROOT=Path(__file__).resolve().parents[2]
 DIR='qa/c5_wheel_metadata/'
 SELF=DIR+'wheel_acquisition_driver.py'

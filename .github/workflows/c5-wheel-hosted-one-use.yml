@@ -6,12 +6,15 @@ on:
   push:
     branches: [feature/live-dev-workspace-20261023]
     paths:
-      - qa/c5_wheel_metadata/APPROVAL_WHEEL_HOSTED_20261126.txt
+      - .github/workflows/c5-wheel-hosted-one-use.yml
+      - qa/c5_wheel_metadata/wheel_one_use_review.py
+      - qa/c5_wheel_metadata/test_wheel_one_use_review.py
+      - qa/c5_wheel_metadata/wheel_acquisition_driver.py
+      - qa/c5_wheel_metadata/test_wheel_acquisition_driver.py
 permissions:
   contents: read
 jobs:
   offline-review:
-    if: ${{ false }}
     runs-on: ubuntu-24.04
     timeout-minutes: 6
     steps:
@@ -21,7 +24,7 @@ jobs:
           persist-credentials: false
       - name: Source pins, synthetic event, artifact and runtime driver review
         run: |
-          test "$(git hash-object qa/c5_wheel_metadata/wheel_acquisition_driver.py)" = "93889b97a7d1564aa1850f49ebed757c3933db29"
+          test "$(git hash-object qa/c5_wheel_metadata/wheel_acquisition_driver.py)" = "e888774ce5cabc5737c413ee47f3da64781443c2"
           python3 -I -B qa/c5_wheel_metadata/test_wheel_one_use_review.py
           python3 -I -B qa/c5_wheel_metadata/test_wheel_acquisition_driver.py
       - name: Assert disabled collection and retrieval
@@ -42,7 +45,7 @@ jobs:
           test "$collect" = 'C5_WHEEL_DRIVER_REFUSAL FRESH_APPROVAL_REQUIRED'
           test "$retrieve" = 'C5_WHEEL_DRIVER_REFUSAL FRESH_APPROVAL_REQUIRED'
   collect-once:
-    if: ${{ github.run_attempt == 1 && github.event.head_commit.message == 'C5-WHEEL-HOSTED-ONCE-20261126 owner approved exact wheel acquisition' && github.event.forced == false && github.event.created == false && github.event.deleted == false }}
+    if: ${{ false }}
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     outputs:
@@ -59,15 +62,15 @@ jobs:
       - name: Exact driver pin and bounded collection
         id: collect
         run: |
-          test "$(git hash-object qa/c5_wheel_metadata/wheel_acquisition_driver.py)" = "93889b97a7d1564aa1850f49ebed757c3933db29"
+          test "$(git hash-object qa/c5_wheel_metadata/wheel_acquisition_driver.py)" = "e888774ce5cabc5737c413ee47f3da64781443c2"
           python3 -I -B qa/c5_wheel_metadata/wheel_acquisition_driver.py --collect
         env:
-          C5_DRIVER_BLOB: 93889b97a7d1564aa1850f49ebed757c3933db29
+          C5_DRIVER_BLOB: e888774ce5cabc5737c413ee47f3da64781443c2
           C5_APPROVED_ONCE: C5-WHEEL-HOSTED-ONCE-20261126
           C5_EXPECTED_SOURCE_SHA: ${{ github.sha }}
       - name: Disabled receipt-only artifact upload
         id: upload
-        if: ${{ success() }}
+        if: ${{ false }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: c5-wheel-receipts-${{ github.run_id }}-${{ github.run_attempt }}
@@ -77,7 +80,7 @@ jobs:
           compression-level: 0
           overwrite: false
   retrieve-once:
-    if: ${{ github.run_attempt == 1 && github.event.head_commit.message == 'C5-WHEEL-HOSTED-ONCE-20261126 owner approved exact wheel acquisition' && github.event.forced == false && github.event.created == false && github.event.deleted == false }}
+    if: ${{ false }}
     needs: collect-once
     runs-on: ubuntu-24.04
     timeout-minutes: 6
@@ -92,10 +95,10 @@ jobs:
           persist-credentials: false
       - name: Independent exact receipt retrieval and replay
         run: |
-          test "$(git hash-object qa/c5_wheel_metadata/wheel_acquisition_driver.py)" = "93889b97a7d1564aa1850f49ebed757c3933db29"
+          test "$(git hash-object qa/c5_wheel_metadata/wheel_acquisition_driver.py)" = "e888774ce5cabc5737c413ee47f3da64781443c2"
           python3 -I -B qa/c5_wheel_metadata/wheel_acquisition_driver.py --retrieve
         env:
-          C5_DRIVER_BLOB: 93889b97a7d1564aa1850f49ebed757c3933db29
+          C5_DRIVER_BLOB: e888774ce5cabc5737c413ee47f3da64781443c2
           C5_APPROVED_ONCE: C5-WHEEL-HOSTED-ONCE-20261126
           C5_EXPECTED_SOURCE_SHA: ${{ github.sha }}
           C5_BUNDLE_RECORD: ${{ needs.collect-once.outputs.record }}
