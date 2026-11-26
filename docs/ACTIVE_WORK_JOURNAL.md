@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | BLOCKED |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | aa575c3282d44e94938d28a9d55885ef9d9208cd |
+| Observed starting HEAD | 58c64d7e6daab9fc15040847f38adadf61c60ac4 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
-| Operation ID | C5-WHEEL-HOSTED-ONCE-20261126 |
-| Operation state | RECONCILED: exact d66357e run 45729307962 attempt 1 FAILURE (blocked settlement), producer 139607028207 SUCCESS, verifier 139607146226 REPLAY_PASS then exit 2; 6 attempted, 5 verified, 565757 body bytes, 63 missing, artifact 15076022558 uploaded/retrieved once. Disarm 85c2d9f run 45729453007 SUCCESS: offline 139607519007, 43 tests and three CLI refusals PASS, collect/retrieve skipped. |
-| Intended files | wheel_acquisition_driver.py exact ARMED flag, c5-wheel-hosted-one-use.yml exact driver pin and marker-only trigger, one exact APPROVAL_WHEEL_HOSTED_20261126.txt addition, then disarm; journal/handoff/ledger and result receipt. No adapter or product-source changes. |
-| Approval | Actual wheel approval consumed/disarmed; no retries or additional retrieval. Fifteen total restricted approvals consumed/disarmed (six native, seven metadata, one synthetic, one actual wheel attempt). |
+| Operation ID | C5-WHEEL-RECEIPT-DIAGNOSIS-ONCE-20261126 |
+| Operation state | PREPARED: owner explicitly approved one additional retrieval of existing artifact 15076022558. Use independent hosted verifier because connector raw-byte access is unestablished. Exact original run/source/ZIP/bundle/manifest pins; persist verified structured inventory and refusal, no raw notice republication. |
+| Intended files | New qa/c5_wheel_metadata/wheel_receipt_diagnosis.py and .github/workflows/c5-wheel-receipt-diagnosis.yml; exact one-use marker addition/removal; journal/handoff/ledger and structured diagnosis receipt. Existing actual wheel driver and adapter stay false. |
+| Approval | Owner explicitly approved receipt retrieval only: artifact 15076022558, original run 45729307962, 20475 ZIP bytes, exact SHA256 efec26dd56725e3cf2619b9002037f37bdf118f98bac6c20c0f970fbbc39bdaf, one metadata read and one authenticated ZIP retrieval with at most one service storage redirect, no retries or new artifact upload. No wheel GET/install/execute or further collection. Fifteen prior approvals consumed/disarmed. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | None. Disarm CI reconciled. |
+| Pending runs | None; prepare offline self-test and marker-only restricted operation. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
-| Recovery action | First refused charset_normalizer Linux candidate; aggregate bytes equal first six expected sizes but exact refusal reason is not logged, do not speculate. Request one exact receipt-only artifact retrieval (15076022558, 20475 ZIP bytes, exact digest, no wheel GETs), or use owner-supplied existing receipt. Independently replay and persist structured refusal and verified inventory before expiry; no retry or replay of the five verified wheels. Further collection requires separate scope/approval after diagnosis. |
+| Recovery action | Reconcile exact run and disarm even on failure, do not retry. Preserve result reason, HTTP status, digest and verified per-wheel receipt metadata; inspection may have discarded deeper subreason. No new acquisition or licence clearance. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
