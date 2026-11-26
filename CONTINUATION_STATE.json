@@ -5,13 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "CONT-V2-MIGRATION-20261126",
-    "parent_sha": "01768a1173dff8aafe4a855d8a2fa0677014aea3",
-    "previous_snapshot_sha": "b9864b70fb9bb5a72d0f79c37f15b94100722192",
-    "scope": "continuation documentation and isolated pure validation only; no product change",
+    "operation_id": "C5-PORTABLE-LIMITED-HOST-PREP-20261126",
+    "parent_sha": "0bec7ea25dfbe0d1a8b29b0c7d0e86bc8b092241",
+    "previous_snapshot_sha": "0bec7ea25dfbe0d1a8b29b0c7d0e86bc8b092241",
+    "scope": "Owner-approved limited hosted bootstrap trust; detached disarmed QA preparation, decision and evidence only",
     "state": "RECONCILED",
     "receipt": {
-      "path": "docs/continuation/MIGRATION_20261126.md"
+      "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
+      "anchor": "26-november--c5-limited-host-bootstrap-preparation",
+      "blob_sha": "090b68f8fb0ab02b0012dbac7ffa7f7504e2d8ea",
+      "start_line": 2686,
+      "end_line": 2688
     }
   },
   "product": {
@@ -115,26 +119,25 @@
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
     "status": "BLOCKED",
     "scope": "C-D08 revised C5-A/B development reproducibility and build safety only; D retains native prerequisites, P8 release-only",
-    "blocker": "Independently expected existing host-tool hashes are not established. Exact prior runner manifest supplies versions only; namespace, decoder and llvm-readobj availability unverified. Explicit owner disposition on limited hosted Ubuntu/distro bootstrap trust required.",
-    "next_action": "Ask only for the unresolved bootstrap trust decision documented at b9864b7. If accepted, prepare disarmed source/config and exact activation review. If declined, retain independent-pin gate and remain blocked; do not collect identity-only evidence again.",
+    "blocker": "Limited hosted bootstrap trust decision resolved and source prepared; exact image/tool availability and namespace capability unverified. Exact one-use activation review and remaining root, gh verifier, Depot release-job/run-correlation and receipt-custody dispositions outstanding; no execution approval.",
+    "next_action": "Review detached b7c9b6e and prepare the exact disarmed activation/disposition proposal with source pins, bounds and receipt custody; then request one combined explicit owner decision/execution approval. Do not activate, acquire or execute before that approval.",
     "next_action_kind": "OWNER_DECISION",
     "after": [
-      "Review exact activation and remaining trust dispositions (root, gh, exact Depot release job/run correlation, receipt custody).",
-      "Obtain one new combined bounded execution approval before acquisition or verifier launch.",
-      "Complete remaining C5 rows 5–7, then row 8 exact regression and source closure. D only after C5 closure, G2 resolution and separate authority."
+      "After exact activation review and combined explicit approval, execute once within approved source, image, bounds and receipt policy; reconcile and disarm.",
+      "Complete C5 rows 5–7 then row 8 exact regression and source closure; D only after C5 closure, G2 resolution and separate authority."
     ],
     "read": [
       {
         "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
-        "anchor": "host-bootstrap-boundary-read-only-review-owner-decision-required",
-        "blob_sha": "e36bb03bd65e937b9dfb0302afcc98df3b9beaf4",
-        "start_line": 676,
-        "end_line": 681
+        "anchor": "owner-approved-limited-host-bootstrap-boundary",
+        "blob_sha": "4964354e74562cb9c85a7590089e42fe2b7742f7",
+        "start_line": 682,
+        "end_line": 688
       },
       {
         "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
         "anchor": "owner-approved-c5-delivery-checklist-26-november-2026",
-        "blob_sha": "e36bb03bd65e937b9dfb0302afcc98df3b9beaf4",
+        "blob_sha": "4964354e74562cb9c85a7590089e42fe2b7742f7",
         "start_line": 273,
         "end_line": 298
       },
@@ -147,30 +150,30 @@
       },
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "26-november--c5-host-bootstrap-boundary-read-only-review",
-        "blob_sha": "4e3dfbe60ebeda34d84a0ce1ca73f6d39d3996f8",
-        "start_line": 2682,
-        "end_line": 2685
+        "anchor": "26-november--c5-limited-host-bootstrap-preparation",
+        "blob_sha": "090b68f8fb0ab02b0012dbac7ffa7f7504e2d8ea",
+        "start_line": 2686,
+        "end_line": 2688
       }
     ]
   },
   "operation": {
-    "id": "C5-PORTABLE-HOST-BOUNDARY-20261126",
+    "id": "C5-PORTABLE-LIMITED-HOST-PREP-20261126",
     "state": "RECONCILED",
-    "starting_sha": "86ccc2aefd07d253166973be7021d0b0f0b3d420",
-    "outcome": "Read-only review documented in b9864b7; no independent expected host pins; no acquisition, test, activation or execution.",
+    "starting_sha": "0bec7ea25dfbe0d1a8b29b0c7d0e86bc8b092241",
+    "outcome": "Owner-approved limited host trust recorded; detached disarmed QA preparation b7c9b6e verified by read-back source inspection; zero candidate runs, no acquisition/execution/activation or acceptance credit.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "26-november--c5-host-bootstrap-boundary-read-only-review",
-      "blob_sha": "4e3dfbe60ebeda34d84a0ce1ca73f6d39d3996f8",
-      "start_line": 2682,
-      "end_line": 2685
+      "anchor": "26-november--c5-limited-host-bootstrap-preparation",
+      "blob_sha": "090b68f8fb0ab02b0012dbac7ffa7f7504e2d8ea",
+      "start_line": 2686,
+      "end_line": 2688
     }
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next.",
-    "preparation_only": "Owner approved consolidated shared-bundle source preparation and inert acquisition-before-signature design only; authentication before extraction/use; no acquisition, execution, installation or live cutover authorised.",
+    "preparation_only": "Owner approved consolidated shared-bundle source preparation and inert acquisition-before-signature design; also exact limited existing GitHub-hosted Ubuntu 24.04 x64 image 20261116.376.1 bootstrap trust for preparation, observed identities not independent pins. Authentication before extraction/use; no acquisition, execution, installation or live cutover authorised.",
     "restricted_active": [],
     "consumed_disarmed_count": 28,
     "consumed_history": {
@@ -191,7 +194,7 @@
       "release",
       "replay of consumed or uncertain approval"
     ],
-    "guards": "Three C1/C2 one-use workflows and OWNED_RESOURCE_ENABLED false; portable draft LIVE_ENABLED false, plan/disposition pins unset; no fallback. Three consumed variables owner cleanup unverified."
+    "guards": "Three C1/C2 one-use workflows and OWNED_RESOURCE_ENABLED false; portable draft b7c9b6e LIVE_ENABLED false, plan/disposition pins unset; no fallback. Three consumed variables owner cleanup unverified."
   },
   "pending_runs": [],
   "pending_operations": [],
@@ -205,6 +208,10 @@
       {
         "sha": "ae673c4d5ba462bbece4252f4d5bc66db94e16d6",
         "scope": "disarmed integrated portable source; five QA paths, 118 workflows unchanged, zero runs; untested"
+      },
+      {
+        "sha": "b7c9b6eed2e475023aa8cfa6922fd4019c849da0",
+        "scope": "owner-approved limited existing-host trust; disarmed QA preparation, five changed QA paths versus ae673c4, workflows unchanged, zero runs, static read-back only; runtime untested"
       }
     ]
   },
