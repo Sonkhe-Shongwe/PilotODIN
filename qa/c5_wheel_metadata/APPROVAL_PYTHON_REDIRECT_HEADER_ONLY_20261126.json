@@ -1,9 +1,0 @@
-{
-  "operation": "C5-PYTHON-REDIRECT-HEADER-ONLY-20261126",
-  "parent": "b654c32fa68a0ec93d44338bbeceef689112e09b",
-  "driver": "eecd9193bbaa9c606e49efb43b399cf82df2d6e4",
-  "workflow": "6090382ea50fd6f2bd48184e8c3a0358df4bc832",
-  "spec": "8ca2c68b4de683d1162dd3efdbe5a7d971e4009b",
-  "lock": "845bc92192a1b77432f4d472c7a056f47ca3a3a7",
-  "manifest": "fbb17a9f2e53eecb812498f02196fa7638f85299"
-}
