@@ -9,17 +9,17 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
 | State | BLOCKED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 347954487b5417ae3d8240f953540a6177daee77 |
+| Observed starting HEAD | f037181e6e4003c3ba675e5cb19622375011aafb |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | Revised C5-A/B development reproducibility and build safety; D prerequisites and P8 release-only allocation. No restricted acquisition, native, owner data, install, packaging, phase activation or release. |
-| Operation ID | C5-STDLIB-PURE-ONEUSE-20261126 |
-| Operation state | RECONCILED SUCCESS: exact rehearsal 5e149a034c7bb37dd3afe4945026d1a581af3ed3, isolated run #45862485546 attempt 1, eleven of eleven passed; activation removed at b07ef3fcb874ab22c84a74bfeba74dbc57091d17; no replay. |
-| Intended files | Terminal documentation-only checkpoint. Next read-only reconciliation of remaining C5-A/B final-use prerequisites for rows 5–7; no platform Stage A/B execution until exact fresh authority. |
+| Operation ID | C5-PREUSE-RECONCILE-20261126 |
+| Operation state | READ-ONLY RECONCILIATION COMPLETE; 162/174 projected archive-use rows match historical actual identities; 12 font/notice use rows (six files twice) lack matching actual acquisition receipts. Independent installed interpreter manifests and full applicable use dispositions unresolved; exact detached plan contains an unresolved supplemental-acquisition prohibition conflict. No execution or authority change. |
+| Intended files | Documentation-only checkpoint; next resolve the independent installed-runtime provenance route and exact supplemental-input authority boundary before activation. No additional acquisition, rehearsal or Stage A/B execution. |
 | Approval | Owner-approved limited hosted Ubuntu/cached CP311 bootstrap and one pure rehearsal consumed; 25 total restricted approvals consumed/disarmed, zero active. Final-use installed interpreter provenance not waived. No acquisition, installation, native product execution, live branch cutover or release. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
 | Pending runs | None for rehearsal; #45862485546 SUCCESS, one job and one attempt. Isolated branch activation removed, branch query exactly one run. |
 | Unpublished work | 5e149a034c7bb37dd3afe4945026d1a581af3ed3 remains off live development branch; reachable in isolated QA ancestry. Owner-local tree untouched/uninspected. |
-| Recovery action | [Exact pure rehearsal receipt](./PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md#26-november--c5-authorised-standard-library-pure-rehearsal-pass). Reconcile remaining existing independent interpreter provenance (Windows/Linux), applicable input/toolchain/npm licence and consumption disposition, then review exact platform-local Stage A/B plan and request fresh bounded authority only for unresolved restricted use. No duplicate pure rehearsal or identity-only collection. |
+| Recovery action | [Pre-use reconciliation](./PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md#26-november--c5-post-rehearsal-pre-use-reconciliation). First establish independently supported expected installed CP311 file manifests (both platforms), or explicitly resolve the provenance route if unavailable; a newly measured cache manifest is not independent proof. Review exact missing notice/member/linkage dispositions and six font/notice identities, reconcile contradictory supplemental-acquisition prohibition against the explicit finite Stage B inputs before any activation. No duplicate pure rehearsal or identity-only collection. Fresh exact authority required for any restricted evidence acquisition or actual use. |
 | Resume after closure | D only after revised C5 source closure, G2 resolution and separately approved scope; every native prerequisite before its use. P8 release-only obligations retained; installer frozen. |
 
 ## Prior operation
