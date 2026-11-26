@@ -25,7 +25,7 @@ jobs:
       - name: Discovery gate, artifact and retention fixtures
         run: python -I -B qa/c5_wheel_metadata/test_wheel_hosted_final.py
   discover-once:
-    if: ${{ false }}
+    if: ${{ github.run_attempt == 1 && github.event.head_commit.message == 'C5-WHEEL-PUBLIC-DISCOVERY-ONCE-20261126 owner approved exact discovery only' && vars.C5_DISCOVERY_EXPECTATION != '' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     outputs:
@@ -46,7 +46,7 @@ jobs:
           C5_WORKFLOW_BLOB: ${{ vars.C5_DISCOVERY_WORKFLOW_BLOB }}
           C5_APPROVED_ONCE: C5-WHEEL-PUBLIC-DISCOVERY-ONCE-20261126
       - id: upload
-        if: ${{ false }}
+        if: ${{ github.run_attempt == 1 && github.event.head_commit.message == 'C5-WHEEL-PUBLIC-DISCOVERY-ONCE-20261126 owner approved exact discovery only' && vars.C5_DISCOVERY_EXPECTATION != '' }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: c5-public-wheel-discovery-${{ github.run_id }}-${{ github.run_attempt }}
@@ -56,7 +56,7 @@ jobs:
           overwrite: false
           if-no-files-found: error
   verify-discovery-once:
-    if: ${{ false }}
+    if: ${{ github.run_attempt == 1 && github.event.head_commit.message == 'C5-WHEEL-PUBLIC-DISCOVERY-ONCE-20261126 owner approved exact discovery only' && vars.C5_DISCOVERY_EXPECTATION != '' }}
     needs: discover-once
     runs-on: ubuntu-24.04
     timeout-minutes: 6
@@ -81,7 +81,7 @@ jobs:
           C5_UPLOAD_DIGEST: ${{ needs.discover-once.outputs.digest }}
           GH_TOKEN: ${{ github.token }}
       - id: retain
-        if: ${{ false }}
+        if: ${{ github.run_attempt == 1 && github.event.head_commit.message == 'C5-WHEEL-PUBLIC-DISCOVERY-ONCE-20261126 owner approved exact discovery only' && vars.C5_DISCOVERY_EXPECTATION != '' }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: c5-public-wheel-discovery-retention-${{ github.run_id }}-${{ github.run_attempt }}
