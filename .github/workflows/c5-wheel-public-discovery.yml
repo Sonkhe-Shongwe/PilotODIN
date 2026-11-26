@@ -1,0 +1,90 @@
+name: C5 public wheel discovery one-use
+on:
+  push:
+    branches: [feature/live-dev-workspace-20261023]
+    paths:
+      - .github/workflows/c5-wheel-public-discovery.yml
+      - qa/c5_wheel_metadata/APPROVAL_WHEEL_PUBLIC_DISCOVERY_20261126.txt
+permissions:
+  contents: read
+jobs:
+  synthetic:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Discovery gate, artifact and retention fixtures
+        run: python -I -B qa/c5_wheel_metadata/test_wheel_hosted_final.py
+  discover-once:
+    if: ${{ false }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    outputs:
+      record: ${{ steps.discover.outputs.record }}
+      artifact-id: ${{ steps.upload.outputs.artifact-id }}
+      digest: ${{ steps.upload.outputs.artifact-digest }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+      - id: discover
+        run: python3 -I -B qa/c5_wheel_metadata/wheel_hosted_final.py --discover
+        env:
+          C5_DISCOVERY_EXPECTATION: ${{ vars.C5_DISCOVERY_EXPECTATION }}
+          C5_DRIVER_BLOB: ${{ vars.C5_DISCOVERY_DRIVER_BLOB }}
+          C5_WORKFLOW_BLOB: ${{ vars.C5_DISCOVERY_WORKFLOW_BLOB }}
+          C5_APPROVED_ONCE: C5-WHEEL-PUBLIC-DISCOVERY-ONCE-20261126
+      - id: upload
+        if: ${{ false }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: c5-public-wheel-discovery-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ steps.discover.outputs.projection }}
+          retention-days: 7
+          compression-level: 0
+          overwrite: false
+          if-no-files-found: error
+  verify-discovery-once:
+    if: ${{ false }}
+    needs: discover-once
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+      - id: verify
+        run: python3 -I -B qa/c5_wheel_metadata/wheel_hosted_final.py --verify-discovery
+        env:
+          C5_DISCOVERY_EXPECTATION: ${{ vars.C5_DISCOVERY_EXPECTATION }}
+          C5_DRIVER_BLOB: ${{ vars.C5_DISCOVERY_DRIVER_BLOB }}
+          C5_WORKFLOW_BLOB: ${{ vars.C5_DISCOVERY_WORKFLOW_BLOB }}
+          C5_APPROVED_ONCE: C5-WHEEL-PUBLIC-DISCOVERY-ONCE-20261126
+          C5_DISCOVERY_RECORD: ${{ needs.discover-once.outputs.record }}
+          C5_ARTIFACT_ID: ${{ needs.discover-once.outputs.artifact-id }}
+          C5_UPLOAD_DIGEST: ${{ needs.discover-once.outputs.digest }}
+          GH_TOKEN: ${{ github.token }}
+      - id: retain
+        if: ${{ false }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: c5-public-wheel-discovery-retention-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ steps.verify.outputs.retention }}
+          retention-days: 7
+          compression-level: 0
+          overwrite: false
+          if-no-files-found: error

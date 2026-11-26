@@ -28,10 +28,15 @@ import zipfile
 import zlib
 
 ARMED=False
+DISCOVERY_ARMED=False
 # No public raw-notice disclosure decision has been approved or pinned.
 PUBLIC_REVIEW_SHA256=None
-if __name__=='__main__' and ARMED is not True:
-    raise SystemExit('FRESH_APPROVAL_REQUIRED: final hosted driver disabled')
+if __name__=='__main__':
+    if sys.argv[1:] in (['--discover'],['--verify-discovery']):
+        if DISCOVERY_ARMED is not True:
+            raise SystemExit('FRESH_APPROVAL_REQUIRED: public discovery disabled')
+    elif ARMED is not True:
+        raise SystemExit('FRESH_APPROVAL_REQUIRED: final hosted driver disabled')
 
 # Python -I omits the script directory. Only the exact adjacent source tree
 # is added; the independently reviewed arm must pin it before execution.
@@ -492,7 +497,7 @@ def verify_discovery(raw,expected_sha,rows,plan_blob,*,bindings,caps,scope):
                  and item['expanded_bytes'] is None and item['notices']==[],
                  'DISCOVERY_RESULT')
             if item['reason']=='INSPECTION_REFUSED':
-                need(item['inspection_reason'] in INSPECTION_REASONS
+                need(type(item['inspection_reason']) is str and item['inspection_reason'] in INSPECTION_REASONS
                      and item['http_status']==200 and item['received_bytes']==row['bytes']
                      and item['received_sha256']==row['sha256'],'DISCOVERY_RESULT')
             else:
@@ -512,9 +517,12 @@ def discover_fixture(rows,bindings,caps,scope,plan_blob,replay,deadline,parent):
     Only the whitelisted projection leaves it; no raw path or bundle returned.
     """
     need(type(replay) is a.Replay,'DISCOVERY_FIXTURE_ONLY')
+    return _discover_projection(rows,bindings,caps,scope,plan_blob,replay.get,deadline,parent)
+
+def _discover_projection(rows,bindings,caps,scope,plan_blob,fetch,deadline,parent):
     rows,bindings,caps,policy_sha=prepare(rows,plan_blob,bindings,caps,scope)
     with tempfile.TemporaryDirectory(dir=parent) as tmp:
-        path,sha=_collect(rows,plan_blob,bindings,caps,scope,replay.get,deadline,Path(tmp))
+        path,sha=_collect(rows,plan_blob,bindings,caps,scope,fetch,deadline,Path(tmp))
         manifest=verify_generation(path,sha,rows,plan_blob,scope=scope,caps=caps,bindings=bindings)
         filemap={x['name']:x for x in manifest['files']}
         results=[]
@@ -550,6 +558,7 @@ DISCOVERY_OP='C5-WHEEL-PUBLIC-DISCOVERY-ONCE-20261126'
 DISCOVERY_MARKER=DIR+'APPROVAL_WHEEL_PUBLIC_DISCOVERY_20261126.txt'
 DISCOVERY_MESSAGE=DISCOVERY_OP+' owner approved exact discovery only'
 DISCOVERY_WORKFLOW_NAME='C5 public wheel discovery one-use'
+DISCOVERY_WORKFLOW='.github/workflows/c5-wheel-public-discovery.yml'
 DISCOVERY_ARTIFACT_PREFIX='c5-public-wheel-discovery-'
 DISCOVERY_ZIP_LIMIT=DISCOVERY_LIMIT+1024*1024
 DISCOVERY_RETENTION_LIMIT=DISCOVERY_LIMIT+65536
@@ -619,7 +628,7 @@ def observe_discovery_checkout(root):
             'message':rt.git(root,'show','-s','--format=%B','HEAD').decode('utf-8').rstrip('\n'),
             'changes':[('A',DISCOVERY_MARKER)],'marker':p.pinned_text(root/DISCOVERY_MARKER,blob),
             'marker_blob':blob,'driver_blob':rt.checkout_blob(root,SELF),
-            'workflow_blob':rt.checkout_blob(root,WORKFLOW),'legacy_markers_absent':True}
+            'workflow_blob':rt.checkout_blob(root,DISCOVERY_WORKFLOW),'legacy_markers_absent':True}
 
 def discovery_fixture_claim(parent,root,event,context,expected,phase):
     claim=discovery_gate(event,context,observe_discovery_checkout(root),expected,phase)
@@ -715,11 +724,151 @@ def verify_discovery_retention(raw,expected_sha,run,source,artifact_id,upload_sh
     need(n.canonical(record)==n.canonical(reviewed),'DISCOVERY_ARTIFACT_RECORD')
     return doc
 
+class _DiscoveryGrant:
+    def __init__(self,runner,claim,path):
+        self.runner=runner;self.claim=claim;self.path=path
+
+def authorize_discovery(phase):
+    need(DISCOVERY_ARMED is True,'FRESH_APPROVAL_REQUIRED')
+    need(os.name=='posix' and threading.current_thread() is threading.main_thread(),'HOSTED_PLATFORM')
+    env=os.environ
+    need(env.get('GITHUB_WORKSPACE')==str(ROOT),'RUNTIME_CONTEXT')
+    expected=_env_json('C5_DISCOVERY_EXPECTATION',16384)
+    event=_json(read_bounded(Path(env.get('GITHUB_EVENT_PATH','')),rt.EVENT_CAP))
+    claim=discovery_gate(event,dict(env),observe_discovery_checkout(ROOT),expected,phase)
+    runner=Path(env.get('RUNNER_TEMP',''))
+    need(runner.is_absolute() and runner.is_dir() and not runner.is_symlink()
+         and not runner.resolve().is_relative_to(ROOT.resolve()),'RUNNER_TEMP')
+    path=runner/('c5-discovery-'+claim['run']+'-'+phase+'.claim')
+    try:
+        with path.open('xb') as out:
+            raw=n.canonical(claim)
+            need(out.write(raw)==len(raw),'CLAIM_WRITE')
+            out.flush();os.fsync(out.fileno())
+    except FileExistsError:
+        raise w.Blocked('ONE_USE_CLAIM_CONSUMED') from None
+    a.sync_dir(runner)
+    return _DiscoveryGrant(runner,claim,path)
+
+def _check_discovery_grant(grant,phase):
+    need(DISCOVERY_ARMED is True,'FRESH_APPROVAL_REQUIRED')
+    need(type(grant) is _DiscoveryGrant and grant.claim['scope']==DISCOVERY_SCOPE
+         and grant.claim['phase']==phase and os.environ.get('GITHUB_JOB')==phase
+         and os.environ.get('GITHUB_RUN_ATTEMPT')=='1'
+         and grant.claim['run']==os.environ.get('GITHUB_RUN_ID')
+         and grant.claim['source_sha']==os.environ.get('GITHUB_SHA')
+         and read_bounded(grant.path,2048)==n.canonical(grant.claim),'DISCOVERY_LIVE_SCOPE')
+
+def _discovery_fetch(grant,rows):
+    _check_discovery_grant(grant,'discover-once')
+    exact,_,_=c.remaining_inputs()
+    need(n.canonical(rows)==n.canonical(exact),'HOSTED_INPUT_IDENTITY')
+    sequence=iter(copy.deepcopy(exact))
+    stopped=False
+    def fetch(url):
+        nonlocal stopped
+        _check_discovery_grant(grant,'discover-once')
+        need(not stopped,'TRANSPORT_STOPPED')
+        row=next(sequence,None)
+        if row is None or url!=a.exact_url(row):
+            stopped=True
+            raise w.Blocked('URL_SCOPE')
+        host,port,path,headers=h.request_parts(row)
+        tls=ssl.create_default_context()
+        need(tls.check_hostname and tls.verify_mode==ssl.CERT_REQUIRED,'TLS_POLICY')
+        conn=http.client.HTTPSConnection(host,port,timeout=a.REQUEST_TIMEOUT,context=tls)
+        try:
+            conn.request('GET',path,headers=headers)
+            response=h._Response(conn,conn.getresponse())
+            if response.status!=200: stopped=True
+            return response
+        except BaseException:
+            stopped=True;conn.close()
+            raise
+    return fetch
+
+def _discovery_download(grant,record,artifact_id,digest,token,opener,rows,plan_blob,*,bindings,caps):
+    _check_discovery_grant(grant,'verify-discovery-once')
+    rows,bindings,caps,policy_sha=prepare(rows,plan_blob,bindings,caps,HOSTED_SCOPE)
+    run,source=grant.claim['run'],grant.claim['source_sha']
+    need(type(record) is dict and set(record)=={'schema_version','scope','input_scope','run_id',
+         'run_attempt','source_sha','artifact_name','plan_blob','rows_sha256','policy_sha256',
+         'projection_bytes','projection_sha256'}
+         and type(record['schema_version']) is int and record['schema_version']==1
+         and record['scope']==DISCOVERY_SCOPE and record['input_scope']==HOSTED_SCOPE
+         and record['run_id']==run and type(record['run_attempt']) is int and record['run_attempt']==1
+         and record['source_sha']==source and record['artifact_name']==DISCOVERY_ARTIFACT_PREFIX+run+'-1'
+         and record['plan_blob']==plan_blob and record['rows_sha256']==w.sha(n.canonical(rows))
+         and record['policy_sha256']==policy_sha
+         and n.bounded_int(record['projection_bytes'],1,DISCOVERY_LIMIT)
+         and n.digest(record['projection_sha256']),'DISCOVERY_ARTIFACT_RECORD')
+    need(type(artifact_id) is str and RUN.fullmatch(artifact_id) and int(artifact_id)<=2**63-1
+         and n.digest(digest) and bool(token),'UPLOAD_OUTPUT')
+    url='https://api.github.com/repos/'+REPO+'/actions/artifacts/'+artifact_id
+    with t.deadline():
+        with opener.open(t.get_request(url,token),timeout=15) as resp:
+            meta=_json(t.read_metadata(resp))
+    need(type(meta) is dict and type(meta.get('id')) is int and meta['id']==int(artifact_id)
+         and meta.get('name')==record['artifact_name'] and meta.get('expired') is False
+         and n.bounded_int(meta.get('size_in_bytes'),1,DISCOVERY_ZIP_LIMIT)
+         and meta.get('digest')=='sha256:'+digest,'DISCOVERY_ARTIFACT_IDENTITY')
+    workflow=meta.get('workflow_run')
+    need(type(workflow) is dict and type(workflow.get('id')) is int and str(workflow['id'])==run
+         and workflow.get('head_sha')==source
+         and workflow.get('head_branch')==BRANCH.removeprefix('refs/heads/'),'DISCOVERY_ARTIFACT_RUN')
+    _check_discovery_grant(grant,'verify-discovery-once')
+    raw=_fetch_artifact_zip(opener,url,token,DISCOVERY_ZIP_LIMIT,meta['size_in_bytes'])
+    return raw,meta
+
+def _discovery_output(parent,name,raw):
+    need(name in ('discovery.json','discovery-retention.json') and type(raw) is bytes
+         and 0<len(raw)<=(DISCOVERY_LIMIT if name=='discovery.json' else DISCOVERY_RETENTION_LIMIT),
+         'DISCOVERY_OUTPUT')
+    path=Path(tempfile.mkdtemp(prefix='c5-public-discovery-',dir=parent))/name
+    with path.open('xb') as out:
+        need(out.write(raw)==len(raw),'DISCOVERY_OUTPUT')
+        out.flush();os.fsync(out.fileno())
+    a.sync_dir(path.parent)
+    return path
+
 def discover_once():
-    raise w.Blocked('FRESH_APPROVAL_REQUIRED')
+    grant=authorize_discovery('discover-once')
+    rows,bindings,caps=c.remaining_inputs()
+    plan=diagnostic.MISSING_PLAN_BLOB
+    raw,sha=_discover_projection(rows,bindings,caps,HOSTED_SCOPE,plan,
+                                  _discovery_fetch(grant,rows),h.deadline,grant.runner)
+    record=discovery_record(raw,sha,grant.claim['run'],grant.claim['source_sha'],
+                            rows,plan,bindings=bindings,caps=caps,scope=HOSTED_SCOPE)
+    _check_discovery_grant(grant,'discover-once')
+    path=_discovery_output(grant.runner,'discovery.json',raw)
+    with open(os.environ['GITHUB_OUTPUT'],'a',encoding='utf-8') as out:
+        out.write('projection='+str(path)+'\nrecord='+n.canonical(record).decode('utf-8').strip()+'\n')
 
 def verify_discovery_once():
-    raise w.Blocked('FRESH_APPROVAL_REQUIRED')
+    grant=authorize_discovery('verify-discovery-once')
+    rows,bindings,caps=c.remaining_inputs()
+    plan=diagnostic.MISSING_PLAN_BLOB
+    record=_env_json('C5_DISCOVERY_RECORD',16384)
+    artifact=os.environ.get('C5_ARTIFACT_ID','')
+    digest=os.environ.get('C5_UPLOAD_DIGEST','').removeprefix('sha256:')
+    tls=ssl.create_default_context()
+    need(tls.check_hostname and tls.verify_mode==ssl.CERT_REQUIRED,'TLS_POLICY')
+    opener=build_opener(ProxyHandler({}),t.NoRedirect(),HTTPSHandler(context=tls))
+    raw,meta=_discovery_download(grant,record,artifact,digest,os.environ.get('GH_TOKEN',''),opener,
+                                 rows,plan,bindings=bindings,caps=caps)
+    run,source=grant.claim['run'],grant.claim['source_sha']
+    envelope,sha=discovery_retention(raw,meta,record,run,source,int(artifact),digest,rows,plan,
+                                      bindings=bindings,caps=caps,scope=HOSTED_SCOPE)
+    doc=verify_discovery_retention(envelope,sha,run,source,int(artifact),digest,rows,plan,
+                                   bindings=bindings,caps=caps,scope=HOSTED_SCOPE)
+    _check_discovery_grant(grant,'verify-discovery-once')
+    path=_discovery_output(grant.runner,'discovery-retention.json',envelope)
+    with open(os.environ['GITHUB_OUTPUT'],'a',encoding='utf-8') as out:
+        out.write('retention='+str(path)+'\nretention_sha256='+sha+'\n')
+    print('C5_DISCOVERY_VERIFIER '+json.dumps({'status':doc['projection']['status'],
+          'retention_sha256':sha,'raw_replay_available':False},sort_keys=True),flush=True)
+    # A refused discovery is still a valid settled diagnostic; not a pass.
+    return 0
 
 def artifact_record(run,source,bundle,rows,plan_blob,*,bindings,caps,scope):
     rows,bindings,caps,policy_sha=prepare(rows,plan_blob,bindings,caps,scope)
@@ -892,6 +1041,13 @@ def _download_exact(grant,record,run,sha,artifact_id,upload_digest,token,opener,
                                   bindings=bindings,caps=caps,scope=scope)
     need(str(ident['id'])==artifact_id and ident['sha256']==upload_digest
          and ident['bytes']<=limit,'ARTIFACT_UPLOAD_IDENTITY')
+    raw=_fetch_artifact_zip(opener,url,token,limit,ident['bytes'])
+    return raw,meta
+
+
+
+
+def _fetch_artifact_zip(opener,url,token,limit,size):
     # One retrieval. The authenticated API redirect is the authority for the
     # opaque short-lived storage URL. Do not forward the token or log Location.
     with t.deadline():
@@ -913,14 +1069,11 @@ def _download_exact(grant,record,run,sha,artifact_id,upload_digest,token,opener,
                  and u.path.startswith('/') and not u.fragment and bool(u.query),
                  'ARTIFACT_REDIRECT_ORIGIN')
             with opener.open(t.get_request(location),timeout=15) as storage:
-                raw=t.read_response(storage,limit,exact=ident['bytes'])
+                raw=t.read_response(storage,limit,exact=size)
         else:
             with resp:
-                raw=t.read_response(resp,limit,exact=ident['bytes'])
-    return raw,meta
-
-
-
+                raw=t.read_response(resp,limit,exact=size)
+    return raw
 
 def _settlement(path,manifest,sha,rows):
     return rt.settlement(path,manifest,sha,rows)
@@ -987,6 +1140,8 @@ if __name__=='__main__':
     try:
         if sys.argv[1:]==['--collect']: produce()
         elif sys.argv[1:]==['--retrieve']: raise SystemExit(retrieve())
+        elif sys.argv[1:]==['--discover']: discover_once()
+        elif sys.argv[1:]==['--verify-discovery']: raise SystemExit(verify_discovery_once())
         else: raise w.Blocked('COMMAND_REFUSED')
     except Exception:
         print('C5_FINAL_REFUSAL TRANSPORT_OR_EVIDENCE_REFUSED',flush=True)

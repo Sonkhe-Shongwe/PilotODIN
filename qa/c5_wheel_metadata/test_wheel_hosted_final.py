@@ -335,7 +335,7 @@ class Tests(unittest.TestCase):
         for path,pin in f.DISCOVERY_PINS.items():
             dest=root/path;dest.parent.mkdir(parents=True,exist_ok=True)
             dest.write_bytes(p.pinned_text(f.ROOT/path,pin))
-        for path in (f.SELF,f.WORKFLOW):
+        for path in (f.SELF,f.DISCOVERY_WORKFLOW):
             dest=root/path;dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(b'discovery inert fixture\n')
         self.git(root,'add','.');self.git(root,'commit','-qm','fixture parent')
         parent=self.git(root,'rev-parse','HEAD');inputs=f.discovery_inputs()
@@ -416,5 +416,44 @@ class Tests(unittest.TestCase):
             self.deny('FRESH_APPROVAL_REQUIRED',f.verify_discovery_once)
             conn.assert_not_called();opener.assert_not_called()
 
+
+
+    def test_discovery_integration_cli_refusal(self):
+        for mode in ('--discover','--verify-discovery'):
+            result=subprocess.run([sys.executable,'-I','-B',str(f.ROOT/f.SELF),mode],
+                                  capture_output=True,timeout=10)
+            self.assertEqual(result.returncode,1)
+            self.assertEqual(result.stderr.decode().strip(),'FRESH_APPROVAL_REQUIRED: public discovery disabled')
+    def test_discovery_integration_live_seams_disarmed(self):
+        with patch.object(f.http.client,'HTTPSConnection') as conn,patch.object(f,'build_opener') as opener:
+            self.deny('FRESH_APPROVAL_REQUIRED',lambda:f._discovery_fetch(None,[]))
+            self.deny('FRESH_APPROVAL_REQUIRED',lambda:f._discovery_download(None,{},'1','0'*64,'token',
+                      None,[],'fixture',bindings={},caps=self.caps))
+            conn.assert_not_called();opener.assert_not_called()
+    def test_discovery_integration_exact_transport_mock(self):
+        rows,_,_=c.remaining_inputs()
+        conn=Mock();response=Mock();response.status=503;conn.getresponse.return_value=response
+        with patch.object(f,'_check_discovery_grant') as guard,patch.object(f.http.client,'HTTPSConnection',return_value=conn) as https:
+            fetch=f._discovery_fetch(object(),rows)
+            got=fetch(rows[0]['url']);got.close()
+            host,port,path,headers=f.h.request_parts(rows[0])
+            self.assertEqual(https.call_args.args,(host,port))
+            conn.request.assert_called_once_with('GET',path,headers=headers)
+            self.deny('TRANSPORT_STOPPED',lambda:fetch(rows[1]['url']))
+            self.assertEqual(https.call_count,1)
+    def test_discovery_integration_output_inventory(self):
+        raw,sha=self.discovery()
+        path=f._discovery_output(self.parent,'discovery.json',raw)
+        self.assertEqual(path.read_bytes(),raw)
+        self.assertEqual(list(path.parent.iterdir()),[path])
+        self.deny('DISCOVERY_OUTPUT',lambda:f._discovery_output(self.parent,'receipts.odin',raw))
+    def test_discovery_integration_workflow_disarmed(self):
+        text=(f.ROOT/f.DISCOVERY_WORKFLOW).read_text(encoding='utf-8')
+        self.assertIn('name: '+f.DISCOVERY_WORKFLOW_NAME,text)
+        self.assertEqual(text.count('if: ${{ false }}'),4)
+        self.assertIn(f.DISCOVERY_MARKER,text)
+        self.assertIn('--verify-discovery',text)
+        self.assertFalse(f.DISCOVERY_ARMED)
+        self.assertFalse((f.ROOT/f.DISCOVERY_MARKER).exists())
 
 if __name__=='__main__':unittest.main(verbosity=2)
