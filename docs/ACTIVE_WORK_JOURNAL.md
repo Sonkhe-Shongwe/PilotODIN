@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | BLOCKED |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 2f192400e941c0d1e0d173a9e1487571149909bc |
+| Observed starting HEAD | 0458d55ca84dac4473f0a40a698992424993f288 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | Revised C5-A/B development reproducibility and build safety; D prerequisites and P8 release-only allocation. No restricted acquisition, native, owner data, install, packaging, phase activation or release. |
-| Operation ID | C5-PDFIUM-INPUT-EVIDENCE-PROPOSAL-20261126 |
-| Operation state | RECONCILED READ_ONLY_REVIEW; new font caller, metadata access limit and finite evidence proposal; live operation not authorised or armed. |
-| Intended files | Journal, handoff, C ledger only. No dependency, lock, workflow, product or guard change. |
-| Approval | Owner explicitly stated: "I approve the bounded evaluation and source-only migration design of pypdfium2 as a test-only replacement for PyMuPDF. Preserve all existing acceptance criteria and production functionality. No acquisition, installation, execution or release authorised. Proceed." No new restricted execution authority; 23 previous approvals consumed/disarmed. |
+| Operation ID | C5-PDFIUM-TWO-WHEEL-EVIDENCE-ONCE-20261126 |
+| Operation state | PREPARED; owner approved bounded preparation, no live activation. Static inventory and disarmed two-wheel evidence adapter to be reviewed before exact activation. |
+| Intended files | Journal, handoff, C ledger; proposed detached QA adapter and dedicated disarmed workflow, no product/dependency/lock edits. |
+| Approval | Owner explicitly stated: "I approve C5-PDFIUM-TWO-WHEEL-EVIDENCE-ONCE-20261126 as proposed in commit 0458d55. Maximum five HTTPS requests and 8994854 response bytes, zero retries. Preserve existing staging and activation safeguards. No installation, downloaded code execution, owner-data access, native application execution, installer generation or release. Proceed with bounded preparation." Approval unconsumed; exact activation not granted. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
 | Pending runs | None. #45827293999 SUCCESS acquisition 139934619797, rehearsal/header skipped. #45827352794 SUCCESS rehearsal 139934819535 34/34; both restricted jobs skipped. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
-| Recovery action | [PDFium caller expansion and finite evidence proposal](./PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md#26-november--c5-pdfium-caller-expansion-and-finite-evidence-proposal). Await explicit bounded authority for exact static inventory and two-wheel metadata/archive inspection (max 5 GETs/8994854 body bytes; no installation/execution of downloaded code). Review exact prelaunch limits, disarmed staging and required activation before live action. Preserve all acceptance checks; no dependency or lock changes. |
+| Recovery action | Prepare disarmed exact two-wheel input route and static Git caller inventory; reuse existing inspector and bounded transport primitives, validate candidate pins and finite limits, audit workflows before any publication or execution. No live activation. |
 | Resume after closure | D only after revised C5 source closure, G2 resolution and separately approved scope; every native prerequisite before its use. P8 release-only obligations retained; installer frozen. |
 
 ## Prior operation
