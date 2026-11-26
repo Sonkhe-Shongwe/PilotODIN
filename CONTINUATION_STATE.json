@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-STDLIB-ALIAS-PREP-20261126",
-    "parent_sha": "10817e876e3706f460e358463a137fcf33bfb541",
-    "previous_snapshot_sha": "10817e876e3706f460e358463a137fcf33bfb541",
-    "scope": "Investigate stdlib refusal and prepare exact inert narrow alias omission; no Docker activation",
-    "state": "RECONCILED",
+    "operation_id": "C5-PORTABLE-DOCKER-STDLIB-ONCE-20261126",
+    "parent_sha": "fdba34b507026c4c6e76665d012b8ae8daf28e42",
+    "previous_snapshot_sha": "fdba34b507026c4c6e76665d012b8ae8daf28e42",
+    "scope": "One fresh exact 5701ff8 no-pull Docker data-only verification on reviewed Ubuntu image and engine, all original safeguards; full pure tests and preflights before bounded acquisition; no retry/fallback.",
+    "state": "PREPARED",
     "receipt": {
-      "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "26-november--c5-exact-stdlib-linker-alias-omission-candidate",
-      "blob_sha": "22c006a257005b4a66b976cd29cb1a83898d9104",
-      "start_line": 2738,
-      "end_line": 2740
+      "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
+      "anchor": "owner-approved-exact-stdlib-alias-one-use-integrated-docker-execution",
+      "blob_sha": "b5bea17951e823241c813f06b2ec7f015120f761",
+      "start_line": 762,
+      "end_line": 764
     }
   },
   "product": {
@@ -117,16 +117,23 @@
   },
   "task": {
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
-    "status": "BLOCKED",
+    "status": "PREPARED",
     "scope": "C-D08 revised C5-A/B development reproducibility and build safety only; D retains native prerequisites, P8 release-only",
-    "blocker": "Fresh exact owner approval required for 5701ff8. Plausible build-only libpython linker alias identified but actual failed runner path/predicate, updated full synthetic suite, rootfs isolation and provenance not established.",
-    "next_action": "Obtain fresh exact one-use owner approval of 5701ff8 and template SHA256 4a4d33441cdc7e519349065e51b98e2733029b56b37a51d23dbde01db5ffdaef for unchanged reviewed bounded no-pull data-only attempt. Verify live head/triggers and pins; write ahead; full disarmed 14-method suite and all preflights before first GET; exact one-use activation, reconcile and disarm. No prior approval reuse or retry/fallback.",
-    "next_action_kind": "OWNER_DECISION",
+    "blocker": "Exact integrated verification not yet executed; previous approval consumed.",
+    "next_action": "Activate sole owned workflow using exact approved candidate template and only two permitted substitutions at verified write-ahead HEAD. Observe and reconcile run; disarm without replay.",
+    "next_action_kind": "APPROVED_EXECUTION",
     "after": [
       "Reconcile exact run/receipt or refusal; disarm and preserve failure without replay. No broad trust expansion.",
       "Complete C5 rows 5–7 and row 8 exact regression/source closure only on qualifying evidence; D only after C5 closure, G2 resolution and separate authority."
     ],
     "read": [
+      {
+        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
+        "anchor": "owner-approved-exact-stdlib-alias-one-use-integrated-docker-execution",
+        "blob_sha": "b5bea17951e823241c813f06b2ec7f015120f761",
+        "start_line": 762,
+        "end_line": 764
+      },
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "26-november--c5-exact-stdlib-linker-alias-omission-candidate",
@@ -305,23 +312,49 @@
     ]
   },
   "operation": {
-    "id": "C5-STDLIB-ALIAS-PREP-20261126",
-    "state": "RECONCILED",
-    "starting_sha": "10817e876e3706f460e358463a137fcf33bfb541",
-    "outcome": "Detached 5701ff8 exact inert candidate, five QA paths, two new exact snippet methods passed; 22 source pins refreshed and verified, updated full 14-method suite mandatory before driver. No Docker or acquisition.",
+    "id": "C5-PORTABLE-DOCKER-STDLIB-ONCE-20261126",
+    "state": "PREPARED",
+    "starting_sha": "fdba34b507026c4c6e76665d012b8ae8daf28e42",
+    "scope": "One fresh exact 5701ff8 no-pull Docker data-only verification on reviewed Ubuntu image and engine, all original safeguards; full pure tests and preflights before bounded acquisition; no retry/fallback.",
+    "intended_paths": [
+      ".github/workflows/c5-portable-provenance-once.yml"
+    ],
+    "authority_ref": {
+      "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
+      "anchor": "owner-approved-exact-stdlib-alias-one-use-integrated-docker-execution",
+      "blob_sha": "b5bea17951e823241c813f06b2ec7f015120f761",
+      "start_line": 762,
+      "end_line": 764
+    },
+    "expected_evidence": "Exact activation parent and message, sole owned first-attempt workflow, terminal job/step logs and reconstructed bounded receipt if present; exact false guard restored.",
+    "recovery": "Inspect live head, commit message and diff, exact workflow run and attempt before any retry; approval is unavailable on uncertainty; disarm owned workflow with expected HEAD after reconciliation. Never replay.",
     "reconcile_before_retry": false,
-    "receipt": {
-      "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "26-november--c5-exact-stdlib-linker-alias-omission-candidate",
-      "blob_sha": "22c006a257005b4a66b976cd29cb1a83898d9104",
-      "start_line": 2738,
-      "end_line": 2740
-    }
+    "source_sha": "5701ff8ded08cf378b1fed8eee7e456267fe1c35",
+    "template_sha256": "4a4d33441cdc7e519349065e51b98e2733029b56b37a51d23dbde01db5ffdaef",
+    "expected_activation_message": "C5-PORTABLE-DOCKER-STDLIB-ONCE-20261126 owner approved exact stdlib alias no-pull data-only operation",
+    "run_attempt": 1
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next.",
     "preparation_only": "Owner approved consolidated shared-bundle disarmed acquisition-before-signature source and exact limited existing host bootstrap; owner approved proposed limited local Docker control-plane and host-derived rootfs trust/no-pull isolation method for preparation only. Authentication before extraction/use; no Docker invocation, acquisition, verification execution, installation or live cutover authorised.",
-    "restricted_active": [],
+    "restricted_active": [
+      {
+        "id": "C5-PORTABLE-DOCKER-STDLIB-ONCE-20261126",
+        "state": "APPROVED",
+        "source_sha": "5701ff8ded08cf378b1fed8eee7e456267fe1c35",
+        "scope": "One fresh exact 5701ff8 no-pull Docker data-only verification on reviewed Ubuntu image and engine, all original safeguards; full pure tests and preflights before bounded acquisition; no retry/fallback.",
+        "owner_authority_ref": {
+          "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
+          "anchor": "owner-approved-exact-stdlib-alias-one-use-integrated-docker-execution",
+          "blob_sha": "b5bea17951e823241c813f06b2ec7f015120f761",
+          "start_line": 762,
+          "end_line": 764
+        },
+        "reconcile_before_retry": false,
+        "template_sha256": "4a4d33441cdc7e519349065e51b98e2733029b56b37a51d23dbde01db5ffdaef",
+        "run_attempt": 1
+      }
+    ],
     "consumed_disarmed_count": 33,
     "consumed_history": {
       "commit": "b9864b70fb9bb5a72d0f79c37f15b94100722192",
