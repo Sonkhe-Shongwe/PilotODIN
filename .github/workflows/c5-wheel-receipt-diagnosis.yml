@@ -3,12 +3,12 @@ on:
   push:
     branches: [feature/live-dev-workspace-20261023]
     paths:
-      - qa/c5_wheel_metadata/APPROVAL_WHEEL_RECEIPT_DIAGNOSIS_20261126.txt
+      - qa/c5_wheel_metadata/wheel_receipt_diagnosis.py
+      - .github/workflows/c5-wheel-receipt-diagnosis.yml
 permissions:
   contents: read
 jobs:
   offline-review:
-    if: ${{ false }}
     runs-on: ubuntu-24.04
     timeout-minutes: 4
     steps:
@@ -18,7 +18,7 @@ jobs:
           persist-credentials: false
       - name: Offline historical receipt pins and synthetic diagnosis
         run: |
-          test "$(git hash-object qa/c5_wheel_metadata/wheel_receipt_diagnosis.py)" = "8449306abb74ac8a945945b388575c70dcac4bfa"
+          test "$(git hash-object qa/c5_wheel_metadata/wheel_receipt_diagnosis.py)" = "4cb3a27f3879d64637a5c239cc253fb0de0e077b"
           python3 -I -B qa/c5_wheel_metadata/wheel_receipt_diagnosis.py --self-test
           set +e
           result=$(python3 -I -B qa/c5_wheel_metadata/wheel_receipt_diagnosis.py --retrieve 2>&1)
@@ -27,7 +27,7 @@ jobs:
           test "$code" = 2
           test "$result" = 'C5_RECEIPT_DIAGNOSIS_REFUSAL FRESH_APPROVAL_REQUIRED'
   retrieve-receipt:
-    if: ${{ github.run_attempt == 1 && github.event.head_commit.message == 'C5-WHEEL-RECEIPT-DIAGNOSIS-ONCE-20261126 owner approved exact receipt retrieval only' && github.event.forced == false && github.event.created == false && github.event.deleted == false }}
+    if: ${{ false }}
     runs-on: ubuntu-24.04
     timeout-minutes: 4
     permissions:
@@ -41,9 +41,9 @@ jobs:
           persist-credentials: false
       - name: Exact existing receipt retrieval and diagnosis
         run: |
-          test "$(git hash-object qa/c5_wheel_metadata/wheel_receipt_diagnosis.py)" = "8449306abb74ac8a945945b388575c70dcac4bfa"
+          test "$(git hash-object qa/c5_wheel_metadata/wheel_receipt_diagnosis.py)" = "4cb3a27f3879d64637a5c239cc253fb0de0e077b"
           python3 -I -B qa/c5_wheel_metadata/wheel_receipt_diagnosis.py --retrieve
         env:
-          C5_DRIVER_BLOB: 8449306abb74ac8a945945b388575c70dcac4bfa
+          C5_DRIVER_BLOB: 4cb3a27f3879d64637a5c239cc253fb0de0e077b
           C5_APPROVED_ONCE: C5-WHEEL-RECEIPT-DIAGNOSIS-ONCE-20261126
           GH_TOKEN: ${{ github.token }}

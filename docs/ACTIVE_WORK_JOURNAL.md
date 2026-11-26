@@ -13,13 +13,13 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
 | Operation ID | C5-WHEEL-RECEIPT-DIAGNOSIS-ONCE-20261126 |
-| Operation state | ARM PREPARED: disarmed 71c876f run 45753688442 SUCCESS, offline 139687192677 historical pin/blocked fixture replay and direct CLI refusal PASS, retrieve-receipt 139687195585 skipped. Exact receipt-only driver arm, marker absent; verify no arm run. |
+| Operation state | CONSUMED: exact 0a637bd run 45753813079 attempt 1 SUCCESS, retrieve-receipt 139687603322, one exact receipt-only retrieval and full replay PASS, six result rows and five verified inspection inventories recovered. Sixth wheel HTTP 200, 263382 bytes and SHA256 match, INSPECTION_REFUSED; deeper subreason discarded by original collector. Disarm source/workflow and remove marker in this checkpoint. |
 | Intended files | New qa/c5_wheel_metadata/wheel_receipt_diagnosis.py and .github/workflows/c5-wheel-receipt-diagnosis.yml; exact one-use marker addition/removal; journal/handoff/ledger and structured diagnosis receipt. Existing actual wheel driver and adapter stay false. |
-| Approval | Owner explicitly approved receipt retrieval only: artifact 15076022558, original run 45729307962, 20475 ZIP bytes, exact SHA256 efec26dd56725e3cf2619b9002037f37bdf118f98bac6c20c0f970fbbc39bdaf, one metadata read and one authenticated ZIP retrieval with at most one service storage redirect, no retries or new artifact upload. No wheel GET/install/execute or further collection. Fifteen prior approvals consumed/disarmed. |
+| Approval | Receipt-only approval consumed successfully, disarm pending verification; sixteen total restricted approvals consumed (six native, seven metadata, one synthetic transfer, one actual wheel attempt, one receipt-only retrieval). No additional retrieval or wheel acquisition authorized. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | No run expected on arm push; then exact marker-only activation attempt 1. |
+| Pending runs | Actual receipt-only run terminal SUCCESS; verify exact disarm offline CI. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
-| Recovery action | Reconcile exact run and disarm even on failure, do not retry. Preserve result reason, HTTP status, digest and verified per-wheel receipt metadata; inspection may have discarded deeper subreason. No new acquisition or licence clearance. |
+| Recovery action | Reconcile disarm and preserve verified structured receipt, five candidate inventories and exact sixth-wheel refusal. Next authorized source-only work: preserve bounded specific archive/notice refusal reason in future receipt without weakening validation, review native-wheel ZIP compatibility and synthetic regressions, design missing-only continuation preserving prior five results. Root subreason not recoverable from old receipt; fresh separately scoped approval needed before any new wheel GET. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
@@ -28,4 +28,4 @@ C4-RESEARCH-AND-IMPLEMENTATION-PLAN-20261125: [`bd7c163`](https://github.com/Son
 
 ## Unresolved or interrupted operations
 
-A/B and C1–C4 source closed; C5 outstanding. Source 14/17 (82.4%), official P4 14/20 (70%). Native DPAPI, actual desktop/physical egress and durability, physical 8 GB and G2/D evidence deferred. Owner-local tree uninspected. Fifteen restricted approvals consumed/disarmed; preserve local work, installer freeze unchanged. Historical failures and exact receipts retained in C ledger.
+A/B and C1–C4 source closed; C5 outstanding. Source 14/17 (82.4%), official P4 14/20 (70%). Native DPAPI, actual desktop/physical egress and durability, physical 8 GB and G2/D evidence deferred. Owner-local tree uninspected. Sixteen restricted approvals consumed; receipt-only disarm pending verification; preserve local work, installer freeze unchanged. Historical failures and exact receipts retained in C ledger.

@@ -1,0 +1,327 @@
+{
+  "artifact_id": "15076022558",
+  "identity": {
+    "artifact_name": "c5-wheel-receipts-45729307962-1",
+    "bundle": {
+      "bytes": 20335,
+      "manifest_sha256": "39f75e668ab6657628f6b0c7f3f45f3758898313021d2952cdcd068c03d17083",
+      "sha256": "69184cce9a1da94f9d68912dc9d8fe620067bd788c0b9676fb9d8598c46cf53b"
+    },
+    "run_attempt": 1,
+    "run_id": "45729307962",
+    "schema_version": 1,
+    "source_sha": "d66357e3a76d6b05ca3db5fcc0be94f8d17dd269"
+  },
+  "notice_payloads_republished": false,
+  "original_run": "45729307962",
+  "original_source": "d66357e3a76d6b05ca3db5fcc0be94f8d17dd269",
+  "records": [
+    {
+      "evidence_bytes": 2114,
+      "evidence_sha256": "5f8088c5319d68b9305e8f3bfda2f7afe8a30e9bd6a06a3868bf52cd00e46e01",
+      "expected_bytes": 21228,
+      "expected_sha256": "f3a22400bce1b0c701683820ac4f3b159cd301acab067c51c653e06961600597",
+      "filename": "altgraph-0.17.5-py2.py3-none-any.whl",
+      "inspection_receipt": {
+        "bytes": 21228,
+        "declared_license_files": [
+          "LICENSE"
+        ],
+        "expanded_bytes": 63350,
+        "filename": "altgraph-0.17.5-py2.py3-none-any.whl",
+        "license_expression": null,
+        "license_reviewed": false,
+        "members": 13,
+        "metadata_sha256": "dc60641dba229a3aef09f764f562c38d908b930c92615af2e626af31d6ff19b5",
+        "native_candidates": [],
+        "notice_bytes": 1002,
+        "notices": [
+          {
+            "bytes": 1002,
+            "path": "altgraph-0.17.5.dist-info/LICENSE",
+            "sha256": "6c194d6db0c64d45535d10c95142b9b0cda7b7dcc7f1ddee302b3d536f3dbe46"
+          }
+        ],
+        "sha256": "f3a22400bce1b0c701683820ac4f3b159cd301acab067c51c653e06961600597",
+        "status": "CANDIDATE_INTEGRITY_ONLY",
+        "tags": [
+          "py2-none-any",
+          "py3-none-any"
+        ]
+      },
+      "result": {
+        "evidence": "wheel-001-evidence.json",
+        "http_status": 200,
+        "reason": null,
+        "received_bytes": 21228,
+        "received_sha256": "f3a22400bce1b0c701683820ac4f3b159cd301acab067c51c653e06961600597",
+        "sequence": 1,
+        "status": "VERIFIED"
+      }
+    },
+    {
+      "evidence_bytes": 2235,
+      "evidence_sha256": "ce3cddc8a430e90d8daf9449d83de5cc18b6ba9066d8c7b920ba953d1cb70700",
+      "expected_bytes": 5286,
+      "expected_sha256": "6bc31bbbec6dfaaedc1676dbc11dbda96fe22a2b5c400e9ebad113fec44a9dc6",
+      "filename": "annotated_doc-0.0.7-py3-none-any.whl",
+      "inspection_receipt": {
+        "bytes": 5286,
+        "declared_license_files": [
+          "LICENSE"
+        ],
+        "expanded_bytes": 9448,
+        "filename": "annotated_doc-0.0.7-py3-none-any.whl",
+        "license_expression": "MIT",
+        "license_reviewed": false,
+        "members": 8,
+        "metadata_sha256": "7b36072110a2525e9689d3acf2d2e88876cfe231a44512ceb584ca06267c0276",
+        "native_candidates": [],
+        "notice_bytes": 1086,
+        "notices": [
+          {
+            "bytes": 1086,
+            "path": "annotated_doc-0.0.7.dist-info/licenses/LICENSE",
+            "sha256": "fff170779a6acbf65abdb405c087f1cee1786691e4a96a4034517e4a504a0cdf"
+          }
+        ],
+        "sha256": "6bc31bbbec6dfaaedc1676dbc11dbda96fe22a2b5c400e9ebad113fec44a9dc6",
+        "status": "CANDIDATE_INTEGRITY_ONLY",
+        "tags": [
+          "py3-none-any"
+        ]
+      },
+      "result": {
+        "evidence": "wheel-002-evidence.json",
+        "http_status": 200,
+        "reason": null,
+        "received_bytes": 5286,
+        "received_sha256": "6bc31bbbec6dfaaedc1676dbc11dbda96fe22a2b5c400e9ebad113fec44a9dc6",
+        "sequence": 2,
+        "status": "VERIFIED"
+      }
+    },
+    {
+      "evidence_bytes": 2239,
+      "evidence_sha256": "0c935fb9f726c0e81b601ec199894bdd62a8839cf19a6a1e6a8f20cd93f8b52d",
+      "expected_bytes": 13427,
+      "expected_sha256": "f072f4d804ea359e4eaf198b1af7a8b0943881a87f31bb764f8bf219bb9419e0",
+      "filename": "annotated_types-0.8.0-py3-none-any.whl",
+      "inspection_receipt": {
+        "bytes": 13427,
+        "declared_license_files": [
+          "LICENSE"
+        ],
+        "expanded_bytes": 36347,
+        "filename": "annotated_types-0.8.0-py3-none-any.whl",
+        "license_expression": "MIT",
+        "license_reviewed": false,
+        "members": 7,
+        "metadata_sha256": "614985b278f601b8ef863f82783b991cc3ada4b89f592eb71c7c48c5f2ef2298",
+        "native_candidates": [],
+        "notice_bytes": 1083,
+        "notices": [
+          {
+            "bytes": 1083,
+            "path": "annotated_types-0.8.0.dist-info/licenses/LICENSE",
+            "sha256": "fe1049884b1a0d9342901e88e07f32925d24b3121d9972b6a6805fb9824b095d"
+          }
+        ],
+        "sha256": "f072f4d804ea359e4eaf198b1af7a8b0943881a87f31bb764f8bf219bb9419e0",
+        "status": "CANDIDATE_INTEGRITY_ONLY",
+        "tags": [
+          "py3-none-any"
+        ]
+      },
+      "result": {
+        "evidence": "wheel-003-evidence.json",
+        "http_status": 200,
+        "reason": null,
+        "received_bytes": 13427,
+        "received_sha256": "f072f4d804ea359e4eaf198b1af7a8b0943881a87f31bb764f8bf219bb9419e0",
+        "sequence": 3,
+        "status": "VERIFIED"
+      }
+    },
+    {
+      "evidence_bytes": 2215,
+      "evidence_sha256": "edd6552a8877feb445c967ece6cef8476f09525bab0051d3aa8d942157a6a347",
+      "expected_bytes": 134521,
+      "expected_sha256": "c66ae634e0b8228396b801741beb3294326d4b6102f7bba4041c0dfb58c29026",
+      "filename": "anyio-4.16.0-py3-none-any.whl",
+      "inspection_receipt": {
+        "bytes": 134521,
+        "declared_license_files": [
+          "LICENSE"
+        ],
+        "expanded_bytes": 553035,
+        "filename": "anyio-4.16.0-py3-none-any.whl",
+        "license_expression": "MIT",
+        "license_reviewed": false,
+        "members": 53,
+        "metadata_sha256": "b184ac9cd097e2bb7f90d42799346cc91c276095d000d95d7f7ddd407d0c887e",
+        "native_candidates": [],
+        "notice_bytes": 1081,
+        "notices": [
+          {
+            "bytes": 1081,
+            "path": "anyio-4.16.0.dist-info/licenses/LICENSE",
+            "sha256": "5361ac9dc58f2ef5fd2e9b09c68297c17f04950909bbc8023bdb82eacf22c2b0"
+          }
+        ],
+        "sha256": "c66ae634e0b8228396b801741beb3294326d4b6102f7bba4041c0dfb58c29026",
+        "status": "CANDIDATE_INTEGRITY_ONLY",
+        "tags": [
+          "py3-none-any"
+        ]
+      },
+      "result": {
+        "evidence": "wheel-004-evidence.json",
+        "http_status": 200,
+        "reason": null,
+        "received_bytes": 134521,
+        "received_sha256": "c66ae634e0b8228396b801741beb3294326d4b6102f7bba4041c0dfb58c29026",
+        "sequence": 4,
+        "status": "VERIFIED"
+      }
+    },
+    {
+      "evidence_bytes": 2106,
+      "evidence_sha256": "c4ae71df529673d7ed3a90c1228164f5c07a5594db655edfb7793ec2f1e627c8",
+      "expected_bytes": 127913,
+      "expected_sha256": "7422df25243767b9877031a2248cb14d09ddac9beee846f4cef3d5c9191d488f",
+      "filename": "certifi-2026.11.20-py3-none-any.whl",
+      "inspection_receipt": {
+        "bytes": 127913,
+        "declared_license_files": [
+          "LICENSE"
+        ],
+        "expanded_bytes": 232408,
+        "filename": "certifi-2026.11.20-py3-none-any.whl",
+        "license_expression": null,
+        "license_reviewed": false,
+        "members": 12,
+        "metadata_sha256": "940f90089b8c6f2bbd0fa6e93a66634289853a5bc1453e9f9b88ae53859a2553",
+        "native_candidates": [],
+        "notice_bytes": 989,
+        "notices": [
+          {
+            "bytes": 989,
+            "path": "certifi-2026.11.20.dist-info/licenses/LICENSE",
+            "sha256": "e93716da6b9c0d5a4a1df60fe695b370f0695603d21f6f83f053e42cfc10caf7"
+          }
+        ],
+        "sha256": "7422df25243767b9877031a2248cb14d09ddac9beee846f4cef3d5c9191d488f",
+        "status": "CANDIDATE_INTEGRITY_ONLY",
+        "tags": [
+          "py3-none-any"
+        ]
+      },
+      "result": {
+        "evidence": "wheel-005-evidence.json",
+        "http_status": 200,
+        "reason": null,
+        "received_bytes": 127913,
+        "received_sha256": "7422df25243767b9877031a2248cb14d09ddac9beee846f4cef3d5c9191d488f",
+        "sequence": 5,
+        "status": "VERIFIED"
+      }
+    },
+    {
+      "expected_bytes": 263382,
+      "expected_sha256": "2a6f937e0b70133d1f826d0a253331b6fe1a4c874808cc12e16f2fb8177042f4",
+      "filename": "charset_normalizer-3.5.3-cp311-cp311-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl",
+      "result": {
+        "evidence": null,
+        "http_status": 200,
+        "reason": "INSPECTION_REFUSED",
+        "received_bytes": 263382,
+        "received_sha256": "2a6f937e0b70133d1f826d0a253331b6fe1a4c874808cc12e16f2fb8177042f4",
+        "sequence": 6,
+        "status": "REFUSED"
+      }
+    }
+  ],
+  "retrievals": 1,
+  "settlement": {
+    "attempted_count": 6,
+    "expected_count": 68,
+    "license_reviewed": false,
+    "missing": [
+      "charset_normalizer-3.5.3-cp311-cp311-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl",
+      "charset_normalizer-3.5.3-cp311-cp311-win_amd64.whl",
+      "click-8.5.1-py3-none-any.whl",
+      "cloudpickle-3.1.3-py3-none-any.whl",
+      "colorama-0.4.6-py2.py3-none-any.whl",
+      "et_xmlfile-2.0.0-py3-none-any.whl",
+      "fastapi-0.165.0-py3-none-any.whl",
+      "h11-0.16.0-py3-none-any.whl",
+      "httpcore-1.0.9-py3-none-any.whl",
+      "httpcore2-2.16.2-py3-none-any.whl",
+      "httptools-0.9.0-cp311-cp311-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl",
+      "httptools-0.9.0-cp311-cp311-win_amd64.whl",
+      "httpx-0.28.1-py3-none-any.whl",
+      "httpx2-2.16.2-py3-none-any.whl",
+      "idna-3.20-py3-none-any.whl",
+      "iniconfig-2.3.1-py3-none-any.whl",
+      "joblib-1.6.0-py3-none-any.whl",
+      "narwhals-2.29.0-py3-none-any.whl",
+      "numpy-2.4.6-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "numpy-2.4.6-cp311-cp311-win_amd64.whl",
+      "openpyxl-3.1.5-py2.py3-none-any.whl",
+      "opentelemetry_api-1.45.2-py3-none-any.whl",
+      "packaging-26.4-py3-none-any.whl",
+      "pandas-2.3.3-cp311-cp311-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl",
+      "pandas-2.3.3-cp311-cp311-win_amd64.whl",
+      "pefile-2024.8.26-py3-none-any.whl",
+      "pillow-13.0.0-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "pillow-13.0.0-cp311-cp311-win_amd64.whl",
+      "pluggy-1.7.0-py3-none-any.whl",
+      "pydantic-2.14.4-py3-none-any.whl",
+      "pydantic_core-2.50.5-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "pydantic_core-2.50.5-cp311-cp311-win_amd64.whl",
+      "pygments-2.21.0-py3-none-any.whl",
+      "pyinstaller-6.22.3-py3-none-win_amd64.whl",
+      "pyinstaller_hooks_contrib-2026.9-py3-none-any.whl",
+      "pymupdf-1.28.2-cp310-abi3-manylinux_2_28_x86_64.whl",
+      "pymupdf-1.28.2-cp310-abi3-win_amd64.whl",
+      "pytest-9.2.0-py3-none-any.whl",
+      "python_dateutil-4.0.0-py3-none-any.whl",
+      "python_dotenv-1.2.4-py3-none-any.whl",
+      "python_multipart-0.0.34-py3-none-any.whl",
+      "pytz-2026.6-py2.py3-none-any.whl",
+      "pywin32_ctypes-0.2.3-py3-none-any.whl",
+      "pyyaml-6.0.4-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl",
+      "pyyaml-6.0.4-cp311-cp311-win_amd64.whl",
+      "reportlab-4.5.1-py3-none-any.whl",
+      "scikit_learn-1.9.1-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "scikit_learn-1.9.1-cp311-cp311-win_amd64.whl",
+      "scipy-1.17.1-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "scipy-1.17.1-cp311-cp311-win_amd64.whl",
+      "setuptools-84.2.1-py3-none-any.whl",
+      "starlette-1.10.0-py3-none-any.whl",
+      "threadpoolctl-3.8.0-py3-none-any.whl",
+      "truststore-0.10.5-py3-none-any.whl",
+      "typing_extensions-4.16.0-py3-none-any.whl",
+      "typing_inspection-0.4.5-py3-none-any.whl",
+      "tzdata-2026.6-py2.py3-none-any.whl",
+      "uvicorn-0.54.0-py3-none-any.whl",
+      "uvloop-0.23.0-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl",
+      "watchfiles-1.3.0-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+      "watchfiles-1.3.0-cp310-abi3-win_amd64.whl",
+      "websockets-17.4-cp311-cp311-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl",
+      "websockets-17.4-cp311-cp311-win_amd64.whl"
+    ],
+    "production_ready": false,
+    "received_bytes": 565757,
+    "status": "BLOCKED",
+    "verified_count": 5
+  },
+  "status": "REPLAY_PASS",
+  "wheel_requests": 0,
+  "zip_bytes": 20475,
+  "zip_sha256": "efec26dd56725e3cf2619b9002037f37bdf118f98bac6c20c0f970fbbc39bdaf",
+  "diagnosis_run_id": 45753813079,
+  "diagnosis_job_id": 139687603322,
+  "diagnosis_source_sha": "0a637bd7bdd1c00e04ee4225f40fb916acf84f14"
+}
