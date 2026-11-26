@@ -7,7 +7,7 @@ on:
 permissions: {}
 jobs:
   provenance-once:
-    if: ${{ true && github.event_name == 'push' && github.run_attempt == 1 && github.event.before == '17409892153c58d942b94d8c450b2e9f3ab0c29e' && github.event.head_commit.message == 'C5-PORTABLE-DOCKER-READER-API-ONCE-20261126 owner approved exact LLVM reader correction no-pull data-only operation' }}
+    if: ${{ false && github.event_name == 'push' && github.run_attempt == 1 && github.event.before == '17409892153c58d942b94d8c450b2e9f3ab0c29e' && github.event.head_commit.message == 'C5-PORTABLE-DOCKER-READER-API-ONCE-20261126 owner approved exact LLVM reader correction no-pull data-only operation' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:

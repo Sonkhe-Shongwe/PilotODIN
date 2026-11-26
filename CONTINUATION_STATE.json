@@ -6,16 +6,16 @@
   },
   "checkpoint": {
     "operation_id": "C5-PORTABLE-DOCKER-READER-API-ONCE-20261126",
-    "parent_sha": "a909829f4a222497ef201509e604bd0976f66ff8",
-    "previous_snapshot_sha": "a909829f4a222497ef201509e604bd0976f66ff8",
-    "scope": "One fresh exact 72e1142 no-pull Docker data-only verification on exactly 20261122.23.1 or 20261116.376.1 and Docker 28.0.4; all original safeguards; full pure tests and preflights before bounded acquisition; no retry/fallback.",
-    "state": "PREPARED",
+    "parent_sha": "6df2978845a5dd4edfc0018aab3da99d44bc8b4f",
+    "previous_snapshot_sha": "17409892153c58d942b94d8c450b2e9f3ab0c29e",
+    "scope": "Reconcile exact LLVM correction attempt, preserve preflight and verification passes and case collision refusal; restore false guard",
+    "state": "RECONCILED",
     "receipt": {
-      "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
-      "anchor": "owner-approved-exact-llvm-reader-correction-one-use-integrated-docker-execution",
-      "blob_sha": "86e5586c515069eb457d0ae248dd26e82b656e7e",
-      "start_line": 770,
-      "end_line": 772
+      "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
+      "anchor": "26-november--c5-llvm-correction-passed-preflights-and-both-verifications-member-case-collision-refused",
+      "blob_sha": "2e2ac5fa4d76a5358d79095b9bc147b9549f849b",
+      "start_line": 2758,
+      "end_line": 2760
     }
   },
   "product": {
@@ -117,16 +117,23 @@
   },
   "task": {
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
-    "status": "PREPARED",
+    "status": "READY",
     "scope": "C-D08 revised C5-A/B development reproducibility and build safety only; D retains native prerequisites, P8 release-only",
-    "blocker": "Exact integrated verification not yet executed; previous approval consumed.",
-    "next_action": "Activate sole owned workflow using exact approved LLVM reader correction candidate template and only two permitted substitutions at verified write-ahead HEAD. Observe and reconcile run; disarm without replay.",
-    "next_action_kind": "APPROVED_EXECUTION",
+    "blocker": "Runtime BLOCKED: MEMBER_CASE_COLLISION during authenticated archive path reconciliation; exact profile/member pair unknown. All preflights, both verifier calls and 84 static reader calls passed; complete inventory, final accounting and receipt not available.",
+    "next_action": "Read-only review exact reconcile_paths predicate and public authenticated release source/layout evidence for legitimate platform-specific case collisions. Preserve exact duplicate, traversal, containment, Windows case-insensitive extraction and all other safety boundaries. Prepare narrow fail-closed diagnostic or correction only if justified; explicit owner authority for changed method/scope, no new acquisition, activation or replay.",
+    "next_action_kind": "SOURCE_PREPARATION",
     "after": [
-      "Reconcile exact run and receipt or refusal, preserving all earlier evidence; no replay or acceptance changes.",
+      "Review justified inert correction or diagnostic proposal, obtain fresh explicit execution authority; reconcile evidence without replay.",
       "Complete C5 rows 5–7 and row 8 exact regression/source closure only on qualifying evidence; D only after C5 closure, G2 resolution and separate authority."
     ],
     "read": [
+      {
+        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
+        "anchor": "26-november--c5-llvm-correction-passed-preflights-and-both-verifications-member-case-collision-refused",
+        "blob_sha": "2e2ac5fa4d76a5358d79095b9bc147b9549f849b",
+        "start_line": 2758,
+        "end_line": 2760
+      },
       {
         "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
         "anchor": "owner-approved-exact-llvm-reader-correction-one-use-integrated-docker-execution",
@@ -355,49 +362,23 @@
   },
   "operation": {
     "id": "C5-PORTABLE-DOCKER-READER-API-ONCE-20261126",
-    "state": "PREPARED",
+    "state": "RECONCILED",
     "starting_sha": "a909829f4a222497ef201509e604bd0976f66ff8",
-    "scope": "One fresh exact 72e1142 no-pull Docker data-only verification on exactly 20261122.23.1 or 20261116.376.1 and Docker 28.0.4; all original safeguards; full pure tests and preflights before bounded acquisition; no retry/fallback.",
-    "intended_paths": [
-      ".github/workflows/c5-portable-provenance-once.yml"
-    ],
-    "authority_ref": {
-      "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
-      "anchor": "owner-approved-exact-llvm-reader-correction-one-use-integrated-docker-execution",
-      "blob_sha": "86e5586c515069eb457d0ae248dd26e82b656e7e",
-      "start_line": 770,
-      "end_line": 772
-    },
-    "expected_evidence": "Exact activation parent and message, sole owned first-attempt workflow, terminal job/step logs and reconstructed bounded receipt if present; exact false guard restored.",
-    "recovery": "Inspect live head, commit message and diff, exact workflow run and attempt before any retry; approval is unavailable on uncertainty; disarm owned workflow with expected HEAD after reconciliation. Never replay.",
+    "outcome": "Run 45895815977 attempt 1/job 140169305392 FAILURE MEMBER_CASE_COLLISION after 17/17 synthetic, all preflights, acquisition, both offline verifier calls and 84/84 static reader calls passed; no final receipt or accounting. One-use approval consumed; false guard restored.",
     "reconcile_before_retry": false,
-    "source_sha": "72e11429adf316316d71084a5eb6f3fd3da048df",
-    "template_sha256": "5694da0f8eadd1fe161c5fb14be0febf7d5061d0465ddae520db8736f65b4ff4",
-    "expected_activation_message": "C5-PORTABLE-DOCKER-READER-API-ONCE-20261126 owner approved exact LLVM reader correction no-pull data-only operation",
-    "run_attempt": 1
+    "receipt": {
+      "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
+      "anchor": "26-november--c5-llvm-correction-passed-preflights-and-both-verifications-member-case-collision-refused",
+      "blob_sha": "2e2ac5fa4d76a5358d79095b9bc147b9549f849b",
+      "start_line": 2758,
+      "end_line": 2760
+    }
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next.",
     "preparation_only": "Owner approved consolidated shared-bundle disarmed acquisition-before-signature source and exact limited existing host bootstrap; owner approved proposed limited local Docker control-plane and host-derived rootfs trust/no-pull isolation method for preparation only. Authentication before extraction/use; no Docker invocation, acquisition, verification execution, installation or live cutover authorised.",
-    "restricted_active": [
-      {
-        "id": "C5-PORTABLE-DOCKER-READER-API-ONCE-20261126",
-        "state": "APPROVED",
-        "source_sha": "72e11429adf316316d71084a5eb6f3fd3da048df",
-        "scope": "One fresh exact 72e1142 no-pull Docker data-only verification on exactly 20261122.23.1 or 20261116.376.1 and Docker 28.0.4; all original safeguards; full pure tests and preflights before bounded acquisition; no retry/fallback.",
-        "owner_authority_ref": {
-          "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
-          "anchor": "owner-approved-exact-llvm-reader-correction-one-use-integrated-docker-execution",
-          "blob_sha": "86e5586c515069eb457d0ae248dd26e82b656e7e",
-          "start_line": 770,
-          "end_line": 772
-        },
-        "reconcile_before_retry": false,
-        "template_sha256": "5694da0f8eadd1fe161c5fb14be0febf7d5061d0465ddae520db8736f65b4ff4",
-        "run_attempt": 1
-      }
-    ],
-    "consumed_disarmed_count": 35,
+    "restricted_active": [],
+    "consumed_disarmed_count": 36,
     "consumed_history": {
       "commit": "b9864b70fb9bb5a72d0f79c37f15b94100722192",
       "path": "docs/TAB_MIGRATION_HANDOFF_CURRENT.md",
@@ -416,21 +397,21 @@
       "release",
       "replay of consumed or uncertain approval"
     ],
-    "guards": "35 consumed/disarmed including finite-image attempt; approved finite policy exactly 20261122.23.1 and 20261116.376.1 remains normative, no execution approval remains; owned workflow false job guard restored with exact activation parent/message retained; no fallback or acquisition. Three C1/C2 workflows and OWNED_RESOURCE_ENABLED false; three consumed variables owner cleanup unverified.",
+    "guards": "36 consumed/disarmed including LLVM reader correction attempt; approved finite policy exactly 20261122.23.1 and 20261116.376.1 remains normative, no execution approval remains; owned workflow false job guard restored with exact activation parent/message retained; no fallback/replay. Three C1/C2 workflows and OWNED_RESOURCE_ENABLED false; three consumed variables owner cleanup unverified.",
     "last_consumed": {
-      "id": "C5-PORTABLE-DOCKER-REVIEWED-IMAGES-ONCE-20261126",
-      "source_sha": "c466b5b2faff2a7bb1b6df5020185b3de798952d",
-      "activation_sha": "5a4742aeb2edbe9691896f47d5e27325c824595a",
-      "run_id": 45894807116,
+      "id": "C5-PORTABLE-DOCKER-READER-API-ONCE-20261126",
+      "source_sha": "72e11429adf316316d71084a5eb6f3fd3da048df",
+      "activation_sha": "6df2978845a5dd4edfc0018aab3da99d44bc8b4f",
+      "run_id": 45895815977,
       "run_attempt": 1,
-      "job_id": 140165969818,
-      "outcome": "FAILURE_HOST_READER_API_AFTER_ROOTFS_IMPORT_OFFLINE_PROBE_DECODER_PASS_ZERO_ACQUISITION",
+      "job_id": 140169305392,
+      "outcome": "FAILURE_MEMBER_CASE_COLLISION_AFTER_ALL_PREFLIGHTS_ACQUISITION_BOTH_VERIFIERS_84_NATIVE_READERS_PASS_NO_FINAL_RECEIPT",
       "receipt": {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "26-november--c5-finite-image-attempt-passed-rootfs-and-isolation-reader-api-refused",
-        "blob_sha": "13ca5150ecdd48d7db20949fb91c09dcbcd45d3f",
-        "start_line": 2750,
-        "end_line": 2752
+        "anchor": "26-november--c5-llvm-correction-passed-preflights-and-both-verifications-member-case-collision-refused",
+        "blob_sha": "2e2ac5fa4d76a5358d79095b9bc147b9549f849b",
+        "start_line": 2758,
+        "end_line": 2760
       }
     }
   },
