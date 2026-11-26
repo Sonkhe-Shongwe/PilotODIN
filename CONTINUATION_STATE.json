@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-PORTABLE-LIMITED-HOST-PREP-20261126",
-    "parent_sha": "0bec7ea25dfbe0d1a8b29b0c7d0e86bc8b092241",
-    "previous_snapshot_sha": "0bec7ea25dfbe0d1a8b29b0c7d0e86bc8b092241",
-    "scope": "Owner-approved limited hosted bootstrap trust; detached disarmed QA preparation, decision and evidence only",
+    "operation_id": "C5-PORTABLE-ACTIVATION-PROPOSAL-20261126",
+    "parent_sha": "e404618584da55218ef1d67b183216b3929fed5a",
+    "previous_snapshot_sha": "e404618584da55218ef1d67b183216b3929fed5a",
+    "scope": "Exact inert C5 activation proposal, source review and evidence; no execution or product change",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "26-november--c5-limited-host-bootstrap-preparation",
-      "blob_sha": "090b68f8fb0ab02b0012dbac7ffa7f7504e2d8ea",
-      "start_line": 2686,
-      "end_line": 2688
+      "anchor": "26-november--c5-exact-inert-activation-proposal",
+      "blob_sha": "ae5b7762d2242cef6919e321ae101882556dee0f",
+      "start_line": 2690,
+      "end_line": 2692
     }
   },
   "product": {
@@ -119,25 +119,32 @@
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
     "status": "BLOCKED",
     "scope": "C-D08 revised C5-A/B development reproducibility and build safety only; D retains native prerequisites, P8 release-only",
-    "blocker": "Limited hosted bootstrap trust decision resolved and source prepared; exact image/tool availability and namespace capability unverified. Exact one-use activation review and remaining root, gh verifier, Depot release-job/run-correlation and receipt-custody dispositions outstanding; no execution approval.",
-    "next_action": "Review detached b7c9b6e and prepare the exact disarmed activation/disposition proposal with source pins, bounds and receipt custody; then request one combined explicit owner decision/execution approval. Do not activate, acquire or execute before that approval.",
+    "blocker": "Exact inert proposal c2264da reviewed at source scope; explicit combined verifier/root/Depot run-correlation/receipt custody and one-use execution approval not granted. Actual exact runner image and capability not verified.",
+    "next_action": "Request explicit combined approval of the exact c2264da proposal and its remaining trust dispositions and one-use bounded data-only operation. If approved, record write-ahead and verify exact activation/expected HEAD before conditional push; if declined or unavailable, remain blocked without replay.",
     "next_action_kind": "OWNER_DECISION",
     "after": [
-      "After exact activation review and combined explicit approval, execute once within approved source, image, bounds and receipt policy; reconcile and disarm.",
-      "Complete C5 rows 5–7 then row 8 exact regression and source closure; D only after C5 closure, G2 resolution and separate authority."
+      "After explicit combined approval, execute one attempt only under exact activation template, image, limits and receipt policy; reconcile outcome and disarm without replay.",
+      "Complete C5 rows 5–7 and row 8 exact regression/source closure; D only after C5 closure, G2 resolution and separate authority."
     ],
     "read": [
       {
         "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
+        "anchor": "exact-inert-portable-provenance-activation-proposal",
+        "blob_sha": "f756c542313af57921b6a81c3113b25d6c184112",
+        "start_line": 690,
+        "end_line": 696
+      },
+      {
+        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
         "anchor": "owner-approved-limited-host-bootstrap-boundary",
-        "blob_sha": "4964354e74562cb9c85a7590089e42fe2b7742f7",
+        "blob_sha": "f756c542313af57921b6a81c3113b25d6c184112",
         "start_line": 682,
         "end_line": 688
       },
       {
         "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
         "anchor": "owner-approved-c5-delivery-checklist-26-november-2026",
-        "blob_sha": "4964354e74562cb9c85a7590089e42fe2b7742f7",
+        "blob_sha": "f756c542313af57921b6a81c3113b25d6c184112",
         "start_line": 273,
         "end_line": 298
       },
@@ -150,25 +157,25 @@
       },
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "26-november--c5-limited-host-bootstrap-preparation",
-        "blob_sha": "090b68f8fb0ab02b0012dbac7ffa7f7504e2d8ea",
-        "start_line": 2686,
-        "end_line": 2688
+        "anchor": "26-november--c5-exact-inert-activation-proposal",
+        "blob_sha": "ae5b7762d2242cef6919e321ae101882556dee0f",
+        "start_line": 2690,
+        "end_line": 2692
       }
     ]
   },
   "operation": {
-    "id": "C5-PORTABLE-LIMITED-HOST-PREP-20261126",
+    "id": "C5-PORTABLE-ACTIVATION-PROPOSAL-20261126",
     "state": "RECONCILED",
-    "starting_sha": "0bec7ea25dfbe0d1a8b29b0c7d0e86bc8b092241",
-    "outcome": "Owner-approved limited host trust recorded; detached disarmed QA preparation b7c9b6e verified by read-back source inspection; zero candidate runs, no acquisition/execution/activation or acceptance credit.",
+    "starting_sha": "e404618584da55218ef1d67b183216b3929fed5a",
+    "outcome": "Detached exact inert activation proposal c2264da committed and source read-back checked, all 118 existing triggers reviewed, zero candidate runs; no execution or acceptance credit.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "26-november--c5-limited-host-bootstrap-preparation",
-      "blob_sha": "090b68f8fb0ab02b0012dbac7ffa7f7504e2d8ea",
-      "start_line": 2686,
-      "end_line": 2688
+      "anchor": "26-november--c5-exact-inert-activation-proposal",
+      "blob_sha": "ae5b7762d2242cef6919e321ae101882556dee0f",
+      "start_line": 2690,
+      "end_line": 2692
     }
   },
   "authority": {
@@ -194,7 +201,7 @@
       "release",
       "replay of consumed or uncertain approval"
     ],
-    "guards": "Three C1/C2 one-use workflows and OWNED_RESOURCE_ENABLED false; portable draft b7c9b6e LIVE_ENABLED false, plan/disposition pins unset; no fallback. Three consumed variables owner cleanup unverified."
+    "guards": "Three C1/C2 one-use workflows and OWNED_RESOURCE_ENABLED false; portable source LIVE_ENABLED false, driver pins unset; inert c2264da template outside workflow directory, sole job guard false, expected parent placeholder, no execution authority. Three consumed variables owner cleanup unverified."
   },
   "pending_runs": [],
   "pending_operations": [],
@@ -212,6 +219,10 @@
       {
         "sha": "b7c9b6eed2e475023aa8cfa6922fd4019c849da0",
         "scope": "owner-approved limited existing-host trust; disarmed QA preparation, five changed QA paths versus ae673c4, workflows unchanged, zero runs, static read-back only; runtime untested"
+      },
+      {
+        "sha": "c2264da688f053d377fd02cddca5e7230866a493",
+        "scope": "exact inert C5 activation proposal; four QA paths changed vs b7c9b6e, 118 workflows unchanged, seven staged payloads read-back exact, zero runs; no runtime tests"
       }
     ]
   },
