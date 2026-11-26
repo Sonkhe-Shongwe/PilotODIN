@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-MEMBER-CASE-DIAGNOSTIC-PREP-20261126",
-    "parent_sha": "b6ebd081ef68f92527fc15f7a3b017dc91ab65a4",
-    "previous_snapshot_sha": "b6ebd081ef68f92527fc15f7a3b017dc91ab65a4",
-    "scope": "Read-only exact archive collision diagnosis; prepare inert fail-closed diagnostic and retain previous refusal",
+    "operation_id": "C5-MEMBER-CASE-DIAGNOSTIC-INTEGRATION-PREP-20261126",
+    "parent_sha": "1807300bd0804122cfc70ca05273f24fe94f4dd2",
+    "previous_snapshot_sha": "1807300bd0804122cfc70ca05273f24fe94f4dd2",
+    "scope": "Record owner-approved bounded diagnostic preparation and fully pinned inert integrated candidate; no execution",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "26-november--c5-archive-case-collision-source-review-and-inert-diagnostic",
-      "blob_sha": "9b609f5c6ad1b9babd25d94143240febcbcede58",
-      "start_line": 2762,
-      "end_line": 2764
+      "anchor": "26-november--c5-bounded-case-collision-diagnostic-integrated-and-pinned-inert-candidate",
+      "blob_sha": "58d924311326801bf23666f261689d7743811a11",
+      "start_line": 2766,
+      "end_line": 2768
     }
   },
   "product": {
@@ -119,14 +119,28 @@
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
     "status": "BLOCKED",
     "scope": "C-D08 revised C5-A/B development reproducibility and build safety only; D retains native prerequisites, P8 release-only",
-    "blocker": "MEMBER_CASE_COLLISION remains unresolved; exact profile and colliding member pair unavailable. Inert diagnostic 9653f9137c1c42232342464bc24c17b33d56d79f preserves refusal but changes failure evidence retention. No justified exception; fresh owner decision required.",
-    "next_action": "Obtain explicit owner authority for the bounded first-collision encoded public member-path diagnostic (no casefold exception, no new acquisition or execution yet); then prepare fresh complete pinned inert integrated candidate, regenerate activation template and manifest, verify exact 18-method gate and unchanged finite-image/no-pull/transport safeguards before requesting separate fresh exact one-use execution authority.",
+    "blocker": "MEMBER_CASE_COLLISION still unresolved; exact colliding profile and member pair not retained. Complete inert integrated diagnostic candidate 05866bc9bcbf405a6c3da9e403c745164d5707a6 prepared under explicit preparation-only authority. No fresh restricted execution authority.",
+    "next_action": "Obtain fresh explicit owner approval of exact candidate 05866bc9bcbf405a6c3da9e403c745164d5707a6 for one bounded integrated no-pull Docker data-only verification attempt with approved first-collision diagnostic, unchanged finite image policy and all existing safeguards. Before activation independently reverify exact template/manifest, guard, workflow trigger scope, pending runs and source pins; persist write-ahead authority/intent. Full 18-method synthetic gate must pass before any Docker invocation or acquisition.",
     "next_action_kind": "OWNER_DECISION",
     "after": [
-      "Only after fresh exact execution approval, run once within unchanged safeguards; reconcile actual first collision evidence or complete result and restore false guard. No replay or assumed cleanup.",
+      "Only after fresh exact execution approval, run once within unchanged safeguards; reconcile first collision diagnostic or complete evidence, restore false guard, no replay or assumed cleanup.",
       "Review exact authenticated colliding profile/pair and upstream evidence; any exception requires explicit authority and independently verified platform safety. Complete C5 rows 5–7 and row 8 only on qualifying evidence; D remains gated by C5, G2 and separate authority."
     ],
     "read": [
+      {
+        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
+        "anchor": "26-november--c5-bounded-case-collision-diagnostic-integrated-and-pinned-inert-candidate",
+        "blob_sha": "58d924311326801bf23666f261689d7743811a11",
+        "start_line": 2766,
+        "end_line": 2768
+      },
+      {
+        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
+        "anchor": "owner-approved-bounded-first-collision-diagnostic-preparation-only",
+        "blob_sha": "53c55bfc1e469cde113435d915fe05eebaec4dba",
+        "start_line": 774,
+        "end_line": 776
+      },
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "26-november--c5-archive-case-collision-source-review-and-inert-diagnostic",
@@ -368,22 +382,22 @@
     ]
   },
   "operation": {
-    "id": "C5-MEMBER-CASE-DIAGNOSTIC-PREP-20261126",
+    "id": "C5-MEMBER-CASE-DIAGNOSTIC-INTEGRATION-PREP-20261126",
     "state": "RECONCILED",
-    "starting_sha": "b6ebd081ef68f92527fc15f7a3b017dc91ab65a4",
-    "outcome": "Read-only publisher/layout and exact source review completed; no justified casefold exception. Detached candidate 9653f9137c1c42232342464bc24c17b33d56d79f prepared; 1 exact mocked synthetic method PASS, four snippets SHA256 matched. Full suite and live diagnostic untested; no restricted execution; 36 consumed/disarmed.",
+    "starting_sha": "1807300bd0804122cfc70ca05273f24fe94f4dd2",
+    "outcome": "Complete detached inert integrated candidate 05866bc9bcbf405a6c3da9e403c745164d5707a6; 22/22 payload pins, ten exact source matches, exact read-back, one new mocked synthetic method PASS and four exact snippet hashes matched. Full 18-method gate integrated NOT RUN; no restricted execution or acquisition.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "26-november--c5-archive-case-collision-source-review-and-inert-diagnostic",
-      "blob_sha": "9b609f5c6ad1b9babd25d94143240febcbcede58",
-      "start_line": 2762,
-      "end_line": 2764
+      "anchor": "26-november--c5-bounded-case-collision-diagnostic-integrated-and-pinned-inert-candidate",
+      "blob_sha": "58d924311326801bf23666f261689d7743811a11",
+      "start_line": 2766,
+      "end_line": 2768
     }
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next.",
-    "preparation_only": "Owner approved consolidated shared-bundle disarmed acquisition-before-signature source and exact limited existing host bootstrap; owner approved proposed limited local Docker control-plane and host-derived rootfs trust/no-pull isolation method for preparation only. Authentication before extraction/use; no Docker invocation, acquisition, verification execution, installation or live cutover authorised.",
+    "preparation_only": "Owner approved consolidated shared-bundle disarmed acquisition-before-signature source and exact limited existing host bootstrap; owner approved proposed limited local Docker control-plane and host-derived rootfs trust/no-pull isolation method for preparation only. Authentication before extraction/use; no Docker invocation, acquisition, verification execution, installation or live cutover authorised. Owner approved bounded first-collision encoded public member-path diagnostic preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-bounded-first-collision-diagnostic-preparation-only. No restricted execution authority.",
     "restricted_active": [],
     "consumed_disarmed_count": 36,
     "consumed_history": {
@@ -482,6 +496,10 @@
       {
         "sha": "9653f9137c1c42232342464bc24c17b33d56d79f",
         "scope": "Inert two-file case-collision diagnostic source proposal; one new exact mocked synthetic method PASS, four snippet SHA256 matches, full 18-method suite NOT RUN, activation template/manifest stale, no candidate runs or workflow changes; diagnostic evidence scope and future exact execution require fresh explicit owner approvals."
+      },
+      {
+        "sha": "05866bc9bcbf405a6c3da9e403c745164d5707a6",
+        "scope": "Complete exact inert integrated case-collision diagnostic candidate; four QA files vs 72e1142, 22/22 pins and ten exact source matches, 34 staging/37 total, one exact mocked test PASS, full 18-method suite NOT RUN, zero candidate runs; no new workflow or product changes; exact one-use execution requires fresh owner approval."
       }
     ]
   },
