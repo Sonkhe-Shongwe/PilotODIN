@@ -1,0 +1,84 @@
+name: C5 missing wheels hosted once
+on:
+  push:
+    branches: [feature/live-dev-workspace-20261023]
+    paths:
+      - qa/c5_wheel_metadata/wheel_missing_hosted.py
+      - qa/c5_wheel_metadata/test_wheel_missing_hosted.py
+      - .github/workflows/c5-wheel-missing-hosted.yml
+permissions:
+  contents: read
+jobs:
+  offline-review:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Review missing-only producer and independent replay
+        run: |
+          test "$(git hash-object qa/c5_wheel_metadata/wheel_missing_hosted.py)" = "1ebe63cf344ff5f9ecf72309da900c7ee071bf49"
+          python3 -I -B qa/c5_wheel_metadata/test_wheel_diagnostic_offline.py
+          python3 -I -B qa/c5_wheel_metadata/test_wheel_missing_hosted.py
+          set +e
+          for mode in --collect --retrieve; do
+            result=$(python3 -I -B qa/c5_wheel_metadata/wheel_missing_hosted.py "$mode" 2>&1)
+            code=$?
+            test "$code" = 1 && test "$result" = 'FRESH_APPROVAL_REQUIRED: missing-only hosted driver disabled' || exit 1
+            printf '%s\n' "$result"
+          done
+  collect-once:
+    if: ${{ false }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    outputs:
+      record: ${{ steps.collect.outputs.record }}
+      settlement: ${{ steps.collect.outputs.settlement }}
+      artifact-id: ${{ steps.upload.outputs.artifact-id }}
+      digest: ${{ steps.upload.outputs.artifact-digest }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+      - id: collect
+        run: python3 -I -B qa/c5_wheel_metadata/wheel_missing_hosted.py --collect
+        env:
+          C5_DRIVER_BLOB: 1ebe63cf344ff5f9ecf72309da900c7ee071bf49
+          C5_APPROVED_ONCE: C5-WHEEL-MISSING-HOSTED-ONCE-20261126
+      - id: upload
+        if: ${{ false }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: c5-wheel-receipts-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ steps.collect.outputs.receipt_bundle }}
+          retention-days: 7
+          compression-level: 0
+          overwrite: false
+          if-no-files-found: error
+  retrieve-once:
+    if: ${{ false }}
+    needs: collect-once
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+      - run: python3 -I -B qa/c5_wheel_metadata/wheel_missing_hosted.py --retrieve
+        env:
+          C5_DRIVER_BLOB: 1ebe63cf344ff5f9ecf72309da900c7ee071bf49
+          C5_APPROVED_ONCE: C5-WHEEL-MISSING-HOSTED-ONCE-20261126
+          C5_BUNDLE_RECORD: ${{ needs.collect-once.outputs.record }}
+          C5_PRODUCER_SETTLEMENT: ${{ needs.collect-once.outputs.settlement }}
+          C5_ARTIFACT_ID: ${{ needs.collect-once.outputs.artifact-id }}
+          C5_UPLOAD_DIGEST: ${{ needs.collect-once.outputs.digest }}
+          GH_TOKEN: ${{ github.token }}
