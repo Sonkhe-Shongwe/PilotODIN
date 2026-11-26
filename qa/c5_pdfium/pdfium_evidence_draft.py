@@ -1,4 +1,4 @@
-"""Marker-absent staged two-wheel evidence adapter; exact one-use gate required."""
+"""Consumed one-use PDFium evidence adapter, disarmed; synthetic rehearsal only."""
 from __future__ import annotations
 import base64
 from contextlib import contextmanager
@@ -49,7 +49,7 @@ PINS = {
 }
 HEX = re.compile(r"[0-9a-f]{64}")
 URL = re.compile(r"https://files\.pythonhosted\.org/packages/[0-9a-f]{2}/[0-9a-f]{2}/[0-9a-f]{60}/[A-Za-z0-9_.-]+\.whl")
-LIVE_ENABLED = True
+LIVE_ENABLED = False
 
 # Exact upstream source tree notice identities, not a bundled licence clearance.
 NOTICE_SOURCE = "a618c900bc03ab071e5ee8aea3c196a935cfa8a7"
@@ -544,7 +544,7 @@ class Synthetic(unittest.TestCase):
         self.assertEqual(m.MAX_MEMBERS,2048)
         self.assertEqual(m.MAX_TOTAL,128*1024**2)
     def test_disarmed(self):
-        self.assertTrue(LIVE_ENABLED)
+        self.assertFalse(LIVE_ENABLED)
         self.assertFalse(_GATE_PASSED)
         self.assertFalse((ROOT/MARKER).exists())
 
@@ -691,7 +691,7 @@ class Synthetic(unittest.TestCase):
             mutated=args.copy();mutated[index]=value
             with self.subTest(index=index),self.assertRaises(Refused):
                 gate_snapshot(*mutated)
-        with self.assertRaisesRegex(Refused,"MARKER"): live_gate()
+        with self.assertRaisesRegex(Refused,"DISARMED_OR_CONSUMED"): live_gate()
 
     def test_transport_refuses_real_connection(self):
         with self.assertRaisesRegex(Refused,"OFFLINE_FIXTURE_ONLY"):

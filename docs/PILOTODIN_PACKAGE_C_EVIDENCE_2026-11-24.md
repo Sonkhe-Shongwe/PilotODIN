@@ -2303,3 +2303,57 @@ Prelaunch corrections: exact pinned inspector verified before first GET under ex
 Exact [a845bda](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/a845bda8444d82e8b9a77455539a5ec3a3d079eb), [run #45839863700](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45839863700), attempt 1 completed SUCCESS. Rehearsal 139978367032 SUCCESS, candidate-acquisition 139978369892 SKIPPED. Logs all 25 methods ok (0.386s), C5_PDFIUM_LIVE_REFUSED: MARKER. Exact driver 88c2625663d4536350922dde6e4c7a4cca177b69, workflow ffe95fadef35a60391d1a35321e47ccd0370aafd, existing inspector 9bf91fb983bd354f0b6db20dbb4eec32c447f369. 117 previous workflow identities unchanged, 118 total; only dedicated workflow changed. Marker absent in exact live tree, no actual candidate requests, no live acquisition, installation or downloaded code execution. Prep approval unconsumed, 23 historical restricted approvals consumed/disarmed. Live-capable source staged, but no marker and exact activation workflow predicate not met. Actual format, publisher metadata and notices remain unverified. Git blob SHA1 comparisons against 26 tagged upstream notice files supplement independently pinned outer archive SHA256 and notice SHA256, do not certify applicable licence terms or linkage.
 
 **Await exact owner activation, not automatic.** This documentation checkpoint is the intended parent of one detached marker-only child, with subject exactly C5-PDFIUM-TWO-WHEEL-EVIDENCE-ONCE-20261126 owner approved exact acquisition only; only added path qa/c5_pdfium/APPROVAL_PDFIUM_TWO_WHEEL_ONCE_20261126.json. Marker JSON binds operation, actual parent commit and exact driver/workflow/inspector blobs above. Create detached commit after verifying checkpoint parent; do not move branch or trigger workflow. Report exact detached child SHA and marker blob to owner for approval. If any drift, revalidate rather than transfer authority. On separately explicit exact-child approval, recheck current parent, expected marker-only diff, all workflow identities, exact first-attempt gate and no prior dispatch, use conditional non-force update only once. Stage approval record and exact activation identity durably in journal through existing prepared operation; do not modify parent or child after owner approves exact SHA. Reconcile exact run, immediately disarm and remove marker (including on refusal, cancellation or ambiguous attempt), record terminal result and safe receipts only. No replay. At most 5 HTTPS GETs/8994854 application response body bytes, no redirects/retries, 30s/request, 300s operation and 5-minute job, exact PyPI version JSON and optional independently hash-advertised sidecars, exact two pinned wheels only, in-memory strict inspection; no native/model/installer/owner data, installation, extracted files, candidate code execution, raw publication or release. No independent physical egress claim. Scope approval authorises preparation only; approval of detached child must explicitly activate. No migration or equivalence acceptance. Source 14/17, P4 14/20, C5 4/8, four profiles blocked, G2 blocked, D pending, P5 unauthorized, installer frozen, owner-local tree uninspected.
+
+### 26 November | C5 PDFium one-use acquisition completed and disarm publication
+
+Owner explicit approval: "I approve exact one-use activation of C5-PDFIUM-TWO-WHEEL-EVIDENCE-ONCE-20261126, detached commit 6fe96595c8d5a699c14f14613b1bf0583895ba32, parent f3e55a078a9613f433b2aef283a97d25af2894c8. Maximum five HTTPS requests and 8994854 response bytes, zero retries or redirects. No installation, downloaded code execution, filesystem extraction, owner-data access, native application execution, installer generation or release. Execute once, reconcile the evidence and immediately disarm." Exact marker-only child [6fe9659](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/6fe96595c8d5a699c14f14613b1bf0583895ba32) advanced once from f3e55a0 using non-force expected-parent update. All 118 workflow identities unchanged at activation; no prior dispatch; marker blob 1366d0fe2f8c1c4b521a8c9c826d27bb1a7449b7. [Run #45840503532](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45840503532) exact activation, attempt 1 SUCCESS; candidate-acquisition 139980571293 SUCCESS, rehearsal 139980574006 SKIPPED. Approval consumed on publication, no retry/replay. Application-level receipts independently reconciled PASS: 5 requests, 8423254 response body bytes, all status 200 and complete; no redirect path/retry, no physical ingress claim. Two exact PyPI wheel hashes/lengths match pre-pinned publisher release identities; sidecars match actual embedded METADATA, no Requires-Dist reported. Full safe receipts [retained](./C5_PDFIUM_TWO_WHEEL_RECEIPTS_45840503532.json); no raw wheel/notice bytes retained or published, no install, filesystem extraction, candidate code execution, native, owner or release activity. 
+
+```json
+[
+  {
+    "filename": "pypdfium2-5.15.2-py3-none-win_amd64.whl",
+    "bytes": 4187589,
+    "metadata": "e0ce0a92c2cd69ceff1ef581fa19f83a59e9fbbc68b3f71463fabc0077e69650",
+    "python": "REVIEW_REQUIRED",
+    "notices": 37,
+    "noticeBytes": 179668,
+    "comparisons": {
+      "TAGGED_SOURCE_MISMATCH": 25,
+      "UNMAPPED_REVIEW_REQUIRED": 11,
+      "EXACT_TAGGED_SOURCE_MATCH": 1
+    },
+    "native": [
+      {
+        "bytes": 7835648,
+        "path": "pypdfium2_raw/pdfium.dll",
+        "sha256": "42d87f68957d745ce9377dfb1d8d63691e19082a7ec29ff421d22779d3142b29"
+      }
+    ],
+    "license": "REVIEW_REQUIRED",
+    "url": "https://files.pythonhosted.org/packages/fe/7f/8aa446529fa14523e5c18f89e823afc95526689f76a75efe68a82a10d850/pypdfium2-5.15.2-py3-none-win_amd64.whl"
+  },
+  {
+    "filename": "pypdfium2-5.15.2-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+    "bytes": 4020833,
+    "metadata": "1f88bdc8babca4068e383b787780ae9f7794e36f7930a66d7e29bd566eb7ddf8",
+    "python": "REVIEW_REQUIRED",
+    "notices": 37,
+    "noticeBytes": 176072,
+    "comparisons": {
+      "EXACT_TAGGED_SOURCE_MATCH": 26,
+      "UNMAPPED_REVIEW_REQUIRED": 11
+    },
+    "native": [
+      {
+        "bytes": 8271176,
+        "path": "pypdfium2_raw/libpdfium.so",
+        "sha256": "c76dc0f7839644bfa7c3e3107a6068df714e339c861bb7d4519907b821d427f9"
+      }
+    ],
+    "license": "REVIEW_REQUIRED",
+    "url": "https://files.pythonhosted.org/packages/c8/e5/2e668bc1bc6fe22f9006694b5571a2dd2c9b874d6a21d16ee839c8f7f6ea/pypdfium2-5.15.2-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"
+  }
+]
+```
+
+Windows notice mismatches and unmapped entries, Linux exact tagged matches and unmapped entries, absent licence expression and unresolved linkage/actual applicable terms remain review requirements. CRLF conversion is a plausible explanation of Windows notice differences, not yet proven. Actual archive integrity PASS is not licence clearance, installed compatibility or equivalence. Next read-only compare all actual notice hashes against exact upstream source Git blobs and exact CRLF transformation where justified, review applicable terms and candidate lock/migration design; no further acquisition/installation/execution authority. Current 24 restricted approvals consumed (including this PDFium operation); disarm changes literal LIVE_ENABLED=False, acquisition job literal false, removes only consumed marker, preserves synthetic tests with expected disarm refusal. Exact disarm CI pending, verify separately. All other workflows unchanged, no product/dependency/lock edits; source 14/17, P4 14/20, C5 4/8, all four profiles BLOCKED; G2 blocked, D pending, P5 unauthorized, installer frozen, owner-local tree uninspected.

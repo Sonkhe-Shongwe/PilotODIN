@@ -10,14 +10,13 @@ permissions:
   contents: read
 jobs:
   rehearsal:
-    if: ${{ github.event.head_commit.message != 'C5-PDFIUM-TWO-WHEEL-EVIDENCE-ONCE-20261126 owner approved exact acquisition only' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           ref: ${{ github.sha }}
-          fetch-depth: 16
+          fetch-depth: 20
           persist-credentials: false
       - name: Existing cached CP311 only, static inventory and fixtures
         shell: bash
@@ -32,7 +31,7 @@ jobs:
           test "$rc" -eq 2
           test ! -e qa/c5_pdfium/APPROVAL_PDFIUM_TWO_WHEEL_ONCE_20261126.json
   candidate-acquisition:
-    if: ${{ github.event.head_commit.message == 'C5-PDFIUM-TWO-WHEEL-EVIDENCE-ONCE-20261126 owner approved exact acquisition only' && github.run_attempt == 1 }}
+    if: ${{ false }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
