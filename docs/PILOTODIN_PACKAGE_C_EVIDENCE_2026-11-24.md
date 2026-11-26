@@ -2200,3 +2200,84 @@ Owner explicitly stated: "I approve C5-PDFIUM-TWO-WHEEL-EVIDENCE-ONCE-20261126 a
 Exact prior live 3f4bb73 and detached a64306a recovered; zero runs on both. Owner scope approval recorded at 4cd51ff is unconsumed, no live activation. Reviewed exact trigger sections and matched all 117 existing workflow blob identities to live HEAD, including quoted on keys, manual-only, PR-only, tag-only and build-e-only workflows. No existing branch-push trigger matches qa/c5_pdfium/pdfium_evidence_draft.py, .github/workflows/c5-pdfium-evidence-draft.yml or the three canonical documentation paths. Only new dedicated workflow matches; checkout pinned, cached CP311, no package setup, static git inventory and synthetic unit tests only, candidate-acquisition literal false, live CLI unconditionally refuses, verify exit code exactly 2. Shallow depth 4 includes exact pre-preparation 0458d55 for this immediate child; do not reuse on a later unrelated commit without verifying base availability. All 117 existing workflows unchanged. No acquisition transport/imports or activation marker.
 
 Overlay reviewed detached source on live documentation HEAD; add nine in-memory fixture test methods (16 total). Synthetic ZIPs contain inert bytes, never actual candidate, no file extraction or dependency install. Positive Windows/Linux wheel tags, full RECORD and notice checks, independent sidecar vs archive-bound receipt; negative sidecar mismatch/unadvertised, dependency, wrong RECORD, missing notice, tag mismatch, unsafe/case-colliding paths, duplicate batch/expansion caps. Fixture-local mock pins exist only in synthetic test methods; no CLI accepts arbitrary wheels. Narrow receipt uses explicit allowlisted Requires-Python and licence-expression values or REVIEW_REQUIRED plus hashes; no raw notices. Test suite and static content inventory not yet run at publication; exact CI must be reconciled before reporting pass. The new workflow intentionally has no live transport. Complete exact inventory classification, fix any failures, then narrow transport/gate and exact activation review. No product/lock edits, no score change, four profiles BLOCKED. Existing P4 14/20 and source 14/17 unchanged, G2 blocked, D pending, P5 unauthorized, installer frozen, owner-local tree uninspected.
+
+### 26 November | C5 PDFium exact disarmed rehearsal PASS and caller inventory reconciliation
+
+[Exact source 9ecfd3e](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/9ecfd3e02cf5a77b89a59f7a28ad35a9cc5a528e), [run #45836658676](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45836658676), attempt 1 COMPLETED SUCCESS. Rehearsal job 139967204093 SUCCESS; candidate-acquisition 139967206202 SKIPPED. Log explicitly reports all 16 methods ok, Ran 16 tests in 0.217s, OK, C5_PDFIUM_LIVE_REFUSED: DISARMED_DRAFT. New QA source blob 756be794d5dcbc626adbe7c2bb7b7bbe931e3f56, workflow 63e1c167264e9813e0e3808f75b4b267d9df93e4; all 117 previous workflows unchanged (118 total). No live transport/imports, real archive request, install, native/application execution or owner data. Synthetic fixture PASS validates request planning, archive/metadata/RECORD and notice checks under strict ZIP subset only; actual wheel format, dependency declaration and notice terms remain unverified. Scope approval unconsumed; no exact activation.
+
+**Static inventory exact source 0458d55:** 1545 tracked blobs, independently joined recursive Git tree (not truncated); 68 unique matching paths, all 68/68 exact Git blob IDs independently reconciled. This scan covers selected source/config extensions and regex terms, not proof that every indirect reference or nonselected extension has been identified. Confirmed minimum now **11 direct test modules + 8 direct QA scripts**, not 10 + 8. Additional direct test tests/test_p2_report_display_disclosure.py 16c1a3c2d0547816dc043c92e85091e2a8ac52c5: exact HTML/PDF omission disclosures (24/30 summary facts, 40/45 observation entries, 30/35 finding entries, 50/53 observation entries, retained source projection and bounded subset), immutable saved input, dense report >=3 pages, A4 595.276 x 841.89 within 1 point, each block bounded with existing 1-point tolerance; no claim of visual glyph acceptance. Preserve all predicates. Self_Test_PilotODIN.bat 14347d5454237377f0af9b3d51308722e93e9b83 line 18 explicitly checks PyMuPDF distribution version along with pytest/httpx/httpx2; future test-only cutover must replace this check, not remove dependency verification. tools/Verify_Macro_A2_Local.ps1 2a6582215b8df544b72516b59ac2de505115da8c and A3 f195afd76158f0b443232014f59ddb5650070335 mention requirements-test.txt as manual repair guidance; no automatic install or owner execution authorised. test_c3_local_verifier_trust.py a90307ada90822eee4870069254b515674127587 imports/reviews legacy visual runner; retain auth/visual client contract. test_p2_legacy_pdf_visual_source.py 6b7bb7bb9a2442cb009073917f8c79b436baf82b checks launcher/source contract. test_c5_build_input_preflight.py pins existing test requirement blob; contracts/build_input_policy_v1.json and build_inputs_v1.schema.json reference test requirements. qa/c5_metadata/graph_review.py and qa/c5_wheel_metadata/combined_graph.py read/pin original requirements; distinguish live preflight expectations from immutable historical graph evidence. All fourteen matched workflows require trigger/job review before eventual cutover; no existing workflow changes authorised here.
+
+**Safe exact inventory retention:** group sizes 14 workflows, 8 root BAT, 3 backend inputs, 3 contract records, 2 docs receipts, 9 QA paths (2 graph reviewers and 7 historical plans/receipts), 17 tests (11 direct, 6 indirect/contracts), 12 tools (8 direct, 4 indirect/preflight/guidance). The observed file list and blob identities below are retained for later classification/cutover; historical receipts/plans never silently repinned. This is a static reference inventory, not proof of runtime use or all transitive references.
+
+```text
+dc3fe0dc471d59bdee604befbb69e52188da93bc .github/workflows/build-e-verification.yml
+b457fe945d40e3862340205cf7f8f84c19cf170a .github/workflows/live-dev-backend-tests.yml
+0a0f61c93b38f0d669a809c9e6ce6355024ff5d9 .github/workflows/p1-isolated-backend.yml
+fe2ba8102c183f5fd0b76de1da05a6e0e59fd19b .github/workflows/p1-project-lifecycle.yml
+2a14551bc619fbe85764f7e4caedd5d2cb30594b .github/workflows/p1-real-http-browser.yml
+d4947b3bec051094d6e2d974bf027a0323646fd6 .github/workflows/p2-legacy-pdf-pagination.yml
+1dc18e5079ca0d6073cc03ce5e2517166a66f71a .github/workflows/p2-real-http-report-comparison.yml
+97c1a6f9d2b3bb55c3cfca89dc914f45878726c2 .github/workflows/p2-report-count-semantics.yml
+706afd89f063a30d21f412a211b111165e76714a .github/workflows/p2-report-revision-idempotency.yml
+2d92f9b3d2ec9d6ec5d5ee0adfa97f9676a70c4a .github/workflows/p3-real-http-semantic-context.yml
+9f85a73de7aa15918dbedd31713c3266f69c4b3b .github/workflows/p3-semantic-business-context.yml
+6ba5d8ce15b199325e44e0fd6c2511b0d623a399 .github/workflows/p4-target-ranking.yml
+daa6f0ebdff345e63eda89d46464922c5e558a4b .github/workflows/r1r2-source-only-windows.yml
+1be9e6418e0c60349e848b544588b1fb5daa71d7 .github/workflows/windows-desktop.yml
+e779f7c601a3f4340793d6fc0f6683c06a84aac6 Run_PilotODIN_P2_Actual_Unicode_Report_DevQA.bat
+f46d8ee09bf60f5c5562a5878ed9c20fc30d7d75 Run_PilotODIN_P2_Font_Candidates_Local_Review.bat
+ace298b9f68e2c87072113b399cf72a0d2ddb9db Run_PilotODIN_P2_Mixed_Report_DevQA.bat
+2d1aa8873bd1e3132de406a248b611df97faafde Run_PilotODIN_P2_PDF_CMap_Scoped_DevQA.bat
+f25d93124084bf5a1116984b44c05e8a7e03cf3c Run_PilotODIN_P2_PDF_Visual_DevQA.bat
+e168f04bf334638648753b32c0518c7543593a8c Run_PilotODIN_P2_Standard_PDF_Visual.bat
+12bfcf5e878e62617f4f8b003106121e11c1d372 Run_PilotODIN_P2_Unicode_Font_Context_DevQA.bat
+14347d5454237377f0af9b3d51308722e93e9b83 Self_Test_PilotODIN.bat
+2d4601fc3103afc34df25a2b4f24646a959c1f6e backend/locks/linux-x64-cp311-source-test.txt
+6dba467333bd1111d4375aa10f268c0cb360cb2f backend/locks/windows-x64-cp311-source-test.txt
+0ed0b88920a281167cf1dc8a3ca038096bf1e7b8 backend/requirements-test.txt
+2b3a73865c85972df1cfcee8dce564b15add0d3f contracts/build_input_policy_v1.json
+b6a812d26b9c1779e379e41ce204a522aff5ebd6 contracts/build_inputs_v1.schema.json
+6ccd3d47efe363ecf87fd13ce7d867cba4bef020 contracts/c5_observed_python_wheels_2026-11-25.json
+9eb11ff031ea7ff3b73ffd503ea499c7d4e290ba docs/C5_PUBLIC_DISCOVERY_RETENTION_45801369045.json
+bd5cc0462ad14ef24c6f1e4757ae8cddb0b89ccc docs/C5_SOURCE_TEST_INPUT_RECEIPTS_45815459625.json
+ec10e3b773c808090a361c99a98915e0d94d9cce qa/c5_metadata/graph_review.py
+7d7eaa012faf08ca9248f3918c6d776f6bbeb2a1 qa/c5_wheel_metadata/combined_graph.py
+6c95b4263e9d0f831aa00cfa68e9cb8268aebbd7 qa/c5_wheel_metadata/combined_graph_receipt_45702239980.json
+6b27407f4b24942c385179bb253f692370f21df7 qa/c5_wheel_metadata/platform_lock_candidates_45703125465.json
+1aa96a7172508f94b2cdc4b7aabd65e3b8f21f89 qa/c5_wheel_metadata/wheel_acquisition_plan_20261125.json
+8a742342059075d58570679c2b6ee0211a73892b qa/c5_wheel_metadata/wheel_collection_receipt_45729307962.json
+5ad5f18b569237d1f24a6ca6065570c9a284c2c7 qa/c5_wheel_metadata/wheel_missing_collection_receipt_45759044664.json
+9938c0f8cc5be3e118dec2eff953cae94f4b5a76 qa/c5_wheel_metadata/wheel_missing_plan_20261126.json
+1dd2627eafba1f4695f972c1d23fac68340d05ee qa/c5_wheel_metadata/wheel_receipt_diagnosis_45753813079.json
+9a0985a8399e63dc40cc72af23922a1e6d83a266 tests/test_a4_frozen_chart_visuals.py
+d625a9a9c741763b3771d2f5ca6cb5fc46c73b1e tests/test_a4_mixed_report_pagination.py
+a36162934b614d38a3ccf82ae2e862295cbbad60 tests/test_a4_model_evidence_reports.py
+8d14c9d5db4dd360e1c540479ec0869e500d5ef6 tests/test_a4_quality_audit_reporting.py
+c422bcd47b46bb1429853afd63f20a8aa3f95f53 tests/test_build_e_persistent_reports.py
+a90307ada90822eee4870069254b515674127587 tests/test_c3_local_verifier_trust.py
+4742dc31bddc8442de4daeb11c59db3ae2ffcf9a tests/test_c5_build_input_preflight.py
+3de36cb073b397e269b9daa5ccf626206547f278 tests/test_explore_to_report_evidence.py
+fd873c6c923dc739b818241be0e976a393ff9c56 tests/test_p2_legacy_pdf_pagination.py
+6b7bb7bb9a2442cb009073917f8c79b436baf82b tests/test_p2_legacy_pdf_visual_source.py
+008931842b97084fc8709353ba1831b327a03994 tests/test_p2_mixed_report_devqa.py
+25e6ede2a0a385737aed3741573c58d53c7edfac tests/test_p2_mixed_runner_contract.py
+205e6c96bc4c4ddafd9dae3d4e7ff0d8f9915aad tests/test_p2_pdf_export_route_integration.py
+4d4ab5e08e84672e6716d0a93fc210932ee7e32c tests/test_p2_pdf_font_devqa_contract.py
+28b9a78a2dd0e289b1f25d28bb18cd0bce2a2f21 tests/test_p2_pdf_unicode_context_devqa.py
+16c1a3c2d0547816dc043c92e85091e2a8ac52c5 tests/test_p2_report_display_disclosure.py
+6fe1555034a9da2bf8548d5a200beee46ac7a2f6 tests/test_report_exhibit_render.py
+e9f90e752892c1e9a0c6ddd616304c46db5fb5c1 tools/Run_P2_Legacy_PDF_Visual_Local.py
+2a6582215b8df544b72516b59ac2de505115da8c tools/Verify_Macro_A2_Local.ps1
+f195afd76158f0b443232014f59ddb5650070335 tools/Verify_Macro_A3_Local.ps1
+144c451658058f932b0aede55cf9afa9c2d1adfe tools/build_input_preflight.py
+6a96a1c222de88f0f97bf5e85f29fe99c51ff3bb tools/p2_actual_unicode_report_devqa.py
+b140dc92e1b7ed78c30210eda4bfebb8229c20a8 tools/p2_mixed_report_devqa.py
+0aab5a6a3f0ab82f9b3b9f1956fc63cafa43fe01 tools/p2_pdf_cmap_scoped_devqa.py
+d4e3a5cbf8435a6d8a1298b651f29ab17a889cba tools/p2_pdf_font_coverage_probe.py
+7d2a59cf773af644d0e5c91cfce270c52b1a10e9 tools/p2_pdf_font_local_review.py
+9db83d0de0f20b5be74e15adcd83c33a362f2568 tools/p2_pdf_tounicode_research.py
+d221b40e568622f9e4c140539a458b99dbcc8333 tools/p2_pdf_unicode_context_devqa.py
+3db6fba192eb66589eeb92366bd21ac47123f308 tools/p2_pdf_visual_devqa.py
+```
+
+**Next authorised work:** implement minimal fixed-origin bounded HTTPS transport and exact one-use activation gate in the existing disarmed PDFium adapter, using prior reviewed transport primitives (no redirects/retries; 5 GETs/8994854 body bytes; 30s each/300s overall; exclusive scratch or bounded memory; no raw publication, install or execution of downloaded code). Complete synthetic HTTP response and gate negative tests and exact disarmed CI before proposing the exact activation child; live false until separate approval. Expand caller search to remaining source extensions if needed at cutover and preserve all 11+8 direct and indirect checks. Applicable actual bundled notices, native linkage and dependency use terms remain open. No score change: source 14/17, P4 14/20, C5 4/8 scoped, all four profiles BLOCKED, 23 historical approvals consumed/disarmed, current PDFium prep approval unconsumed. Owner-local tree uninspected, installer frozen, G2 blocked, D pending, P5 unauthorized.
