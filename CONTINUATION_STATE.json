@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-ROOTFS-IDENTITY-PREP-20261126",
-    "parent_sha": "b59fb889fc73fd948062520672a86b77979f084b",
-    "previous_snapshot_sha": "b59fb889fc73fd948062520672a86b77979f084b",
-    "scope": "Reconcile live state and prepare detached rootfs identity correction; no Docker activation",
+    "operation_id": "C5-ROOTFS-EXACT-PROPOSAL-20261126",
+    "parent_sha": "4735835d01b35163d96dab81bc50d9fc574ea0ca",
+    "previous_snapshot_sha": "4735835d01b35163d96dab81bc50d9fc574ea0ca",
+    "scope": "Corrected exact inert Docker rootfs proposal; tested snippets, regenerated pins, no activation",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "26-november--c5-rootfs-identity-correction-prepared-pure-snippet-checks",
-      "blob_sha": "1ab4d29c30116d879ac686c77e911014579725b3",
-      "start_line": 2726,
-      "end_line": 2728
+      "anchor": "26-november--c5-corrected-exact-inert-docker-candidate-prepared",
+      "blob_sha": "f82d5c3109c713395039dec9489fc504ca0635aa",
+      "start_line": 2730,
+      "end_line": 2732
     }
   },
   "product": {
@@ -117,16 +117,23 @@
   },
   "task": {
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
-    "status": "READY",
+    "status": "BLOCKED",
     "scope": "C-D08 revised C5-A/B development reproducibility and build safety only; D retains native prerequisites, P8 release-only",
-    "blocker": "Runtime remains BLOCKED: exact Docker rootfs HOST_FILE_BOUND predicate/file unknown; narrow source correction prepared in 3c46865, pure snippets passed, but complete disarmed module tests, corrected template pins, offline isolation and provenance not established.",
-    "next_action": "Review detached 3c46865 rootfs-only integration including zero-byte non-executable archive destination semantics, regenerate exact inert activation template and manifest from corrected files, verify all disarmed/active pins and full pure tests where available. Prior template/manifest is stale; never activate it. No Docker or acquisition execution.",
-    "next_action_kind": "SOURCE_PREPARATION",
+    "blocker": "Fresh exact owner execution approval required for corrected candidate 3aeebbc; previous approval consumed. Full disarmed module suite, actual Docker rootfs/isolation and provenance unverified.",
+    "next_action": "Obtain fresh explicit one-use owner approval of exact 3aeebbc and template SHA256 9b9f0ea937b79d8264fb4aa5914ce6b7af434867ed0a4fc964e7aac22b58e8ab for same reviewed image and bounded no-pull data-only verification. On approval verify live head/triggers and source pins; write ahead; full disarmed suite and all preflights before first GET; exact one-use activation, reconcile and disarm. No retry/fallback or prior approval reuse.",
+    "next_action_kind": "OWNER_DECISION",
     "after": [
-      "Review corrected exact inert candidate, template and test evidence; request fresh exact one-use execution authority before Docker/acquisition. No replay.",
+      "Reconcile exact run, successful or refused stages and receipt if available; disarm and preserve failure; never infer completed evidence from source tests.",
       "Complete C5 rows 5–7 and row 8 exact regression/source closure only on qualifying evidence; D only after C5 closure, G2 resolution and separate authority."
     ],
     "read": [
+      {
+        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
+        "anchor": "26-november--c5-corrected-exact-inert-docker-candidate-prepared",
+        "blob_sha": "f82d5c3109c713395039dec9489fc504ca0635aa",
+        "start_line": 2730,
+        "end_line": 2732
+      },
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "26-november--c5-rootfs-identity-correction-prepared-pure-snippet-checks",
@@ -277,17 +284,17 @@
     ]
   },
   "operation": {
-    "id": "C5-ROOTFS-IDENTITY-PREP-20261126",
+    "id": "C5-ROOTFS-EXACT-PROPOSAL-20261126",
     "state": "RECONCILED",
-    "starting_sha": "b59fb889fc73fd948062520672a86b77979f084b",
-    "outcome": "Detached 3c46865 exactly three QA paths; exact two snippets passed 21 synthetic cases. Full modules/host regression and regenerated template pins pending; no activation or acquisition.",
+    "starting_sha": "4735835d01b35163d96dab81bc50d9fc574ea0ca",
+    "outcome": "Detached 3aeebbc exact proposal, five QA paths, 2 additional exact snippet methods PASS, 11/11 disarmed/active pins regenerated, source/manifest/template read-back verified; full suite mandatory before driver, no Docker or acquisition.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "26-november--c5-rootfs-identity-correction-prepared-pure-snippet-checks",
-      "blob_sha": "1ab4d29c30116d879ac686c77e911014579725b3",
-      "start_line": 2726,
-      "end_line": 2728
+      "anchor": "26-november--c5-corrected-exact-inert-docker-candidate-prepared",
+      "blob_sha": "f82d5c3109c713395039dec9489fc504ca0635aa",
+      "start_line": 2730,
+      "end_line": 2732
     }
   },
   "authority": {
@@ -367,6 +374,10 @@
       {
         "sha": "3c46865af8a608cadd085d8c4480d229c9658ff4",
         "scope": "Rootfs-only correction (three QA paths), exact snippets 2 methods/21 cases PASS in local mocked Python; full suite and host regression not run; inherited activation template/manifest pins stale; no workflows changed, no runs; fresh approval required."
+      },
+      {
+        "sha": "3aeebbc9c9021f8d8810b82e0b2b9c148df172cd",
+        "scope": "Corrected exact inert rootfs Docker proposal; five QA paths vs df35b97, 2 additional exact snippet methods PASS, 11/11 disarmed/active pins regenerated, full module suite NOT RUN, zero candidate runs; fresh exact execution approval required."
       }
     ]
   },
