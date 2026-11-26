@@ -46,3 +46,6 @@ C-D08-R2-EXACT-PATH (26 November; PROPOSED, owner policy decision pending): [bou
 
 
 C-D08-R2-EXACT-PATH approval (26 November): owner explicitly stated "I approve the exact-artifact SciPy path exception for disarmed source integration and synthetic verification only. No actual acquisition or activation is authorised." This adopts only the narrow disarmed source design in section 19, not the proposed live suffix, separate diagnostic cap, publication, evidence-method change or actual execution. All 19 restricted approvals remain consumed/disarmed. Prepared operation C5-R2-EXACT-PATH-INTEGRATION-20261126 in journal; historical proposed decision retained above.
+
+
+C-D08-R2-EXACT-PATH source integration checkpoint (26 November; approved disarmed scope, first batch verified): [exact results and outstanding contract work](./C5_PUBLIC_REPOSITORY_LICENCE_EVIDENCE_REVIEW_2026-11-26.md#20-owner-approved-disarmed-source-integration-26-november). 296 tests per platform, pinned real plan and synthetic-only settlement/receipt, real frontdoor refuses. Complete real receipt/settlement and transitive hosted pin contract before readiness review. No actual acquisition approval, publication, or acceptance change.

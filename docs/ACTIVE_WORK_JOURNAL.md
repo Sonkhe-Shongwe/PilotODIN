@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | VERIFYING |
+| State | READY |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 3567648e9111cf832e6d1374e61083a6f73cc041 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
 | Operation ID | C5-R2-EXACT-PATH-INTEGRATION-20261126 |
-| Operation state | PUBLISHED disarmed source integration (resolve exact child of prepared 3506f8a by operation ID), synthetic CI pending; real frontdoor refuses. |
-| Intended files | New qa/c5_wheel_metadata/wheel_exact_scipy_policy.py, wheel_exact_scipy_integration.py, test_wheel_exact_scipy_integration.py, independent policy pin document and dedicated synthetic workflow; journal/handoff/decision/evidence. Preserve historical and live source. |
+| Operation state | RECONCILED first source batch a9f9f75: exact cross-platform 296 tests and direct CLI refusals passed. [Evidence](./C5_PUBLIC_REPOSITORY_LICENCE_EVIDENCE_REVIEW_2026-11-26.md#20-owner-approved-disarmed-source-integration-26-november). Real wrapper and complete hosted pin closure outstanding; real frontdoor disarmed. |
+| Intended files | First integration parser, mock-only integration, pin JSON, tests and dedicated workflow published; canonical documentation checkpoint. No historic or product source changes. |
 | Approval | Owner explicitly stated: "I approve the exact-artifact SciPy path exception for disarmed source integration and synthetic verification only. No actual acquisition or activation is authorised." 19 prior restricted approvals remain consumed/disarmed; no new execution grant. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | New dedicated C5 disarmed exact SciPy integration synthetic run expected at exact child of 3506f8a. Initial 45805506550 FAILURE (both syntax errors); corrective 45805589636 exact 0b0ad56 Ubuntu 139859859654 SUCCESS 279 tests and CLI refusal, Windows 139859860302 completed/success, 279 tests and CLI refusal. Prior disarm exact 085222b, full 45801721107 and dedicated 45801721259 SUCCESS, all restricted jobs skipped. 19 approvals consumed/disarmed; exact retention JSON unchanged. |
+| Pending runs | None. Exact 45807039660 a9f9f75 Ubuntu 139864905469 and Windows 139864906049 SUCCESS 296 tests and CLI refusals each. Prior 45805506550 initial syntax failure retained; 45805589636 corrected 279 each SUCCESS. Prior disarm 085222b full 45801721107/dedicated 45801721259 SUCCESS all restricted jobs skipped. 19 approvals consumed/disarmed. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
-| Recovery action | Reconcile exact source and synthetic CI; do not arm a driver or request actual artifacts. Full evidence and disclosure remain blocked; owner clears consumed variables. |
+| Recovery action | Complete disarmed real receipt/settlement contract, transitive hosted-source/workflow pin closure and independent exact synthetic replay; no live wiring or acquisition. Owner clears consumed variables. Full raw evidence and public disclosure remain blocked. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
