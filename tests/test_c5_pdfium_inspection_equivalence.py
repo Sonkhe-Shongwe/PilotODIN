@@ -13,7 +13,7 @@ import pytest
 from tools import pdf_test_inspection as qa
 
 
-def _pdf(*streams: bytes, box=(0, 0, 200, 200), rotation=0,
+def _pdf(*streams: bytes, box=(0, 0, 200, 200), rotation=0, crop=None, user_unit=None,
          unicode_hex: bytes | None = None) -> bytes:
     """Build deterministic tiny PDFs without depending on either inspection engine."""
     count = len(streams)
@@ -27,9 +27,11 @@ def _pdf(*streams: bytes, box=(0, 0, 200, 200), rotation=0,
         b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding" + cmap_ref + b" >>",
     ]
     geometry = " ".join(str(n) for n in box)
+    crop_geometry = " ".join(str(n) for n in (box if crop is None else crop))
+    unit = "" if user_unit is None else f" /UserUnit {user_unit}"
     for page_id, stream in zip(ids, streams):
         objects.append(
-            f"<< /Type /Page /Parent 2 0 R /MediaBox [{geometry}] /CropBox [{geometry}] "
+            f"<< /Type /Page /Parent 2 0 R /MediaBox [{geometry}] /CropBox [{crop_geometry}]{unit} "
             f"/Rotate {rotation} /Resources << /Font << /F1 3 0 R >> >> /Contents {page_id + 1} 0 R >>"
             .encode("ascii"))
         objects.append(b"<< /Length " + str(len(stream)).encode("ascii") +
@@ -160,7 +162,8 @@ def test_bmp_unicode_map():
 
 def test_sparse_continuation_retains_nonfooter_extent_predicate():
     # Exercise the actual shared predicate against independently specified boxes.
-    footer = qa.TextRegion((10, 185, 190, 195), "PilotODIN · Verified")
+    footer = qa.TextRegion((10, 185, 190, 195),
+                           "PilotODIN · Verified, version-linked analytical evidence")
     top = qa.TextRegion((20, 10, 100, 25), "Parameters")
     body = qa.TextRegion((20, 90, 100, 104), "Substantial content")
     sparse = qa.PageEvidence("", 200, 200, (top, footer), ())
@@ -178,3 +181,90 @@ def test_sparse_continuation_retains_nonfooter_extent_predicate():
                                          _line("Parameters", 20, 180) +
                                          _line("Substantial content", 20, 80)), geometry=True)
     assert not qa.has_sparse_continuation(filled_last)
+
+
+def test_fully_off_page_canary_cannot_be_silently_lost():
+    raw = _pdf(_line("Visible anchor") + _line("PRIVATE_CANARY", 220, 100))
+    # Either the complete text and independent outside geometry are available,
+    # or the helper explicitly refuses incomplete extraction. Never pass
+    # with a missing canary.
+    try:
+        page, = qa.inspect_pdf(raw, geometry=True)
+    except ValueError as exc:
+        assert str(exc) in (
+            "PDF character inventory disagrees with bounded extraction",
+            "Unresolved nonseparator PDF glyph geometry",
+            "Unresolved loose PDF glyph geometry",
+            "Unresolved PDF character inventory",
+        )
+    else:
+        assert "PRIVATE_CANARY" in page.text
+        assert not _within(page, 1)
+    try:
+        page, = qa.inspect_pdf(raw)
+    except ValueError as exc:
+        assert str(exc) in (
+            "PDF character inventory disagrees with bounded extraction",
+            "Unresolved nonseparator PDF glyph geometry",
+            "Unresolved PDF character inventory",
+        )
+    else:
+        assert "PRIVATE_CANARY" in page.text
+
+
+def test_distinct_crop_and_user_unit_refused():
+    with pytest.raises(ValueError, match="Distinct PDF crop box"):
+        qa.inspect_pdf(_pdf(_line("Crop"), crop=(10, 10, 190, 190)), geometry=True)
+    for token in (b"/UserUnit", b"/User#55nit"):
+        raw = _pdf(_line("Scaled"), user_unit=2).replace(b"/UserUnit", token)
+        # Name-escape variant checks the independent preparse refusal, not xref.
+        with pytest.raises(ValueError, match="Unsupported generated PDF"):
+            qa.inspect_pdf(raw, geometry=True)
+
+
+def test_malformed_with_eof_requires_reader_refusal():
+    from pypdfium2 import PdfiumError
+    malformed = b"%PDF-1.4\nnot a PDF object or page tree\n%%EOF\n"
+    # A valid suffix alone cannot make this a generated report.
+    qa._check_generated_pdf(malformed)
+    with pytest.raises((PdfiumError, ValueError)):
+        qa.inspect_pdf(malformed)
+
+
+def _footer_stream(split: bool) -> bytes:
+    # Literal octal 267 is a WinAnsi middle dot, not an external font.
+    if split:
+        left = (b"BT /F1 7 Tf 20 10 Td (PilotODIN) Tj ET\n"
+                b"BT /F1 7 Tf 58 10 Td (\\267 Verified, version-linked analytical evidence) Tj ET\n")
+    else:
+        left = b"BT /F1 7 Tf 20 10 Td (PilotODIN \\267 Verified, version-linked analytical evidence) Tj ET\n"
+    return left + b"BT /F1 7 Tf 540 10 Td (Page 2) Tj ET\n"
+
+
+@pytest.mark.parametrize("split", [False, True])
+def test_generated_footer_does_not_hide_sparse_or_footer_only_page(split):
+    footer = _footer_stream(split)
+    first = _line("First", 20, 150)
+    top = _line("Parameters", 20, 180)
+    body = _line("Substantial content", 20, 80)
+    _, sparse = qa.inspect_pdf(_pdf(first, top + footer, box=(0, 0, 600, 200)), geometry=True)
+    assert qa.has_sparse_continuation(sparse)
+    _, full = qa.inspect_pdf(_pdf(first, top + body + footer, box=(0, 0, 600, 200)), geometry=True)
+    assert not qa.has_sparse_continuation(full)
+    _, footer_only = qa.inspect_pdf(_pdf(first, footer, box=(0, 0, 600, 200)), geometry=True)
+    with pytest.raises(ValueError, match="no nonfooter text"):
+        qa.has_sparse_continuation(footer_only)
+
+
+def test_ambiguous_footer_refuses_and_unrelated_bottom_text_counts():
+    top = qa.TextRegion((20, 10, 100, 25), "Parameters")
+    fragment = qa.TextRegion((20, 185, 70, 195), "PilotODIN")
+    unrelated = qa.TextRegion((80, 185, 190, 195), "Unrelated content")
+    with pytest.raises(ValueError, match="Ambiguous continuation footer"):
+        qa.has_sparse_continuation(qa.PageEvidence("", 200, 200, (top, fragment, unrelated), ()))
+    assert not qa.has_sparse_continuation(qa.PageEvidence("", 200, 200, (top, unrelated), ()))
+
+
+def test_missing_continuation_geometry_refuses():
+    with pytest.raises(ValueError, match="Missing continuation text geometry"):
+        qa.has_sparse_continuation(qa.PageEvidence("Nonblank", 200, 200, (), ()))

@@ -63,7 +63,8 @@ class P2LegacyPDFVisualSource(unittest.TestCase):
         self.assertIn('frozen["content_sha256"] == report["content_sha256"]', s)
         self.assertIn('"be_030_owner_visual": "PENDING"', s)
         self.assertIn('pdf_path.write_bytes(pdf.content)', s)
-        self.assertIn('view.save(str(outputs / f"P2_BE030_SYNTHETIC_PAGE_', s)
+        self.assertIn('view = render_rgb(pdf.content, index, scale=1.3)', s)
+        self.assertIn('view.save_png(str(outputs / f"P2_BE030_SYNTHETIC_PAGE_{index+1:02}.png"))', s)
         self.assertIn('source.read_bytes() == CSV', s)
         self.assertNotIn('OWNER_REPORTED_PASS', s)
 
