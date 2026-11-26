@@ -3,12 +3,12 @@ on:
   push:
     branches: [feature/live-dev-workspace-20261023]
     paths:
-      - qa/c5_wheel_metadata/remaining_dev_input_once.py
-      - .github/workflows/c5-remaining-dev-input-once.yml
+      - qa/c5_wheel_metadata/APPROVAL_REMAINING_DEV_INPUT_ONCE_20261126.json
 permissions:
   contents: read
 jobs:
   rehearsal:
+    if: ${{ false }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -24,7 +24,7 @@ jobs:
           test -f "$python"
           "$python" -I -B qa/c5_wheel_metadata/remaining_dev_input_once.py --rehearse
   acquisition-once:
-    if: ${{ false }}
+    if: ${{ github.run_attempt == 1 && github.event_name == 'push' && github.ref == 'refs/heads/feature/live-dev-workspace-20261023' && github.event.head_commit.message == 'C5-REMAINING-DEV-INPUT-ONCE-20261126 owner approved acquisition only' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
