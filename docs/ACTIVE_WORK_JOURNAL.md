@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | READY |
+| State | BLOCKED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 5b0fe75901a026fbf6e4768ba93303dd78280aeb |
+| Observed starting HEAD | 6f8dc9d6a277a487a4c620c33331e39aec5bd71f |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | Revised C5-A/B development reproducibility and build safety; D prerequisites and P8 release-only allocation. No restricted acquisition, native, owner data, install, packaging, phase activation or release. |
-| Operation ID | C5-PDFIUM-DETACHED-CORRECTION-20261126 |
-| Operation state | RECONCILED detached correction and disarmed staged controls at 011ceced156bcc52033fea5258e49893ccb20a6c; six paths, 102/102 inventory and 98/98 lock matches, zero CI. No actual execution path or equivalence. |
-| Intended files | Documentation-only completion checkpoint. Next read-only executor/wiring and linkage/use review; no acquisition, installation or execution. |
+| Operation ID | C5-PDFIUM-EXECUTOR-REVIEW-20261126 |
+| Operation state | RECONCILED read-only executor review; disarm import defect and cross-job scheduling issue found, consolidated standard-tool wiring proposed. No source edits or execution. |
+| Intended files | Documentation-only review checkpoint. Await approval for detached wiring, guarded fixture import and platform-local stage scheduling; no activation. |
 | Approval | Owner: "I approve the detached correction of the PDFium implementation review findings and preparation of the disarmed staged equivalence verification mechanism. Preserve all existing acceptance criteria, historical evidence and production functionality. No acquisition, installation, CI execution, native execution, live branch cutover or release is authorised. Proceed." Detached correction/preparation completed only; no transferable approval. 24 prior restricted approvals consumed/disarmed. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
 | Pending runs | None. #45840503532 acquisition SUCCESS; #45840727452 rehearsal SUCCESS and acquisition SKIPPED. |
 | Unpublished work | Corrected detached candidate 011ceced156bcc52033fea5258e49893ccb20a6c preserved; previous detached 605abd0 historical. No ref advanced to candidates. Owner-local tree untouched/uninspected. |
-| Recovery action | [corrected detached candidate and disarmed staged controls](./PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md#26-november--c5-corrected-detached-candidate-and-disarmed-staged-verification-controls). Recover candidate 011ceced156bcc52033fea5258e49893ccb20a6c; review exact standard-tool executor, provenance/linkage/use preconditions and same-generation coordination. No live activation, acquisition or execution until separately authorised. |
+| Recovery action | [standard-tool executor design review and scheduling decision proposal](./PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md#26-november--c5-standard-tool-executor-design-review-and-scheduling-decision-proposal). Preserve candidate 011cece; obtain consolidated detached wiring and scheduling approval. Separate actual use approval remains mandatory. |
 | Resume after closure | D only after revised C5 source closure, G2 resolution and separately approved scope; every native prerequisite before its use. P8 release-only obligations retained; installer frozen. |
 
 ## Prior operation
