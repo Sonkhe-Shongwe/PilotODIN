@@ -192,7 +192,7 @@ Use separate schema-2 notice documents containing the exact inspector-v2 receipt
 
 [Consolidated research, layering, roadmap and risk/acceptance review](./C5_ARCHITECTURE_READINESS_REVIEW_2026-11-26.md) refines the implementation sequence, not C-D08. Adopt responsibility separation and sequencing as planning; the narrow shared schema-3 settlement core remains PROPOSED for next source-only R2 pending exact CI; historical pinned code and fixture-only frontdoor remain immutable. Before fresh acquisition proposal, reconcile compatibility/metadata licence-path semantics, exact residual caps, independent replay and one-use gate, prior-five durable evidence, retention plan and representative synthetic resource evidence. No wholesale format support, new package manager or speculative architecture rewrite. Actual offending member unknown; receipt consistency is not wheelhouse availability or legal clearance. R1 documentation only, no source/acceptance credit.
 
-The [26 November consistency audit](./DOCUMENTATION_AUDIT_C5_R1_READINESS_2026-11-26.md) confirms C5-R1 is a companion implementation directive, not a superseding phase or acceptance policy. Exact metadata receipt 45705552265 confirms 68 persisted sidecars (62 initial + six freezer), not 68 archives. All four fixed profiles remain BLOCKED; no scope exclusion without explicit owner decision. R2 first step and dependency order live in the handoff; no new acquisition authority.
+The [26 November consistency audit](./DOCUMENTATION_AUDIT_C5_R1_READINESS_2026-11-26.md) confirms C5-R1 is a companion implementation directive, not a superseding phase or acceptance policy. Exact metadata receipt 45705552265 confirms 68 persisted sidecars (62 initial + six freezer), not 68 archives. All four fixed profiles remain BLOCKED; no scope exclusion without explicit owner decision. R2 was the historical first step; the later owner-approved C-D08 allocation and live handoff now govern. No new acquisition authority.
 
 ### C5-R2 | Metadata-version-bound licence placement (26 November)
 
@@ -271,6 +271,8 @@ Record actual expiry at terminal reconciliation. Custodian should complete appro
 
 
 ## Owner-approved C5 delivery checklist (26 November 2026)
+
+**Reading boundary:** the table and subsequent dated proposals retain the historical delivery sequence and evidence snapshots; live status and exact next action are owned by the [current handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md#4-immediate-next-work-in-order). At the post-PDFium audit, rows 1–4 are scoped verified (row 4 lock definition only), rows 5–7 partial, row 8 open. The original 3/8 at decision and commented projections below are historical. Three reviewed lock files now exist; do not read the earlier absent-lock statement as current. The [later exact C5 evidence](./PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md) and [post-PDFium audit](./DOCUMENTATION_AUDIT_C5_POST_PDFIUM_2026-11-26.md) retain newer receipts; no use approval or acceptance change.
 
 Controlling [C-D08 rationalised scope](./PILOTODIN_PACKAGE_C_RESOURCE_TRUST_SPEC_2026-11-24.md#c-d08-rationalised-scope-owner-decision-26-november-2026) and explicit owner decision supersede prior R1–R9 closure sequencing and the broad exit sentence in §6 **only as to phase allocation**. Earlier evidence is preserved, not re-scored. No new execution grant or machine-policy transition. Use this finite eight-row checklist; do not create additional process gates.
 

@@ -1,6 +1,6 @@
 # PilotODIN 1.0 | Current product-first implementation directive
 
-**CURRENT | Fixed execution and authority contract.** The [live handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md) owns next action and source progress, the [active journal](./ACTIVE_WORK_JOURNAL.md) owns recovery, and the [official scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) owns earned acceptance. [Continuation protocol](./CONTINUATION_PROTOCOL_CURRENT.md) · [Current documentation audit](./DOCUMENTATION_AUDIT_C5_R1_READINESS_2026-11-26.md) · [Pre-audit directive](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/bd7c1639c3b98ae93e0d83b8170e189dc042b365/docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md). Historical evidence below is not a live work order.
+**CURRENT | Fixed execution and authority contract.** The [live handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md) owns next action and source progress, the [active journal](./ACTIVE_WORK_JOURNAL.md) owns recovery, and the [official scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) owns earned acceptance. [Continuation protocol](./CONTINUATION_PROTOCOL_CURRENT.md) · [Current documentation audit](./DOCUMENTATION_AUDIT_C5_POST_PDFIUM_2026-11-26.md) · [Pre-audit directive](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/bd7c1639c3b98ae93e0d83b8170e189dc042b365/docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md). Historical evidence below is not a live work order.
 
 ## 1. Source-of-truth hierarchy
 
