@@ -7,7 +7,7 @@ on:
 permissions: {}
 jobs:
   provenance-once:
-    if: ${{ true && github.event_name == 'push' && github.run_attempt == 1 && github.event.before == 'd7789d7525d6030ed876925241eed27f82dae58f' && github.event.head_commit.message == 'C5-PORTABLE-PROVENANCE-IMAGE-20261122-ONCE-20261126 owner approved exact data-only operation' }}
+    if: ${{ false && github.event_name == 'push' && github.run_attempt == 1 && github.event.before == 'd7789d7525d6030ed876925241eed27f82dae58f' && github.event.head_commit.message == 'C5-PORTABLE-PROVENANCE-IMAGE-20261122-ONCE-20261126 owner approved exact data-only operation' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
