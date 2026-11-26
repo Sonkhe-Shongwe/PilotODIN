@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | VERIFYING |
+| State | READY |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 429f629c6a7fa7779fa8ad22e6bbf1e9fced04e0 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
 | Operation ID | C5-R2-RESOURCE-MEASUREMENT-20261126 |
-| Operation state | PREPARED: representative inert final-driver resource measurements; near-cap stored archive, dense member inventory, near-cap notice batch and 63-row request count, scaled exact/one-byte-under refusals. No product or historical source changes. |
+| Operation state | RECONCILED: exact 44bad5b run 45764132136 attempt 1 SUCCESS; Ubuntu 139720837333 Python 3.12.3 and Windows 139720837462 Python 3.12.10 each 3 representative fixtures + scaled budget boundaries PASS. Largest observed cumulative peak RSS/working set 165953536 / 198602752 bytes; largest combined retained logical bytes 173951536, 63-row notice-heavy replay. No cap increases, live operations or new acceptance credit. All 18 approvals consumed/disarmed. |
 | Intended files | qa/c5_wheel_metadata/benchmark_wheel_hosted_final.py, .github/workflows/c5-wheel-resource-review.yml, journal/handoff/spec/ledger. |
 | Approval | Routine source/synthetic CI only. All 18 restricted approvals consumed/disarmed; no actual wheels, retrieval, installation, owner tree or execution. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | Exact dedicated cross-platform synthetic measurement CI pending reconciliation. |
+| Pending runs | None; exact resource CI reconciled. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
-| Recovery action | Fresh process per scenario; measure cumulative process RSS/Windows peak working set, elapsed phase time, logical scratch file peak and retained stage bytes; use existing final driver collection/export/replay, generated data only, no live seams. Assert exact accepted counts/digests, first-refusal and no evidence publication. No full 4 GiB expansion or owner 8 GB claims, no cap increases. Record exact CI results; durable retention and final proposal review next. |
+| Recovery action | Next durable notice retention plan and final R2 readiness review: define independently replayed notice evidence preservation within explicit new approval scope and durable digest-bound records before finite artifact expiry; no wheelhouse claim or uncontrolled Git publication. Verify independent activation expectation provisioning and exact disarm/reconcile steps. No further infrastructure without concrete defect, no actual acquisition or artifact transfer until fresh R3 approval. Preserve measured resource scope and limitations; no physical 8 GB claim. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
