@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-PORTABLE-PROVENANCE-ONCE-20261126",
-    "parent_sha": "5a27d668bca6397ea32f6c4883a4b1f16e47c350",
-    "previous_snapshot_sha": "5a27d668bca6397ea32f6c4883a4b1f16e47c350",
-    "scope": "Reconcile exact failed first-attempt provenance run, restore false guard and record evidence only",
+    "operation_id": "C5-PORTABLE-IMAGE-REVISION-PROPOSAL-20261126",
+    "parent_sha": "b8b19524564287ed28c6d13009d691a370afcf8b",
+    "previous_snapshot_sha": "b8b19524564287ed28c6d13009d691a370afcf8b",
+    "scope": "Read-only review of actual image; exact inert revised candidate, no execution authority",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "26-november--c5-one-use-portable-provenance-image-refusal",
-      "blob_sha": "c5ac2126ff7516a625cfd4490b0b93e98001c120",
-      "start_line": 2694,
-      "end_line": 2696
+      "anchor": "26-november--c5-runner-image-revision-read-only-review",
+      "blob_sha": "b07dfc87a8799f8b092f3e47e8c171b7bc186b0f",
+      "start_line": 2698,
+      "end_line": 2700
     }
   },
   "product": {
@@ -119,46 +119,53 @@
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
     "status": "BLOCKED",
     "scope": "C-D08 revised C5-A/B development reproducibility and build safety only; D retains native prerequisites, P8 release-only",
-    "blocker": "Exact one-use run refused a different GitHub-hosted Ubuntu image (actual 20261122.23.1; approved 20261116.376.1). Prior approval consumed; no host preflight, acquisition, signature or licence/use evidence.",
-    "next_action": "Read-only review exact actual runner image manifest and relevant availability evidence; prepare narrowly scoped revised exact-image proposal only if supported, then obtain fresh explicit owner disposition and separate one-use execution authority. No silent image substitution or replay.",
-    "next_action_kind": "MISSING_EVIDENCE",
+    "blocker": "Previous execution refused unapproved image. Exact revised inert proposal 393679c requires fresh explicit owner approval of image 20261122.23.1 and one-use operation. Actual future image and host capabilities unverified.",
+    "next_action": "Request fresh combined explicit approval of exact 393679c image update and one bounded data-only attempt under unchanged trust dispositions/caps. If granted, record write-ahead, confirm existing disarmed workflow blob and exact source/trigger scope before conditional push. No replay of prior attempt or future image fallback.",
+    "next_action_kind": "OWNER_DECISION",
     "after": [
       "After new exact image review, fresh bounded approval and write-ahead, execute one authorised attempt only, reconcile/disarm; retain original refusal.",
       "Complete C5 rows 5–7 and row 8 exact regression/source closure; D only after C5 closure, G2 resolution and separate authority."
     ],
     "read": [
       {
+        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
+        "anchor": "exact-observed-ubuntu-image-revision-proposal",
+        "blob_sha": "d12ecf1066e59a017ef9629c593348cdbf32a69e",
+        "start_line": 702,
+        "end_line": 706
+      },
+      {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "26-november--c5-one-use-portable-provenance-image-refusal",
-        "blob_sha": "c5ac2126ff7516a625cfd4490b0b93e98001c120",
-        "start_line": 2694,
-        "end_line": 2696
+        "anchor": "26-november--c5-runner-image-revision-read-only-review",
+        "blob_sha": "b07dfc87a8799f8b092f3e47e8c171b7bc186b0f",
+        "start_line": 2698,
+        "end_line": 2700
       },
       {
         "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
         "anchor": "owner-approved-one-use-portable-provenance-execution",
-        "blob_sha": "dd78fdb1b6ad40ae04af5a47da1b9c3ef89676ad",
+        "blob_sha": "d12ecf1066e59a017ef9629c593348cdbf32a69e",
         "start_line": 698,
         "end_line": 700
       },
       {
         "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
         "anchor": "exact-inert-portable-provenance-activation-proposal",
-        "blob_sha": "dd78fdb1b6ad40ae04af5a47da1b9c3ef89676ad",
+        "blob_sha": "d12ecf1066e59a017ef9629c593348cdbf32a69e",
         "start_line": 690,
         "end_line": 696
       },
       {
         "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
         "anchor": "owner-approved-limited-host-bootstrap-boundary",
-        "blob_sha": "dd78fdb1b6ad40ae04af5a47da1b9c3ef89676ad",
+        "blob_sha": "d12ecf1066e59a017ef9629c593348cdbf32a69e",
         "start_line": 682,
         "end_line": 688
       },
       {
         "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
         "anchor": "owner-approved-c5-delivery-checklist-26-november-2026",
-        "blob_sha": "dd78fdb1b6ad40ae04af5a47da1b9c3ef89676ad",
+        "blob_sha": "d12ecf1066e59a017ef9629c593348cdbf32a69e",
         "start_line": 273,
         "end_line": 298
       },
@@ -168,21 +175,28 @@
         "blob_sha": "e0c428ab105c409660c4530dc3e82e39d75b6fa9",
         "start_line": 84,
         "end_line": 96
+      },
+      {
+        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
+        "anchor": "26-november--c5-one-use-portable-provenance-image-refusal",
+        "blob_sha": "b07dfc87a8799f8b092f3e47e8c171b7bc186b0f",
+        "start_line": 2694,
+        "end_line": 2696
       }
     ]
   },
   "operation": {
-    "id": "C5-PORTABLE-PROVENANCE-ONCE-20261126",
+    "id": "C5-PORTABLE-IMAGE-REVISION-PROPOSAL-20261126",
     "state": "RECONCILED",
-    "starting_sha": "b3449baecceca62bbd2b36ba7b7417a671f951b2",
-    "outcome": "Approved one-use activation 5a27d66, run 45884221643 attempt 1, job 140130786271 failed pre-staging image gate: actual 20261122.23.1 not approved 20261116.376.1. All staging and driver steps skipped; no acquisition or verification. Approval consumed, guard restored false in checkpoint.",
+    "starting_sha": "b8b19524564287ed28c6d13009d691a370afcf8b",
+    "outcome": "Disarm skip verified; official observed image manifest reviewed; exact inert 393679c prepared and seven embedded source/config read-back matches, zero runs. Prior failure and consumed approval retained.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "26-november--c5-one-use-portable-provenance-image-refusal",
-      "blob_sha": "c5ac2126ff7516a625cfd4490b0b93e98001c120",
-      "start_line": 2694,
-      "end_line": 2696
+      "anchor": "26-november--c5-runner-image-revision-read-only-review",
+      "blob_sha": "b07dfc87a8799f8b092f3e47e8c171b7bc186b0f",
+      "start_line": 2698,
+      "end_line": 2700
     }
   },
   "authority": {
@@ -208,7 +222,7 @@
       "release",
       "replay of consumed or uncertain approval"
     ],
-    "guards": "29 consumed/disarmed including exact portable one-use image refusal; portable workflow false job guard restored, exact old parent and message remain; detached driver pins unset, no fallback. Three C1/C2 one-use workflows and OWNED_RESOURCE_ENABLED false; three consumed variables owner cleanup unverified.",
+    "guards": "29 consumed/disarmed; exact portable workflow false job guard and disarm skip verified. New inert 393679c image revision not approved, no live activation or candidate execution. Three C1/C2 workflows and OWNED_RESOURCE_ENABLED false; three consumed variables owner cleanup unverified.",
     "last_consumed": {
       "id": "C5-PORTABLE-PROVENANCE-ONCE-20261126",
       "source_sha": "c2264da688f053d377fd02cddca5e7230866a493",
@@ -220,7 +234,7 @@
       "receipt": {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "26-november--c5-one-use-portable-provenance-image-refusal",
-        "blob_sha": "c5ac2126ff7516a625cfd4490b0b93e98001c120",
+        "blob_sha": "b07dfc87a8799f8b092f3e47e8c171b7bc186b0f",
         "start_line": 2694,
         "end_line": 2696
       }
@@ -246,6 +260,10 @@
       {
         "sha": "c2264da688f053d377fd02cddca5e7230866a493",
         "scope": "exact inert C5 activation proposal; four QA paths changed vs b7c9b6e, 118 workflows unchanged, seven staged payloads read-back exact, zero runs; no runtime tests"
+      },
+      {
+        "sha": "393679c51c3752e2e6204ad77e57c229b25e7633",
+        "scope": "Inert observed-image revision only; five QA paths changed from c2264da, seven embedded payloads read-back exact, no workflow changes, zero runs; fresh owner approval required"
       }
     ]
   },
