@@ -152,8 +152,7 @@ class Tests(unittest.TestCase):
         self.assertEqual(result['directory_inventory_sha256'],w.sha(('\n'.join(sorted(names))+'\n').encode()))
         self.assertEqual(len(notices),2)
         self.assertEqual(result['expanded_bytes'],w.InspectionBudget().inspect(*fixture())['expanded_bytes'])
-        with self.assertRaisesRegex(historical.Blocked,'^ZIP_NONREGULAR unittest.main(verbosity=2)
-):
+        with self.assertRaisesRegex(historical.Blocked,'^ZIP_NONREGULAR$'):
             historical.InspectionBudget().inspect(*args)
 
     def test_deflated_empty_directory(self):
