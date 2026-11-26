@@ -68,13 +68,10 @@ def git_blob(raw):
     return hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest()
 
 
-def verify_sources(root=ROOT, *, armed=False):
+def verify_sources(root=None):
+    root=ROOT if root is None else root
     for name,pin in PINS.items():
         raw=read_file(root/DIR/name)
-        if name=='wheel_hosted_proposal.py' and armed:
-            # Only this exact flag replacement is proposed for the armed adapter.
-            need(raw.count(b'\nLIVE_ENABLED = True\n')==1,'ADAPTER_ARM')
-            raw=raw.replace(b'\nLIVE_ENABLED = True\n',b'\nLIVE_ENABLED = False\n')
         need(git_blob(raw)==pin,'SOURCE_PIN')
     return True
 
@@ -130,7 +127,7 @@ def authorize(phase):
          and e.get('GITHUB_WORKSPACE')==str(ROOT)
          and RUN.fullmatch(e.get('GITHUB_RUN_ID',''))
          and SHA1.fullmatch(e.get('C5_DRIVER_BLOB','')),'DRIVER_CONTEXT')
-    verify_sources(armed=True)
+    verify_sources()
     self_raw=read_file(ROOT/SELF)
     need(git_blob(self_raw)==e['C5_DRIVER_BLOB']
          and git(ROOT,'rev-parse','HEAD:'+SELF).decode('ascii').strip()==e['C5_DRIVER_BLOB'],
@@ -147,7 +144,7 @@ def authorize(phase):
          and event.get('head_commit',{}).get('message')==msg,'EVENT_IDENTITY')
     g.activation_contract(event,e,head=head,parent=parent,changes=[('A',MARKER)],
                           message=msg,marker=marker)
-    need(h.LIVE_ENABLED is True and a.LIVE_ENABLED is False and g.ENABLED is False
+    need(h.LIVE_ENABLED is False and a.LIVE_ENABLED is False and g.ENABLED is False
          and t.ENABLED is False,'EXCLUSIVE_ARM')
     rows=a.plan_rows(n.load_pinned_rows())
     need(len(rows)==68 and sum(x['bytes'] for x in rows)==225699980,'PLAN_COUNTS')
@@ -170,9 +167,20 @@ def prepare_receipt(path,manifest_sha,rows,plan,runner,run,sha,mods):
     return bundle,g.identity(run,sha,ident),summary(manifest)
 
 
+def collect_after_authorization(adapter):
+    # Only the exact driver calls this private seam after authorize and claim.
+    # The adapter source never arms on disk; restore even on abnormal refusal.
+    need(adapter.LIVE_ENABLED is False,'ADAPTER_ALREADY_ENABLED')
+    adapter.LIVE_ENABLED=True
+    try:
+        return adapter.collect()
+    finally:
+        adapter.LIVE_ENABLED=False
+
+
 def produce():
     a,w,h,n,g,t,rows,runner,run,sha=authorize('collect-once')
-    path,manifest_sha=h.collect()
+    path,manifest_sha=collect_after_authorization(h)
     bundle,record,settlement=prepare_receipt(path,manifest_sha,rows,n.PLAN_BLOB,runner,
                                             run,sha,(a,w,h,n,g,t))
     print('C5_WHEEL_PRODUCER '+json.dumps({'identity':record,'settlement':settlement},sort_keys=True),flush=True)

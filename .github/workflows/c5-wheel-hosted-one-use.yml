@@ -1,6 +1,7 @@
 name: C5 wheel hosted one-use acquisition
 # Disarmed. A future separately approved arm changes only reviewed flags,
-# exact source pin and marker-only trigger. No collection on ordinary pushes.
+# exact driver pin and marker-only trigger. Adapter source stays disabled.
+# Only the authorized producer process opens the adapter gate temporarily.
 on:
   push:
     branches: [feature/live-dev-workspace-20261023]
@@ -23,7 +24,7 @@ jobs:
           persist-credentials: false
       - name: Source pins, synthetic event, artifact and runtime driver review
         run: |
-          test "$(git hash-object qa/c5_wheel_metadata/wheel_acquisition_driver.py)" = "fc8cebd134c0b42e930aa0b1e30259e460dd1553"
+          test "$(git hash-object qa/c5_wheel_metadata/wheel_acquisition_driver.py)" = "e888774ce5cabc5737c413ee47f3da64781443c2"
           python3 -I -B qa/c5_wheel_metadata/test_wheel_one_use_review.py
           python3 -I -B qa/c5_wheel_metadata/test_wheel_acquisition_driver.py
       - name: Assert disabled collection and retrieval
@@ -61,10 +62,10 @@ jobs:
       - name: Exact driver pin and bounded collection
         id: collect
         run: |
-          test "$(git hash-object qa/c5_wheel_metadata/wheel_acquisition_driver.py)" = "fc8cebd134c0b42e930aa0b1e30259e460dd1553"
+          test "$(git hash-object qa/c5_wheel_metadata/wheel_acquisition_driver.py)" = "e888774ce5cabc5737c413ee47f3da64781443c2"
           python3 -I -B qa/c5_wheel_metadata/wheel_acquisition_driver.py --collect
         env:
-          C5_DRIVER_BLOB: fc8cebd134c0b42e930aa0b1e30259e460dd1553
+          C5_DRIVER_BLOB: e888774ce5cabc5737c413ee47f3da64781443c2
           C5_APPROVED_ONCE: C5-WHEEL-HOSTED-ONCE-20261126
           C5_EXPECTED_SOURCE_SHA: ${{ github.sha }}
       - name: Disabled receipt-only artifact upload
@@ -94,10 +95,10 @@ jobs:
           persist-credentials: false
       - name: Independent exact receipt retrieval and replay
         run: |
-          test "$(git hash-object qa/c5_wheel_metadata/wheel_acquisition_driver.py)" = "fc8cebd134c0b42e930aa0b1e30259e460dd1553"
+          test "$(git hash-object qa/c5_wheel_metadata/wheel_acquisition_driver.py)" = "e888774ce5cabc5737c413ee47f3da64781443c2"
           python3 -I -B qa/c5_wheel_metadata/wheel_acquisition_driver.py --retrieve
         env:
-          C5_DRIVER_BLOB: fc8cebd134c0b42e930aa0b1e30259e460dd1553
+          C5_DRIVER_BLOB: e888774ce5cabc5737c413ee47f3da64781443c2
           C5_APPROVED_ONCE: C5-WHEEL-HOSTED-ONCE-20261126
           C5_EXPECTED_SOURCE_SHA: ${{ github.sha }}
           C5_BUNDLE_RECORD: ${{ needs.collect-once.outputs.record }}

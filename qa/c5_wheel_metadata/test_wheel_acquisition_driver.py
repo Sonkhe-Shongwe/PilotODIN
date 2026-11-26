@@ -33,8 +33,12 @@ class Tests(unittest.TestCase):
         self.assertEqual(h.MAX_BUNDLE,d.MAX_BUNDLE)
         self.assertEqual(g.MAX_ZIP,d.MAX_ZIP)
 
-    def test_armed_pins_refuse_disarmed_adapter(self):
-        self.deny('ADAPTER_ARM',lambda:d.verify_sources(armed=True))
+    def test_adapter_flag_source_change_refused(self):
+        with patch.object(d,'read_file',wraps=d.read_file) as read:
+            original=read._mock_wraps
+            read.side_effect=lambda path: (original(path).replace(b'LIVE_ENABLED = False',b'LIVE_ENABLED = True')
+                       if path.name=='wheel_hosted_proposal.py' else original(path))
+            self.deny('SOURCE_PIN',d.verify_sources)
 
     def test_disabled_both_phases(self):
         with patch.object(d,'load_modules') as load, patch.object(d,'claim') as claim:
@@ -45,6 +49,56 @@ class Tests(unittest.TestCase):
     def test_armed_flag_alone_refuses(self):
         with patch.object(d,'ARMED',True),patch.dict(d.os.environ,{},clear=True):
             self.deny('DRIVER_CONTEXT',lambda:d.authorize('collect-once'))
+
+    def test_process_local_gate_restored(self):
+        def fake_collect():
+            self.assertIs(h.LIVE_ENABLED,True)
+            return ('fixture','digest')
+        with patch.object(h,'collect',side_effect=fake_collect):
+            self.assertEqual(d.collect_after_authorization(h),('fixture','digest'))
+        self.assertIs(h.LIVE_ENABLED,False)
+        with patch.object(h,'collect',side_effect=OSError('inert')):
+            with self.assertRaises(OSError): d.collect_after_authorization(h)
+        self.assertIs(h.LIVE_ENABLED,False)
+        with patch.object(h,'LIVE_ENABLED',True),patch.object(h,'collect') as collect:
+            self.deny('ADAPTER_ALREADY_ENABLED',lambda:d.collect_after_authorization(h))
+            collect.assert_not_called()
+
+    def test_complete_runtime_contract_inert(self):
+        import shutil
+        checkout=self.root/'checkout'; checkout.mkdir()
+        runner=self.root/'runner'; runner.mkdir()
+        old_root=self.root
+        self.root=checkout
+        self.addCleanup(setattr,self,'root',old_root)
+        self.cmd('init','-q')
+        for relative in [d.DIR+x for x in d.PINS]+[d.SELF,d.WORKFLOW_PATH]:
+            dst=checkout/relative; dst.parent.mkdir(parents=True,exist_ok=True)
+            shutil.copyfile(d.ROOT/relative,dst)
+        self.cmd('add','.'); self.cmd('commit','-qm','reviewed inert arm fixture')
+        parent=self.cmd('rev-parse','HEAD').decode().strip()
+        marker=checkout/d.MARKER; marker.write_bytes(d.MARKER_BYTES)
+        self.cmd('add',d.MARKER); self.cmd('commit','-qm',d.MESSAGE)
+        head=self.cmd('rev-parse','HEAD').decode().strip()
+        event=old_root/'event.json'
+        event.write_text(json.dumps({'ref':h.BRANCH,'before':parent,'after':head,
+            'forced':False,'created':False,'deleted':False,'repository':{'full_name':d.REPO},
+            'head_commit':{'id':head,'message':d.MESSAGE}}))
+        env={'GITHUB_ACTIONS':'true','GITHUB_EVENT_NAME':'push','GITHUB_REPOSITORY':d.REPO,
+             'GITHUB_JOB':'collect-once','GITHUB_WORKSPACE':str(checkout),
+             'GITHUB_RUN_ID':'12345','GITHUB_RUN_ATTEMPT':'1','GITHUB_REF':h.BRANCH,
+             'GITHUB_WORKFLOW':h.WORKFLOW,'GITHUB_SHA':head,'C5_EXPECTED_SOURCE_SHA':head,
+             'C5_APPROVED_ONCE':h.OP,'GITHUB_EVENT_PATH':str(event),'RUNNER_TEMP':str(runner),
+             'C5_DRIVER_BLOB':d.git_blob((checkout/d.SELF).read_bytes())}
+        with patch.object(d,'ROOT',checkout),patch.object(d,'ARMED',True), \
+             patch.object(d,'load_modules',return_value=MODS),patch.dict(d.os.environ,env,clear=True), \
+             patch.object(h,'collect') as collect:
+            result=d.authorize('collect-once')
+            self.assertEqual(len(result[6]),68)
+            self.assertEqual(result[-1],head)
+            self.assertIs(h.LIVE_ENABLED,False)
+            self.deny('ONE_USE_CLAIM_CONSUMED',lambda:d.authorize('collect-once'))
+            collect.assert_not_called()
 
     def test_exclusive_claim(self):
         d.claim(self.root,'123','collect-once')
