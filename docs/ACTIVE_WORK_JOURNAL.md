@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | PREPARED |
+| State | READY |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | b219e9e659f7cb3055a737664cc665ae2797ffb2 |
+| Observed starting HEAD | c187b28e2a319bfd8d2483cb5867c21c09cd1a6e |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | Revised C5-A/B development reproducibility and build safety; D prerequisites and P8 release-only allocation. No restricted acquisition, native, owner data, install, packaging, phase activation or release. |
 | Operation ID | C5-PDFIUM-EXECUTOR-IMPLEMENTATION-20261126 |
-| Operation state | PREPARED consolidated detached disarmed executor and sequential platform scheduling. No live activation. |
-| Intended files | QA-only detached guard, stage controls, standard-tool wiring and tests; no production change or execution. |
-| Approval | Owner: "I approve the consolidated detached and disarmed executor implementation, including the identified guard corrections, reuse of existing standard verification tools, and sequential platform-local Stage A and Stage B verification. Both Windows and Linux must satisfy all existing acceptance criteria before final acceptance. No acquisition, installation, CI execution, native execution, live branch cutover or release is authorised. Proceed." Detached preparation only; 24 prior restricted approvals consumed/disarmed. |
+| Operation state | RECONCILED detached sequential executor draft at 05a9c7492dff49abbf43de970a8fec97c191071e; eight paths, exact inventory unchanged, 118 existing workflows unchanged, zero CI. Hard stops remain; not activation-ready. |
+| Intended files | Documentation-only completion checkpoint. Next read-only pre-use disposition, exact font and trusted toolchain/activation evidence; no acquisition or execution. |
+| Approval | Owner: "I approve the consolidated detached and disarmed executor implementation, including the identified guard corrections, reuse of existing standard verification tools, and sequential platform-local Stage A and Stage B verification. Both Windows and Linux must satisfy all existing acceptance criteria before final acceptance. No acquisition, installation, CI execution, native execution, live branch cutover or release is authorised. Proceed." Detached implementation preparation completed only; no transferable approval. 24 prior restricted approvals consumed/disarmed. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
 | Pending runs | None. #45840503532 acquisition SUCCESS; #45840727452 rehearsal SUCCESS and acquisition SKIPPED. |
-| Unpublished work | Corrected detached candidate 011ceced156bcc52033fea5258e49893ccb20a6c preserved; previous detached 605abd0 historical. No ref advanced to candidates. Owner-local tree untouched/uninspected. |
-| Recovery action | Implement on detached parent 011cece, verify exact diff and disarm; checkpoint documentation only. No source ref advancement or execution. |
+| Unpublished work | Detached executor candidate 05a9c7492dff49abbf43de970a8fec97c191071e preserved; previous candidates 011cece and 605abd0 historical. No ref advanced to candidates. Owner-local tree untouched/uninspected. |
+| Recovery action | [sequential disarmed executor implementation](./PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md#26-november--c5-sequential-disarmed-executor-implementation-prepared). Recover exact candidate 05a9c7492dff49abbf43de970a8fec97c191071e; resolve finite actual-use disposition, font and runner/toolchain prerequisites read-only, prepare one exact bounded proposal if acquisition/use is indispensable. No activation or execution before separate owner authority. |
 | Resume after closure | D only after revised C5 source closure, G2 resolution and separately approved scope; every native prerequisite before its use. P8 release-only obligations retained; installer frozen. |
 
 ## Prior operation
