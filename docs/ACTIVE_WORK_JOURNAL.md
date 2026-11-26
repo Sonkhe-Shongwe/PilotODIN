@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | VERIFYING |
+| State | READY |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 86b337e01904fe5ef8a3071b76d6bbb38c9bcec6 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | Revised C5-A/B development reproducibility and build safety; D prerequisites and P8 release-only allocation. No restricted acquisition, native, owner data, install, packaging, phase activation or release. |
 | Operation ID | C5-SOURCE-TEST-INPUT-ONCE-20261126 |
-| Operation state | ISSUED exact 345b216 marker-only activation, run 45815459625 attempt 1 observed. Approval consumed; disarm now, no retry. |
+| Operation state | RECONCILED one-use 345b216 / #45815459625 SUCCESS; approval consumed, marker removed and both live jobs disabled at ebe8296. [Safe reconciled receipts](./C5_SOURCE_TEST_INPUT_RECEIPTS_45815459625.json). |
 | Intended files | Minimal dedicated one-use source-test driver and workflow, inert rehearsal only initially, then independently pinned marker-only activation and immediate disarm only after readiness. |
-| Approval | Owner explicitly stated: "I approve one bounded C5 source-test dependency verification transaction covering the 62 unique pinned wheels, maximum 98 exact HTTPS GETs and 230520362 body bytes, Windows and Linux isolated wheelhouses, actual SHA256 and metadata verification and offline pip dry-run only. No redirects, retries, actual installation, native execution, owner access or installer build." Further exact limits in bounded proposal; 19 older approvals remain consumed/disarmed. Current approval unconsumed. |
+| Approval | Owner explicitly stated: "I approve one bounded C5 source-test dependency verification transaction covering the 62 unique pinned wheels, maximum 98 exact HTTPS GETs and 230520362 body bytes, Windows and Linux isolated wheelhouses, actual SHA256 and metadata verification and offline pip dry-run only. No redirects, retries, actual installation, native execution, owner access or installer build." Further exact limits in bounded proposal; 19 older approvals remain consumed/disarmed. Current approval consumed/disarmed; 20 total. No further restricted authority. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | Exact live #45815459625 at 345b216 in progress; Windows 139893951063, rehearsal 139893953137 skipped, Linux gated by Windows success. Final disarmed rehearsal #45815156277 SUCCESS. |
+| Pending runs | None. Exact #45815459625 attempt 1 at 345b216 SUCCESS: Windows 139893951063 and Linux 139894120940 each 49/49 actual wheel size/SHA256 and unique METADATA SHA256, target tags/declarations, exact local pip 26.3 dependency dry-run PASS; rehearsal skipped 139893953137. All 98 safe row receipts independently matched the pinned original plan; 62 unique wheels, 98 reported GETs, 230520362 retained body bytes (107014797 Windows, 123505565 Linux). No installation, licence clearance, retained wheelhouse or physical egress proof. Disarm #45815558611 SUCCESS, Windows/Linux rehearsal passed, both live jobs skipped. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
-| Recovery action | Reconcile exact one-use run and safe receipts; no reactivation, retry, install or scope expansion. Confirm marker absent and both live jobs literal false at HEAD. |
+| Recovery action | Reuse exact Python archive/metadata/dry-run evidence; finish applicable use-licence dispositions (24/62 missing declared expressions), independently identified development-toolchain input integrity and Windows browser-dev compatibility, then separately scoped readiness proof if necessary. No repeat wheel acquisition or install under consumed approval. |
 | Resume after closure | D only after revised C5 source closure, G2 resolution and separately approved scope; every native prerequisite before its use. P8 release-only obligations retained; installer frozen. |
 
 ## Prior operation
