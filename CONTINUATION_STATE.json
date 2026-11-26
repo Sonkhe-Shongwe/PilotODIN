@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-PORTABLE-DOCKER-STDLIB-ONCE-20261126",
-    "parent_sha": "65495864ba78ece62a1941d609220dce95f9a5cb",
-    "previous_snapshot_sha": "fccbfe302b570cb302e4a5aa8f410fe83a8ffe3b",
-    "scope": "Reconcile exact stdlib candidate image refusal and restore false workflow guard",
+    "operation_id": "C5-REVIEWED-IMAGES-PREP-20261126",
+    "parent_sha": "f4db02295e91cfee50ef6faaae10b7ffd7f05244",
+    "previous_snapshot_sha": "f4db02295e91cfee50ef6faaae10b7ffd7f05244",
+    "scope": "Read-only exact runner image review and inert finite two-image compatibility proposal; no activation",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "26-november--c5-stdlib-alias-attempt-refused-unreviewed-runner-image",
-      "blob_sha": "d76603c74ac1d69477e889198bcbce5889dc3a6c",
-      "start_line": 2742,
-      "end_line": 2744
+      "anchor": "26-november--c5-finite-documented-runner-image-compatibility-proposal",
+      "blob_sha": "799f75d4dcc0c10cbb4aa7ba9f0ff777ff1789c4",
+      "start_line": 2746,
+      "end_line": 2748
     }
   },
   "product": {
@@ -117,16 +117,23 @@
   },
   "task": {
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
-    "status": "READY",
+    "status": "BLOCKED",
     "scope": "C-D08 revised C5-A/B development reproducibility and build safety only; D retains native prerequisites, P8 release-only",
-    "blocker": "Runtime BLOCKED: hosted image 20261116.133.1 differed from approved 20261122.23.1, first image guard refused before staging; stdlib alias correction untested on runner, full updated 14-method suite, rootfs/isolation/provenance still unverified.",
-    "next_action": "Read-only review exact observed runner image release and existing approved image/runtime constraints; determine bounded image compatibility approach without broadening trust, weakening acceptance or replay. Any revised image or execution requires explicit owner authority before activation.",
-    "next_action_kind": "SOURCE_PREPARATION",
+    "blocker": "Explicit owner decision required for proposed finite host image trust list and one fresh exact c466b5b attempt. Actual refused image 20261116.133.1 undocumented and excluded; full 16-method suite, stdlib correction runtime, isolation/provenance unverified.",
+    "next_action": "Obtain explicit owner approval of finite exact images 20261122.23.1 and 20261116.376.1 only and one fresh exact c466b5b bounded data-only Docker attempt, template SHA256 da80fa5caea65f5d4057f4b214740055f8e92250085d843047ea6e287835764c. Verify live head/triggers/pins; write ahead; full disarmed 16-method suite and all preflights before first GET; one-use activation, reconcile/disarm. Unknown image .133.1 remains refused; no fallback/replay.",
+    "next_action_kind": "OWNER_DECISION",
     "after": [
-      "Review and pin justified inert candidate or exact image proposal; seek fresh execution authority before any new activation. Reconcile evidence without replay.",
-      "Complete C5 rows 5–7 and row 8 exact regression/source closure on qualifying evidence; D only after C5 closure, G2 resolution and separate authority."
+      "Reconcile exact run and receipt or refusal; if unknown image assigned, stop without replay and consider separate reviewed diagnostic/controlled runner only with owner authority.",
+      "Complete C5 rows 5–7 and row 8 exact regression/source closure only on qualifying evidence; D only after C5 closure, G2 resolution and separate authority."
     ],
     "read": [
+      {
+        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
+        "anchor": "26-november--c5-finite-documented-runner-image-compatibility-proposal",
+        "blob_sha": "799f75d4dcc0c10cbb4aa7ba9f0ff777ff1789c4",
+        "start_line": 2746,
+        "end_line": 2748
+      },
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "26-november--c5-stdlib-alias-attempt-refused-unreviewed-runner-image",
@@ -319,17 +326,17 @@
     ]
   },
   "operation": {
-    "id": "C5-PORTABLE-DOCKER-STDLIB-ONCE-20261126",
+    "id": "C5-REVIEWED-IMAGES-PREP-20261126",
     "state": "RECONCILED",
-    "starting_sha": "fdba34b507026c4c6e76665d012b8ae8daf28e42",
-    "outcome": "Run 45893331954 attempt 1/job 140161073580 terminal FAILURE: image 20261116.133.1 != approved 20261122.23.1. All staging/tests/driver skipped, zero Docker or acquisition. One-use approval consumed; false guard restored.",
+    "starting_sha": "f4db02295e91cfee50ef6faaae10b7ffd7f05244",
+    "outcome": "Detached c466b5b exact inert proposal; six QA paths, two new exact test methods passed in mocked Python, 22 SHA256 pins and cross-layer list readback verified; full 16-method suite mandatory before driver, no Docker/acquisition.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "26-november--c5-stdlib-alias-attempt-refused-unreviewed-runner-image",
-      "blob_sha": "d76603c74ac1d69477e889198bcbce5889dc3a6c",
-      "start_line": 2742,
-      "end_line": 2744
+      "anchor": "26-november--c5-finite-documented-runner-image-compatibility-proposal",
+      "blob_sha": "799f75d4dcc0c10cbb4aa7ba9f0ff777ff1789c4",
+      "start_line": 2746,
+      "end_line": 2748
     }
   },
   "authority": {
@@ -421,6 +428,10 @@
       {
         "sha": "5701ff8ded08cf378b1fed8eee7e456267fe1c35",
         "scope": "Exact inert stdlib alias omission Docker proposal; five QA paths vs 3aeebbc, 22/22 refreshed pins read back; full updated 14-method suite NOT RUN, zero candidate runs, fresh approval required."
+      },
+      {
+        "sha": "c466b5b2faff2a7bb1b6df5020185b3de798952d",
+        "scope": "Inert finite documented two-image compatibility proposal; six QA paths, two new exact methods PASS with mocked host, 22/22 refreshed pins and cross-layer binding read back; updated full 16-method suite NOT RUN, zero candidate runs; new policy and execution require explicit owner approval."
       }
     ]
   },
