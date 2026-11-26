@@ -7,7 +7,7 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 1c28be30b5482e09be49161bee5a10945fb7ffe4 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
@@ -17,7 +17,7 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Intended files | qa/c5_wheel_metadata/wheel_hosted_runtime.py, test_wheel_hosted_runtime.py, .github/workflows/c5-wheel-hosted-runtime-review.yml, journal/handoff/spec/ledger. |
 | Approval | Routine source/synthetic CI only. All 18 restricted approvals consumed/disarmed; no actual wheels, retrieval, installation, owner tree or execution. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | None; dedicated synthetic CI planned. |
+| Pending runs | Exact dedicated synthetic CI pending reconciliation; no live jobs. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
 | Recovery action | Observe Git HEAD/parent/diff/message and working bytes versus Git blobs before claims; check independent expectations and exact pins, fresh marker only in inert fixture repo. Bind transport to ordered exact rows, one request per URL and stop after refusal, test TLS/factory with mocks only. Reconcile independent bundle replay and producer settlement equality. No hosted scope promotion or new live capability until separately reviewed arm-ready source; resource/retention review remains. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
