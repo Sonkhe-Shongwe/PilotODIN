@@ -7,15 +7,15 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | READY |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 11be374c96ad6ef4599637e8976b195f1b68f609 |
+| Observed starting HEAD | 76bf24d1a720fac7fb9cfaef676a460d30ecc443 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | Revised C5-A/B development reproducibility and build safety; D prerequisites and P8 release-only allocation. No restricted acquisition, native, owner data, install, packaging, phase activation or release. |
-| Operation ID | C5-PYTHON-REDIRECT-HEADER-ONLY-20261126 |
-| Operation state | RECONCILED DIAGNOSTIC_COMPLETE; exact ba6e67e / #45822448427 attempt 1 SUCCESS, 2 original GETs, 0 body reads/redirect follows, both assets have two exact literal filename aliases and original gate REDIRECT_FILENAME. Approval consumed; disarm 8dadd5d / #45822496719 SUCCESS. 22 approvals consumed/disarmed. |
-| Intended files | Both live flags/jobs false, marker absent; driver 863e56c630c666169c0eb72789a6a7490737d281 and workflow fe3fca2176040a75d443b43d74e5c472373c051a restored exactly. Next pure source-only narrow alias predicate correction and regression fixtures. |
-| Approval | Owner explicitly stated: "I approve C5-PYTHON-REDIRECT-HEADER-ONLY-20261126 as documented in commit 11be374c96ad6ef4599637e8976b195f1b68f609. Maximum two original HTTPS GETs, zero response body reads, zero redirects followed, zero retries, no archive acquisition, installation, extraction or native execution. Preserve redaction and all existing safeguards." Consumed by ba6e67e attempt 1; no replay or new acquisition authority. |
+| Operation ID | C5-PYTHON-DUAL-ALIAS-CORRECTION-20261126 |
+| Operation state | PREPARED source-only correction; 22 prior restricted approvals consumed/disarmed, no new acquisition approval. |
+| Intended files | Existing remaining_dev_input_once.py: narrow alias predicate and regression fixtures only; workflow unchanged; both flags/jobs false. |
+| Approval | Ordinary source and synthetic CI only under live directive. Previous header-only scope consumed; no restricted authority. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
 | Pending runs | None. #45822448427 SUCCESS header 139917896830; acquisition/rehearsal skipped. #45822496719 SUCCESS rehearsal 139918064361 31/31; both restricted jobs skipped. Historical #45820796108 refusal preserved. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
