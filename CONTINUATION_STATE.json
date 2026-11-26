@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-NCURSES-TERMINFO-CASE-POLICY-PREP-20261126",
-    "parent_sha": "84900e5b0fe6302091e60d1d4ff3b911b68144e8",
-    "previous_snapshot_sha": "84900e5b0fe6302091e60d1d4ff3b911b68144e8",
-    "scope": "Read-only ncurses 6.5 source review and inert finite exact Linux terminfo case policy proposal; preserve live refusal",
+    "operation_id": "C5-TERMINFO-POLICY-INTEGRATION-PREP-20261126",
+    "parent_sha": "629da1c7d1440cf6d4bebb6075c0c367ae6607fb",
+    "previous_snapshot_sha": "629da1c7d1440cf6d4bebb6075c0c367ae6607fb",
+    "scope": "Record owner-approved finite exact Linux terminfo policy and bounded receipt preparation; complete pinned inert integrated candidate, no execution",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "26-november--c5-pinned-ncurses-terminfo-case-sensitive-data-only-inventory-proposal",
-      "blob_sha": "7f49013bff41ae3a84fce4d9e5c77c7d63891c75",
-      "start_line": 2774,
-      "end_line": 2776
+      "anchor": "26-november--c5-owner-approved-finite-linux-terminfo-policy-integrated-and-pinned-inert-candidate",
+      "blob_sha": "c10e8b3e8f17db8215248ad1855bf5777ad1d275",
+      "start_line": 2778,
+      "end_line": 2780
     }
   },
   "product": {
@@ -119,14 +119,28 @@
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
     "status": "BLOCKED",
     "scope": "C-D08 revised C5-A/B development reproducibility and build safety only; D retains native prerequisites, P8 release-only",
-    "blocker": "Authenticated Linux terminfo pair explained by ncurses 6.5 source; complete archive inventory/accounting still missing. Inert finite exact Linux data-only collision policy candidate 8cc1a6965fb6983d2fa0f4e07e603988d57ff059 requires explicit changed policy/receipt decision. No new restricted approval.",
-    "next_action": "Obtain explicit owner approval of proposed finite exact Linux data-only terminfo inventory policy and bounded success-receipt projection in 8cc1a696; no Windows/gh collision waiver, no extraction authority or other safeguard change. Then prepare exact complete inert integrated candidate; regenerate template and manifest, review receipt consumers and verify all pins/full 19-method gate before separate fresh exact one-use execution authority.",
+    "blocker": "Exact Linux terminfo collision policy approved for preparation and complete inert integrated candidate 76e60bc2a39e3eb795805f2efa717999464c8ce8 verified statically and in isolated synthetic method. Actual complete inventory/accounting/receipt still unavailable; no fresh restricted execution authority.",
+    "next_action": "Obtain fresh explicit owner approval of exact candidate 76e60bc2a39e3eb795805f2efa717999464c8ce8 for one bounded integrated no-pull Docker data-only verification attempt with approved finite Linux terminfo policy and bounded receipt projection, unchanged finite runner image policy and all other safeguards. Before activation independently reverify template/manifest, guard, workflow trigger scope, pending runs and source pins; persist write-ahead authority/intent. Full 19-method synthetic gate must pass before Docker invocation or acquisition.",
     "next_action_kind": "OWNER_DECISION",
     "after": [
-      "Only after explicit policy approval and fresh exact execution authority, run once within unchanged safeguards, retain observed accepted collision pairs or first unapproved collision, reconcile final accounting/receipt and disarm. No replay or assumed cleanup.",
+      "Only after fresh exact execution approval, run once under unchanged safeguards; reconcile observed case-sensitive inventory receipt or first unapproved collision and final accounting, independently verify receipt hashes/parts and approved policy fields, restore false guard; no replay or assumed cleanup.",
       "Complete C5 rows 5–7 and row 8 only on qualifying evidence; D after C5 closure, G2 resolution and separate authority."
     ],
     "read": [
+      {
+        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
+        "anchor": "26-november--c5-owner-approved-finite-linux-terminfo-policy-integrated-and-pinned-inert-candidate",
+        "blob_sha": "c10e8b3e8f17db8215248ad1855bf5777ad1d275",
+        "start_line": 2778,
+        "end_line": 2780
+      },
+      {
+        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
+        "anchor": "owner-approved-finite-exact-linux-terminfo-inventory-policy-and-bounded-receipt-preparation-only",
+        "blob_sha": "207c012f03b1f0edd7c7d3376ba540cdff737b25",
+        "start_line": 782,
+        "end_line": 784
+      },
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "26-november--c5-pinned-ncurses-terminfo-case-sensitive-data-only-inventory-proposal",
@@ -403,22 +417,22 @@
     ]
   },
   "operation": {
-    "id": "C5-NCURSES-TERMINFO-CASE-POLICY-PREP-20261126",
+    "id": "C5-TERMINFO-POLICY-INTEGRATION-PREP-20261126",
     "state": "RECONCILED",
-    "starting_sha": "84900e5b0fe6302091e60d1d4ff3b911b68144e8",
-    "outcome": "Confirmed intentional same-entry HP2621 aliases from pinned upstream source; 25 leaf groups and eight directory groups derived; detached proposal 8cc1a6965fb6983d2fa0f4e07e603988d57ff059; corrected isolated synthetic method PASS, 3/3 snippet hashes matched; full 19-method gate NOT RUN, runtime untested, policy and execution unapproved.",
+    "starting_sha": "629da1c7d1440cf6d4bebb6075c0c367ae6607fb",
+    "outcome": "Complete detached inert integrated candidate 76e60bc2a39e3eb795805f2efa717999464c8ce8; 22/22 payload pins, ten exact source matches, exact readback, isolated mocked test rerun PASS and three exact snippet hashes matched; staged receipt producer compatibility reviewed. Full 19-method gate integrated NOT RUN; no restricted execution or acquisition.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "26-november--c5-pinned-ncurses-terminfo-case-sensitive-data-only-inventory-proposal",
-      "blob_sha": "7f49013bff41ae3a84fce4d9e5c77c7d63891c75",
-      "start_line": 2774,
-      "end_line": 2776
+      "anchor": "26-november--c5-owner-approved-finite-linux-terminfo-policy-integrated-and-pinned-inert-candidate",
+      "blob_sha": "c10e8b3e8f17db8215248ad1855bf5777ad1d275",
+      "start_line": 2778,
+      "end_line": 2780
     }
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next.",
-    "preparation_only": "Owner approved consolidated shared-bundle disarmed acquisition-before-signature source and exact limited existing host bootstrap; owner approved proposed limited local Docker control-plane and host-derived rootfs trust/no-pull isolation method for preparation only. Authentication before extraction/use; no Docker invocation, acquisition, verification execution, installation or live cutover authorised. Owner approved bounded first-collision encoded public member-path diagnostic preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-bounded-first-collision-diagnostic-preparation-only. No restricted execution authority.",
+    "preparation_only": "Owner approved consolidated shared-bundle disarmed acquisition-before-signature source and exact limited existing host bootstrap; owner approved proposed limited local Docker control-plane and host-derived rootfs trust/no-pull isolation method for preparation only. Authentication before extraction/use; no Docker invocation, acquisition, verification execution, installation or live cutover authorised. Owner approved bounded first-collision encoded public member-path diagnostic preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-bounded-first-collision-diagnostic-preparation-only. No restricted execution authority. Owner approved finite exact Linux data-only terminfo inventory policy and bounded receipt projection as proposed in 8cc1a696, preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-finite-exact-linux-terminfo-inventory-policy-and-bounded-receipt-preparation-only. Strict Windows/gh and other safeguards unchanged; no acquisition, extraction or restricted execution.",
     "restricted_active": [],
     "consumed_disarmed_count": 37,
     "consumed_history": {
@@ -529,6 +543,10 @@
       {
         "sha": "8cc1a6965fb6983d2fa0f4e07e603988d57ff059",
         "scope": "Corrected inert two-file finite exact Linux terminfo case-policy proposal; one isolated mocked test PASS, three exact snippet SHA256 matches; full 19-method gate NOT RUN, stale inherited template/manifest, no candidate runs, changed policy and separate execution require fresh authority."
+      },
+      {
+        "sha": "76e60bc2a39e3eb795805f2efa717999464c8ce8",
+        "scope": "Complete exact inert integrated finite Linux terminfo policy candidate; four QA paths vs 05866bc9, 22/22 pins, ten exact source matches, 36 staging/39 total, one exact mocked test rerun PASS, full 19-method suite NOT RUN, receipt producer reviewed, zero candidate runs, no workflow/product changes; separate exact one-use execution approval required."
       }
     ]
   },
