@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-PORTABLE-ACTIVATION-PROPOSAL-20261126",
-    "parent_sha": "e404618584da55218ef1d67b183216b3929fed5a",
-    "previous_snapshot_sha": "e404618584da55218ef1d67b183216b3929fed5a",
-    "scope": "Exact inert C5 activation proposal, source review and evidence; no execution or product change",
-    "state": "RECONCILED",
+    "operation_id": "C5-PORTABLE-PROVENANCE-ONCE-20261126",
+    "parent_sha": "b3449baecceca62bbd2b36ba7b7417a671f951b2",
+    "previous_snapshot_sha": "b3449baecceca62bbd2b36ba7b7417a671f951b2",
+    "scope": "Write-ahead owner-approved exact portable provenance operation; no run yet",
+    "state": "PREPARED",
     "receipt": {
-      "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "26-november--c5-exact-inert-activation-proposal",
-      "blob_sha": "ae5b7762d2242cef6919e321ae101882556dee0f",
-      "start_line": 2690,
-      "end_line": 2692
+      "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
+      "anchor": "owner-approved-one-use-portable-provenance-execution",
+      "blob_sha": "dd78fdb1b6ad40ae04af5a47da1b9c3ef89676ad",
+      "start_line": 698,
+      "end_line": 700
     }
   },
   "product": {
@@ -117,11 +117,11 @@
   },
   "task": {
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
-    "status": "BLOCKED",
+    "status": "PREPARED",
     "scope": "C-D08 revised C5-A/B development reproducibility and build safety only; D retains native prerequisites, P8 release-only",
-    "blocker": "Exact inert proposal c2264da reviewed at source scope; explicit combined verifier/root/Depot run-correlation/receipt custody and one-use execution approval not granted. Actual exact runner image and capability not verified.",
-    "next_action": "Request explicit combined approval of the exact c2264da proposal and its remaining trust dispositions and one-use bounded data-only operation. If approved, record write-ahead and verify exact activation/expected HEAD before conditional push; if declined or unavailable, remain blocked without replay.",
-    "next_action_kind": "OWNER_DECISION",
+    "blocker": "Exact run not issued; verify activation diff and expected parent, then one conditional push.",
+    "next_action": "Materialise exact approved c2264da template by changing only false guard and expected-parent placeholder; verify full source pins and expected live HEAD, conditional non-force push once. If push uncertain reconcile before any retry.",
+    "next_action_kind": "RECONCILE",
     "after": [
       "After explicit combined approval, execute one attempt only under exact activation template, image, limits and receipt policy; reconcile outcome and disarm without replay.",
       "Complete C5 rows 5–7 and row 8 exact regression/source closure; D only after C5 closure, G2 resolution and separate authority."
@@ -129,22 +129,29 @@
     "read": [
       {
         "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
+        "anchor": "owner-approved-one-use-portable-provenance-execution",
+        "blob_sha": "dd78fdb1b6ad40ae04af5a47da1b9c3ef89676ad",
+        "start_line": 698,
+        "end_line": 700
+      },
+      {
+        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
         "anchor": "exact-inert-portable-provenance-activation-proposal",
-        "blob_sha": "f756c542313af57921b6a81c3113b25d6c184112",
+        "blob_sha": "dd78fdb1b6ad40ae04af5a47da1b9c3ef89676ad",
         "start_line": 690,
         "end_line": 696
       },
       {
         "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
         "anchor": "owner-approved-limited-host-bootstrap-boundary",
-        "blob_sha": "f756c542313af57921b6a81c3113b25d6c184112",
+        "blob_sha": "dd78fdb1b6ad40ae04af5a47da1b9c3ef89676ad",
         "start_line": 682,
         "end_line": 688
       },
       {
         "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
         "anchor": "owner-approved-c5-delivery-checklist-26-november-2026",
-        "blob_sha": "f756c542313af57921b6a81c3113b25d6c184112",
+        "blob_sha": "dd78fdb1b6ad40ae04af5a47da1b9c3ef89676ad",
         "start_line": 273,
         "end_line": 298
       },
@@ -165,23 +172,48 @@
     ]
   },
   "operation": {
-    "id": "C5-PORTABLE-ACTIVATION-PROPOSAL-20261126",
-    "state": "RECONCILED",
-    "starting_sha": "e404618584da55218ef1d67b183216b3929fed5a",
-    "outcome": "Detached exact inert activation proposal c2264da committed and source read-back checked, all 118 existing triggers reviewed, zero candidate runs; no execution or acceptance credit.",
-    "reconcile_before_retry": false,
-    "receipt": {
-      "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "26-november--c5-exact-inert-activation-proposal",
-      "blob_sha": "ae5b7762d2242cef6919e321ae101882556dee0f",
-      "start_line": 2690,
-      "end_line": 2692
-    }
+    "id": "C5-PORTABLE-PROVENANCE-ONCE-20261126",
+    "state": "PREPARED",
+    "starting_sha": "b3449baecceca62bbd2b36ba7b7417a671f951b2",
+    "scope": "One attempt of exact c2264da data-only portable provenance review; approved gh digest, exact root pin, exact Depot release-only job/run correlation and bounded public notice/static receipt log; exact hosted Ubuntu image; no more than 9 GETs, 122848440 response-body bytes, 589824 header bytes, 3 redirects, 25 minutes, zero retries; no portable/product execution, installation, owner data, use or release.",
+    "intended_paths": [
+      ".github/workflows/c5-portable-provenance-once.yml"
+    ],
+    "authority_ref": {
+      "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
+      "anchor": "owner-approved-one-use-portable-provenance-execution",
+      "blob_sha": "dd78fdb1b6ad40ae04af5a47da1b9c3ef89676ad",
+      "start_line": 698,
+      "end_line": 700,
+      "proposal_commit": "c2264da688f053d377fd02cddca5e7230866a493",
+      "owner_message": "I approve the exact c2264da consolidated trust dispositions and one-use bounded data-only verification operation, subject to all documented safeguards and refusal conditions. Proceed."
+    },
+    "expected_evidence": "Exact first-attempt run/job at issued activation SHA; actual preflight and bounded transfer result; complete receipt reconstruction with both hashes before use; refusal or failure retained.",
+    "recovery": "Inspect branch, exact activation commit/message, workflow and runs before retry; never replay uncertain or consumed approval. Disarm owned workflow with non-force expected HEAD and record outcome. No alternate image, fallback or extra request.",
+    "reconcile_before_retry": true,
+    "approval_id": "C5-PORTABLE-PROVENANCE-ONCE-20261126",
+    "run_attempt": 1,
+    "proposal_commit": "c2264da688f053d377fd02cddca5e7230866a493"
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next.",
     "preparation_only": "Owner approved consolidated shared-bundle source preparation and inert acquisition-before-signature design; also exact limited existing GitHub-hosted Ubuntu 24.04 x64 image 20261116.376.1 bootstrap trust for preparation, observed identities not independent pins. Authentication before extraction/use; no acquisition, execution, installation or live cutover authorised.",
-    "restricted_active": [],
+    "restricted_active": [
+      {
+        "id": "C5-PORTABLE-PROVENANCE-ONCE-20261126",
+        "state": "APPROVED",
+        "source_sha": "c2264da688f053d377fd02cddca5e7230866a493",
+        "scope": "One attempt of exact c2264da data-only portable provenance review; approved gh digest, exact root pin, exact Depot release-only job/run correlation and bounded public notice/static receipt log; exact hosted Ubuntu image; no more than 9 GETs, 122848440 response-body bytes, 589824 header bytes, 3 redirects, 25 minutes, zero retries; no portable/product execution, installation, owner data, use or release.",
+        "owner_authority_ref": {
+          "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
+          "anchor": "owner-approved-one-use-portable-provenance-execution",
+          "blob_sha": "dd78fdb1b6ad40ae04af5a47da1b9c3ef89676ad",
+          "start_line": 698,
+          "end_line": 700
+        },
+        "reconcile_before_retry": true
+      }
+    ],
     "consumed_disarmed_count": 28,
     "consumed_history": {
       "commit": "b9864b70fb9bb5a72d0f79c37f15b94100722192",
@@ -201,7 +233,7 @@
       "release",
       "replay of consumed or uncertain approval"
     ],
-    "guards": "Three C1/C2 one-use workflows and OWNED_RESOURCE_ENABLED false; portable source LIVE_ENABLED false, driver pins unset; inert c2264da template outside workflow directory, sole job guard false, expected parent placeholder, no execution authority. Three consumed variables owner cleanup unverified."
+    "guards": "28 earlier restricted approvals consumed/disarmed; C1/C2 guards unchanged. One new exact portable operation prepared only; live workflow absent; no replay or fallback. Three consumed variables owner cleanup unverified."
   },
   "pending_runs": [],
   "pending_operations": [],
