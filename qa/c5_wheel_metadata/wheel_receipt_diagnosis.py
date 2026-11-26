@@ -13,7 +13,7 @@ from urllib.parse import urlsplit
 from urllib.request import build_opener, HTTPSHandler, ProxyHandler
 import zipfile
 
-ARMED=False
+ARMED=True
 ROOT=Path(__file__).resolve().parents[2]
 DIR='qa/c5_wheel_metadata/'
 SELF=DIR+'wheel_receipt_diagnosis.py'
