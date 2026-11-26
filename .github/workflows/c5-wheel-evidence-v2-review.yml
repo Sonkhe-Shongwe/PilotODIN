@@ -1,0 +1,53 @@
+name: C5 wheel evidence v2 synthetic review
+on:
+  push:
+    branches: [feature/live-dev-workspace-20261023]
+    paths:
+      - qa/c5_wheel_metadata/wheel_notice_evidence_v2.py
+      - qa/c5_wheel_metadata/wheel_diagnostic_v3_offline.py
+      - qa/c5_wheel_metadata/test_wheel_notice_evidence_v2.py
+      - qa/c5_wheel_metadata/test_wheel_diagnostic_v3_offline.py
+      - .github/workflows/c5-wheel-evidence-v2-review.yml
+permissions:
+  contents: read
+jobs:
+  synthetic:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Exact historical pins and inert evidence replay
+        shell: bash
+        run: |
+          set -e
+          test "$(git rev-parse HEAD:qa/c5_wheel_metadata/wheel_archive_inspector_v2.py)" = 9bf91fb983bd354f0b6db20dbb4eec32c447f369
+          test "$(git rev-parse HEAD:qa/c5_wheel_metadata/wheel_archive_inspector.py)" = aa5ab610d711fb8f9bc1fce1020c4999e53f3571
+          test "$(git rev-parse HEAD:qa/c5_wheel_metadata/wheel_notice_evidence.py)" = 141f069706d0c597214829eea90a48197c381e2c
+          test "$(git rev-parse HEAD:qa/c5_wheel_metadata/wheel_diagnostic_offline.py)" = 6aa10f588e24e582d7edf6226635adc6a591faad
+          test "$(git rev-parse HEAD:qa/c5_wheel_metadata/wheel_missing_hosted.py)" = 73311acf23aa6653c534678dd7710ff1a4e6a150
+          test "$(git rev-parse HEAD:.github/workflows/c5-wheel-missing-hosted.yml)" = 7bf52665598af6619de024f143288ab626f7ccc2
+          test ! -e qa/c5_wheel_metadata/APPROVAL_WHEEL_MISSING_HOSTED_20261126.txt
+          python --version
+          python -I -B qa/c5_wheel_metadata/test_wheel_notice_evidence.py
+          python -I -B qa/c5_wheel_metadata/test_wheel_diagnostic_offline.py
+          python -I -B qa/c5_wheel_metadata/test_wheel_notice_evidence_v2.py
+          python -I -B qa/c5_wheel_metadata/test_wheel_diagnostic_v3_offline.py
+      - name: Direct restricted CLI refusals
+        shell: bash
+        run: |
+          set +e
+          result=$(python -I -B qa/c5_wheel_metadata/wheel_notice_evidence_v2.py --collect 2>&1)
+          code=$?
+          test "$code" = 1 && test "$result" = 'OFFLINE_LIBRARY_ONLY: v2 no acquisition or evidence publication CLI' || exit 1
+          printf '%s\n' "$result"
+          result=$(python -I -B qa/c5_wheel_metadata/wheel_diagnostic_v3_offline.py --collect 2>&1)
+          code=$?
+          test "$code" = 1 && test "$result" = 'FRESH_APPROVAL_REQUIRED: v3 diagnostic collection is fixture-only' || exit 1
+          printf '%s\n' "$result"
