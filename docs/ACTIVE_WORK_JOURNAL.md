@@ -7,17 +7,17 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | e851d40f8a155c796ed0f94149c6626e8eff10cb |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
 | Operation ID | C5-WHEEL-DIAGNOSTIC-MISSING-PLAN-20261126 |
-| Operation state | PREPARED: versioned offline diagnostic receipt with allowlisted inspection reason, native wheel synthetic compatibility review (no acceptance broadening), exact remaining-only plan independently bound to historical diagnosis and original plan. Preserve all historical pinned modules. |
+| Operation state | PUBLISHED/VERIFYING: versioned fixture-only diagnostic schema, allowlisted inspection reason, native format regression fixtures and exact remaining-only proposal. Historical modules unchanged. CI pending. |
 | Intended files | New qa/c5_wheel_metadata/wheel_diagnostic_offline.py, wheel_missing_plan_20261126.json, test_wheel_diagnostic_offline.py and dedicated offline-only .github/workflows/c5-wheel-diagnostic-review.yml; journal/handoff/ledger. No existing workflow or historical pin changes. |
 | Approval | Receipt-only approval consumed/disarmed; sixteen total restricted approvals consumed/disarmed (six native, seven metadata, one synthetic transfer, one actual wheel attempt, one receipt-only retrieval). No additional retrieval or wheel acquisition authorized. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | None issued; expect dedicated Ubuntu/Windows source-only fixture tests and CLI refusal. |
+| Pending runs | Expect dedicated Ubuntu/Windows offline review only. No restricted job or live entrypoint. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
 | Recovery action | Verify exact CI and reconcile. No live acquisition, artifact retrieval, raw notice publication, installation or execution. Missing-only plan is not a live driver; prior inventory hashes preserved, raw notices still only in expiring artifact. Real sixth-wheel underlying error not recoverable. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
