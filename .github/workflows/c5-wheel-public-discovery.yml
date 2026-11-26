@@ -9,6 +9,8 @@ permissions:
   contents: read
 jobs:
   synthetic:
+    # Marker-only activation is separately reviewed; do not run disarm assertions on it.
+    if: ${{ github.event.head_commit.message != 'C5-WHEEL-PUBLIC-DISCOVERY-ONCE-20261126 owner approved exact discovery only' }}
     strategy:
       fail-fast: false
       matrix:

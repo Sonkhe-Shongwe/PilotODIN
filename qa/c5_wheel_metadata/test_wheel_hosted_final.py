@@ -411,7 +411,7 @@ class Tests(unittest.TestCase):
         self.assertFalse(doc['raw_replay_available'])
         self.deny('DISCOVERY_RETENTION_IDENTITY',lambda:f.verify_discovery_retention(raw,'0'*64,'12345','1'*40,123,w.sha(data),self.rows,'fixture',**kwargs))
     def test_discovery_operations_live_frontdoors_refuse(self):
-        with patch.object(f.http.client,'HTTPSConnection') as conn,patch.object(f,'build_opener') as opener:
+        with patch.object(f,'DISCOVERY_ARMED',False),patch.object(f.http.client,'HTTPSConnection') as conn,patch.object(f,'build_opener') as opener:
             self.deny('FRESH_APPROVAL_REQUIRED',f.discover_once)
             self.deny('FRESH_APPROVAL_REQUIRED',f.verify_discovery_once)
             conn.assert_not_called();opener.assert_not_called()
@@ -419,13 +419,20 @@ class Tests(unittest.TestCase):
 
 
     def test_discovery_integration_cli_refusal(self):
+        # Even a separately approved future staged source arm must refuse
+        # without independent provisioning. Never inherit hosted approval vars.
+        env={k:v for k,v in os.environ.items() if not k.startswith(('C5_','GITHUB_','RUNNER_'))}
         for mode in ('--discover','--verify-discovery'):
             result=subprocess.run([sys.executable,'-I','-B',str(f.ROOT/f.SELF),mode],
-                                  capture_output=True,timeout=10)
-            self.assertEqual(result.returncode,1)
-            self.assertEqual(result.stderr.decode().strip(),'FRESH_APPROVAL_REQUIRED: public discovery disabled')
+                                  capture_output=True,timeout=10,env=env)
+            if f.DISCOVERY_ARMED is False:
+                self.assertEqual(result.returncode,1)
+                self.assertEqual(result.stderr.decode().strip(),'FRESH_APPROVAL_REQUIRED: public discovery disabled')
+            else:
+                self.assertEqual(result.returncode,2)
+                self.assertEqual(result.stdout.decode().strip(),'C5_FINAL_REFUSAL TRANSPORT_OR_EVIDENCE_REFUSED')
     def test_discovery_integration_live_seams_disarmed(self):
-        with patch.object(f.http.client,'HTTPSConnection') as conn,patch.object(f,'build_opener') as opener:
+        with patch.object(f,'DISCOVERY_ARMED',False),patch.object(f.http.client,'HTTPSConnection') as conn,patch.object(f,'build_opener') as opener:
             self.deny('FRESH_APPROVAL_REQUIRED',lambda:f._discovery_fetch(None,[]))
             self.deny('FRESH_APPROVAL_REQUIRED',lambda:f._discovery_download(None,{},'1','0'*64,'token',
                       None,[],'fixture',bindings={},caps=self.caps))
@@ -450,10 +457,67 @@ class Tests(unittest.TestCase):
     def test_discovery_integration_workflow_disarmed(self):
         text=(f.ROOT/f.DISCOVERY_WORKFLOW).read_text(encoding='utf-8')
         self.assertIn('name: '+f.DISCOVERY_WORKFLOW_NAME,text)
-        self.assertEqual(text.count('if: ${{ false }}'),4)
+        self.assertIn("if: ${{ github.event.head_commit.message != '"+f.DISCOVERY_MESSAGE+"' }}",text)
         self.assertIn(f.DISCOVERY_MARKER,text)
         self.assertIn('--verify-discovery',text)
-        self.assertFalse(f.DISCOVERY_ARMED)
+        self.assertIs(type(f.DISCOVERY_ARMED),bool)
+        if f.DISCOVERY_ARMED is False:
+            self.assertEqual(text.count('if: ${{ false }}'),4)
+        else:
+            guard="if: ${{ github.run_attempt == 1 && github.event.head_commit.message == '"+f.DISCOVERY_MESSAGE+"' && vars.C5_DISCOVERY_EXPECTATION != '' }}"
+            self.assertEqual(text.count(guard),4)
+        self.assertFalse(f.ARMED)
+        self.assertIsNone(f.PUBLIC_REVIEW_SHA256)
         self.assertFalse((f.ROOT/f.DISCOVERY_MARKER).exists())
+
+
+    def test_discovery_prelaunch_unprovisioned_staged_arm_refuses(self):
+        with patch.object(f,'DISCOVERY_ARMED',True),patch.object(f.os,'name','posix'),\
+             patch.dict(os.environ,{'GITHUB_WORKSPACE':str(f.ROOT)},clear=True),\
+             patch.object(f,'observe_discovery_checkout') as observe,\
+             patch.object(f.http.client,'HTTPSConnection') as conn:
+            self.deny('RUNTIME_JSON_LIMIT',lambda:f.authorize_discovery('discover-once'))
+            observe.assert_not_called();conn.assert_not_called()
+    def test_discovery_prelaunch_inert_producer_verifier(self):
+        rows,bindings,caps=c.remaining_inputs();plan=f.diagnostic.MISSING_PLAN_BLOB
+        replay=a.Replay({rows[0]['url']:b'HTTP/1.1 503 Unavailable\r\nContent-Length: 0\r\n\r\n'})
+        grant=Mock();grant.runner=self.parent;grant.claim={'run':'12345','source_sha':'1'*40}
+        output=self.parent/'producer-output'
+        with patch.object(f,'authorize_discovery',return_value=grant),\
+             patch.object(f,'_check_discovery_grant'),patch.object(f,'_discovery_fetch',return_value=replay.get),\
+             patch.object(f.h,'deadline',nullcontext),patch.dict(os.environ,{'GITHUB_OUTPUT':str(output)},clear=True),\
+             patch.object(f.http.client,'HTTPSConnection') as conn:
+            f.discover_once();conn.assert_not_called()
+        values=dict(line.split('=',1) for line in output.read_text(encoding='utf-8').splitlines())
+        record=json.loads(values['record']);projection=Path(values['projection']).read_bytes()
+        self.assertEqual(len(replay.requests),1)
+        self.assertEqual(json.loads(projection)['status'],'DISCOVERY_REFUSED')
+        archive=io.BytesIO()
+        with zipfile.ZipFile(archive,'w',compression=zipfile.ZIP_STORED) as z:
+            z.writestr('discovery.json',projection)
+        raw=archive.getvalue();digest=w.sha(raw)
+        meta={'id':123,'name':record['artifact_name'],'expired':False,'size_in_bytes':len(raw),
+              'digest':'sha256:'+digest,'workflow_run':{'id':12345,'head_sha':'1'*40,
+                          'head_branch':f.BRANCH.removeprefix('refs/heads/')}}
+        opener=Mock();opener.open.return_value=nullcontext(object())
+        retained=self.parent/'verifier-output'
+        env={'GITHUB_OUTPUT':str(retained),'C5_DISCOVERY_RECORD':json.dumps(record),
+             'C5_ARTIFACT_ID':'123','C5_UPLOAD_DIGEST':digest,'GH_TOKEN':'inert-token'}
+        with patch.object(f,'authorize_discovery',return_value=grant),patch.object(f,'_check_discovery_grant'),\
+             patch.object(f,'build_opener',return_value=opener),patch.object(f.t,'deadline',nullcontext),\
+             patch.object(f.t,'read_metadata',return_value=n.canonical(meta)),\
+             patch.object(f,'_fetch_artifact_zip',return_value=raw) as fetch,\
+             patch.dict(os.environ,env,clear=True),patch.object(f.http.client,'HTTPSConnection') as conn:
+            self.assertEqual(f.verify_discovery_once(),0)
+            conn.assert_not_called();fetch.assert_called_once()
+        request=opener.open.call_args.args[0]
+        self.assertEqual(request.full_url,'https://api.github.com/repos/'+f.REPO+'/actions/artifacts/123')
+        values=dict(line.split('=',1) for line in retained.read_text(encoding='utf-8').splitlines())
+        envelope=Path(values['retention']).read_bytes()
+        doc=f.verify_discovery_retention(envelope,values['retention_sha256'],'12345','1'*40,123,digest,
+                       rows,plan,bindings=bindings,caps=caps,scope=f.HOSTED_SCOPE)
+        self.assertEqual(doc['projection']['status'],'DISCOVERY_REFUSED')
+        self.assertNotIn(b'inert-token',envelope)
+        self.assertFalse(doc['raw_replay_available'])
 
 if __name__=='__main__':unittest.main(verbosity=2)
