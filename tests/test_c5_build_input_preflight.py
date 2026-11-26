@@ -174,7 +174,12 @@ def test_reviewed_python_locks_match_pinned_graphs_and_stay_blocked():
     production = json.loads(pinned(directory + "production_graph_receipt_45705552265.json",
                                    "70cdac979b732aadfad0c51d7e159a60840cc1ef"))
     base = pinned("backend/requirements.txt", "30d347462aa29b4db9c7308079f231185f4c1703")
-    extra = pinned("backend/requirements-test.txt", "0ed0b88920a281167cf1dc8a3ca038096bf1e7b8")
+    # Exact historical requirement bytes, not the current candidate requirement.
+    extra = (b"-r requirements.txt\npytest>=8,<10\nhttpx>=0.27,<1\n"
+             b"# Starlette TestClient prefers httpx2 (httpx-only support is deprecated).\n"
+             b"httpx2>=2.13,<3\nPyMuPDF>=1.24,<2\n")
+    assert len(extra) == 156
+    assert hashlib.sha1(b"blob 156\0" + extra).hexdigest() == "0ed0b88920a281167cf1dc8a3ca038096bf1e7b8"
     roots = [Requirement(line) for line in base.decode().splitlines()
              if line and not line.startswith("#")]
     test_roots = roots + [Requirement(line) for line in extra.decode().splitlines()
@@ -248,8 +253,105 @@ def test_reviewed_python_locks_match_pinned_graphs_and_stay_blocked():
         expected = header + "".join(
             f"{r['name']}{'[standard]' if r['name'] == 'uvicorn' else ''}=={r['version']}"
             f" --hash=sha256:{r['sha256']}\n" for r in rows)
-        assert (ROOT / path).read_text(encoding="ascii") == expected
+        if is_production:
+            assert (ROOT / path).read_text(encoding="ascii") == expected
+        else:
+            # Reconstruct and check the original historical lock identity without
+            # claiming the historic PyMuPDF graph attests the new PDFium input.
+            original = expected.encode("ascii")
+            historical_sha, historical_bytes = {
+                "windows-x64-cp311-source-test": ("6dba467333bd1111d4375aa10f268c0cb360cb2f", 5200),
+                "linux-x64-cp311-source-test": ("2d4601fc3103afc34df25a2b4f24646a959c1f6e", 5198),
+            }[pid]
+            assert len(original) == historical_bytes
+            assert hashlib.sha1(b"blob " + str(len(original)).encode("ascii")
+                                + b"\0" + original).hexdigest() == historical_sha
     assert total == 141
+
+
+def test_pdfium_candidate_is_exact_one_for_one_projection_not_install_authority():
+    from packaging.requirements import Requirement
+    from packaging.specifiers import SpecifierSet
+    from packaging.tags import cpython_tags, compatible_tags
+    from packaging.utils import canonicalize_name, parse_wheel_filename
+    from packaging.version import Version
+
+    def pinned(path, expected):
+        raw = (ROOT / path).read_bytes().replace(b"\r\n", b"\n")
+        assert hashlib.sha1(b"blob " + str(len(raw)).encode("ascii")
+                            + b"\0" + raw).hexdigest() == expected
+        return raw
+
+    plan_pin = "1aa96a7172508f94b2cdc4b7aabd65e3b8f21f89"
+    receipt_pin = "270e49aff95923c2f4de6742336c80d55d476a5f"
+    plan = json.loads(pinned("qa/c5_wheel_metadata/wheel_acquisition_plan_20261125.json", plan_pin))
+    receipt = json.loads(pinned("docs/C5_PDFIUM_TWO_WHEEL_RECEIPTS_45840503532.json", receipt_pin))
+    root_bytes = pinned("backend/requirements.txt", "30d347462aa29b4db9c7308079f231185f4c1703")
+    extra = pinned("backend/requirements-test.txt", "3254e52ba68ce80e46b663f6d9291dc134d8271c")
+    assert extra == (b"-r requirements.txt\npytest>=8,<10\nhttpx>=0.27,<1\n"
+                     b"# Starlette TestClient prefers httpx2 (httpx-only support is deprecated).\n"
+                     b"httpx2>=2.13,<3\npypdfium2==5.15.2\n")
+    roots = [Requirement(line) for line in (root_bytes + extra).decode().splitlines()
+             if line and not line.startswith(("#", "-r "))]
+    assert len(roots) == 14
+    assert "pymupdf" not in {canonicalize_name(req.name) for req in roots}
+    assert len(receipt["wheels"]) == 2
+    policy = preflight.audit_policy(ROOT)
+    assert len(policy["profiles"]) == 4
+    assert all(profile["status"] == "BLOCKED" for profile in policy["profiles"])
+    cases = {
+        "windows-x64-cp311-source-test": (
+            "3.11.9", "pypdfium2-5.15.2-py3-none-win_amd64.whl", 4187589,
+            "74d1bace34fb01c660d0b64344d5a4b7d276942b7c6623c88ab59ea21c5acfbd",
+            "e0ce0a92c2cd69ceff1ef581fa19f83a59e9fbbc68b3f71463fabc0077e69650",
+            "ff4393192ee3d752c6f790eebb98f042e316301f", 5263, 91375854),
+        "linux-x64-cp311-source-test": (
+            "3.11.18", "pypdfium2-5.15.2-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", 4020833,
+            "dc31aea5b0fb9fefc9b537a65f4113980b2c40798445736a7e6565bc85161e37",
+            "1f88bdc8babca4068e383b787780ae9f7794e36f7930a66d7e29bd566eb7ddf8",
+            "29f97e0fc36f5ea3065c16f9bb812f34ddfb98f1", 5261, 101763898),
+    }
+    for pid, (python, filename, size, digest, metadata, lock_sha, lock_size, total_bytes) in cases.items():
+        row = next(w for w in receipt["wheels"] if w["filename"] == filename)
+        assert (row["bytes"], row["sha256"], row["metadata_sha256"]) == (size, digest, metadata)
+        assert row["requires_dist_count"] == 0
+        assert row["requires_python_sha256"] == hashlib.sha256(b">= 3.6").hexdigest()
+        assert SpecifierSet(">= 3.6").contains(Version(python))
+        name, version, _, wheel_tags = parse_wheel_filename(filename)
+        platforms = ["win_amd64"] if pid.startswith("windows") else (
+            [f"manylinux_2_{n}_x86_64" for n in range(28, 4, -1)]
+            + ["manylinux2014_x86_64", "manylinux2010_x86_64", "manylinux1_x86_64"])
+        tags = set(cpython_tags((3, 11), abis=["cp311"], platforms=platforms))
+        tags.update(compatible_tags((3, 11), interpreter="cp311", platforms=platforms))
+        assert name == "pypdfium2" and version == Version("5.15.2") and wheel_tags & tags
+        historical = sorted((r for r in plan["wheels"] if pid in r["profiles"]),
+                            key=lambda r: r["name"])
+        assert len(historical) == 49 and len({r["name"] for r in historical}) == 49
+        assert sum(r["name"] == "pymupdf" for r in historical) == 1
+        projected = [dict(name="pypdfium2", version="5.15.2", sha256=digest, bytes=size)
+                     if r["name"] == "pymupdf" else r for r in historical]
+        assert sum(r["bytes"] for r in projected) == total_bytes
+        assert len(projected) == len({r["name"] for r in projected}) == 49
+        names = {r["name"]: r for r in projected}
+        for req in roots:
+            assert req.specifier.contains(Version(names[canonicalize_name(req.name)]["version"]))
+        assert "pymupdf" not in names
+        header = (
+            f"# PilotODIN C5 reviewed expected Python lock: {pid}\n"
+            "# Definition only; profile BLOCKED. Not installation or acquisition authority.\n"
+            f"# CPython 3.11 x64; reviewed metadata environment {python} (not selected interpreter distribution).\n"
+            f"# Expected hashes from pinned plan {plan_pin} plus PDFium receipt {receipt_pin}.\n"
+            "# Use only with separately authorised, verified local wheelhouse and preflight.\n"
+            "--no-index\n--only-binary=:all:\n--require-hashes\n\n"
+        )
+        expected = header + "".join(
+            f"{r['name']}{'[standard]' if r['name'] == 'uvicorn' else ''}=={r['version']}"
+            f" --hash=sha256:{r['sha256']}\n" for r in projected)
+        profile = next(p for p in policy["profiles"] if p["id"] == pid)
+        actual = pinned(profile["planned_lock"], lock_sha)
+        assert len(actual) == lock_size and actual.decode("ascii") == expected
+    pinned("backend/locks/windows-x64-cp311-production-build.txt",
+           "c28770c27a8e4add9037c1aeab20044880c4eaef")
 
 
 @pytest.mark.parametrize("change", ["missing", "tampered", "extra-index", "crlf", "linked"])

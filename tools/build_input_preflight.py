@@ -40,8 +40,8 @@ PROFILES = {
 # policy schema. A matching definition does not authorise its consumption.
 REVIEWED_LOCK_PINS = {
     "backend/locks/windows-x64-cp311-production-build.txt": ("c28770c27a8e4add9037c1aeab20044880c4eaef", 4665),
-    "backend/locks/windows-x64-cp311-source-test.txt": ("6dba467333bd1111d4375aa10f268c0cb360cb2f", 5200),
-    "backend/locks/linux-x64-cp311-source-test.txt": ("2d4601fc3103afc34df25a2b4f24646a959c1f6e", 5198),
+    "backend/locks/windows-x64-cp311-source-test.txt": ("ff4393192ee3d752c6f790eebb98f042e316301f", 5263),
+    "backend/locks/linux-x64-cp311-source-test.txt": ("29f97e0fc36f5ea3065c16f9bb812f34ddfb98f1", 5261),
 }
 WHEEL_FIELDS = {
     "name", "version", "filename", "bytes", "sha256", "source",

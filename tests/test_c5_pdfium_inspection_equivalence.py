@@ -1,0 +1,158 @@
+"""Independent generated PDFium candidate fixtures; not run in detached draft.
+
+The exact candidate must be separately authorised before this suite is executed.
+No owner data, external fonts, renderer fallback or acquisition.
+"""
+from __future__ import annotations
+
+import math
+from unittest.mock import patch
+
+import pytest
+
+from tools import pdf_test_inspection as qa
+
+
+def _pdf(*streams: bytes, box=(0, 0, 200, 200), rotation=0,
+         unicode_hex: bytes | None = None) -> bytes:
+    """Build deterministic tiny PDFs without depending on either inspection engine."""
+    count = len(streams)
+    ids = [4 + 2 * n for n in range(count)]
+    cmap_id = 4 + 2 * count
+    kids = b" ".join(f"{n} 0 R".encode("ascii") for n in ids)
+    cmap_ref = f" /ToUnicode {cmap_id} 0 R".encode("ascii") if unicode_hex else b""
+    objects = [
+        b"<< /Type /Catalog /Pages 2 0 R >>",
+        b"<< /Type /Pages /Count " + str(count).encode("ascii") + b" /Kids [" + kids + b"] >>",
+        b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding" + cmap_ref + b" >>",
+    ]
+    geometry = " ".join(str(n) for n in box)
+    for page_id, stream in zip(ids, streams):
+        objects.append(
+            f"<< /Type /Page /Parent 2 0 R /MediaBox [{geometry}] /CropBox [{geometry}] "
+            f"/Rotate {rotation} /Resources << /Font << /F1 3 0 R >> >> /Contents {page_id + 1} 0 R >>"
+            .encode("ascii"))
+        objects.append(b"<< /Length " + str(len(stream)).encode("ascii") +
+                       b" >>\nstream\n" + stream + b"\nendstream")
+    if unicode_hex:
+        cmap = (
+            b"/CIDInit /ProcSet findresource begin\n12 dict begin\nbegincmap\n"
+            b"/CIDSystemInfo << /Registry (Adobe) /Ordering (UCS) /Supplement 0 >> def\n"
+            b"/CMapName /SyntheticMap def\n/CMapType 2 def\n"
+            b"1 begincodespacerange\n<00> <FF>\nendcodespacerange\n"
+            b"1 beginbfchar\n<41> <" + unicode_hex + b">\nendbfchar\n"
+            b"endcmap\nCMapName currentdict /CMap defineresource pop\nend\nend\n")
+        objects.append(b"<< /Length " + str(len(cmap)).encode("ascii") +
+                       b" >>\nstream\n" + cmap + b"endstream")
+    output = bytearray(b"%PDF-1.4\n")
+    offsets = [0]
+    for index, obj in enumerate(objects, 1):
+        offsets.append(len(output))
+        output.extend(f"{index} 0 obj\n".encode("ascii") + obj + b"\nendobj\n")
+    xref = len(output)
+    output.extend(f"xref\n0 {len(offsets)}\n0000000000 65535 f \n".encode("ascii"))
+    for offset in offsets[1:]:
+        output.extend(f"{offset:010d} 00000 n \n".encode("ascii"))
+    output.extend(f"trailer\n<< /Size {len(offsets)} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n"
+                  .encode("ascii"))
+    return bytes(output)
+
+
+def _line(text: str, x: int = 20, y: int = 150) -> bytes:
+    assert text.isascii() and not any(c in text for c in "()\\")
+    return f"BT /F1 12 Tf {x} {y} Td ({text}) Tj ET\n".encode("ascii")
+
+
+def _within(page, tolerance=0):
+    return bool(page.text_bounds) and all(
+        -tolerance <= l <= r <= page.width + tolerance and
+        -tolerance <= t <= b <= page.height + tolerance
+        for l, t, r, b in page.text_bounds)
+
+
+def test_disarmed_gate_refuses_before_metadata_or_native_import():
+    with patch.object(qa, "PDFIUM_TEST_EXECUTION_ENABLED", False), \
+            patch("importlib.metadata.version") as version:
+        with pytest.raises(RuntimeError, match="C5_PDFIUM_TEST_EXECUTION_DISARMED"):
+            qa.require_pdfium()
+        version.assert_not_called()
+
+
+def test_ordered_text_numbers_revision_and_raster():
+    sha = "f" * 64
+    raw = _pdf(_line("Overview", 20, 180) + _line("345.75", 20, 150),
+               _line("Compare", 20, 180) + _line(sha, 20, 150), box=(0, 0, 600, 200))
+    first, second = qa.inspect_pdf(raw, geometry=True, max_pages=2)
+    assert "Overview" in first.text and "345.75" in first.text
+    assert "Compare" in second.text and sha in second.text
+    assert "PRIVATE_CANARY" not in first.text + second.text
+    assert "Compare" not in first.text
+    assert all(_within(page, 1) for page in (first, second))
+    raster = qa.render_rgb(raw, 0, scale=1.3)
+    assert (raster.width, raster.height) == (math.ceil(600 * 1.3), math.ceil(200 * 1.3))
+    assert len(raster.rgb) == raster.width * raster.height * 3
+    assert any(v != 255 for v in raster.rgb)
+
+
+@pytest.mark.parametrize("x,y", [(-5, 150), (198, 150), (20, -5), (20, 198)])
+def test_clipped_text_on_each_edge_is_not_hidden_by_bounded_extraction(x, y):
+    page, = qa.inspect_pdf(_pdf(_line("Visible anchor") + _line("W", x, y)), geometry=True)
+    assert "Visible anchor" in page.text
+    assert not _within(page, 1), "Off-page glyph must survive independent geometry enumeration"
+
+
+def test_nonzero_page_origin_mapping_and_rotation_refusal():
+    page, = qa.inspect_pdf(_pdf(_line("Offset origin", 30, 170),
+                                 box=(10, 20, 210, 220)), geometry=True)
+    assert (page.width, page.height) == (200, 200)
+    assert "Offset origin" in page.text and _within(page)
+    with pytest.raises(ValueError, match="Rotated PDF"):
+        qa.inspect_pdf(_pdf(_line("Rotation"), rotation=90), geometry=True)
+
+
+def test_changed_omitted_forbidden_and_reordered_content_controls():
+    def passes(raw):
+        page, = qa.inspect_pdf(raw)
+        text = page.text
+        return ("Overview" in text and "Compare" in text and "345.75" in text
+                and "PRIVATE_CANARY" not in text and text.index("Overview") < text.index("Compare"))
+
+    original = _line("Overview", 20, 180) + _line("Compare", 20, 160) + _line("345.75", 20, 140)
+    assert passes(_pdf(original))
+    for stream in (original.replace(b"345.75", b"345.76"),
+                   original.replace(b"Overview", b"Absent"),
+                   original + _line("PRIVATE_CANARY", 20, 120),
+                   _line("Compare", 20, 180) + _line("Overview", 20, 160) + _line("345.75", 20, 140)):
+        assert not passes(_pdf(stream))
+
+
+def test_blank_wrong_size_and_page_count_malformed_truncated_controls():
+    blank = _pdf(b"")
+    page, = qa.inspect_pdf(blank)
+    assert not page.text.strip()
+    with pytest.raises(ValueError, match="Blank PDF raster"):
+        qa.render_rgb(blank, 0, scale=1.5)
+    page, = qa.inspect_pdf(_pdf(_line("A4"), box=(0, 0, 500, 700)))
+    assert abs(page.width - 595.276) > 1 and abs(page.height - 841.89) > 1
+    with pytest.raises(ValueError, match="Unexpected PDF page count"):
+        qa.inspect_pdf(_pdf(_line("First"), _line("Second")), max_pages=1)
+    with pytest.raises(Exception):
+        qa.inspect_pdf(b"%PDF-1.4\nmalformed")
+    with pytest.raises(Exception):
+        qa.inspect_pdf(_pdf(_line("Complete"))[:-12])
+
+
+def test_supplementary_unicode_map_and_same_engine_pixel_identity():
+    # The glyph is deliberately Helvetica A in both fixtures. Only the Unicode
+    # map changes: this tests extraction, not actual emoji glyph coverage.
+    stream = _line("A")
+    wrong = _pdf(stream, unicode_hex=b"0041")
+    corrected = _pdf(stream, unicode_hex=b"D83DDCC8")
+    assert qa.inspect_pdf(wrong)[0].text.strip() != "📈"
+    assert qa.inspect_pdf(corrected)[0].text.strip() == "📈"
+    assert qa.render_rgb(wrong, 0, scale=1.5).rgb == qa.render_rgb(corrected, 0, scale=1.5).rgb
+
+
+def test_bmp_unicode_map():
+    page, = qa.inspect_pdf(_pdf(_line("A"), unicode_hex=b"0394"))
+    assert page.text.strip() == "Δ"

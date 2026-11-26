@@ -11,6 +11,8 @@ from pathlib import Path
 from threading import RLock
 
 _LOCK = RLock()
+# Detached draft: no environment or caller flag can enable native test-tool use.
+PDFIUM_TEST_EXECUTION_ENABLED = False
 Box = tuple[float, float, float, float]
 
 
@@ -48,6 +50,8 @@ class RasterEvidence:
 
 def require_pdfium() -> None:
     """Keep the dependency probe real, without a fallback or auto-install."""
+    if PDFIUM_TEST_EXECUTION_ENABLED is not True:
+        raise RuntimeError("C5_PDFIUM_TEST_EXECUTION_DISARMED")
     from importlib.metadata import version
     if version("pypdfium2") != "5.15.2":
         raise ValueError("Unexpected PDFium test dependency version")
@@ -173,6 +177,8 @@ def render_rgb(raw: bytes, index: int, *, scale: float) -> RasterEvidence:
                             pixels = image.tobytes()
                             if len(pixels) != expected[0] * expected[1] * 3:
                                 raise ValueError("Unexpected raster byte length")
+                            if all(value == 255 for value in pixels):
+                                raise ValueError("Blank PDF raster")
                             return RasterEvidence(*expected, pixels)
                 finally:
                     bitmap.close()
