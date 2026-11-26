@@ -6,16 +6,16 @@
   },
   "checkpoint": {
     "operation_id": "C5-PORTABLE-PREFLIGHT-DIAGNOSTIC-ONCE-20261126",
-    "parent_sha": "78ef111ca5c3cdc5908c2297bcba768087f6b790",
-    "previous_snapshot_sha": "78ef111ca5c3cdc5908c2297bcba768087f6b790",
-    "scope": "Write-ahead exact owner-approved diagnostic only, no run yet",
-    "state": "PREPARED",
+    "parent_sha": "b8712cd0a18b113a67850a46a7cb72e46ded8eb2",
+    "previous_snapshot_sha": "b8712cd0a18b113a67850a46a7cb72e46ded8eb2",
+    "scope": "Reconcile exact diagnostic namespace permission refusal; restore false guard and preserve evidence",
+    "state": "RECONCILED",
     "receipt": {
-      "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
-      "anchor": "owner-approved-one-use-preflight-diagnostic",
-      "blob_sha": "6f502316e57263189fa7a540065e0abc93df9779",
-      "start_line": 720,
-      "end_line": 722
+      "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
+      "anchor": "26-november--c5-preflight-diagnostic-namespace-permission-refusal",
+      "blob_sha": "51e150ada59e0e61176b634b86287d5df2585873",
+      "start_line": 2710,
+      "end_line": 2712
     }
   },
   "product": {
@@ -117,16 +117,23 @@
   },
   "task": {
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
-    "status": "PREPARED",
+    "status": "BLOCKED",
     "scope": "C-D08 revised C5-A/B development reproducibility and build safety only; D retains native prerequisites, P8 release-only",
-    "blocker": "Diagnostic not issued; verify exact activation diff and expected parent, then one conditional push.",
-    "next_action": "Replace existing disabled owned workflow with exact approved 1e5267f diagnostic template, changing only false guard and expected-parent placeholder; verify exact live HEAD and diff, conditional non-force push once. Reconcile uncertainty before any retry.",
-    "next_action_kind": "RECONCILE",
+    "blocker": "Exact diagnostic confirms unprivileged network namespace creation denied on reviewed Ubuntu hosted runner (NAMESPACE 1 UNSHARE_PERMISSION). Mandatory isolation unavailable in tested environment; specific policy not established, remaining preflight and provenance evidence absent.",
+    "next_action": "Read-only assess viable alternative preserving mandatory offline isolation and all provenance/receipt criteria. Propose exact supported isolation boundary for explicit owner decision if justified. No sudo, security/OS changes, alternative execution, acquisition or replay without distinct approval.",
+    "next_action_kind": "MISSING_EVIDENCE",
     "after": [
-      "Resolve actual stage refusal with diagnostic evidence; any different isolation method or full provenance run requires distinct authority.",
+      "Obtain explicit owner decision for any changed isolation/evidence method, then exact bounded execution authority and reconcile actual evidence.",
       "Complete C5 rows 5–7 and row 8 exact regression/source closure; D only after C5 closure, G2 resolution and separate authority."
     ],
     "read": [
+      {
+        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
+        "anchor": "26-november--c5-preflight-diagnostic-namespace-permission-refusal",
+        "blob_sha": "51e150ada59e0e61176b634b86287d5df2585873",
+        "start_line": 2710,
+        "end_line": 2712
+      },
       {
         "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
         "anchor": "owner-approved-one-use-preflight-diagnostic",
@@ -144,14 +151,14 @@
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "26-november--c5-preflight-only-diagnostic-preparation",
-        "blob_sha": "29bce380ef004e355c1de3b7e9acf73c0a3619e6",
+        "blob_sha": "51e150ada59e0e61176b634b86287d5df2585873",
         "start_line": 2706,
         "end_line": 2708
       },
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "26-november--c5-revised-image-subprocess-refusal",
-        "blob_sha": "29bce380ef004e355c1de3b7e9acf73c0a3619e6",
+        "blob_sha": "51e150ada59e0e61176b634b86287d5df2585873",
         "start_line": 2702,
         "end_line": 2704
       },
@@ -172,7 +179,7 @@
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "26-november--c5-runner-image-revision-read-only-review",
-        "blob_sha": "29bce380ef004e355c1de3b7e9acf73c0a3619e6",
+        "blob_sha": "51e150ada59e0e61176b634b86287d5df2585873",
         "start_line": 2698,
         "end_line": 2700
       },
@@ -214,7 +221,7 @@
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "26-november--c5-one-use-portable-provenance-image-refusal",
-        "blob_sha": "29bce380ef004e355c1de3b7e9acf73c0a3619e6",
+        "blob_sha": "51e150ada59e0e61176b634b86287d5df2585873",
         "start_line": 2694,
         "end_line": 2696
       }
@@ -222,48 +229,23 @@
   },
   "operation": {
     "id": "C5-PORTABLE-PREFLIGHT-DIAGNOSTIC-ONCE-20261126",
-    "state": "PREPARED",
+    "state": "RECONCILED",
     "starting_sha": "78ef111ca5c3cdc5908c2297bcba768087f6b790",
-    "scope": "One attempt of exact 1e5267f hosted preflight-only diagnostic; Ubuntu image 20261122.23.1, original host/namespace and synthetic decoder/static readers/curl version criteria, stop first failure, 5 minute limit, zero GETs, no acquisition, verifier or portable/product execution, no OS/security changes or fallback.",
-    "intended_paths": [
-      ".github/workflows/c5-portable-provenance-once.yml"
-    ],
-    "authority_ref": {
-      "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
-      "anchor": "owner-approved-one-use-preflight-diagnostic",
-      "blob_sha": "6f502316e57263189fa7a540065e0abc93df9779",
-      "start_line": 720,
-      "end_line": 722,
-      "proposal_commit": "1e5267ff3ac7e39f02c62ec5dbce1be5ff32689e",
-      "owner_message": "I approve exact candidate 1e5267f for one five-minute hosted preflight diagnostic with zero acquisition requests, unchanged isolation requirements and all documented safeguards. Proceed."
-    },
-    "expected_evidence": "Exact first-attempt job and fixed diagnostic stage/pass/failure/exit category or refusal; zero acquisition; retain evidence and disarm.",
-    "recovery": "Inspect branch, exact activation commit and run before retry; never replay uncertain or consumed approval. Disarm exact owned workflow with expected HEAD. No alternate image or isolation, acquisition or fallback.",
-    "reconcile_before_retry": true,
-    "approval_id": "C5-PORTABLE-PREFLIGHT-DIAGNOSTIC-ONCE-20261126",
-    "run_attempt": 1,
-    "proposal_commit": "1e5267ff3ac7e39f02c62ec5dbce1be5ff32689e"
+    "outcome": "Run 45886147926 attempt 1/job 140137222308 matched image, passed host and failed first namespace probe with exit 1 UNSHARE_PERMISSION. Zero acquisition by diagnostic source; later probes not reached. Approval consumed; false guard restored in checkpoint.",
+    "reconcile_before_retry": false,
+    "receipt": {
+      "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
+      "anchor": "26-november--c5-preflight-diagnostic-namespace-permission-refusal",
+      "blob_sha": "51e150ada59e0e61176b634b86287d5df2585873",
+      "start_line": 2710,
+      "end_line": 2712
+    }
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next.",
     "preparation_only": "Owner approved consolidated shared-bundle source preparation and inert acquisition-before-signature design; also exact limited existing GitHub-hosted Ubuntu 24.04 x64 image 20261116.376.1 bootstrap trust for preparation, observed identities not independent pins. Authentication before extraction/use; no acquisition, execution, installation or live cutover authorised.",
-    "restricted_active": [
-      {
-        "id": "C5-PORTABLE-PREFLIGHT-DIAGNOSTIC-ONCE-20261126",
-        "state": "APPROVED",
-        "source_sha": "1e5267ff3ac7e39f02c62ec5dbce1be5ff32689e",
-        "scope": "One attempt of exact 1e5267f hosted preflight-only diagnostic; Ubuntu image 20261122.23.1, original host/namespace and synthetic decoder/static readers/curl version criteria, stop first failure, 5 minute limit, zero GETs, no acquisition, verifier or portable/product execution, no OS/security changes or fallback.",
-        "owner_authority_ref": {
-          "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
-          "anchor": "owner-approved-one-use-preflight-diagnostic",
-          "blob_sha": "6f502316e57263189fa7a540065e0abc93df9779",
-          "start_line": 720,
-          "end_line": 722
-        },
-        "reconcile_before_retry": true
-      }
-    ],
-    "consumed_disarmed_count": 30,
+    "restricted_active": [],
+    "consumed_disarmed_count": 31,
     "consumed_history": {
       "commit": "b9864b70fb9bb5a72d0f79c37f15b94100722192",
       "path": "docs/TAB_MIGRATION_HANDOFF_CURRENT.md",
@@ -282,21 +264,21 @@
       "release",
       "replay of consumed or uncertain approval"
     ],
-    "guards": "30 earlier approvals consumed/disarmed; C1/C2 guards unchanged. One exact preflight diagnostic prepared; existing owned workflow false guard; no acquisition or replay. Three consumed variables owner cleanup unverified.",
+    "guards": "31 consumed/disarmed including exact hosted diagnostic; owned workflow false job guard restored, exact parent/message retained; no fallback or acquisition. Three C1/C2 workflows and OWNED_RESOURCE_ENABLED false; three consumed variables owner cleanup unverified.",
     "last_consumed": {
-      "id": "C5-PORTABLE-PROVENANCE-IMAGE-20261122-ONCE-20261126",
-      "source_sha": "393679c51c3752e2e6204ad77e57c229b25e7633",
-      "activation_sha": "0768c786e5106b65593338d5742568ba90db037b",
-      "run_id": 45885206163,
+      "id": "C5-PORTABLE-PREFLIGHT-DIAGNOSTIC-ONCE-20261126",
+      "source_sha": "1e5267ff3ac7e39f02c62ec5dbce1be5ff32689e",
+      "activation_sha": "b8712cd0a18b113a67850a46a7cb72e46ded8eb2",
+      "run_id": 45886147926,
       "run_attempt": 1,
-      "job_id": 140134087234,
-      "outcome": "FAILURE_PROCESS_REFUSED_STAGE_UNKNOWN",
+      "job_id": 140137222308,
+      "outcome": "FAILURE_NAMESPACE_UNSHARE_PERMISSION_ZERO_ACQUISITION",
       "receipt": {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "26-november--c5-revised-image-subprocess-refusal",
-        "blob_sha": "29bce380ef004e355c1de3b7e9acf73c0a3619e6",
-        "start_line": 2702,
-        "end_line": 2704
+        "anchor": "26-november--c5-preflight-diagnostic-namespace-permission-refusal",
+        "blob_sha": "51e150ada59e0e61176b634b86287d5df2585873",
+        "start_line": 2710,
+        "end_line": 2712
       }
     }
   },

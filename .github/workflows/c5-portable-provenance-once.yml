@@ -7,7 +7,7 @@ on:
 permissions: {}
 jobs:
   diagnostic-once:
-    if: ${{ true && github.event_name == 'push' && github.run_attempt == 1 && github.event.before == '2efa6f8fc29778d1b9d66e484e6b72f7819f162e' && github.event.head_commit.message == 'C5-PORTABLE-PREFLIGHT-DIAGNOSTIC-ONCE-20261126 owner approved no acquisition' }}
+    if: ${{ false && github.event_name == 'push' && github.run_attempt == 1 && github.event.before == '2efa6f8fc29778d1b9d66e484e6b72f7819f162e' && github.event.head_commit.message == 'C5-PORTABLE-PREFLIGHT-DIAGNOSTIC-ONCE-20261126 owner approved no acquisition' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
