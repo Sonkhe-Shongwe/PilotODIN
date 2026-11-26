@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-PORTABLE-DOCKER-ONCE-20261126",
-    "parent_sha": "517157ecfddc25b455f0cb1e57cffa4151a60d88",
-    "previous_snapshot_sha": "517157ecfddc25b455f0cb1e57cffa4151a60d88",
-    "scope": "Reconcile exact Docker rootfs bound refusal; restore false guard and preserve successful synthetic/engine evidence",
+    "operation_id": "C5-ROOTFS-IDENTITY-PREP-20261126",
+    "parent_sha": "b59fb889fc73fd948062520672a86b77979f084b",
+    "previous_snapshot_sha": "b59fb889fc73fd948062520672a86b77979f084b",
+    "scope": "Reconcile live state and prepare detached rootfs identity correction; no Docker activation",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "26-november--c5-integrated-docker-rootfs-file-bound-refusal",
-      "blob_sha": "c8e78c9b4dd78fdeb5b5913e04cf9955407288cf",
-      "start_line": 2722,
-      "end_line": 2724
+      "anchor": "26-november--c5-rootfs-identity-correction-prepared-pure-snippet-checks",
+      "blob_sha": "1ab4d29c30116d879ac686c77e911014579725b3",
+      "start_line": 2726,
+      "end_line": 2728
     }
   },
   "product": {
@@ -117,16 +117,23 @@
   },
   "task": {
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
-    "status": "BLOCKED",
+    "status": "READY",
     "scope": "C-D08 revised C5-A/B development reproducibility and build safety only; D retains native prerequisites, P8 release-only",
-    "blocker": "Docker engine preflight passed but host-derived rootfs construction refused HOST_FILE_BOUND. Exact file/predicate unknown; legitimate zero-length stdlib Python files are plausible. Offline isolation and provenance not established.",
-    "next_action": "Review exact rootfs file-identity guard and local distro source-only evidence; prepare a narrow fail-closed rootfs-specific correction and safe stage diagnostics with synthetic regression fixtures if justified. Preserve host/tool file pins, size/ownership/paths and all existing isolation/acquisition criteria. Fresh approval required for any new integrated execution, no replay.",
+    "blocker": "Runtime remains BLOCKED: exact Docker rootfs HOST_FILE_BOUND predicate/file unknown; narrow source correction prepared in 3c46865, pure snippets passed, but complete disarmed module tests, corrected template pins, offline isolation and provenance not established.",
+    "next_action": "Review detached 3c46865 rootfs-only integration including zero-byte non-executable archive destination semantics, regenerate exact inert activation template and manifest from corrected files, verify all disarmed/active pins and full pure tests where available. Prior template/manifest is stale; never activate it. No Docker or acquisition execution.",
     "next_action_kind": "SOURCE_PREPARATION",
     "after": [
-      "Review corrected disarmed source and exact template pins; obtain fresh exact one-use execution authority before Docker or acquisition. Reconcile actual evidence and receipt if available.",
-      "Complete C5 rows 5–7 and row 8 exact regression/source closure; D only after C5 closure, G2 resolution and separate authority."
+      "Review corrected exact inert candidate, template and test evidence; request fresh exact one-use execution authority before Docker/acquisition. No replay.",
+      "Complete C5 rows 5–7 and row 8 exact regression/source closure only on qualifying evidence; D only after C5 closure, G2 resolution and separate authority."
     ],
     "read": [
+      {
+        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
+        "anchor": "26-november--c5-rootfs-identity-correction-prepared-pure-snippet-checks",
+        "blob_sha": "1ab4d29c30116d879ac686c77e911014579725b3",
+        "start_line": 2726,
+        "end_line": 2728
+      },
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "26-november--c5-integrated-docker-rootfs-file-bound-refusal",
@@ -270,17 +277,17 @@
     ]
   },
   "operation": {
-    "id": "C5-PORTABLE-DOCKER-ONCE-20261126",
+    "id": "C5-ROOTFS-IDENTITY-PREP-20261126",
     "state": "RECONCILED",
-    "starting_sha": "1432f465808d26859e244ee676a1080d64afe3a5",
-    "outcome": "Run 45889312603 attempt 1/job 140147755687 matched image, staged all 29 parts, passed 8 synthetic tests and Docker engine policy checks; failed during rootfs construction HOST_FILE_BOUND before import, offline checks or acquisition. No receipt. Approval consumed; false guard restored.",
+    "starting_sha": "b59fb889fc73fd948062520672a86b77979f084b",
+    "outcome": "Detached 3c46865 exactly three QA paths; exact two snippets passed 21 synthetic cases. Full modules/host regression and regenerated template pins pending; no activation or acquisition.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "26-november--c5-integrated-docker-rootfs-file-bound-refusal",
-      "blob_sha": "c8e78c9b4dd78fdeb5b5913e04cf9955407288cf",
-      "start_line": 2722,
-      "end_line": 2724
+      "anchor": "26-november--c5-rootfs-identity-correction-prepared-pure-snippet-checks",
+      "blob_sha": "1ab4d29c30116d879ac686c77e911014579725b3",
+      "start_line": 2726,
+      "end_line": 2728
     }
   },
   "authority": {
@@ -356,6 +363,10 @@
       {
         "sha": "df35b972e0e32b33603e6c8be6d2ba190d8b84ba",
         "scope": "Exact inert integrated local no-pull Docker rootfs/provenance proposal, ten QA paths vs 393679c, 11/11 embedded disarmed and active hashes read back; 28/28 pure exact-snippet assertions, full suite not run and mandatory before driver; zero candidate runs, execution approval required"
+      },
+      {
+        "sha": "3c46865af8a608cadd085d8c4480d229c9658ff4",
+        "scope": "Rootfs-only correction (three QA paths), exact snippets 2 methods/21 cases PASS in local mocked Python; full suite and host regression not run; inherited activation template/manifest pins stale; no workflows changed, no runs; fresh approval required."
       }
     ]
   },
