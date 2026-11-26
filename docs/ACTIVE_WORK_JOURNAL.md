@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | READY |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 58c64d7e6daab9fc15040847f38adadf61c60ac4 |
+| Observed starting HEAD | e851d40f8a155c796ed0f94149c6626e8eff10cb |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
-| Operation ID | C5-WHEEL-RECEIPT-DIAGNOSIS-ONCE-20261126 |
-| Operation state | RECONCILED: exact 0a637bd run 45753813079 SUCCESS, receipt-only retrieval and full replay PASS, six result rows/five verified inventories preserved; sixth wheel HTTP 200, 263382 bytes and SHA256 match, INSPECTION_REFUSED, deeper subreason discarded. Disarm 5ec0fe7 run 45753929661 SUCCESS, offline 139687970895 PASS, restricted retrieval 139687972408 SKIPPED. |
-| Intended files | New qa/c5_wheel_metadata/wheel_receipt_diagnosis.py and .github/workflows/c5-wheel-receipt-diagnosis.yml; exact one-use marker addition/removal; journal/handoff/ledger and structured diagnosis receipt. Existing actual wheel driver and adapter stay false. |
+| Operation ID | C5-WHEEL-DIAGNOSTIC-MISSING-PLAN-20261126 |
+| Operation state | PREPARED: versioned offline diagnostic receipt with allowlisted inspection reason, native wheel synthetic compatibility review (no acceptance broadening), exact remaining-only plan independently bound to historical diagnosis and original plan. Preserve all historical pinned modules. |
+| Intended files | New qa/c5_wheel_metadata/wheel_diagnostic_offline.py, wheel_missing_plan_20261126.json, test_wheel_diagnostic_offline.py and dedicated offline-only .github/workflows/c5-wheel-diagnostic-review.yml; journal/handoff/ledger. No existing workflow or historical pin changes. |
 | Approval | Receipt-only approval consumed/disarmed; sixteen total restricted approvals consumed/disarmed (six native, seven metadata, one synthetic transfer, one actual wheel attempt, one receipt-only retrieval). No additional retrieval or wheel acquisition authorized. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | None. Disarm CI reconciled. |
+| Pending runs | None issued; expect dedicated Ubuntu/Windows source-only fixture tests and CLI refusal. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
-| Recovery action | Next authorized source-only work: preserve bounded specific archive/notice refusal reason in future receipt without weakening validation, review native-wheel ZIP compatibility and synthetic regressions, design missing-only continuation preserving prior five results. Root subreason not recoverable from old receipt; fresh separately scoped approval needed before any new wheel GET. |
+| Recovery action | Verify exact CI and reconcile. No live acquisition, artifact retrieval, raw notice publication, installation or execution. Missing-only plan is not a live driver; prior inventory hashes preserved, raw notices still only in expiring artifact. Real sixth-wheel underlying error not recoverable. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
