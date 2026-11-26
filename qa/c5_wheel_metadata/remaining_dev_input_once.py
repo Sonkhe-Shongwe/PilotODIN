@@ -142,6 +142,45 @@ def select_pip(row, raw):
          and type(v["size"]) is int and 0 < v["size"] <= row.cap and PIP_URL.fullmatch(v["url"]), "PIP_IDENTITY")
     return replace(row, url=v["url"], exact=v["size"])
 
+def filename_projection(expected, q):
+    """Pure diagnostic categories only. Never grants redirect permission.
+
+    Call only with the bounded, validated query map from an original response.
+    Do not return any input values, raw header, path, signed query or parser error.
+    """
+    from email import policy
+    from email.message import EmailMessage
+
+    def classify(value):
+        if value in ("attachment; filename=" + expected, 'attachment; filename="' + expected + '"'):
+            return "LITERAL_MATCH"
+        if type(value) is not str or not 0 < len(value) <= 4096 or any(not 32 <= ord(c) <= 126 for c in value):
+            return "INVALID"
+        try:
+            msg = EmailMessage(policy=policy.default)
+            msg["Content-Disposition"] = value
+            h = msg["Content-Disposition"]
+            if h.defects:
+                return "INVALID"
+            params = dict(h.params)
+            if h.content_disposition != "attachment":
+                return "NOT_ATTACHMENT"
+            if "filename" not in params:
+                return "NO_FILENAME"
+            if params["filename"] != expected:
+                return "FILENAME_MISMATCH"
+            if set(params) != {"filename"}:
+                return "MATCH_EXTRA_PARAMETERS"
+            return "PARSED_MATCH"
+        except Exception:
+            return "INVALID"
+
+    return {
+        key: classify(q[key]) if key in q else "ABSENT"
+        for key in ("rscd", "response-content-disposition")
+    }
+
+
 def redirect(row, original, location):
     # Numeric asset IDs are independently confirmed in publisher metadata, not
     # inferred from the opaque UUID. Bind the redirect to the response to the
@@ -462,6 +501,39 @@ def self_test():
                 self.reply(wire(b"3\r\na",headers=(("Transfer-Encoding","chunked"),),length=False),row)
             self.assertLessEqual(self.t.body,4)
             self.assertEqual(self.t.body,sum(v["bytes"] for k,v in self.records if k=="REQUEST"))
+        def test_filename_projection(self):
+            expected=next(r.id for r in rows if r.asset)
+            for value, category in [
+                ("attachment; filename="+expected,"LITERAL_MATCH"),
+                ('attachment; filename="'+expected+'"',"LITERAL_MATCH"),
+                ("Attachment;Filename = "+expected,"PARSED_MATCH"),
+                ("attachment; filename*=UTF-8''"+expected,"PARSED_MATCH"),
+                ("attachment; filename="+expected+"; size=123","MATCH_EXTRA_PARAMETERS"),
+                ("attachment; filename=untrusted.zip","FILENAME_MISMATCH"),
+                ("attachment; filename="+expected+"; filename=untrusted.zip","INVALID"),
+                ("attachment","NO_FILENAME"),
+                ("inline; filename="+expected,"NOT_ATTACHMENT"),
+                ("attachment;\r\nfilename="+expected,"INVALID"),
+            ]:
+                with self.subTest(category=category):
+                    out=filename_projection(expected,{"rscd":value,"sig":"fixture-secret"})
+                    self.assertEqual(out,{"rscd":category,"response-content-disposition":"ABSENT"})
+                    self.assertNotIn(expected,str(out))
+                    self.assertNotIn("fixture-secret",str(out))
+                    self.assertNotIn("untrusted.zip",str(out))
+            self.assertEqual(filename_projection(expected,{}),{"rscd":"ABSENT","response-content-disposition":"ABSENT"})
+            self.assertEqual(filename_projection(expected,{"rscd":"attachment; filename="+expected,
+              "response-content-disposition":"attachment; filename=untrusted.zip"}),
+              {"rscd":"LITERAL_MATCH","response-content-disposition":"FILENAME_MISMATCH"})
+        def test_diagnostic_does_not_relax_redirect(self):
+            row=next(r for r in rows if r.asset)
+            prefix="https://release-assets.githubusercontent.com/github-production-release-asset/250077933/00000000-0000-0000-0000-000000000001?sig=fixture&se=fixture"
+            from urllib.parse import urlencode
+            for q in [{},{"rscd":"Attachment;Filename = "+row.id},{"rscd":"attachment; filename*=UTF-8''"+row.id},
+                      {"rscd":"attachment; filename="+row.id,"response-content-disposition":"attachment; filename="+row.id},
+                      {"rscd":"attachment; filename=untrusted.zip"}]:
+                with self.subTest(keys=sorted(q)),self.assertRaisesRegex(Refused,"REDIRECT_FILENAME"):
+                    redirect(row,row.url,prefix+("&"+urlencode(q) if q else ""))
         def test_disarmed(self):
             with self.assertRaisesRegex(Refused,"FRESH_APPROVAL_REQUIRED"): live_gate()
             with self.assertRaisesRegex(Refused,"OFFLINE_FIXTURE_ONLY"): Transport(Path(self.tmp.name),http.client.HTTPSConnection,lambda *_:None)
