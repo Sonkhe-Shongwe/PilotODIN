@@ -7,7 +7,7 @@ on:
 permissions: {}
 jobs:
   provenance-once:
-    if: ${{ true && github.event_name == 'push' && github.run_attempt == 1 && github.event.before == '32443bd10b61f96bdc0efe650f11dfacffda7124' && github.event.head_commit.message == 'C5-PORTABLE-DOCKER-REVIEWED-IMAGES-ONCE-20261126 owner approved finite reviewed images no-pull data-only operation' }}
+    if: ${{ false && github.event_name == 'push' && github.run_attempt == 1 && github.event.before == '32443bd10b61f96bdc0efe650f11dfacffda7124' && github.event.head_commit.message == 'C5-PORTABLE-DOCKER-REVIEWED-IMAGES-ONCE-20261126 owner approved finite reviewed images no-pull data-only operation' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
