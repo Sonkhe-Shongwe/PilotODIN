@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | READY |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 8e02a03575b1b1957368b0b4dfb907df11fe231d |
+| Observed starting HEAD | 429f629c6a7fa7779fa8ad22e6bbf1e9fced04e0 |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
-| Operation ID | C5-R2-FINAL-DISARMED-HOSTED-20261126 |
-| Operation state | RECONCILED: exact 1e8350e run 45763244014 SUCCESS; Ubuntu 139717960138 and Windows 139717960745 each 191 existing +16 new tests, eleven CLI refusals; collect 139717962021 and retrieve 139717962158 SKIPPED. Initial 0841e94 run 45763145780 SUCCESS; isolated-mode import gap corrected and final gate/mock protocols tested. ARMED=False, all 18 approvals consumed/disarmed. |
-| Intended files | qa/c5_wheel_metadata/wheel_hosted_final.py, test_wheel_hosted_final.py, .github/workflows/c5-wheel-hosted-final-review.yml, journal/handoff/spec/ledger. |
+| Operation ID | C5-R2-RESOURCE-MEASUREMENT-20261126 |
+| Operation state | PREPARED: representative inert final-driver resource measurements; near-cap stored archive, dense member inventory, near-cap notice batch and 63-row request count, scaled exact/one-byte-under refusals. No product or historical source changes. |
+| Intended files | qa/c5_wheel_metadata/benchmark_wheel_hosted_final.py, .github/workflows/c5-wheel-resource-review.yml, journal/handoff/spec/ledger. |
 | Approval | Routine source/synthetic CI only. All 18 restricted approvals consumed/disarmed; no actual wheels, retrieval, installation, owner tree or execution. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | None; exact final synthetic CI reconciled. |
+| Pending runs | None; dedicated Ubuntu/Windows synthetic measurement CI planned. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
-| Recovery action | Next complete representative bounded synthetic resource measurements and durable notice-retention plan, then final R2 readiness review of actual scope, exact approval provisioning and disarm/reconciliation. No further standalone infrastructure unless a concrete defect requires correction. Independently provisioned arm/child/driver/workflow expectations not configured or approved; actual marker absent, real jobs/upload disabled, no restricted requests, no actual artifact transfer. Fresh exact R3 approval only after readiness evidence. |
+| Recovery action | Fresh process per scenario; measure cumulative process RSS/Windows peak working set, elapsed phase time, logical scratch file peak and retained stage bytes; use existing final driver collection/export/replay, generated data only, no live seams. Assert exact accepted counts/digests, first-refusal and no evidence publication. No full 4 GiB expansion or owner 8 GB claims, no cap increases. Record exact CI results; durable retention and final proposal review next. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
