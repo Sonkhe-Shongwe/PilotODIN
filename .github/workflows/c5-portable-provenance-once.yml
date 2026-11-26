@@ -7,7 +7,7 @@ on:
 permissions: {}
 jobs:
   provenance-once:
-    if: ${{ false && github.event_name == 'push' && github.run_attempt == 1 && github.event.before == 'abe05e8e9ffafbf9716f6ee6cc79474b277b80d3' && github.event.head_commit.message == 'C5-PORTABLE-DOCKER-TERMINFO-POLICY-ONCE-20261126 owner approved exact finite Linux terminfo inventory policy no-pull data-only operation' }}
+    if: ${{ true && github.event_name == 'push' && github.run_attempt == 1 && github.event.before == 'b61faf69acbd8dee4d3c8f53d61918c9837a7d14' && github.event.head_commit.message == 'C5-PORTABLE-DOCKER-TERMINFO-POLICY-ONCE-20261127 owner approved exact finite Linux terminfo inventory policy no-pull data-only operation' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
@@ -26,7 +26,7 @@ jobs:
           test "$GITHUB_RUN_ATTEMPT" = 1
           /usr/bin/python3.12 -I -B -S - <<'PY'
           import os, pathlib
-          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261126'
+          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261127'
           p.mkdir(mode=0o700)
           PY
       - name: Stage portable_provenance_driver.py part 1
@@ -105,7 +105,7 @@ jobs:
               'ZXAubmVlZChwbGFuWyJzY2hlbWEiXSA9PSAxIGFuZAogICAgICAgICAgICAgIHBsYW5bImJvdW5kcyJd'
           )
           raw = base64.b64decode(encoded, validate=True)
-          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261126' / 'portable_provenance_driver.py'
+          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261127' / 'portable_provenance_driver.py'
           with p.open('xb') as out: out.write(raw)
           PY
       - name: Stage portable_provenance_driver.py part 2
@@ -184,7 +184,7 @@ jobs:
               'ICAgZ2hfcm93LCB3aW5fcm93LCBsaW5fcm93ID0gcGxhblsiYXJjaGl2ZXMiXQogICAgICAgICAgICBn'
           )
           raw = base64.b64decode(encoded, validate=True)
-          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261126' / 'portable_provenance_driver.py'
+          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261127' / 'portable_provenance_driver.py'
           if p.is_symlink() or not p.is_file() or p.stat().st_size != 6000: raise SystemExit('SOURCE_PART_ORDER')
           with p.open('ab') as out: out.write(raw)
           PY
@@ -264,7 +264,7 @@ jobs:
               'cmFyeSBleGNlcHRpb24gdGV4dC4KICAgICAgICBjb2RlID0gc3RyKGVycm9yKSBpZiB0eXBlKGVycm9y'
           )
           raw = base64.b64decode(encoded, validate=True)
-          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261126' / 'portable_provenance_driver.py'
+          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261127' / 'portable_provenance_driver.py'
           if p.is_symlink() or not p.is_file() or p.stat().st_size != 12000: raise SystemExit('SOURCE_PART_ORDER')
           with p.open('ab') as out: out.write(raw)
           PY
@@ -280,7 +280,7 @@ jobs:
               'MSkK'
           )
           raw = base64.b64decode(encoded, validate=True)
-          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261126' / 'portable_provenance_driver.py'
+          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261127' / 'portable_provenance_driver.py'
           if p.is_symlink() or not p.is_file() or p.stat().st_size != 18000: raise SystemExit('SOURCE_PART_ORDER')
           with p.open('ab') as out: out.write(raw)
           PY
@@ -360,7 +360,7 @@ jobs:
               'UklGSUVEIikKICAgICAgICBpZiByb2xlICE9ICJjYSIgYW5kIHJvbGUgIT0gInNuYXBweSI6CiAgICAg'
           )
           raw = base64.b64decode(encoded, validate=True)
-          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261126' / 'portable_provenance_host.py'
+          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261127' / 'portable_provenance_host.py'
           with p.open('xb') as out: out.write(raw)
           PY
       - name: Stage portable_provenance_host.py part 2
@@ -378,7 +378,7 @@ jobs:
               'SEFOR0VEIikK'
           )
           raw = base64.b64decode(encoded, validate=True)
-          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261126' / 'portable_provenance_host.py'
+          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261127' / 'portable_provenance_host.py'
           if p.is_symlink() or not p.is_file() or p.stat().st_size != 6000: raise SystemExit('SOURCE_PART_ORDER')
           with p.open('ab') as out: out.write(raw)
           PY
@@ -458,7 +458,7 @@ jobs:
               'IFtjaGFycCwgc2l6ZV90XQogICAgdmFsaWRhdGUucmVzdHlwZSA9IGN0eXBlcy5jX2ludAogICAgZGVj'
           )
           raw = base64.b64decode(encoded, validate=True)
-          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261126' / 'portable_provenance_preparation.py'
+          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261127' / 'portable_provenance_preparation.py'
           with p.open('xb') as out: out.write(raw)
           PY
       - name: Stage portable_provenance_preparation.py part 2
@@ -526,7 +526,7 @@ jobs:
               'CgppZiBfX25hbWVfXyA9PSAiX19tYWluX18iOgogICAgcmFpc2UgU3lzdGVtRXhpdCgiRElTQVJNRURfUFJFUEFSQVRJT05fT05MWSIpCg=='
           )
           raw = base64.b64decode(encoded, validate=True)
-          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261126' / 'portable_provenance_preparation.py'
+          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261127' / 'portable_provenance_preparation.py'
           if p.is_symlink() or not p.is_file() or p.stat().st_size != 6000: raise SystemExit('SOURCE_PART_ORDER')
           with p.open('ab') as out: out.write(raw)
           PY
@@ -606,7 +606,7 @@ jobs:
               'ICAgInAvcDEyLW0iOiAoKCJQL1AxMi1NIiwgInAvcHJpc20xMi1tIiksICgicC9wMTItbSIsICJwL3By'
           )
           raw = base64.b64decode(encoded, validate=True)
-          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261126' / 'portable_provenance_inspection.py'
+          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261127' / 'portable_provenance_inspection.py'
           with p.open('xb') as out: out.write(raw)
           PY
       - name: Stage portable_provenance_inspection.py part 2
@@ -685,7 +685,7 @@ jobs:
               'ZGlycyBvcgogICAgICAgICAgICAgICAgICAoY3VycmVudCBpbiByZWNvcmRzIGFuZCByZWNvcmRzW2N1'
           )
           raw = base64.b64decode(encoded, validate=True)
-          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261126' / 'portable_provenance_inspection.py'
+          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261127' / 'portable_provenance_inspection.py'
           if p.is_symlink() or not p.is_file() or p.stat().st_size != 6000: raise SystemExit('SOURCE_PART_ORDER')
           with p.open('ab') as out: out.write(raw)
           PY
@@ -765,7 +765,7 @@ jobs:
               'ICAgICAgICAgICAgICAgICBsaW5rYWdlW25hbWVdID0geyJzaGEyNTYiOiBoYXNobGliLnNoYTI1Nihl'
           )
           raw = base64.b64decode(encoded, validate=True)
-          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261126' / 'portable_provenance_inspection.py'
+          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261127' / 'portable_provenance_inspection.py'
           if p.is_symlink() or not p.is_file() or p.stat().st_size != 12000: raise SystemExit('SOURCE_PART_ORDER')
           with p.open('ab') as out: out.write(raw)
           PY
@@ -811,7 +811,7 @@ jobs:
               'ZWQpIDw9IDgzODg2MDgsICJSRUNFSVBUX0NPTVBSRVNTRURfQ0FQIikKICAgIHJldHVybiByYXcsIGNvbXByZXNzZWQK'
           )
           raw = base64.b64decode(encoded, validate=True)
-          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261126' / 'portable_provenance_inspection.py'
+          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261127' / 'portable_provenance_inspection.py'
           if p.is_symlink() or not p.is_file() or p.stat().st_size != 18000: raise SystemExit('SOURCE_PART_ORDER')
           with p.open('ab') as out: out.write(raw)
           PY
@@ -891,7 +891,7 @@ jobs:
               'dHJ5IiwgIjAiLCAiLS1tYXgtcmVkaXJzIiwgIjAiLAogICAgICAgICAgICAgICAgIi0tY29ubmVjdC10'
           )
           raw = base64.b64decode(encoded, validate=True)
-          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261126' / 'portable_provenance_transport.py'
+          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261127' / 'portable_provenance_transport.py'
           with p.open('xb') as out: out.write(raw)
           PY
       - name: Stage portable_provenance_transport.py part 2
@@ -970,7 +970,7 @@ jobs:
               'L2hvc3QvcGF0aC9maWxlbmFtZSBiZWZvcmUgZm9sbG93aW5nIG9uY2UuCiAgICAgICAgICAgIHVybCA9'
           )
           raw = base64.b64decode(encoded, validate=True)
-          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261126' / 'portable_provenance_transport.py'
+          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261127' / 'portable_provenance_transport.py'
           if p.is_symlink() or not p.is_file() or p.stat().st_size != 6000: raise SystemExit('SOURCE_PART_ORDER')
           with p.open('ab') as out: out.write(raw)
           PY
@@ -992,7 +992,7 @@ jobs:
               'LCAiLVMiLCBzdHIoZHJpdmVyKSwgIi0tb2ZmbGluZS1jaGlsZCIsCiAgICAgICAgICAgIG5hbWVzcGFjZV9pZCgpLCAqY2hpbGRfYXJnc10K'
           )
           raw = base64.b64decode(encoded, validate=True)
-          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261126' / 'portable_provenance_transport.py'
+          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261127' / 'portable_provenance_transport.py'
           if p.is_symlink() or not p.is_file() or p.stat().st_size != 12000: raise SystemExit('SOURCE_PART_ORDER')
           with p.open('ab') as out: out.write(raw)
           PY
@@ -1072,7 +1072,7 @@ jobs:
               'a2luZCI6ICJPQlNFUlZFRF9UUlVTVEVEX0hPU1RfTk9UX0lOREVQRU5ERU5UX0VYUEVDVEFUSU9OIn0K'
           )
           raw = base64.b64decode(encoded, validate=True)
-          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261126' / 'portable_provenance_rootfs.py'
+          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261127' / 'portable_provenance_rootfs.py'
           with p.open('xb') as out: out.write(raw)
           PY
       - name: Stage portable_provenance_rootfs.py part 2
@@ -1151,7 +1151,7 @@ jobs:
               'IGluIHNlbGYuZGlycyBhbmQgZGVzdCBub3QgaW4gc2VsZi5saW5rcywKICAgICAgICAgICAgICAgICAg'
           )
           raw = base64.b64decode(encoded, validate=True)
-          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261126' / 'portable_provenance_rootfs.py'
+          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261127' / 'portable_provenance_rootfs.py'
           if p.is_symlink() or not p.is_file() or p.stat().st_size != 6000: raise SystemExit('SOURCE_PART_ORDER')
           with p.open('ab') as out: out.write(raw)
           PY
@@ -1231,7 +1231,7 @@ jobs:
               'KSA8PSBNQVhfVEFSLCAiUk9PVEZTX0JPVU5EIikKICAgICAgICBwcmVwLm5lZWQoMCA8IHBhdGguc3Rh'
           )
           raw = base64.b64decode(encoded, validate=True)
-          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261126' / 'portable_provenance_rootfs.py'
+          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261127' / 'portable_provenance_rootfs.py'
           if p.is_symlink() or not p.is_file() or p.stat().st_size != 12000: raise SystemExit('SOURCE_PART_ORDER')
           with p.open('ab') as out: out.write(raw)
           PY
@@ -1266,7 +1266,7 @@ jobs:
               'X0hPU1RfREVSSVZFRF9ST09URlNfTk9UX0lOREVQRU5ERU5UX1BST1ZFTkFOQ0UifQo='
           )
           raw = base64.b64decode(encoded, validate=True)
-          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261126' / 'portable_provenance_rootfs.py'
+          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261127' / 'portable_provenance_rootfs.py'
           if p.is_symlink() or not p.is_file() or p.stat().st_size != 18000: raise SystemExit('SOURCE_PART_ORDER')
           with p.open('ab') as out: out.write(raw)
           PY
@@ -1346,7 +1346,7 @@ jobs:
               'aCkpID09IHNlbGYuZW5naW5lW3JvbGVdWyJwYXRoIl0gYW5kCiAgICAgICAgICAgICAgICAgICAgICBm'
           )
           raw = base64.b64decode(encoded, validate=True)
-          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261126' / 'portable_provenance_docker.py'
+          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261127' / 'portable_provenance_docker.py'
           with p.open('xb') as out: out.write(raw)
           PY
       - name: Stage portable_provenance_docker.py part 2
@@ -1425,7 +1425,7 @@ jobs:
               'ICAgICAgICAgICAgICAyNTYsIDE4MCkuZGVjb2RlKCJhc2NpaSIpLnN0cmlwKCkKICAgICAgICBwcmVw'
           )
           raw = base64.b64decode(encoded, validate=True)
-          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261126' / 'portable_provenance_docker.py'
+          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261127' / 'portable_provenance_docker.py'
           if p.is_symlink() or not p.is_file() or p.stat().st_size != 6000: raise SystemExit('SOURCE_PART_ORDER')
           with p.open('ab') as out: out.write(raw)
           PY
@@ -1505,7 +1505,7 @@ jobs:
               'bm90IGluIHN0cihzdGFnZSkgYW5kIHN0YWdlLnBhcmVudCA9PSBzZWxmLnNjcmF0Y2gsICJET0NLRVJf'
           )
           raw = base64.b64decode(encoded, validate=True)
-          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261126' / 'portable_provenance_docker.py'
+          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261127' / 'portable_provenance_docker.py'
           if p.is_symlink() or not p.is_file() or p.stat().st_size != 12000: raise SystemExit('SOURCE_PART_ORDER')
           with p.open('ab') as out: out.write(raw)
           PY
@@ -1585,7 +1585,7 @@ jobs:
               'ICAgICAgIkRPQ0tFUl9DTEVBTlVQIikKICAgICAgICByZXR1cm4geyJhbmNob3IiOiBBTkNIT1IsICJl'
           )
           raw = base64.b64decode(encoded, validate=True)
-          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261126' / 'portable_provenance_docker.py'
+          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261127' / 'portable_provenance_docker.py'
           if p.is_symlink() or not p.is_file() or p.stat().st_size != 18000: raise SystemExit('SOURCE_PART_ORDER')
           with p.open('ab') as out: out.write(raw)
           PY
@@ -1604,7 +1604,7 @@ jobs:
               'T05MWV9OT05ST09UX0NBUF9EUk9QX0FMTF9ERUZBVUxUX1NFQ0NPTVBfQVBQQVJNT1IifQo='
           )
           raw = base64.b64decode(encoded, validate=True)
-          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261126' / 'portable_provenance_docker.py'
+          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261127' / 'portable_provenance_docker.py'
           if p.is_symlink() or not p.is_file() or p.stat().st_size != 24000: raise SystemExit('SOURCE_PART_ORDER')
           with p.open('ab') as out: out.write(raw)
           PY
@@ -1684,7 +1684,7 @@ jobs:
               'bW9kZSBpbiAoInJlYWRlbGYtaGVscCIsICJsbHZtX3JlYWRvYmotaGVscCIsCiAgICAgICAgICAgICAg'
           )
           raw = base64.b64decode(encoded, validate=True)
-          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261126' / 'portable_provenance_docker_child.py'
+          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261127' / 'portable_provenance_docker_child.py'
           with p.open('xb') as out: out.write(raw)
           PY
       - name: Stage portable_provenance_docker_child.py part 2
@@ -1742,7 +1742,7 @@ jobs:
               'RXhpdCgxKQo='
           )
           raw = base64.b64decode(encoded, validate=True)
-          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261126' / 'portable_provenance_docker_child.py'
+          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261127' / 'portable_provenance_docker_child.py'
           if p.is_symlink() or not p.is_file() or p.stat().st_size != 6000: raise SystemExit('SOURCE_PART_ORDER')
           with p.open('ab') as out: out.write(raw)
           PY
@@ -1822,7 +1822,7 @@ jobs:
               'ICAidmVyaWZpZXIiOiB7CiAgICAidmVyc2lvbiI6ICIyLjEwNC4wIiwKICAgICJzb3VyY2VfY29tbWl0'
           )
           raw = base64.b64decode(encoded, validate=True)
-          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261126' / 'portable_provenance_plan_20261126.json'
+          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261127' / 'portable_provenance_plan_20261126.json'
           with p.open('xb') as out: out.write(raw)
           PY
       - name: Stage portable_provenance_plan_20261126.json part 2
@@ -1901,7 +1901,7 @@ jobs:
               'Y3R1cmUiOiAiWDY0IiwKICAgICJpZGVudGl0eSI6ICJPQlNFUlZFRF9OT1RfSU5ERVBFTkRFTlRfRVhQ'
           )
           raw = base64.b64decode(encoded, validate=True)
-          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261126' / 'portable_provenance_plan_20261126.json'
+          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261127' / 'portable_provenance_plan_20261126.json'
           if p.is_symlink() or not p.is_file() or p.stat().st_size != 6000: raise SystemExit('SOURCE_PART_ORDER')
           with p.open('ab') as out: out.write(raw)
           PY
@@ -1927,7 +1927,7 @@ jobs:
               'Tk9fRkFMTEJBQ0siCiAgfQp9Cg=='
           )
           raw = base64.b64decode(encoded, validate=True)
-          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261126' / 'portable_provenance_plan_20261126.json'
+          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261127' / 'portable_provenance_plan_20261126.json'
           if p.is_symlink() or not p.is_file() or p.stat().st_size != 12000: raise SystemExit('SOURCE_PART_ORDER')
           with p.open('ab') as out: out.write(raw)
           PY
@@ -1957,7 +1957,7 @@ jobs:
               'c29jayIsCiAgImRvY2tlcl9yZWdpc3RyeV9nZXRzIjogMAp9Cg=='
           )
           raw = base64.b64decode(encoded, validate=True)
-          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261126' / 'portable_provenance_disposition.json'
+          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261127' / 'portable_provenance_disposition.json'
           with p.open('xb') as out: out.write(raw)
           PY
       - name: Stage test_portable_provenance_docker_pure.py part 1
@@ -2036,7 +2036,7 @@ jobs:
               'XSwgMG80NDQpCiAgICAgICAgICAgIHNlbGYuYXNzZXJ0RXF1YWwob2JqLmZpbGVzW3BhdGhdWyJieXRl'
           )
           raw = base64.b64decode(encoded, validate=True)
-          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261126' / 'test_portable_provenance_docker_pure.py'
+          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261127' / 'test_portable_provenance_docker_pure.py'
           with p.open('xb') as out: out.write(raw)
           PY
       - name: Stage test_portable_provenance_docker_pure.py part 2
@@ -2115,7 +2115,7 @@ jobs:
               'LCBJbWFnZVZlcnNpb249ZXhwZWN0ZWRbMF0sIFJVTk5FUl9FTlZJUk9OTUVOVD0ic2VsZi1ob3N0ZWQi'
           )
           raw = base64.b64decode(encoded, validate=True)
-          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261126' / 'test_portable_provenance_docker_pure.py'
+          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261127' / 'test_portable_provenance_docker_pure.py'
           if p.is_symlink() or not p.is_file() or p.stat().st_size != 6000: raise SystemExit('SOURCE_PART_ORDER')
           with p.open('ab') as out: out.write(raw)
           PY
@@ -2195,7 +2195,7 @@ jobs:
               'LnNlYXJjaF9kaXJzKFB1cmVQb3NpeFBhdGgoIi91c3IvbGliL2xsdm0tMTgvYmluIiksCiAgICAgICAg'
           )
           raw = base64.b64decode(encoded, validate=True)
-          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261126' / 'test_portable_provenance_docker_pure.py'
+          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261127' / 'test_portable_provenance_docker_pure.py'
           if p.is_symlink() or not p.is_file() or p.stat().st_size != 12000: raise SystemExit('SOURCE_PART_ORDER')
           with p.open('ab') as out: out.write(raw)
           PY
@@ -2275,7 +2275,7 @@ jobs:
               'dWVFcnJvciwgIl5NRU1CRVJfQ0FTRV9DT0xMSVNJT04kIik6CiAgICAgICAgICAgICAgICAgICAgICAg'
           )
           raw = base64.b64decode(encoded, validate=True)
-          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261126' / 'test_portable_provenance_docker_pure.py'
+          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261127' / 'test_portable_provenance_docker_pure.py'
           if p.is_symlink() or not p.is_file() or p.stat().st_size != 18000: raise SystemExit('SOURCE_PART_ORDER')
           with p.open('ab') as out: out.write(raw)
           PY
@@ -2355,7 +2355,7 @@ jobs:
               'b290c3RyYXAiXVsicmVnaXN0cnlfZ2V0cyJdLCAwKQogICAgICAgIHNlbGYuYXNzZXJ0RXF1YWwocGxh'
           )
           raw = base64.b64decode(encoded, validate=True)
-          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261126' / 'test_portable_provenance_docker_pure.py'
+          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261127' / 'test_portable_provenance_docker_pure.py'
           if p.is_symlink() or not p.is_file() or p.stat().st_size != 24000: raise SystemExit('SOURCE_PART_ORDER')
           with p.open('ab') as out: out.write(raw)
           PY
@@ -2377,7 +2377,7 @@ jobs:
               'UkVBRE9OTFkpCgoKaWYgX19uYW1lX18gPT0gIl9fbWFpbl9fIjoKICAgIHVuaXR0ZXN0Lm1haW4oKQo='
           )
           raw = base64.b64decode(encoded, validate=True)
-          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261126' / 'test_portable_provenance_docker_pure.py'
+          p = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261127' / 'test_portable_provenance_docker_pure.py'
           if p.is_symlink() or not p.is_file() or p.stat().st_size != 30000: raise SystemExit('SOURCE_PART_ORDER')
           with p.open('ab') as out: out.write(raw)
           PY
@@ -2387,7 +2387,7 @@ jobs:
           set -euo pipefail
           /usr/bin/python3.12 -I -B -S - <<'PY'
           import hashlib, os, pathlib, sys
-          root = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261126'
+          root = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261127'
           expected = {
               'portable_provenance_driver.py': '1a8e0372013f9fa7f68fce7bee5465699eea11b43fa49339d03c88a3da8bbce8',
               'portable_provenance_host.py': '7a8d6afcd615ae957e938a0c0fb4e5808c817c20390cd61658d1cf7d25e7c660',
@@ -2413,7 +2413,7 @@ jobs:
           set -euo pipefail
           /usr/bin/python3.12 -I -B -S - <<'PY'
           import hashlib, os, pathlib, sys
-          root = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261126'
+          root = pathlib.Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'c5-portable-docker-terminfo-policy-once-20261127'
           disarmed = {
               'portable_provenance_driver.py': '1a8e0372013f9fa7f68fce7bee5465699eea11b43fa49339d03c88a3da8bbce8',
               'portable_provenance_host.py': '7a8d6afcd615ae957e938a0c0fb4e5808c817c20390cd61658d1cf7d25e7c660',
