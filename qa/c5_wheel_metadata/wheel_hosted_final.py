@@ -28,7 +28,7 @@ import zipfile
 import zlib
 
 ARMED=False
-DISCOVERY_ARMED=True
+DISCOVERY_ARMED=False
 # No public raw-notice disclosure decision has been approved or pinned.
 PUBLIC_REVIEW_SHA256=None
 if __name__=='__main__':
