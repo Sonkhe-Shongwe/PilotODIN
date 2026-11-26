@@ -419,6 +419,131 @@ def verify_generation(path, manifest_sha, rows, plan_blob, *, scope, caps, bindi
     return m
 
 
+
+# Discovery has a separate, deliberately non-acceptance evidence format.
+# No CLI or workflow job can activate it in this revision.
+DISCOVERY_LIMIT=8*1024*1024
+DISCOVERY_SCOPE='PUBLIC_DISCOVERY_ONLY_V1'
+
+def _path_digest(path):
+    return w.sha(path.encode('utf-8'))
+
+def verify_discovery(raw,expected_sha,rows,plan_blob,*,bindings,caps,scope):
+    """Independent structural replay; not independent replay of omitted bytes."""
+    rows,bindings,caps,policy_sha=prepare(rows,plan_blob,bindings,caps,scope)
+    need(type(raw) is bytes and 0<len(raw)<=DISCOVERY_LIMIT
+         and n.digest(expected_sha) and w.sha(raw)==expected_sha,'DISCOVERY_IDENTITY')
+    doc=_json(raw)
+    need(type(doc) is dict and set(doc)=={'schema_version','scope','input_scope','plan_blob',
+         'rows_sha256','policy_sha256','caps','results','status','production_ready',
+         'license_reviewed','raw_replay_available'} and n.canonical(doc)==raw
+         and type(doc['schema_version']) is int and doc['schema_version']==1
+         and doc['scope']==DISCOVERY_SCOPE and doc['input_scope']==scope
+         and doc['plan_blob']==plan_blob and doc['rows_sha256']==w.sha(n.canonical(rows))
+         and doc['policy_sha256']==policy_sha and n.canonical(doc['caps'])==n.canonical(caps)
+         and doc['production_ready'] is False and doc['license_reviewed'] is False
+         and doc['raw_replay_available'] is False,'DISCOVERY_SCHEMA')
+    results=doc['results']
+    need(type(results) is list and 1<=len(results)<=len(rows),'DISCOVERY_COUNTS')
+    total=expanded=notice=0
+    stopped=False
+    for i,(item,row) in enumerate(zip(results,rows),1):
+        need(not stopped and type(item) is dict and set(item)=={
+             'sequence','filename','http_status','received_bytes','received_sha256',
+             'status','reason','inspection_reason','expanded_bytes','notices','evidence_sha256'}
+             and type(item['sequence']) is int and item['sequence']==i
+             and item['filename']==row['filename']
+             and n.bounded_int(item['received_bytes'],0,row['bytes'])
+             and n.digest(item['received_sha256'])
+             and (item['http_status'] is None or n.bounded_int(item['http_status'],100,599)),
+             'DISCOVERY_RESULT')
+        total+=item['received_bytes']
+        if item['received_bytes']==0:
+            need(item['received_sha256']==w.sha(b''),'DISCOVERY_RESULT')
+        if item['status']=='INSPECTED':
+            need(item['reason'] is None and item['inspection_reason'] is None
+                 and item['http_status']==200 and item['received_bytes']==row['bytes']
+                 and item['received_sha256']==row['sha256'] and n.digest(item['evidence_sha256'])
+                 and n.bounded_int(item['expanded_bytes'],0,caps['expanded']),
+                 'DISCOVERY_RESULT')
+            expanded+=item['expanded_bytes']
+            notices=item['notices']
+            need(type(notices) is list and len(notices)<=w.MAX_MEMBERS,'DISCOVERY_NOTICES')
+            ids=[]
+            subtotal=0
+            for entry in notices:
+                need(type(entry) is dict and set(entry)=={'path_sha256','bytes','sha256'}
+                     and n.digest(entry['path_sha256']) and n.digest(entry['sha256'])
+                     and n.bounded_int(entry['bytes'],0,w.MAX_NOTICE),'DISCOVERY_NOTICE')
+                ids.append(entry['path_sha256']);subtotal+=entry['bytes']
+            need(ids==sorted(set(ids)) and subtotal<=item['expanded_bytes'],'DISCOVERY_NOTICES')
+            notice+=subtotal
+            bound=bindings[row['filename']]
+            prefix='-'.join(row['filename'][:-4].split('-')[:2])+'.dist-info/'
+            modern=tuple(map(int,bound['metadata_version'].split('.')))>=(2,4)
+            for path in bound['license_files']:
+                modern_path=_path_digest(prefix+'licenses/'+path)
+                legacy_path=_path_digest(prefix+path)
+                need((modern_path in ids and legacy_path not in ids) if modern
+                     else len({modern_path,legacy_path}&set(ids))==1,'DISCOVERY_DECLARED_PATH')
+        else:
+            need(item['status']=='REFUSED' and type(item['reason']) is str
+                 and item['reason'] in FAILURES and item['evidence_sha256'] is None
+                 and item['expanded_bytes'] is None and item['notices']==[],
+                 'DISCOVERY_RESULT')
+            if item['reason']=='INSPECTION_REFUSED':
+                need(item['inspection_reason'] in INSPECTION_REASONS
+                     and item['http_status']==200 and item['received_bytes']==row['bytes']
+                     and item['received_sha256']==row['sha256'],'DISCOVERY_RESULT')
+            else:
+                need(item['inspection_reason'] is None,'DISCOVERY_RESULT')
+            stopped=True
+    need(total<=caps['body'] and expanded<=caps['expanded'] and notice<=caps['notice'],
+         'DISCOVERY_BUDGET')
+    need((stopped and doc['status']=='DISCOVERY_REFUSED')
+         or (not stopped and len(results)==len(rows) and doc['status']=='DISCOVERY_COMPLETE'),
+         'DISCOVERY_SETTLEMENT')
+    return doc
+
+def discover_fixture(rows,bindings,caps,scope,plan_blob,replay,deadline,parent):
+    """Inert hosted-shape rehearsal only. No live transport or artifact output.
+
+    Raw intermediate evidence is confined to a fresh disposable generation.
+    Only the whitelisted projection leaves it; no raw path or bundle returned.
+    """
+    need(type(replay) is a.Replay,'DISCOVERY_FIXTURE_ONLY')
+    rows,bindings,caps,policy_sha=prepare(rows,plan_blob,bindings,caps,scope)
+    with tempfile.TemporaryDirectory(dir=parent) as tmp:
+        path,sha=_collect(rows,plan_blob,bindings,caps,scope,replay.get,deadline,Path(tmp))
+        manifest=verify_generation(path,sha,rows,plan_blob,scope=scope,caps=caps,bindings=bindings)
+        filemap={x['name']:x for x in manifest['files']}
+        results=[]
+        for i,row in enumerate(rows[:manifest['attempted_count']],1):
+            result=parse(read_bounded(path/f'request-{i:03d}-result.json',MAX_RECORD))
+            item={k:result[k] for k in ('sequence','http_status','received_bytes',
+                                       'received_sha256','reason','inspection_reason')}
+            item.update(filename=row['filename'],status='REFUSED',expanded_bytes=None,
+                        notices=[],evidence_sha256=None)
+            if result['status']=='VERIFIED':
+                ident=filemap[result['evidence']]
+                evidence=read_bounded(path/ident['name'],n.MAX_DOCUMENT)
+                receipt=p.verify_evidence(evidence,ident['sha256'],row,plan_blob,bindings[row['filename']])
+                item.update(status='INSPECTED',expanded_bytes=receipt['expanded_bytes'],
+                            evidence_sha256=ident['sha256'],
+                            notices=sorted([{'path_sha256':_path_digest(x['path']),
+                                             'bytes':x['bytes'],'sha256':x['sha256']}
+                                            for x in receipt['notices']],key=lambda x:x['path_sha256']))
+            results.append(item)
+        raw=n.canonical({'schema_version':1,'scope':DISCOVERY_SCOPE,'input_scope':scope,
+                        'plan_blob':plan_blob,'rows_sha256':w.sha(n.canonical(rows)),
+                        'policy_sha256':policy_sha,'caps':caps,'results':results,
+                        'status':'DISCOVERY_COMPLETE' if manifest['verified_count']==len(rows)
+                        else 'DISCOVERY_REFUSED','production_ready':False,
+                        'license_reviewed':False,'raw_replay_available':False})
+        digest=w.sha(raw)
+        verify_discovery(raw,digest,rows,plan_blob,bindings=bindings,caps=caps,scope=scope)
+    return raw,digest
+
 def artifact_record(run,source,bundle,rows,plan_blob,*,bindings,caps,scope):
     rows,bindings,caps,policy_sha=prepare(rows,plan_blob,bindings,caps,scope)
     need(len(rows)<=63,'REMAINING_COUNT')

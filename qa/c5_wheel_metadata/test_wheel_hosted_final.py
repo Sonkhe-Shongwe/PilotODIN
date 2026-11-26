@@ -272,4 +272,61 @@ class Tests(unittest.TestCase):
                 '12345','1'*40,public_review=self.public_pin(doc)))
             export.assert_not_called()
 
+
+    def discovery(self):
+        return f.discover_fixture(self.rows,self.bindings,self.caps,f.FIXTURE_SCOPE,'fixture',
+                                  a.Replay({self.rows[0]['url']:wire(self.raw)}),nullcontext,self.parent)
+    def verify_discovery(self,raw,sha):
+        return f.verify_discovery(raw,sha,self.rows,'fixture',bindings=self.bindings,
+                                  caps=self.caps,scope=f.FIXTURE_SCOPE)
+    def test_discovery_projection_and_cleanup(self):
+        raw,sha=self.discovery();doc=self.verify_discovery(raw,sha)
+        self.assertEqual(doc['status'],'DISCOVERY_COMPLETE')
+        self.assertFalse(doc['raw_replay_available']);self.assertFalse(doc['production_ready'])
+        self.assertTrue(doc['results'][0]['notices'])
+        self.assertEqual(list(self.parent.iterdir()),[])
+        path,ident,_=self.disclosure_fixture()
+        receipt=json.loads((path/'wheel-001-evidence.json').read_bytes())['receipt']
+        for notice in receipt['notices']:
+            self.assertNotIn(notice['path'].encode(),raw)
+            self.assertIn(f._path_digest(notice['path']).encode(),raw)
+        self.assertNotIn(b'notice_payloads',raw)
+        self.assertNotIn(b'base64',raw)
+    def test_discovery_bad_digest(self):
+        raw,_=self.discovery()
+        self.deny('DISCOVERY_IDENTITY',lambda:self.verify_discovery(raw,'0'*64))
+    def test_discovery_no_raw_fields_or_acceptance_upgrade(self):
+        raw,_=self.discovery();doc=json.loads(raw)
+        for changed in ({**doc,'production_ready':True},{**doc,'raw_replay_available':True},
+                        {**doc,'license_reviewed':True},{**doc,'notice_payloads':[]}):
+            data=n.canonical(changed)
+            self.deny('DISCOVERY_SCHEMA',lambda:self.verify_discovery(data,w.sha(data)))
+    def test_discovery_missing_declared_path(self):
+        raw,_=self.discovery();doc=json.loads(raw);doc['results'][0]['notices']=[]
+        data=n.canonical(doc)
+        self.deny('DISCOVERY_DECLARED_PATH',lambda:self.verify_discovery(data,w.sha(data)))
+    def test_discovery_notice_extra_field(self):
+        raw,_=self.discovery();doc=json.loads(raw);doc['results'][0]['notices'][0]['path']='hidden'
+        data=n.canonical(doc)
+        self.deny('DISCOVERY_NOTICE',lambda:self.verify_discovery(data,w.sha(data)))
+    def test_discovery_refusal_and_exact_hosted_plan(self):
+        rows,bindings,caps=c.remaining_inputs()
+        replay=a.Replay({rows[0]['url']:b'HTTP/1.1 503 Unavailable\r\nContent-Length: 0\r\n\r\n'})
+        raw,sha=f.discover_fixture(rows,bindings,caps,f.HOSTED_SCOPE,f.diagnostic.MISSING_PLAN_BLOB,
+                                   replay,nullcontext,self.parent)
+        doc=f.verify_discovery(raw,sha,rows,f.diagnostic.MISSING_PLAN_BLOB,
+                               bindings=bindings,caps=caps,scope=f.HOSTED_SCOPE)
+        self.assertEqual(doc['status'],'DISCOVERY_REFUSED')
+        self.assertEqual(len(replay.requests),1);self.assertEqual(len(doc['results']),1)
+        self.assertEqual(list(self.parent.iterdir()),[])
+    def test_discovery_rejects_nonfixture_transport(self):
+        transport=Mock()
+        self.deny('DISCOVERY_FIXTURE_ONLY',lambda:f.discover_fixture(
+            self.rows,self.bindings,self.caps,f.FIXTURE_SCOPE,'fixture',transport,nullcontext,self.parent))
+        transport.assert_not_called();self.assertEqual(list(self.parent.iterdir()),[])
+    def test_discovery_limit_no_output(self):
+        with patch.object(f,'DISCOVERY_LIMIT',1):
+            self.deny('DISCOVERY_IDENTITY',self.discovery)
+        self.assertEqual(list(self.parent.iterdir()),[])
+
 if __name__=='__main__':unittest.main(verbosity=2)
