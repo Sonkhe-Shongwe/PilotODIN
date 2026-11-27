@@ -1,0 +1,1 @@
+Owner approved one-time Ubuntu metadata retrieval and transaction review: 2 HTTPS GETs, 16.5 MiB, five minutes, disposable GitHub Ubuntu runner, no package installation. Operation C5-CD10-UBUNTU-METADATA-ONCE-20261127. No replay.
