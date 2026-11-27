@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-CD09-INSPECTION-SCOPE-20261127",
-    "parent_sha": "f0e0bde702417aa226bb44c34fc8de9a892cd4c0",
-    "previous_snapshot_sha": "f0e0bde702417aa226bb44c34fc8de9a892cd4c0",
-    "scope": "Exact retained Certifi notice reconciliation, narrowed inspection-only acquisition projection and standard-tool transport contract.",
+    "operation_id": "C5-CD09-INSPECTION-CORE-20261127",
+    "parent_sha": "3090a43adc44ca65dbcb43911d1a5f41bfc407cc",
+    "previous_snapshot_sha": "3090a43adc44ca65dbcb43911d1a5f41bfc407cc",
+    "scope": "Disarmed inspection-only standard-library core and local synthetic test source; exact scope projection, no execution.",
     "state": "RECONCILED",
     "receipt": {
-      "path": "docs/C5_CD09_INSPECTION_SCOPE_2026-11-27.md",
-      "anchor": "pilotodin--c-d09-inspection-only-scope-and-transport-preparation",
-      "blob_sha": "2a5c38752c3db77b45e59799198513916836b250",
+      "path": "docs/C5_CD09_INSPECTION_CORE_2026-11-27.md",
+      "anchor": "pilotodin--c-d09-disarmed-inspection-core",
+      "blob_sha": "b4ccefc7d7709c272bcebb1da8d240db55047e21",
       "start_line": 1,
-      "end_line": 23
+      "end_line": 17
     }
   },
   "product": {
@@ -119,14 +119,21 @@
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
     "status": "BLOCKED",
     "scope": "C-D08 development reproducibility/build safety as revised by C-D09 limited managed-development evidence method; D native and P8 release boundaries unchanged.",
-    "blocker": "C-D09 PDFium actual applicable native/component terms and linkage remain open; inspection-only scope narrowed to 42 rows, exact disarmed transport/inspector implementation and source/runner review not yet complete.",
-    "next_action": "Prepare one minimal disarmed inspection-only adaptation of reviewed curl transport and bounded static ZIP/TAR/PE/ELF inspection, using exact 42-row projection in new receipt. Verify synthetic refusal cases and exact source/runner/tool rights and caps before fresh bounded approval. No Certifi inspection re-acquisition, no identity-only acquisition, no install/import/load, no legacy collector replay. Preserve original Stage A/B, disarmed PDFium overlay and final use/compatibility gates.",
+    "blocker": "Inspection-only pure core prepared and 13 synthetic methods pass; actual applicable component/use facts, strict ZIP review, exact live adapter, bounded native member staging/tool output/receipt processing and runner/tool review remain unproven.",
+    "next_action": "Complete one minimal disarmed inspection-only adapter atop exact tested core: positive pinned Python projection, strict ZIP structural review, exclusive scratch, bounded transfer and native staging, bounded static tool process capture/parse and aggregate refusal receipts; test synthetic negative cases, exact runner/tool rights/source and caps. No execution or activation without fresh exact approval; no Certifi re-acquisition, no install/import/load, no legacy collector replay. Preserve Stage A/B, disarmed PDFium overlay and final use/compatibility gates.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "Complete applicable rights and static linkage, conditional exact PDFium source integration and final managed source-test candidate; explicit bounded execution permission, no owner/native/installer.",
       "Run authorised exact Stage A/B and consolidated Windows/Linux development regressions, standalone Rust and browser-dev, final checklist audit; C5 closure only on evidence. D/G2 and phase gates unchanged."
     ],
     "read": [
+      {
+        "path": "docs/C5_CD09_INSPECTION_CORE_2026-11-27.md",
+        "anchor": "pilotodin--c-d09-disarmed-inspection-core",
+        "blob_sha": "b4ccefc7d7709c272bcebb1da8d240db55047e21",
+        "start_line": 1,
+        "end_line": 17
+      },
       {
         "path": "docs/C5_CD09_INSPECTION_SCOPE_2026-11-27.md",
         "anchor": "pilotodin--c-d09-inspection-only-scope-and-transport-preparation",
@@ -193,17 +200,17 @@
     ]
   },
   "operation": {
-    "id": "C5-CD09-INSPECTION-SCOPE-20261127",
+    "id": "C5-CD09-INSPECTION-CORE-20261127",
     "state": "RECONCILED",
-    "starting_sha": "f0e0bde702417aa226bb44c34fc8de9a892cd4c0",
-    "outcome": "Certifi exact 989-byte notice/source SHA256 and Git blob match; inspection-only upper bound 42 unique GETs/214328914 bytes; standard-tool transport/inspection contract drafted. No execution, source integration or score.",
+    "starting_sha": "3090a43adc44ca65dbcb43911d1a5f41bfc407cc",
+    "outcome": "Exact local 13/13 synthetic tests pass; two Git blob identities match tested bytes; 42-row connector projection matches. No live adapter, native staging/process execution, CI, acquisition or score.",
     "reconcile_before_retry": false,
     "receipt": {
-      "path": "docs/C5_CD09_INSPECTION_SCOPE_2026-11-27.md",
-      "anchor": "pilotodin--c-d09-inspection-only-scope-and-transport-preparation",
-      "blob_sha": "2a5c38752c3db77b45e59799198513916836b250",
+      "path": "docs/C5_CD09_INSPECTION_CORE_2026-11-27.md",
+      "anchor": "pilotodin--c-d09-disarmed-inspection-core",
+      "blob_sha": "b4ccefc7d7709c272bcebb1da8d240db55047e21",
       "start_line": 1,
-      "end_line": 23
+      "end_line": 17
     }
   },
   "authority": {
