@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-LINUX-TWO-WHEEL-INSPECTION-20261127",
-    "parent_sha": "a8e894b9963ebe2f84f6c6ae746f962af6022d52",
-    "previous_snapshot_sha": "a8e894b9963ebe2f84f6c6ae746f962af6022d52",
-    "scope": "Reconcile exact two-wheel local download attempt; zero bytes, DNS failure, no inspection or acceptance.",
+    "operation_id": "C5-LINUX-ACTUAL-WHEEL-INSPECTION-20261127",
+    "parent_sha": "e7c7d3fcb102f64db3ea6b8a160581cf0374b6b2",
+    "previous_snapshot_sha": "e7c7d3fcb102f64db3ea6b8a160581cf0374b6b2",
+    "scope": "Owner-uploaded two-wheel static inspection; actual hash/notice/native/SBOM and linkage evidence, no execution or acceptance change.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--exact-linux-two-wheel-download-attempt-blocked-by-dns",
-      "blob_sha": "d5769bcfd9dc3a7ef1ad953942015870b3921fc2",
-      "start_line": 221,
-      "end_line": 225
+      "anchor": "27-november--actual-uploaded-linux-pillow-and-pdfium-inspection",
+      "blob_sha": "acdf305892cd26b0427217ead269fce2674f1289",
+      "start_line": 227,
+      "end_line": 235
     }
   },
   "product": {
@@ -119,8 +119,8 @@
     "id": "C5-LINUX-FIRST-20261127",
     "status": "BLOCKED",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "Exact approved Pillow and PDFium download attempts both failed DNS resolution with zero bytes. Actual files unavailable. No actual security/licence/linkage review completed.",
-    "next_action": "Obtain owner-uploaded two exact pinned public Linux wheels and perform local hash-first read-only security/licensing inspection; no install or execution. No automated transfer replay or unrelated preparation. Linux-first C5 allocation remains, full relevant verification and Windows before D1 required.",
+    "blocker": "Actual Pillow Linux wheel contains linked Brotli 1.2.0 affected version, no corrected official release observed. PDFium identity, notices and direct ELF linkage verified; static Brotli patch status and applicable use disposition unresolved. Other pre-use facts remain.",
+    "next_action": "Resolve exact PDFium static Brotli patch applicability from publisher build and PDFium/Chromium source evidence, and applicable use rights. Then existing Pillow-free Linux Stage A with remaining pip/smoke pre-use facts and exact approval. Full C5 requires corrected official Pillow release or reviewed reproducible patched upstream-source build; no insecure wheel consumption, unrelated fixes, duplicate identity acquisition or generic verifier. Windows mandatory before D1; no phase advance.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
@@ -130,15 +130,15 @@
     "read": [
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "27-november--exact-linux-two-wheel-download-attempt-blocked-by-dns",
-        "blob_sha": "d5769bcfd9dc3a7ef1ad953942015870b3921fc2",
-        "start_line": 221,
-        "end_line": 225
+        "anchor": "27-november--actual-uploaded-linux-pillow-and-pdfium-inspection",
+        "blob_sha": "acdf305892cd26b0427217ead269fce2674f1289",
+        "start_line": 227,
+        "end_line": 235
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--owner-approved-linux-first-c5-allocation-and-exact-reduced-input-plan",
-        "blob_sha": "d5769bcfd9dc3a7ef1ad953942015870b3921fc2",
+        "blob_sha": "acdf305892cd26b0427217ead269fce2674f1289",
         "start_line": 211,
         "end_line": 219
       },
@@ -177,17 +177,17 @@
     ]
   },
   "operation": {
-    "id": "C5-LINUX-TWO-WHEEL-INSPECTION-20261127",
+    "id": "C5-LINUX-ACTUAL-WHEEL-INSPECTION-20261127",
     "state": "RECONCILED",
-    "starting_sha": "e88f8f77aa43ce4ec34c85672a232c112170d190",
-    "outcome": "Two exact HTTPS transfer attempts returned curl 6 / HTTP 000 / zero bytes, hostname resolution unavailable. No archive returned, no install/import/inspection; grant consumed, no retry.",
+    "starting_sha": "e7c7d3fcb102f64db3ea6b8a160581cf0374b6b2",
+    "outcome": "Both exact archive and metadata hashes/strict inspections PASS. Pillow Brotli 1.2.0 decoder linkage confirmed and held; PDFium library identity, 37 notices and direct system linkage verified, static Brotli applicability/use disposition unresolved. No package install/import/native load.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--exact-linux-two-wheel-download-attempt-blocked-by-dns",
-      "blob_sha": "d5769bcfd9dc3a7ef1ad953942015870b3921fc2",
-      "start_line": 221,
-      "end_line": 225
+      "anchor": "27-november--actual-uploaded-linux-pillow-and-pdfium-inspection",
+      "blob_sha": "acdf305892cd26b0427217ead269fce2674f1289",
+      "start_line": 227,
+      "end_line": 235
     }
   },
   "authority": {
@@ -222,7 +222,7 @@
       "receipt": {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--exact-linux-two-wheel-download-attempt-blocked-by-dns",
-        "blob_sha": "d5769bcfd9dc3a7ef1ad953942015870b3921fc2",
+        "blob_sha": "acdf305892cd26b0427217ead269fce2674f1289",
         "start_line": 221,
         "end_line": 225
       }
@@ -393,7 +393,8 @@
     "Detached bb31566cda9cd35e4e8ce8a6a1c8470537c141e3 post-review staging and fixed verifier argument source only; actual bounded transfer, credential/controller integration, signed provenance, pre-use disposition and real archive layout/native settlement unverified. Five pure/synthetic local checks are not functional acceptance.",
     "C5 single-job route parked at independent actual pre-use review, not abandoned. Detached product b8fa995ae1b86c044c77610abd1db1b7fa8cedd0 improves legacy whole-job settlement and interruption retention but is uncompiled/untested/unmerged; emergency exit and actual G2/native evidence remain unresolved.",
     "Legacy shutdown source now published at b574e0ab07da17fa322a9c5a464e0d0ce1d27b13 with local 10/10 source checks and old-source negative control; ordinary CI pending, Windows desktop compile and actual whole-job settlement not demonstrated. Do not mistake live source for previous verified baseline.",
-    "Uncertain-spawn correction candidate dae0cda99f11cb6adf609e29de7b55039f135bfa retains original storage/model witnesses and refuses Windows legacy graceful close after uncertain spawn; local static 11/11 only, no native compilation or actual runtime evidence. Conservative refusal also for early spawn failures; no recovery of missing child handle."
+    "Uncertain-spawn correction candidate dae0cda99f11cb6adf609e29de7b55039f135bfa retains original storage/model witnesses and refuses Windows legacy graceful close after uncertain spawn; local static 11/11 only, no native compilation or actual runtime evidence. Conservative refusal also for early spawn failures; no recovery of missing child handle.",
+    "Actual uploaded Pillow Brotli 1.2.0 linked via FreeType; held for CVE-2026-111497. PDFium direct linkage/37 notices verified; static Brotli version/patch and applicable rights unresolved."
   ],
   "context": {
     "protocol": {
