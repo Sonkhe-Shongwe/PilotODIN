@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-CONSOLIDATED-STAGING-LIFECYCLE-20261127",
-    "parent_sha": "86dd8d187ddb7ddbe9bcf43aac11c26891e997b7",
-    "previous_snapshot_sha": "86dd8d187ddb7ddbe9bcf43aac11c26891e997b7",
-    "scope": "Consolidated C5 disarmed measured staging, targeted facts and retained regression lifecycle preparation.",
+    "operation_id": "C5-CONSOLIDATED-OWNED-TRANSACTION-20261127",
+    "parent_sha": "ee202cd3adc178989579aaf51ee380f38d6605eb",
+    "previous_snapshot_sha": "ee202cd3adc178989579aaf51ee380f38d6605eb",
+    "scope": "Disarmed staged installer, exact pre-use gate, measured Chrome and owned consolidated transaction preparation.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--consolidated-c5-measured-staging-and-retained-regression-lifecycle",
-      "blob_sha": "ddaf232dc6181bac2ef9ea163772d22a4def8187",
-      "start_line": 557,
-      "end_line": 561
+      "anchor": "27-november--consolidated-c5-staged-installer-and-owned-transaction-binding",
+      "blob_sha": "cc276968a23487bcefecfabcb10daded556df869",
+      "start_line": 563,
+      "end_line": 567
     }
   },
   "product": {
@@ -137,8 +137,8 @@
     "id": "C5-LINUX-FIRST-20261127",
     "status": "BLOCKED",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "Detached 0204090 prepares measured staging/public Pillow, targeted fact inventory, revised npm lock and retained regression workspace. Actual pre-use use dispositions, installation/host transaction and exact full regression/Chrome/settlement receipts remain unbound; @playwright/test actual size unobserved. No execution authority.",
-    "next_action": "Complete one disarmed owned transaction around 0204090: bind staged pre-use facts to reviewed exact applicability and disposition (refuse unresolved), reuse hash-locked Python/npm install on staged workspace, exact Chrome setup/credits and measured request receipt, full per-selector regressions and final guard/positive settlement including failures. Preserve 23 targeted rows and prior Stage A; source-only verify, then seek one bounded consolidated execution approval. No standalone acquisition probe.",
+    "blocker": "Detached f4273df connects disarmed staged installer, exact reviewed use and owned transaction. Exact staged fact/disposition evidence and measured @playwright/test size still unresolved; host deadline/settlement/failure receipts, exact remaining selector applicability and browser credits/result callbacks unbound. No execution authority.",
+    "next_action": "Resolve the exact pre-use applicability/disposition evidence and its staged-fact binding without guessing; reconcile with one consolidated bounded execution approach. Bind exact hosted source/generation, command runner/deadline/positive settlement/failure accounting and remaining reviewed selectors/credits/receipts to f4273df; replace draft refusals only after finite binding, source-only verify, then seek one bounded execution approval. No standalone acquisition probe.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
@@ -146,6 +146,13 @@
       "D2, G2 and remaining physical E2/P4 acceptance; no phase advance without evidence and owner signoff."
     ],
     "read": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "27-november--consolidated-c5-staged-installer-and-owned-transaction-binding",
+        "blob_sha": "cc276968a23487bcefecfabcb10daded556df869",
+        "start_line": 563,
+        "end_line": 567
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--consolidated-c5-measured-staging-and-retained-regression-lifecycle",
@@ -464,17 +471,17 @@
     ]
   },
   "operation": {
-    "id": "C5-CONSOLIDATED-STAGING-LIFECYCLE-20261127",
+    "id": "C5-CONSOLIDATED-OWNED-TRANSACTION-20261127",
     "state": "RECONCILED",
-    "starting_sha": "86dd8d187ddb7ddbe9bcf43aac11c26891e997b7",
-    "outcome": "Detached 0204090 (via 049ea0d) binds measured application transfers, exact public Pillow and bounded standard direct transport, revised npm witness, targeted fact collection and regression-before-cleanup lifecycle; 14 grouped static checks, 13 exact copied excerpt mock checks pass. No actual acquisition/use/CI; final review/install/host/receipt bindings remain.",
+    "starting_sha": "ee202cd3adc178989579aaf51ee380f38d6605eb",
+    "outcome": "Detached f4273df via cc10efc connects staged offline install, exact reviewed disposition gate, measured Chrome budget and single transaction settlement. 25 grouped static checks and nine fingerprint-matched pure excerpt cases PASS; full modules/actual acquisition/use not run. Remaining evidence, host/selector/credits and activation bindings unresolved.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--consolidated-c5-measured-staging-and-retained-regression-lifecycle",
-      "blob_sha": "ddaf232dc6181bac2ef9ea163772d22a4def8187",
-      "start_line": 557,
-      "end_line": 561
+      "anchor": "27-november--consolidated-c5-staged-installer-and-owned-transaction-binding",
+      "blob_sha": "cc276968a23487bcefecfabcb10daded556df869",
+      "start_line": 563,
+      "end_line": 567
     }
   },
   "authority": {
@@ -776,6 +783,10 @@
       {
         "sha": "0204090f1f14832cbc482d40bf10fd7683faeeed",
         "scope": "Detached consolidated successor of 61c1007 through 049ea0d: measured receipt and bounded transport/targeted fact preparation, revised npm witness and regression-before-cleanup lifecycle; 14 grouped static checks and 13 fingerprint-matched copied excerpt synthetic checks pass. Full modules/actual acquisition/use/CI not run; disarmed."
+      },
+      {
+        "sha": "f4273dfab350767417bb799ad932431a5b915840",
+        "scope": "Detached consolidated successor of 0204090 through cc10efc: staged offline installer/exact reviewed pre-use gate, measured Chrome and owned transaction. 25 grouped static checks and nine fingerprint-matched pure excerpt tests pass; full modules/actual acquisition/use/CI not run, disarmed."
       }
     ]
   },
@@ -800,7 +811,7 @@
     "Pillow controlled storage 46059721700 refused combined redirect URL predicate, individual cause unknown. Exact storage bytes not obtained; no unsupported filename inference or repeated probe.",
     "Exact Pillow SHA256/size from public source verified 46062661845; combined ZIP entry-count/size assertion failed, prior regular-file count may differ from infolist including directories. No installation or current durable custody; full profile open.",
     "Candidate 9402a08 pending exact pre-use/manifest/callback/settlement binding; @playwright/test size cap proposed, not measured; no full tests run. Pillow inventory correction unexecuted.",
-    "0204090 partial consolidated preparation only. Actual use dispositions, staged bootstrap/install and full host/Chrome/regression/final settlement binding remain. @playwright/test size unobserved; all four profiles blocked, no execution authority or score credit."
+    "f4273df partial disarmed consolidated transaction: reviewed pre-use facts/disposition and @playwright/test measured size unresolved; exact hosted runner/deadline/failure settlement and remaining selector/credits/receipt binding pending. No execution authority or score credit."
   ],
   "context": {
     "protocol": {
