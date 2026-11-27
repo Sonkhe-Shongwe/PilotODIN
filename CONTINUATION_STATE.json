@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-LINUX-FULL-PROFILE-PREPARATION-20261127",
-    "parent_sha": "4151378e3780b6d956b90cf7708af324bd73844d",
-    "previous_snapshot_sha": "4151378e3780b6d956b90cf7708af324bd73844d",
-    "scope": "Exact disarmed Linux full-profile data-only preparation; corrected Pillow proposed lock and consolidated input/regression inventory; isolated execution candidate still incomplete.",
+    "operation_id": "DOC-AUDIT-C5-LIVE-RECONCILIATION-20261127",
+    "parent_sha": "dac214940f87bf3b9fb9eb9a197fa776ff71628c",
+    "previous_snapshot_sha": "dac214940f87bf3b9fb9eb9a197fa776ff71628c",
+    "scope": "Documentation audit and navigation/continuity correction only; existing engineering next action and governing acceptance unchanged.",
     "state": "RECONCILED",
     "receipt": {
-      "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--exact-linux-full-profile-pillow-pin-and-consolidated-verification-inventory",
-      "blob_sha": "8ade1c9f7c9edc0da7209f481338f41308738bc8",
-      "start_line": 341,
-      "end_line": 349
+      "path": "docs/DOCUMENTATION_AUDIT_C5_D1_MIGRATION_2026-11-27.md",
+      "anchor": "9-live-continuity-and-document-routing-audit",
+      "blob_sha": "512d48229764e9820927897119fa360b31006d0d",
+      "start_line": 75,
+      "end_line": 83
     }
   },
   "product": {
@@ -144,13 +144,6 @@
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "27-november--corrected-pillow-publisher-artifact-selected-for-bounded-inspection",
-        "blob_sha": "8ade1c9f7c9edc0da7209f481338f41308738bc8",
-        "start_line": 325,
-        "end_line": 329
-      },
-      {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--linux-stage-a-actual-19-test-pass-and-one-use-disarm",
         "blob_sha": "8ade1c9f7c9edc0da7209f481338f41308738bc8",
         "start_line": 317,
@@ -158,80 +151,10 @@
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "27-november--owner-approved-one-use-linux-stage-a-execution",
-        "blob_sha": "8ade1c9f7c9edc0da7209f481338f41308738bc8",
-        "start_line": 311,
-        "end_line": 315
-      },
-      {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "27-november--exact-stage-a-disposition-proposal-and-managed-rolling-image-activation-draft",
-        "blob_sha": "8ade1c9f7c9edc0da7209f481338f41308738bc8",
-        "start_line": 303,
-        "end_line": 309
-      },
-      {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--c55-exact-setup-drafts-and-managed-chrome-candidate",
         "blob_sha": "8ade1c9f7c9edc0da7209f481338f41308738bc8",
         "start_line": 297,
         "end_line": 301
-      },
-      {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "27-november--c55-proportionate-baseline-consolidation",
-        "blob_sha": "8ade1c9f7c9edc0da7209f481338f41308738bc8",
-        "start_line": 289,
-        "end_line": 295
-      },
-      {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "27-november--c551-isolated-managed-operating-system-review",
-        "blob_sha": "8ade1c9f7c9edc0da7209f481338f41308738bc8",
-        "start_line": 285,
-        "end_line": 287
-      },
-      {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "27-november--stage-a-generated-fixture-applicability-and-targeted-host-preflight",
-        "blob_sha": "8ade1c9f7c9edc0da7209f481338f41308738bc8",
-        "start_line": 275,
-        "end_line": 283
-      },
-      {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "27-november--exact-pdfium-publisher-build-chain-and-managed-linux-bootstrap",
-        "blob_sha": "8ade1c9f7c9edc0da7209f481338f41308738bc8",
-        "start_line": 265,
-        "end_line": 273
-      },
-      {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "27-november--disarmed-standalone-linux-stage-a-source-candidate",
-        "blob_sha": "8ade1c9f7c9edc0da7209f481338f41308738bc8",
-        "start_line": 255,
-        "end_line": 263
-      },
-      {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "27-november--six-uploaded-linux-stage-a-wheels-verified",
-        "blob_sha": "8ade1c9f7c9edc0da7209f481338f41308738bc8",
-        "start_line": 245,
-        "end_line": 253
-      },
-      {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "27-november--pdfium-brotli-source-fix-traced-and-official-pillow-nightly-option",
-        "blob_sha": "8ade1c9f7c9edc0da7209f481338f41308738bc8",
-        "start_line": 237,
-        "end_line": 243
-      },
-      {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "27-november--actual-uploaded-linux-pillow-and-pdfium-inspection",
-        "blob_sha": "8ade1c9f7c9edc0da7209f481338f41308738bc8",
-        "start_line": 227,
-        "end_line": 235
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
@@ -267,25 +190,21 @@
         "blob_sha": "ce8cbe509a91823cbb37bbb62f30dc953d3ad664",
         "start_line": 1,
         "end_line": 33
-      },
-      {
-        "path": "docs/P4_R02_5_G2_CONSOLIDATED_CLOSURE_DECISION_2026-11-24.md",
-        "blob_sha": "8906f34d7e3c29f16417506985e7a14da9afe319"
       }
     ]
   },
   "operation": {
-    "id": "C5-LINUX-FULL-PROFILE-PREPARATION-20261127",
+    "id": "DOC-AUDIT-C5-LIVE-RECONCILIATION-20261127",
     "state": "RECONCILED",
-    "starting_sha": "4151378e3780b6d956b90cf7708af324bd73844d",
-    "outcome": "Detached f1cf3d2 two additive data-only QA paths, exact 49/49 lock-to-inventory match, 86 inputs/157012942 staged bytes, 85 direct bodies/149435321 bytes, 29 overlay base checks and selector path checks passed; zero candidate runs, no acquisition, install, resolver or native/functional execution. No score change.",
+    "starting_sha": "dac214940f87bf3b9fb9eb9a197fa776ff71628c",
+    "outcome": "Recounted official 14/20; validated 40 path references and selected anchors; reconciled latest consumed Pillow record, historical vs current route, delivered recovery and stale risk/read chronology. Verified detached proposal 49/49, 86 inputs and zero execution; no score or product change.",
     "reconcile_before_retry": false,
     "receipt": {
-      "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--exact-linux-full-profile-pillow-pin-and-consolidated-verification-inventory",
-      "blob_sha": "8ade1c9f7c9edc0da7209f481338f41308738bc8",
-      "start_line": 341,
-      "end_line": 349
+      "path": "docs/DOCUMENTATION_AUDIT_C5_D1_MIGRATION_2026-11-27.md",
+      "anchor": "9-live-continuity-and-document-routing-audit",
+      "blob_sha": "512d48229764e9820927897119fa360b31006d0d",
+      "start_line": 75,
+      "end_line": 83
     }
   },
   "authority": {
@@ -311,21 +230,20 @@
       "release",
       "replay of consumed or uncertain approval"
     ],
-    "guards": "45 prior restricted grants consumed/closed or disarmed; no execution authority remains. Codespace preflight refused, no persistent activation; stop requested not confirmed. Existing exact false workflow restored; approved Actions images unchanged; no fallback/replay. Three C1/C2 workflows and OWNED_RESOURCE_ENABLED false; three consumed variables owner cleanup unverified. Owner-approved bounded technical retry rule permits one corrected replacement only after proven terminal zero-job pre-execution failure; prior activation remains closed; no automatic second replacement. Latest local two-wheel read-only grant consumed/closed after both DNS failures, total 46, no active grant or replay. Current exact one-use Stage A grant approved for source 304b24d only; all other restrictions and 46 consumed grants retained. Stage A 304b24d grant consumed after exact run 46031011314 success; workflow dispatch-only false and marker removed in reconciliation. Total 47, zero active; no replay or broader use. Corrected Pillow exact artifact one-use retrieval succeeded and bounded static inspection complete; grant consumed/disarmed, total 48 zero active; no retry or broader use.",
+    "guards": "48 historical restricted grants consumed/closed/disarmed, zero active; never replay. Codespace preflight refused and stop requested but not confirmed; three consumed variables owner cleanup unverified; existing exact false workflows restored, C1/C2 workflows and OWNED_RESOURCE_ENABLED false, no fallback. Bounded technical retry only for proven terminal zero-job pre-execution failure and new exact write-ahead, no automatic second replacement. Linux Stage A exact 304b24d run 46031011314 success consumed/disarmed, dispatch-only false and marker removed. Pillow one-use artifact retrieval/inspection consumed; no broader use or retry. Preserve earlier exact grant chronology in reviewed parent dac2149 and ledger.",
     "last_consumed": {
-      "id": "C5-LINUX-STAGE-A-ONCE-20261127",
-      "source_sha": "304b24d71aef1c8e3e98211bb5e8ba2430932f4f",
-      "activation_sha": "3f0574f642a29b50af9505c61630a7fda16bcd4b",
-      "outcome": "STAGE_A_19_OF_19_PASS_ONE_ATTEMPT_OWNED_SCRATCH_REMOVED",
+      "id": "C5-LINUX-PILLOW-ARTIFACT-INSPECTION-ONCE-20261127",
+      "source_sha": "dce0f39a2395bed5717e1fc1354a073c75f4f4fc",
+      "write_ahead_sha": "38ca35b3cd694d3007aecc2acf1629e13dabad9a",
+      "outcome": "ONE_RETRIEVAL_STATIC_INSPECTION_RECONCILED_NO_INSTALL",
+      "artifact_id": 14985180992,
       "receipt": {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "27-november--linux-stage-a-actual-19-test-pass-and-one-use-disarm",
-        "blob_sha": "c35717bb3d867248f04e51cbabfd543a6cd6cdd4",
-        "start_line": 317,
-        "end_line": 323
-      },
-      "run_id": 46031011314,
-      "job_id": 140614495903
+        "anchor": "27-november--corrected-linux-pillow-exact-final-wheel-inspected",
+        "blob_sha": "8ade1c9f7c9edc0da7209f481338f41308738bc8",
+        "start_line": 331,
+        "end_line": 339
+      }
     }
   },
   "pending_runs": [],
@@ -512,29 +430,13 @@
     ]
   },
   "remaining_risks": [
-    "All four C5 machine profiles blocked; applicable toolchain/npm/PDFium notice/linkage and installed readiness incomplete.",
-    "G2 original handle/physical destination/coverage proof unresolved; governing native runs 44838416004 and 45342345634 retain filesystem/network failures and unresolved credits; no new method or G2.x without owner decision.",
-    "Physical 8 GB bundled inference/coexistence, DPAPI, actual desktop egress/durability and production IPC/physical destination unverified; D prerequisites retained.",
-    "R06 original-data historical full-tree 74 differences, unknown writer; prospective preservation pending. No loss of original data permitted.",
-    "Standalone Windows A candidate 0c1590f57c4d62d58dca482c03ac9948009e90a4, exact Astral runtime and 8 application archives remain inactive; provenance, actual rights/security, Windows settlement and tool applicability pending. Production Pillow/Brotli concern remains unresolved.",
-    "Approved applicability method and PRODUCT-FIRST-20261127 rationalisation do not clear CLI or dependencies. Actual supported tool suitability, cryptographic release/build provenance, pre-use rights/security, Windows owned settlement/staging and one-use activation remain blocked; exact archive limits unchanged.",
-    "G2 equivalent design has documented FileObject/identity primitives but shared mapped/cache/background original-writer attribution and independent complete coverage, safe supported deployment remain unproven. No new live evidence method adopted.",
-    "PRODUCT-FIRST-20261127 rationalises only ordinary standard-verifier metadata traffic accounting in a later approved disposable C5 job; actual security/rights/provenance and Windows settlement remain unproven, exact archive bounds retained. G2 proof and all product gates unchanged.",
-    "Detached 8ca9f6f9c96f2f9eb1473ae26ed8e1a7e7ac7010 implements standalone post-staging Stage A path but has no qualified runtime, actual pre-use disposition, Windows runner, acquisition/extraction or activation; no functional 19-test or native execution evidence. Exact original source and sanitised recovery copy now owner-held; not full Git backup.",
-    "Detached fa610dcff5e73b89290cc5df3ec99e5b7d45a17f owned Windows runner is disarmed; eight byte-matched pure/mock tests only, no full module/native execution. Actual host nested-job/API/pipe behavior, pre-assignment controller failure, exact tool environment and integrated cleanup remain unverified; no sandbox or acceptance claim.",
-    "Detached bb31566cda9cd35e4e8ce8a6a1c8470537c141e3 post-review staging and fixed verifier argument source only; actual bounded transfer, credential/controller integration, signed provenance, pre-use disposition and real archive layout/native settlement unverified. Five pure/synthetic local checks are not functional acceptance.",
-    "C5 single-job route parked at independent actual pre-use review, not abandoned. Detached product b8fa995ae1b86c044c77610abd1db1b7fa8cedd0 improves legacy whole-job settlement and interruption retention but is uncompiled/untested/unmerged; emergency exit and actual G2/native evidence remain unresolved.",
-    "Legacy shutdown source now published at b574e0ab07da17fa322a9c5a464e0d0ce1d27b13 with local 10/10 source checks and old-source negative control; ordinary CI pending, Windows desktop compile and actual whole-job settlement not demonstrated. Do not mistake live source for previous verified baseline.",
-    "Uncertain-spawn correction candidate dae0cda99f11cb6adf609e29de7b55039f135bfa retains original storage/model witnesses and refuses Windows legacy graceful close after uncertain spawn; local static 11/11 only, no native compilation or actual runtime evidence. Conservative refusal also for early spawn failures; no recovery of missing child handle.",
-    "Actual uploaded Pillow Brotli 1.2.0 linked via FreeType; held for CVE-2026-111497. PDFium direct linkage/37 notices verified; static Brotli version/patch and applicable rights unresolved.",
-    "PDFium expected source Brotli cfa184a contains upstream CVE fix; direct exact DEPS/build checkout unavailable and byte markers inconclusive. Official Pillow nightly channel exists, artifact/source/hash not qualified. Local CPython 3.13.5 is not approved CP311 target.",
-    "All seven Stage A archive identities now evidenced (six uploaded static checks plus prior PDFium); pip primary/vendor notices present and PE Windows launchers excluded in Linux scope. Limited advisory review and static dependency compatibility are not actual pre-use runtime/security or functional acceptance. Exact Linux standalone runner/settlement, PDFium conditional disposition, 19 predicates and full-profile corrected Pillow remain.",
-    "Detached ef44885 standalone Linux Stage A source path uses existing bounded group capture and explicit absence probe; no real process, package, native, functional or full new module test. Historical Ubuntu image 20261122.23.1 and CP311.18 layout corroborated, actual exact host/rights/security disposition absent. No claim against escaped sessions or complete containment. Final reviewed source activation and one-use authority absent; no Stage B or phase advancement.",
-    "Exact publisher build/publication correlation now established for PDFium pinned wheel, source branch 8149 and Brotli decoder compiled; direct exact Brotli checkout and independent cryptographic attestation verification absent. Specific pre-use disposition and host actual applicability still required. Detached 70ee69c C-D09 observed Python fingerprint is not independent provenance; no full module or actual run.",
-    "Conditional PDFium generated-fixture recommendation is not general security clearance or exact compiled Brotli proof. Actual image and package observations required; 783027c refuses drift. No approved activation or execution and no Stage A or C5 credit.",
-    "Stage A 19/19 actual PASS at exact checkout 304b24d, one-use consumed. Full Linux profile and applicable browser/Rust/frontend final use not qualified; Pillow held and patched managed Chrome availability pending. No repeated Stage A use under consumed grant.",
-    "Corrected Pillow exact final CP311 wheel verified static and targeted Brotli version concern resolved; applicable pre-use rights/security and 49-row offline resolver/functional profile/browser checks remain. Wheel available only in current session; no durable custody assertion. No Windows or release adoption.",
-    "Exact inert f1cf3d2 Linux full-profile proposed inventory/lock exists; actual isolated source and guard rebind, Stage B runner/settlement, local-to-hosted Pillow custody, targeted use review and actual Chrome compatibility pending. No additional grant, no score or activation."
+    "All four C5 profiles remain BLOCKED; exact disarmed f1cf3d2 49-row/86-input proposal is not a runnable profile. Current source overlay/guard rebind, Stage B font/mixed staging and owned settlement, Pillow local-to-hosted handoff, 24 targeted use rows, actual patched Chrome and full offline resolver/functional regressions remain. No custody inference or replay; previous exact artifact and Stage A receipt retained.",
+    "Stage A 19/19 passed only for exact generated fixtures at 304b24d; PDFium direct Brotli build checkout/attestation and general rights/security not established. Corrected Pillow Linux static Brotli 1.2.1 addresses targeted concern only; production/Windows Pillow and broader use remain held. Windows candidate Astral 3.11.18, source/rights/security, owned settlement, browser-dev and actual inputs/regression mandatory before D1; no Windows/production adoption.",
+    "C-D09 and PRODUCT-FIRST-20261127 are narrow development trust/control-traffic decisions, not blanket security/provenance, CLI suitability, archive acquisition or execution authority. No new custom framework, no changed method or weakened acceptance.",
+    "G2 original handle/physical destination/independent coverage unresolved; 44838416004 and 45342345634 native filesystem/network failures retained; G2 equivalent design original-writer mapped/cache/background and deployment unproven. G3/G4 pending, no method adoption or native closure.",
+    "Physical 8 GB bundled Qwen/coexistence, DPAPI, desktop egress/durability, production IPC/physical destination and actual legacy whole-job settlement unverified. Product baseline c5f4bd8 scoped ordinary CI only, uncertain-spawn/other detached work preserved; no Windows desktop compile/runtime inference. D1/D2 and E2/Gate C remain mandatory; no phase or release credit.",
+    "R06 historical 74 original-data differences with unknown writer; prospective owner-device preservation pending. No original data loss or owner-local access; 44 detached records preserved. Codespace stop and consumed-variable cleanup unverified, no replay.",
+    "Owner-held recovery copy delivered for exact historical 1d033ce, not current HEAD/full Git history/detached backup or build proof. Root LICENSE/NOTICE/SECURITY.md absent, owner decision outstanding. Prior risk chronology and exact references preserved at dac2149 and historical ledger."
   ],
   "context": {
     "protocol": {
@@ -582,6 +484,13 @@
       },
       {
         "path": "docs/DOCUMENTATION_INDEX.md"
+      },
+      {
+        "path": "docs/DOCUMENTATION_AUDIT_C5_D1_MIGRATION_2026-11-27.md",
+        "anchor": "9-live-continuity-and-document-routing-audit",
+        "blob_sha": "512d48229764e9820927897119fa360b31006d0d",
+        "start_line": 75,
+        "end_line": 83
       }
     ],
     "evidence": [
