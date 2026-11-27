@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-DISPOSABLE-LINUX-ENVIRONMENT-FEASIBILITY-20261127",
-    "parent_sha": "2a53674fb38475d6a1d971befffdfef194c6532e",
-    "previous_snapshot_sha": "2a53674fb38475d6a1d971befffdfef194c6532e",
-    "scope": "Read-only available disposable Linux capability review; stop on actual incompatibility/isolation.",
+    "operation_id": "C5-STAGE-B-RESULT-COLLISION-RECOVERY-20261127",
+    "parent_sha": "0d5871760debdf8451f52b2a3d75539e44b368d2",
+    "previous_snapshot_sha": "0d5871760debdf8451f52b2a3d75539e44b368d2",
+    "scope": "Recover exact Stage B QA correction, run extracted mock and independent product source-excerpt regression.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--disposable-linux-environment-feasibility-stop",
-      "blob_sha": "8be7f2292e72790b8a47b58fc725bb919515ea7e",
-      "start_line": 393,
-      "end_line": 397
+      "anchor": "27-november--stage-b-result-collision-correction-recovered-and-source-regression-executed",
+      "blob_sha": "c81b2f69f63f664c8994d617cfa86d1882c2eeac",
+      "start_line": 399,
+      "end_line": 405
     }
   },
   "product": {
@@ -119,9 +119,9 @@
     "id": "C5-LINUX-FIRST-20261127",
     "status": "BLOCKED",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "C5 full-profile parked. Available workspace fails exact CP311/Node/Rust/Chrome and owner-data-free nonroot environment requirements; prior archive present by stat only. Hosted credential and private handoff routes remain unsupported. Owner-provided environment/private custody needed; independent 9006133 source verification pending.",
-    "next_action": "Owner to provide a concrete independently reviewed disposable Linux environment or supported private single-object handoff to existing hosted runner; no further environment/token preparation without new evidence. Otherwise keep C5 parked and verify independent 9006133 source correction within existing authorised source/synthetic scope after workflow review. No acquisition, tool install or restricted execution inferred.",
-    "next_action_kind": "OWNER_DECISION",
+    "blocker": "C5 full-profile parked: no compatible isolated environment/private custody established; 23 targeted use rows and actual host/Chrome/full regressions remain. Stage B result-collision correction recovered 982435f; independent 9006133 excerpt regression passed, full source/CI review and publication pending.",
+    "next_action": "Review existing applicable workflow triggers and actual job scope for integrating independent 9006133 source correction; use permitted exact-source/synthetic route only and preserve unknown owner work. C5 remains parked until concrete compatible isolated environment/private single-object handoff; preserve 982435f QA correction for future exact source integration. No redundant mock-test loops, no further token/adapter/environment preparation without new evidence, no restricted acquisition or execution.",
+    "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
       "Windows-specific verified input and compatibility prerequisites before actual production-equivalent D1, separately authorised; no installer.",
@@ -130,78 +130,85 @@
     "read": [
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "27-november--stage-b-result-collision-correction-recovered-and-source-regression-executed",
+        "blob_sha": "c81b2f69f63f664c8994d617cfa86d1882c2eeac",
+        "start_line": 399,
+        "end_line": 405
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--disposable-linux-environment-feasibility-stop",
-        "blob_sha": "8be7f2292e72790b8a47b58fc725bb919515ea7e",
+        "blob_sha": "c81b2f69f63f664c8994d617cfa86d1882c2eeac",
         "start_line": 393,
         "end_line": 397
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--zero-scope-credential-route-rejected",
-        "blob_sha": "8be7f2292e72790b8a47b58fc725bb919515ea7e",
+        "blob_sha": "c81b2f69f63f664c8994d617cfa86d1882c2eeac",
         "start_line": 387,
         "end_line": 391
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--hosted-pillow-access-stop-and-independent-backend-admission-fix",
-        "blob_sha": "8be7f2292e72790b8a47b58fc725bb919515ea7e",
+        "blob_sha": "c81b2f69f63f664c8994d617cfa86d1882c2eeac",
         "start_line": 377,
         "end_line": 385
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--owner-approved-hosted-pillow-route-preparation",
-        "blob_sha": "8be7f2292e72790b8a47b58fc725bb919515ea7e",
+        "blob_sha": "c81b2f69f63f664c8994d617cfa86d1882c2eeac",
         "start_line": 369,
         "end_line": 375
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--linux-stage-b-adapter-reconciled-and-finite-pre-use-boundary",
-        "blob_sha": "8be7f2292e72790b8a47b58fc725bb919515ea7e",
+        "blob_sha": "c81b2f69f63f664c8994d617cfa86d1882c2eeac",
         "start_line": 359,
         "end_line": 367
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--isolated-linux-full-profile-source-overlay-and-guard-binding",
-        "blob_sha": "8be7f2292e72790b8a47b58fc725bb919515ea7e",
+        "blob_sha": "c81b2f69f63f664c8994d617cfa86d1882c2eeac",
         "start_line": 351,
         "end_line": 357
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--exact-linux-full-profile-pillow-pin-and-consolidated-verification-inventory",
-        "blob_sha": "8be7f2292e72790b8a47b58fc725bb919515ea7e",
+        "blob_sha": "c81b2f69f63f664c8994d617cfa86d1882c2eeac",
         "start_line": 341,
         "end_line": 349
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--corrected-linux-pillow-exact-final-wheel-inspected",
-        "blob_sha": "8be7f2292e72790b8a47b58fc725bb919515ea7e",
+        "blob_sha": "c81b2f69f63f664c8994d617cfa86d1882c2eeac",
         "start_line": 331,
         "end_line": 339
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--linux-stage-a-actual-19-test-pass-and-one-use-disarm",
-        "blob_sha": "8be7f2292e72790b8a47b58fc725bb919515ea7e",
+        "blob_sha": "c81b2f69f63f664c8994d617cfa86d1882c2eeac",
         "start_line": 317,
         "end_line": 323
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--c55-exact-setup-drafts-and-managed-chrome-candidate",
-        "blob_sha": "8be7f2292e72790b8a47b58fc725bb919515ea7e",
+        "blob_sha": "c81b2f69f63f664c8994d617cfa86d1882c2eeac",
         "start_line": 297,
         "end_line": 301
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--owner-approved-linux-first-c5-allocation-and-exact-reduced-input-plan",
-        "blob_sha": "8be7f2292e72790b8a47b58fc725bb919515ea7e",
+        "blob_sha": "c81b2f69f63f664c8994d617cfa86d1882c2eeac",
         "start_line": 211,
         "end_line": 219
       },
@@ -236,17 +243,17 @@
     ]
   },
   "operation": {
-    "id": "C5-DISPOSABLE-LINUX-ENVIRONMENT-FEASIBILITY-20261127",
+    "id": "C5-STAGE-B-RESULT-COLLISION-RECOVERY-20261127",
     "state": "RECONCILED",
-    "starting_sha": "2a53674fb38475d6a1d971befffdfef194c6532e",
-    "outcome": "Observed local archive size, Debian13 root workspace CP313/Node22.16/npm10.9.2, no matched Rust/Chrome/CP311 and existing attachments accessible. Not qualifying disposable environment; no new archive read, tool acquisition, install, credential or test.",
+    "starting_sha": "0d5871760debdf8451f52b2a3d75539e44b368d2",
+    "outcome": "Recovered detached 982435f exact two QA paths, 16/16 extracted-function mocked checks passed; independent 9006133 existing source regression method exercised against verified excerpts, 3/3 selected cases. Initial auto-discovery helper fixture failure preserved. No full repository test/compile/native, no restricted execution or live product change.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--disposable-linux-environment-feasibility-stop",
-      "blob_sha": "8be7f2292e72790b8a47b58fc725bb919515ea7e",
-      "start_line": 393,
-      "end_line": 397
+      "anchor": "27-november--stage-b-result-collision-correction-recovered-and-source-regression-executed",
+      "blob_sha": "c81b2f69f63f664c8994d617cfa86d1882c2eeac",
+      "start_line": 399,
+      "end_line": 405
     }
   },
   "authority": {
@@ -282,7 +289,7 @@
       "receipt": {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--corrected-linux-pillow-exact-final-wheel-inspected",
-        "blob_sha": "8be7f2292e72790b8a47b58fc725bb919515ea7e",
+        "blob_sha": "c81b2f69f63f664c8994d617cfa86d1882c2eeac",
         "start_line": 331,
         "end_line": 339
       }
@@ -484,16 +491,20 @@
       {
         "sha": "9006133f95ad3519a9d1540ba171b858e26cc6cc",
         "scope": "Independent P4 source-only stale backend connection admission fix, exact live parent 0785ffd, two paths, 14 static checks. Recorded exit and final generation fence, no replacement/ownership release. Actual source test/compile/native and publication pending."
+      },
+      {
+        "sha": "982435f458d4ed10006833c0141df40490b30315",
+        "scope": "Recovered Linux Stage B mixed-callback result collision fix, two exact QA paths, 16/16 extracted mock checks, full module not run; disarmed."
       }
     ]
   },
   "remaining_risks": [
-    "All C5 profiles BLOCKED; available workspace fails exact toolchain and isolation prerequisites; no supported alternate environment/private handoff or target-repo access. Retained archive stat only. Owner concrete environment/custody needed; 23 targeted rows, actual host/source/settlement and patched Chrome, full regression remain. No acquisition or replay.",
+    "All C5 profiles BLOCKED; compatible isolated environment/private custody unsupported. 982435f fixes Stage B mixed result collision on disarmed 93fbdad, no full module test; 23 targeted rows, actual host/Chrome/source/settlement, full functional regressions remain.",
     "Stage A 19/19 passed only for exact generated fixtures at 304b24d; PDFium direct Brotli build checkout/attestation and general rights/security not established. Corrected Pillow Linux static Brotli 1.2.1 addresses targeted concern only; production/Windows Pillow and broader use remain held. Windows candidate Astral 3.11.18, source/rights/security, owned settlement, browser-dev and actual inputs/regression mandatory before D1; no Windows/production adoption.",
     "C-D09 and PRODUCT-FIRST-20261127 are narrow development trust/control-traffic decisions, not blanket security/provenance, CLI suitability, archive acquisition or execution authority. No new custom framework, no changed method or weakened acceptance.",
     "G2 original handle/physical destination/independent coverage unresolved; 44838416004 and 45342345634 native filesystem/network failures retained; G2 equivalent design original-writer mapped/cache/background and deployment unproven. G3/G4 pending, no method adoption or native closure.",
     "Physical 8 GB bundled Qwen/coexistence, DPAPI, desktop egress/durability, production IPC/physical destination and actual legacy whole-job settlement unverified. Product baseline c5f4bd8 scoped ordinary CI only, uncertain-spawn/other detached work preserved; no Windows desktop compile/runtime inference. D1/D2 and E2/Gate C remain mandatory; no phase or release credit.",
-    "R06 historical 74 original-data differences with unknown writer; prospective owner-device preservation pending. No original data loss or owner-local access; 48 detached records preserved. Codespace stop and consumed-variable cleanup unverified, no replay.",
+    "R06 historical 74 original-data differences with unknown writer; prospective owner-device preservation pending. No original data loss or owner-local access; 49 detached records preserved. Codespace stop and consumed-variable cleanup unverified, no replay.",
     "Owner-held recovery copy delivered for exact historical 1d033ce, not current HEAD/full Git history/detached backup or build proof. Root LICENSE/NOTICE/SECURITY.md absent, owner decision outstanding. Prior risk chronology and exact references preserved at dac2149 and historical ledger."
   ],
   "context": {
