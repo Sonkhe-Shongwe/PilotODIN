@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-CD10-NORMAL-CONTEXT-SIMULATION-ONCE-20261127",
-    "parent_sha": "d7406c84753802ca95b13ffcc4a7b250de1a6120",
-    "previous_snapshot_sha": "d7406c84753802ca95b13ffcc4a7b250de1a6120",
-    "scope": "Reconcile actual normal-context simulation refusal, retain concrete flag reproduction and disarm.",
+    "operation_id": "C5-CD10-CORRECTED-SIMULATION-PREPARED-20261127",
+    "parent_sha": "3734612e9ff4d606471f880d1714019d767afbab",
+    "previous_snapshot_sha": "3734612e9ff4d606471f880d1714019d767afbab",
+    "scope": "Prepare exact detached corrected stock APT simulation; no activation, request fresh authority.",
     "state": "RECONCILED",
     "receipt": {
-      "path": "docs/C5_CD10_NORMAL_CONTEXT_SIMULATION_RECEIPT_2026-11-27.md",
-      "anchor": "pilotodin--c-d10-normal-context-simulation-and-concrete-apt-flag-diagnosis",
-      "blob_sha": "fb510bdde0f3d38c038fe6d640e40c86e32ca7a3",
+      "path": "docs/C5_CD10_CORRECTED_SIMULATION_CANDIDATE_2026-11-27.md",
+      "anchor": "pilotodin--c-d10-corrected-simulation-candidate",
+      "blob_sha": "a08097b49f2ceee2fa98b6be89fff4b1c4b37ed0",
       "start_line": 1,
-      "end_line": 19
+      "end_line": 13
     }
   },
   "product": {
@@ -119,14 +119,21 @@
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
     "status": "BLOCKED",
     "scope": "C-D08 development reproducibility/build safety as revised by C-D09 limited managed-development evidence method; D native and P8 release boundaries unchanged.",
-    "blocker": "Actual normal-context resolver reached zero broken packages but -s --no-download refused missing cached archives. Local synthetic fixture reproduces exact error, plain -s succeeds without .deb/status change. Exact Noble transaction not yet validated. All actual grants consumed/disarmed.",
-    "next_action": "Correct stock APT simulation by using explicit -s without --no-download (local differential reproduction retained); retain all pin/normal context/transaction/endpoint constraints, no actual download/install in simulation. Prepare finite execution path, preferably reviewed patched provider image or explicitly owner-approved conditional combined simulation-before-update/inspection after exact scope and material driver correction review; do not assume combined scope authorised. Otherwise request corrected simulation-only approval. No repeat identity-only metadata discovery or generic verification framework. No replay, no installs/inspection without authority; preserve original C5/P4/E2/G2/D/P8 gates.",
-    "next_action_kind": "MISSING_EVIDENCE",
+    "blocker": "Corrected simulation candidate prepared; fresh explicit approval required because prior normal-context job started and failed. No reviewed patched provider image established; exact Noble transaction not yet validated.",
+    "next_action": "If reviewed patched provider image becomes available prefer it; otherwise obtain explicit owner approval for exact corrected simulation-only detached candidate 3239d8c65ec8e94219242b4b87654ac8cb132e2f (workflow 053f957e3050f26fe615750b555e804a782bcc88). One job, two HTTPS GETs/16.5 MiB/five minutes, zero .deb transfer/install. Before activation verify fresh HEAD/approval and complete static validation, bind unique marker and write-ahead, then reconcile and disarm. No replay. If successful prepare exact bounded security update/inspection only after material driver settlement correction and rights/security review and separate explicit approval.",
+    "next_action_kind": "OWNER_DECISION",
     "after": [
       "Complete applicable rights and static linkage, conditional exact PDFium source integration and final managed source-test candidate; explicit bounded execution permission, no owner/native/installer.",
       "Run authorised exact Stage A/B and consolidated Windows/Linux development regressions, standalone Rust and browser-dev, final checklist audit; C5 closure only on evidence. D/G2 and phase gates unchanged."
     ],
     "read": [
+      {
+        "path": "docs/C5_CD10_CORRECTED_SIMULATION_CANDIDATE_2026-11-27.md",
+        "anchor": "pilotodin--c-d10-corrected-simulation-candidate",
+        "blob_sha": "a08097b49f2ceee2fa98b6be89fff4b1c4b37ed0",
+        "start_line": 1,
+        "end_line": 13
+      },
       {
         "path": "docs/C5_CD10_NORMAL_CONTEXT_SIMULATION_RECEIPT_2026-11-27.md",
         "anchor": "pilotodin--c-d10-normal-context-simulation-and-concrete-apt-flag-diagnosis",
@@ -295,17 +302,17 @@
     ]
   },
   "operation": {
-    "id": "C5-CD10-NORMAL-CONTEXT-SIMULATION-ONCE-20261127",
+    "id": "C5-CD10-CORRECTED-SIMULATION-PREPARED-20261127",
     "state": "RECONCILED",
-    "starting_sha": "63adc881621aa72edb42a5ab773f915923b46d44",
-    "outcome": "Run 45977074306 job 140431363956 attempt 1 failure APT_SIMULATION rc100. Authenticated 8 exact .11 pins, normal context 107 files, resolver broken count 0, no holds, archive-fetch refusal, dpkg status unchanged. Local synthetic APT 3.0.3 reproduced -s --no-download rc100 versus -s rc0, no .deb/status change. No actual Noble transaction pass or install. Approval consumed/disarmed; no score.",
+    "starting_sha": "3734612e9ff4d606471f880d1714019d767afbab",
+    "outcome": "Detached exact candidate 3239d8c65ec8e94219242b4b87654ac8cb132e2f workflow 053f957e3050f26fe615750b555e804a782bcc88; inverse transformation, read-back and single-path diff verified. No run or marker. Live previous workflow disarmed. Prior actual failure and 44 consumed grants preserved.",
     "reconcile_before_retry": false,
     "receipt": {
-      "path": "docs/C5_CD10_NORMAL_CONTEXT_SIMULATION_RECEIPT_2026-11-27.md",
-      "anchor": "pilotodin--c-d10-normal-context-simulation-and-concrete-apt-flag-diagnosis",
-      "blob_sha": "fb510bdde0f3d38c038fe6d640e40c86e32ca7a3",
+      "path": "docs/C5_CD10_CORRECTED_SIMULATION_CANDIDATE_2026-11-27.md",
+      "anchor": "pilotodin--c-d10-corrected-simulation-candidate",
+      "blob_sha": "a08097b49f2ceee2fa98b6be89fff4b1c4b37ed0",
       "start_line": 1,
-      "end_line": 19
+      "end_line": 13
     }
   },
   "authority": {
@@ -442,6 +449,10 @@
       {
         "sha": "813f3f059c80a7a94e40133f6ef55e202e7f80f1",
         "scope": "Consolidated nine inert QA paths, six new actual local pure custody fixture tests passed; previous six blobs retained. No live adapters or key material, no execution readiness; C5 necessity audit next."
+      },
+      {
+        "sha": "3239d8c65ec8e94219242b4b87654ac8cb132e2f",
+        "scope": "Exact detached corrected simulation workflow, single-path diff, inverse transformation and exact read-back PASS; full fresh parser/compile not run, no activation/marker/run, fresh explicit execution approval required."
       }
     ]
   },
