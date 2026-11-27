@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-CONSOLIDATED-GITHUB-PREPARATION-20261127",
-    "parent_sha": "dd5ec0dbe2e5062a35efa82da3af043d95c03438",
-    "previous_snapshot_sha": "dd5ec0dbe2e5062a35efa82da3af043d95c03438",
-    "scope": "Owner-approved consolidated C5 development policy and disarmed source/regression preparation.",
+    "operation_id": "C5-CONSOLIDATED-FINITE-BINDING-20261127",
+    "parent_sha": "e3231a80a720f5e3aab2658614e6f7fe0512e5e7",
+    "previous_snapshot_sha": "e3231a80a720f5e3aab2658614e6f7fe0512e5e7",
+    "scope": "Disarmed consolidated C5 finite partition and regression command preparation; no execution.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--consolidated-c5-github-source-recovery-and-regression-preparation",
-      "blob_sha": "cb214fa2d4dfc99111f9ac7c01e31178d1df0cff",
-      "start_line": 543,
-      "end_line": 549
+      "anchor": "27-november--consolidated-c5-finite-partition-and-report-regression-binding",
+      "blob_sha": "cdb00fa113f6c3016a1b75baf1f552143142db6a",
+      "start_line": 551,
+      "end_line": 555
     }
   },
   "product": {
@@ -137,8 +137,8 @@
     "id": "C5-LINUX-FIRST-20261127",
     "status": "BLOCKED",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "Consolidated isolated candidate 9402a08 prepared; actual pre-use review, new manifest/staging/receipt callbacks and settlement, @playwright/test size evidence and report-writer command unresolved. No execution authority.",
-    "next_action": "Finish existing consolidated candidate's finite staging/pre-use/settlement and regression bindings; retain 23 targeted rows and exact new browser/Pillow checks, no standalone acquisition probe. Validate source-only as authorised; seek one exact consolidated execution approval when ready.",
+    "blocker": "Detached 61c1007 adds finite manifest partition and report writer/direct Vite bindings; actual pre-use, public Pillow/revised graph staging/receipt callbacks, measured @playwright/test size, per-selector applicability and positive final settlement remain unresolved. No execution authority.",
+    "next_action": "Bind existing consolidated candidate 61c1007 to fresh public Pillow acquisition and reviewed actual pre-use dispositions, updated npm lock and measured-size receipts; retain owned scratch through full applicable regressions then positive settlement/final guard. Preserve 23 targeted rows, no standalone acquisition probe; source-only verification then one exact consolidated approval when ready.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
@@ -146,6 +146,13 @@
       "D2, G2 and remaining physical E2/P4 acceptance; no phase advance without evidence and owner signoff."
     ],
     "read": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "27-november--consolidated-c5-finite-partition-and-report-regression-binding",
+        "blob_sha": "cdb00fa113f6c3016a1b75baf1f552143142db6a",
+        "start_line": 551,
+        "end_line": 555
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--consolidated-c5-github-source-recovery-and-regression-preparation",
@@ -450,17 +457,17 @@
     ]
   },
   "operation": {
-    "id": "C5-CONSOLIDATED-GITHUB-PREPARATION-20261127",
+    "id": "C5-CONSOLIDATED-FINITE-BINDING-20261127",
     "state": "RECONCILED",
-    "starting_sha": "dd5ec0dbe2e5062a35efa82da3af043d95c03438",
-    "outcome": "Recovered isolated candidate 9402a08, exact Playwright lock rows, reusable Pillow/Chrome methods, corrected inventory/npm configuration, regression draft and proposed bounds. Final staging/use/settlement binding remains; zero acquisition/execution.",
+    "starting_sha": "e3231a80a720f5e3aab2658614e6f7fe0512e5e7",
+    "outcome": "Detached 61c1007 pure finite partition, synthetic test source, historical report-writer command and direct installed Vite command bound; nine static checks and manifest arithmetic pass. No execution; staging, actual pre-use and settlement callbacks remain.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--consolidated-c5-github-source-recovery-and-regression-preparation",
-      "blob_sha": "cb214fa2d4dfc99111f9ac7c01e31178d1df0cff",
-      "start_line": 543,
-      "end_line": 549
+      "anchor": "27-november--consolidated-c5-finite-partition-and-report-regression-binding",
+      "blob_sha": "cdb00fa113f6c3016a1b75baf1f552143142db6a",
+      "start_line": 551,
+      "end_line": 555
     }
   },
   "authority": {
@@ -754,6 +761,10 @@
       {
         "sha": "9402a0859d2586b5e25bdaaed2aecad90ac9b9b9",
         "scope": "Consolidated draft with regression commands and finite input bounds, not execution-ready."
+      },
+      {
+        "sha": "61c10076bf3450b154bfc5eb73f8bea83e3d0f75",
+        "scope": "Detached five-path finite consolidated partition, report writer command and direct installed Vite config successor of 9402a08; nine static/readback checks and manifest arithmetic pass; synthetic tests written not run; disarmed, no acquisition/execution."
       }
     ]
   },
@@ -777,7 +788,8 @@
     "Direct public Pillow acquisition 46059207493 refused observed 302 to binstar-cio-packages-prod.s3.amazonaws.com; actual wheel identity not established. Exact one-hop scope requires approval.",
     "Pillow controlled storage 46059721700 refused combined redirect URL predicate, individual cause unknown. Exact storage bytes not obtained; no unsupported filename inference or repeated probe.",
     "Exact Pillow SHA256/size from public source verified 46062661845; combined ZIP entry-count/size assertion failed, prior regular-file count may differ from infolist including directories. No installation or current durable custody; full profile open.",
-    "Candidate 9402a08 pending exact pre-use/manifest/callback/settlement binding; @playwright/test size cap proposed, not measured; no full tests run. Pillow inventory correction unexecuted."
+    "Candidate 9402a08 pending exact pre-use/manifest/callback/settlement binding; @playwright/test size cap proposed, not measured; no full tests run. Pillow inventory correction unexecuted.",
+    "61c1007 partial finite binding only; old Stage B cleans scratch before full regression and assumes local Pillow custody/old lock/exact sizes. Actual pre-use disposition, measured @playwright/test size, callback/settlement and approval open; no score credit."
   ],
   "context": {
     "protocol": {
