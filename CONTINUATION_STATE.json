@@ -5,17 +5,21 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-CD10-UBUNTU-METADATA-ONCE-20261127",
-    "parent_sha": "3659503a0b3fc739ede94f22c3bc9c7fedc5831c",
-    "previous_snapshot_sha": "3659503a0b3fc739ede94f22c3bc9c7fedc5831c",
-    "scope": "Reconcile failed metadata workflow configuration before any runner job; disarm one-use activation, preserve corrected detached source.",
-    "state": "RECONCILED",
+    "operation_id": "C5-CD10-UBUNTU-METADATA-CORRECTED-ONCE-20261127",
+    "parent_sha": "dbb16ce41687a8504fe7b9b58502c682c6baaa5f",
+    "previous_snapshot_sha": "dbb16ce41687a8504fe7b9b58502c682c6baaa5f",
+    "scope": "Owner-approved narrow technical retry rule and exact corrected metadata replacement write-ahead; no job execution yet.",
+    "state": "PREPARED",
     "receipt": {
-      "path": "docs/C5_CD10_UBUNTU_METADATA_ATTEMPT_2026-11-27.md",
-      "anchor": "pilotodin--c-d10-ubuntu-metadata-one-use-attempt-pre-job-configuration-failure",
-      "blob_sha": "11fd94971a0b9333331419913343931f6e493c4d",
-      "start_line": 1,
-      "end_line": 13
+      "path": "docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md",
+      "anchor": "27-november-2026--owner-approved-bounded-technical-retry-rule",
+      "blob_sha": "89f7179175b22eaac88aee8c5fc337f8d7981276",
+      "start_line": 3,
+      "end_line": 9,
+      "owner_quote": "okay lets do that",
+      "original_owner_quote": "i aprove",
+      "original_run": 45972049954,
+      "previous_disarm": "dbb16ce41687a8504fe7b9b58502c682c6baaa5f"
     }
   },
   "product": {
@@ -117,16 +121,27 @@
   },
   "task": {
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
-    "status": "BLOCKED",
+    "status": "PREPARED",
     "scope": "C-D08 development reproducibility/build safety as revised by C-D09 limited managed-development evidence method; D native and P8 release boundaries unchanged.",
     "blocker": "C-D10 run 45972049954 failed before job creation due to YAML configuration defect; zero jobs and no signed metadata or simulated transaction. Exact corrected workflow detached; owner approval consumed/disarmed. Provider patched image not previously listed.",
-    "next_action": "Review exact corrected workflow blob 70cd3b61948e4ed6b0538b4e33b891cd1d57ca70 (folded condition; unchanged steps), validate full YAML/Python binding and obtain fresh explicit one-use metadata approval before replacement attempt, or select newly available reviewed patched provider image. Same two HTTPS GET/16.5 MiB/5-minute cap; no .deb acquisition/install, dependency inspection, owner access or replay. No additional verification infrastructure or redundant checkpoints.",
-    "next_action_kind": "OWNER_DECISION",
+    "next_action": "Issue exact corrected metadata replacement once within unchanged original scope; reconcile actual result and disarm. No subsequent package update or inspection authority.",
+    "next_action_kind": "RECONCILE",
     "after": [
       "Complete applicable rights and static linkage, conditional exact PDFium source integration and final managed source-test candidate; explicit bounded execution permission, no owner/native/installer.",
       "Run authorised exact Stage A/B and consolidated Windows/Linux development regressions, standalone Rust and browser-dev, final checklist audit; C5 closure only on evidence. D/G2 and phase gates unchanged."
     ],
     "read": [
+      {
+        "path": "docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md",
+        "anchor": "27-november-2026--owner-approved-bounded-technical-retry-rule",
+        "blob_sha": "89f7179175b22eaac88aee8c5fc337f8d7981276",
+        "start_line": 3,
+        "end_line": 9,
+        "owner_quote": "okay lets do that",
+        "original_owner_quote": "i aprove",
+        "original_run": 45972049954,
+        "previous_disarm": "dbb16ce41687a8504fe7b9b58502c682c6baaa5f"
+      },
       {
         "path": "docs/C5_CD10_UBUNTU_METADATA_ATTEMPT_2026-11-27.md",
         "anchor": "pilotodin--c-d10-ubuntu-metadata-one-use-attempt-pre-job-configuration-failure",
@@ -256,23 +271,63 @@
     ]
   },
   "operation": {
-    "id": "C5-CD10-UBUNTU-METADATA-ONCE-20261127",
-    "state": "RECONCILED",
-    "starting_sha": "bba5104d4014428b10fb66f959692058a5100dca",
-    "outcome": "Run 45972049954 attempt 1 FAILURE, zero jobs. Reproduced invalid unquoted YAML colon in condition; corrected scalar detached blob 70cd3b61948e4ed6b0538b4e33b891cd1d57ca70. No metadata or simulation result. Approval consumed/disarmed; no retry or score.",
-    "reconcile_before_retry": false,
-    "receipt": {
-      "path": "docs/C5_CD10_UBUNTU_METADATA_ATTEMPT_2026-11-27.md",
-      "anchor": "pilotodin--c-d10-ubuntu-metadata-one-use-attempt-pre-job-configuration-failure",
-      "blob_sha": "11fd94971a0b9333331419913343931f6e493c4d",
-      "start_line": 1,
-      "end_line": 13
-    }
+    "id": "C5-CD10-UBUNTU-METADATA-CORRECTED-ONCE-20261127",
+    "state": "PREPARED",
+    "starting_sha": "dbb16ce41687a8504fe7b9b58502c682c6baaa5f",
+    "scope": "Exactly one corrected disposable GitHub Ubuntu24.04 x64 metadata-only job, attempt 1, unchanged 2 HTTPS GET maximum to security.ubuntu.com/ubuntu/dists/noble-security/, 512 KiB InRelease and 16 MiB Packages.xz, 16.5 MiB combined, five minutes. Authenticated index and isolated read-only APT simulation only. No package retrieval/install, application inspection, system configuration, secrets, checkout or retries.",
+    "intended_paths": [
+      ".github/workflows/c5-cd10-ubuntu-security-metadata-once.yml",
+      "qa/c5_managed_dev/APPROVAL_CD10_UBUNTU_SECURITY_METADATA_ONCE_20261127.txt"
+    ],
+    "authority_ref": {
+      "path": "docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md",
+      "anchor": "27-november-2026--owner-approved-bounded-technical-retry-rule",
+      "blob_sha": "89f7179175b22eaac88aee8c5fc337f8d7981276",
+      "start_line": 3,
+      "end_line": 9,
+      "owner_quote": "okay lets do that",
+      "original_owner_quote": "i aprove",
+      "original_run": 45972049954,
+      "previous_disarm": "dbb16ce41687a8504fe7b9b58502c682c6baaa5f"
+    },
+    "expected_evidence": "One corrected attempt-1 metadata job; exact C5_CD10_METADATA result or bounded refusal. Full YAML/Bash/Python static validation passed, no body changes. No additional replacement.",
+    "recovery": "Inspect exact activation and actual run/jobs/logs; disarm after outcome. No automatic second replacement, no package update/inspection authority. Unknown stays unreplayed.",
+    "reconcile_before_retry": true,
+    "expected_workflow_blob": "70cd3b61948e4ed6b0538b4e33b891cd1d57ca70",
+    "expected_marker_blob": "44b0b2346d72bf0be687d5f339313ab0e06a31ee",
+    "expected_commit_message": "C5: issue approved CD10 Ubuntu security metadata once 20261127",
+    "expected_workflow_runs": 1,
+    "previous_run": 45972049954
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next.",
     "preparation_only": "Owner approved consolidated shared-bundle disarmed acquisition-before-signature source and exact limited existing host bootstrap; owner approved proposed limited local Docker control-plane and host-derived rootfs trust/no-pull isolation method for preparation only. Authentication before extraction/use; no Docker invocation, acquisition, verification execution, installation or live cutover authorised. Owner approved bounded first-collision encoded public member-path diagnostic preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-bounded-first-collision-diagnostic-preparation-only. No restricted execution authority. Owner approved finite exact Linux data-only terminfo inventory policy and bounded receipt projection as proposed in 8cc1a696, preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-finite-exact-linux-terminfo-inventory-policy-and-bounded-receipt-preparation-only. Strict Windows/gh and other safeguards unchanged; no acquisition, extraction or restricted execution. Owner explicitly approved preparation and static/synthetic verification only of Approach C observation-only candidate (11 fixed roles, five minutes); no restricted execution, acquisition, Docker invocation or active policy change. Exact reference in C5 spec owner-approved-bounded-approach-c-observation-candidate-preparation-only. Owner approved Approach C metadata-only preparation/static/synthetic verification under 13 GET/10-minute proposed limits; no actual acquisition, package downloads, installation, Docker invocation, restricted execution or active trust policy change. Exact spec anchor owner-approved-bounded-approach-c-metadata-only-preparation-and-synthetic-core. Owner approved narrow metadata bootstrap preparation on existing two reviewed images including GnuPG/necessary existing dependencies, no acquisition/restricted execution/integrated verification/active policy change, original 13 GET/10 min bounds. Exact spec anchor owner-approved-narrow-metadata-bootstrap-preparation-and-finite-key-evidence-contract. Owner approved two-stage key/metadata sequence preparation including bounded public signing-key private repository retention proposal, combined 13 GET/600s/256 MiB; no actual acquisition, restricted execution or active policy change. Exact spec anchor owner-approved-two-stage-preparation-and-consolidated-custody-core. Owner approved exact C-D09 managed-development CI evidence rationalisation at proposal 2cbed51, recorded in C5 implementation spec; limited bootstrap trust and residual risk accepted, prepare concrete bounded validation candidate only, no acquisition, installation, restricted execution, migration, new expenditure or phase advancement.",
-    "restricted_active": [],
+    "restricted_active": [
+      {
+        "id": "C5-CD10-UBUNTU-METADATA-CORRECTED-ONCE-20261127",
+        "state": "APPROVED",
+        "source_sha": "dbb16ce41687a8504fe7b9b58502c682c6baaa5f",
+        "scope": "Exactly one corrected disposable GitHub Ubuntu24.04 x64 metadata-only job, attempt 1, unchanged 2 HTTPS GET maximum to security.ubuntu.com/ubuntu/dists/noble-security/, 512 KiB InRelease and 16 MiB Packages.xz, 16.5 MiB combined, five minutes. Authenticated index and isolated read-only APT simulation only. No package retrieval/install, application inspection, system configuration, secrets, checkout or retries.",
+        "owner_authority_ref": {
+          "path": "docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md",
+          "anchor": "27-november-2026--owner-approved-bounded-technical-retry-rule",
+          "blob_sha": "89f7179175b22eaac88aee8c5fc337f8d7981276",
+          "start_line": 3,
+          "end_line": 9,
+          "owner_quote": "okay lets do that",
+          "original_owner_quote": "i aprove",
+          "original_run": 45972049954,
+          "previous_disarm": "dbb16ce41687a8504fe7b9b58502c682c6baaa5f"
+        },
+        "reconcile_before_retry": true,
+        "workflow": ".github/workflows/c5-cd10-ubuntu-security-metadata-once.yml",
+        "workflow_blob": "70cd3b61948e4ed6b0538b4e33b891cd1d57ca70",
+        "marker": "qa/c5_managed_dev/APPROVAL_CD10_UBUNTU_SECURITY_METADATA_ONCE_20261127.txt",
+        "marker_blob": "44b0b2346d72bf0be687d5f339313ab0e06a31ee",
+        "run_attempt": 1,
+        "corrected_replacement": 1
+      }
+    ],
     "consumed_disarmed_count": 42,
     "consumed_history": {
       "commit": "b9864b70fb9bb5a72d0f79c37f15b94100722192",
@@ -292,7 +347,7 @@
       "release",
       "replay of consumed or uncertain approval"
     ],
-    "guards": "42 prior restricted grants consumed/closed or disarmed; no execution authority remains. Codespace preflight refused, no persistent activation; stop requested not confirmed. Existing exact false workflow restored; approved Actions images unchanged; no fallback/replay. Three C1/C2 workflows and OWNED_RESOURCE_ENABLED false; three consumed variables owner cleanup unverified.",
+    "guards": "42 prior restricted grants consumed/closed or disarmed; no execution authority remains. Codespace preflight refused, no persistent activation; stop requested not confirmed. Existing exact false workflow restored; approved Actions images unchanged; no fallback/replay. Three C1/C2 workflows and OWNED_RESOURCE_ENABLED false; three consumed variables owner cleanup unverified. Owner-approved bounded technical retry rule permits one corrected replacement only after proven terminal zero-job pre-execution failure; prior activation remains closed; no automatic second replacement.",
     "last_consumed": {
       "id": "C5-CD10-UBUNTU-METADATA-ONCE-20261127",
       "source_sha": "bba5104d4014428b10fb66f959692058a5100dca",
