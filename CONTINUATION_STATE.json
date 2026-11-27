@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-LINUX-STAGE-A-ONCE-20261127",
-    "parent_sha": "3f0574f642a29b50af9505c61630a7fda16bcd4b",
-    "previous_snapshot_sha": "3f0574f642a29b50af9505c61630a7fda16bcd4b",
-    "scope": "Stage A one-use terminal 19/19 PASS, scoped managed host and seven dependency consumption, receipt retained and workflow/marker disarmed.",
+    "operation_id": "C5-LINUX-PILLOW-PUBLISHER-ARTIFACT-20261127",
+    "parent_sha": "809106676f97c3891524eb0b3f9fb5e6e3451b73",
+    "previous_snapshot_sha": "809106676f97c3891524eb0b3f9fb5e6e3451b73",
+    "scope": "Corrected official Pillow 13.1.0.dev0 immutable publisher ZIP identified, actual source-build/upload chain verified; final wheel inspection requires separate authority.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--linux-stage-a-actual-19-test-pass-and-one-use-disarm",
-      "blob_sha": "c35717bb3d867248f04e51cbabfd543a6cd6cdd4",
-      "start_line": 317,
-      "end_line": 323
+      "anchor": "27-november--corrected-pillow-publisher-artifact-selected-for-bounded-inspection",
+      "blob_sha": "4393a164434602193297ba46307e5bda1592b242",
+      "start_line": 325,
+      "end_line": 329
     }
   },
   "product": {
@@ -119,9 +119,9 @@
     "id": "C5-LINUX-FIRST-20261127",
     "status": "BLOCKED",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "Stage A 19/19 PASS and actual managed host/Python/pip plus seven exact wheel uses established. Full Linux profile still requires corrected Pillow (13.0.0 held), actual patched managed browser and final remaining dependency/source/frontend/browser regression evidence with separate exact approval.",
-    "next_action": "Resolve finite full Linux corrected Pillow input decision (official immutable corrected artifact or reviewed upstream-source build; do not use affected 13.0.0 or repeat broad polling); prepare remaining full-profile application lock and applicable rights/security and managed Chrome actual availability, final exact Linux profile/frontend/browser regression scope for approval. Reuse actual Stage A PASS, no duplicate qualification or replay. Windows all mandatory before D1.",
-    "next_action_kind": "MISSING_EVIDENCE",
+    "blocker": "Official corrected Pillow publisher artifact selected; final CP311 member hash, metadata, actual SBOM/native/notices and resolver compatibility not yet observed. Read-only exact artifact retrieval requires explicit approval or owner upload. Actual patched managed browser and full Linux profile remaining.",
+    "next_action": "Obtain one explicit bounded read-only retrieval/inspection approval for official Pillow artifact 14985180992 (65,786,382 bytes SHA256 c8785e8a17b11655203645a08e4a3fa3e79da30dcabcdf9df7d2af76cc8a2863, ordinary provider redirect only, no retry), or owner upload exact ZIP. Verify outer digest before parsing, inspect only exact CP311 wheel member and actual SBOM/native/notices/metadata/RECORD without install/import/native execution. Stop if connector bytes unavailable, no alternate fetch. Then propose exact Linux-only prerelease lock pin and resolver check, retain all other holds; no repeated research or Stage A replay. Full profile and browser require separate approval; Windows before D1.",
+    "next_action_kind": "OWNER_DECISION",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
       "Windows-specific verified input and compatibility prerequisites before actual production-equivalent D1, separately authorised; no installer.",
@@ -130,92 +130,99 @@
     "read": [
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "27-november--corrected-pillow-publisher-artifact-selected-for-bounded-inspection",
+        "blob_sha": "4393a164434602193297ba46307e5bda1592b242",
+        "start_line": 325,
+        "end_line": 329
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--linux-stage-a-actual-19-test-pass-and-one-use-disarm",
-        "blob_sha": "c35717bb3d867248f04e51cbabfd543a6cd6cdd4",
+        "blob_sha": "4393a164434602193297ba46307e5bda1592b242",
         "start_line": 317,
         "end_line": 323
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--owner-approved-one-use-linux-stage-a-execution",
-        "blob_sha": "c35717bb3d867248f04e51cbabfd543a6cd6cdd4",
+        "blob_sha": "4393a164434602193297ba46307e5bda1592b242",
         "start_line": 311,
         "end_line": 315
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--exact-stage-a-disposition-proposal-and-managed-rolling-image-activation-draft",
-        "blob_sha": "c35717bb3d867248f04e51cbabfd543a6cd6cdd4",
+        "blob_sha": "4393a164434602193297ba46307e5bda1592b242",
         "start_line": 303,
         "end_line": 309
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--c55-exact-setup-drafts-and-managed-chrome-candidate",
-        "blob_sha": "c35717bb3d867248f04e51cbabfd543a6cd6cdd4",
+        "blob_sha": "4393a164434602193297ba46307e5bda1592b242",
         "start_line": 297,
         "end_line": 301
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--c55-proportionate-baseline-consolidation",
-        "blob_sha": "c35717bb3d867248f04e51cbabfd543a6cd6cdd4",
+        "blob_sha": "4393a164434602193297ba46307e5bda1592b242",
         "start_line": 289,
         "end_line": 295
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--c551-isolated-managed-operating-system-review",
-        "blob_sha": "c35717bb3d867248f04e51cbabfd543a6cd6cdd4",
+        "blob_sha": "4393a164434602193297ba46307e5bda1592b242",
         "start_line": 285,
         "end_line": 287
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--stage-a-generated-fixture-applicability-and-targeted-host-preflight",
-        "blob_sha": "c35717bb3d867248f04e51cbabfd543a6cd6cdd4",
+        "blob_sha": "4393a164434602193297ba46307e5bda1592b242",
         "start_line": 275,
         "end_line": 283
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--exact-pdfium-publisher-build-chain-and-managed-linux-bootstrap",
-        "blob_sha": "c35717bb3d867248f04e51cbabfd543a6cd6cdd4",
+        "blob_sha": "4393a164434602193297ba46307e5bda1592b242",
         "start_line": 265,
         "end_line": 273
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--disarmed-standalone-linux-stage-a-source-candidate",
-        "blob_sha": "c35717bb3d867248f04e51cbabfd543a6cd6cdd4",
+        "blob_sha": "4393a164434602193297ba46307e5bda1592b242",
         "start_line": 255,
         "end_line": 263
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--six-uploaded-linux-stage-a-wheels-verified",
-        "blob_sha": "c35717bb3d867248f04e51cbabfd543a6cd6cdd4",
+        "blob_sha": "4393a164434602193297ba46307e5bda1592b242",
         "start_line": 245,
         "end_line": 253
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--pdfium-brotli-source-fix-traced-and-official-pillow-nightly-option",
-        "blob_sha": "c35717bb3d867248f04e51cbabfd543a6cd6cdd4",
+        "blob_sha": "4393a164434602193297ba46307e5bda1592b242",
         "start_line": 237,
         "end_line": 243
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--actual-uploaded-linux-pillow-and-pdfium-inspection",
-        "blob_sha": "c35717bb3d867248f04e51cbabfd543a6cd6cdd4",
+        "blob_sha": "4393a164434602193297ba46307e5bda1592b242",
         "start_line": 227,
         "end_line": 235
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--owner-approved-linux-first-c5-allocation-and-exact-reduced-input-plan",
-        "blob_sha": "c35717bb3d867248f04e51cbabfd543a6cd6cdd4",
+        "blob_sha": "4393a164434602193297ba46307e5bda1592b242",
         "start_line": 211,
         "end_line": 219
       },
@@ -254,25 +261,17 @@
     ]
   },
   "operation": {
-    "id": "C5-LINUX-STAGE-A-ONCE-20261127",
+    "id": "C5-LINUX-PILLOW-PUBLISHER-ARTIFACT-20261127",
     "state": "RECONCILED",
-    "starting_sha": "29ffcd50598fda7f901a2b635c246a8c68bbd151",
-    "outcome": "Exact run 46031011314/job 140614495903 attempt 1 SUCCESS, 19/19 original Stage A tests, seven verified wheel uses/7,808,390 bytes, all seven managed package observations, native identity before/after and owned scratch cleanup. No Stage B or full-profile claim; one-use grant consumed and owned workflow disarmed/marker removed.",
+    "starting_sha": "809106676f97c3891524eb0b3f9fb5e6e3451b73",
+    "outcome": "Publisher Wheels run 45528042532/source 35a4496a, build and upload jobs successful; actual Brotli 1.2.1 build and exact final artifact 14985180992/65,786,382 bytes/SHA256 c8785e8a17b11655203645a08e4a3fa3e79da30dcabcdf9df7d2af76cc8a2863 verified from metadata/logs. Initial wheel hash predates SBOM rewrite, not final hash. No archive acquisition, actual final wheel inspection, install or score change.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--linux-stage-a-actual-19-test-pass-and-one-use-disarm",
-      "blob_sha": "c35717bb3d867248f04e51cbabfd543a6cd6cdd4",
-      "start_line": 317,
-      "end_line": 323
-    },
-    "activation_sha": "3f0574f642a29b50af9505c61630a7fda16bcd4b",
-    "source_sha": "304b24d71aef1c8e3e98211bb5e8ba2430932f4f",
-    "run_id": 46031011314,
-    "job_id": 140614495903,
-    "terminal_receipt": {
-      "path": "docs/C5_LINUX_STAGE_A_RECEIPT_46031011314.json",
-      "blob_sha": "28a3b7375547adf46e0d6544c768cb6cd887bcff"
+      "anchor": "27-november--corrected-pillow-publisher-artifact-selected-for-bounded-inspection",
+      "blob_sha": "4393a164434602193297ba46307e5bda1592b242",
+      "start_line": 325,
+      "end_line": 329
     }
   },
   "authority": {
