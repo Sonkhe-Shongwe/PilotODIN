@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-CD10-CORRECTED-SIMULATION-ONCE-20261127",
-    "parent_sha": "4cd6797d41244fec5a767c0529a9c52b5f33fbae",
-    "previous_snapshot_sha": "4cd6797d41244fec5a767c0529a9c52b5f33fbae",
-    "scope": "Reconcile actual corrected simulation rc0 and parser refusal; retain exact log, disarm one-use activation.",
+    "operation_id": "C5-CD10-PARSER-SETTLEMENT-CORRECTION-20261127",
+    "parent_sha": "b5263d0e9b6af7541aeac7552ae9641ea4a3946a",
+    "previous_snapshot_sha": "b5263d0e9b6af7541aeac7552ae9641ea4a3946a",
+    "scope": "Apply focused pure APT parser and unprivileged process settlement corrections; preserve disarm and integrated execution boundary.",
     "state": "RECONCILED",
     "receipt": {
-      "path": "docs/C5_CD10_CORRECTED_SIMULATION_RECEIPT_2026-11-27.md",
-      "anchor": "pilotodin--c-d10-corrected-simulation-receipt",
-      "blob_sha": "81d4b8706d0c4608fff6768d0fa4fffaf3da15fd",
+      "path": "docs/C5_CD10_PARSER_SETTLEMENT_CORRECTION_2026-11-27.md",
+      "anchor": "pilotodin--c-d10-focused-transaction-and-settlement-corrections",
+      "blob_sha": "32726e118b7fc5cc78d018b4ca81b14d67a71019",
       "start_line": 1,
-      "end_line": 17
+      "end_line": 19
     }
   },
   "product": {
@@ -119,14 +119,21 @@
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
     "status": "BLOCKED",
     "scope": "C-D08 development reproducibility/build safety as revised by C-D09 limited managed-development evidence method; D native and P8 release boundaries unchanged.",
-    "blocker": "Actual Noble exact transaction resolved (rc0, 8 upgrades, 0 new/remove); automated parser refused stock APT dependency annotations. No restricted grants remain. Integrated update/inspection candidate still needs precise parser correction, process settlement and tool rights/security review; new explicit scope approval required.",
-    "next_action": "Prepare one finite integrated signed-security-update/inspection candidate within existing preparation authority: narrow parser correction with actual retained 16-line fixture and strict negative cases, material bounded_process settlement correction, exact tool rights/security and existing inspection caps. Require corrected simulation pass on same disposable job before any conditional security update; fresh explicit expanded owner approval for exact integrated candidate, no acquisition/install/inspection now. Prefer reviewed patched provider image if available; no repeat standalone metadata discovery or automatic retry; do not weaken acceptance.",
+    "blocker": "Corrected pure APT parser and bounded_process source implemented; full integration/retained suite pending. Exact distro security/rights and local-cache root-side installation settlement/transaction binding still need review. No restricted grants.",
+    "next_action": "Finish ONE disarmed integrated same-job signed metadata/strict corrected simulation -> exact pinned .deb staging -> offline cache plan recheck and bounded root-side package transaction -> exact post-install graph/tool security/rights -> existing ordered 42-row inspection. Reuse previous exact workflow/source and new parser/adapter; no further standalone metadata. Run retained and new pure synthetic tests; fresh explicit exact combined operation approval only after complete executable review. Prefer reviewed patched provider image. No actual acquisition/installation/inspection yet.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "Complete applicable rights and static linkage, conditional exact PDFium source integration and final managed source-test candidate; explicit bounded execution permission, no owner/native/installer.",
       "Run authorised exact Stage A/B and consolidated Windows/Linux development regressions, standalone Rust and browser-dev, final checklist audit; C5 closure only on evidence. D/G2 and phase gates unchanged."
     ],
     "read": [
+      {
+        "path": "docs/C5_CD10_PARSER_SETTLEMENT_CORRECTION_2026-11-27.md",
+        "anchor": "pilotodin--c-d10-focused-transaction-and-settlement-corrections",
+        "blob_sha": "32726e118b7fc5cc78d018b4ca81b14d67a71019",
+        "start_line": 1,
+        "end_line": 19
+      },
       {
         "path": "docs/C5_CD10_CORRECTED_SIMULATION_RECEIPT_2026-11-27.md",
         "anchor": "pilotodin--c-d10-corrected-simulation-receipt",
@@ -309,17 +316,17 @@
     ]
   },
   "operation": {
-    "id": "C5-CD10-CORRECTED-SIMULATION-ONCE-20261127",
+    "id": "C5-CD10-PARSER-SETTLEMENT-CORRECTION-20261127",
     "state": "RECONCILED",
-    "starting_sha": "d2df9d7e5c661fa4c11132d19076eb59a4f953ce",
-    "outcome": "Run 45979167594 job 140438373369 attempt 1 completed FAILURE, APT_UNEXPECTED_ACTION; actual APT rc0, exact eight .10 to .11 upgrades/16 actions independently matched from retained log, zero new/remove, no .deb/install reported, dpkg status unchanged. Parser refused observed dependency annotation suffixes. Automated gate failed; no score. Approval consumed/disarmed.",
+    "starting_sha": "b5263d0e9b6af7541aeac7552ae9641ea4a3946a",
+    "outcome": "Four inert QA files; exact parser and retained fixture blobs matched local tests; exact adapter function matched local isolated test; final 7/7 methods PASS, first fixture run retained in receipt. Full integrated suite not run. No activation/acquisition/install. Tool and combined execution review still required.",
     "reconcile_before_retry": false,
     "receipt": {
-      "path": "docs/C5_CD10_CORRECTED_SIMULATION_RECEIPT_2026-11-27.md",
-      "anchor": "pilotodin--c-d10-corrected-simulation-receipt",
-      "blob_sha": "81d4b8706d0c4608fff6768d0fa4fffaf3da15fd",
+      "path": "docs/C5_CD10_PARSER_SETTLEMENT_CORRECTION_2026-11-27.md",
+      "anchor": "pilotodin--c-d10-focused-transaction-and-settlement-corrections",
+      "blob_sha": "32726e118b7fc5cc78d018b4ca81b14d67a71019",
       "start_line": 1,
-      "end_line": 17
+      "end_line": 19
     }
   },
   "authority": {

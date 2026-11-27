@@ -109,43 +109,59 @@ def stage_member(raw, row, item, scratch):
 
 
 def bounded_process(argv, scratch, deadline, cap):
-    """Linux-only capture primitive, no shell, no live orchestration call site."""
-    c.need(0 < cap <= c.MAX_TOOL_OUTPUT and time.monotonic() < deadline, 'PROCESS_BOUNDS')
+    """Linux-only capture; retain the group leader until group cleanup is issued."""
+    started = time.monotonic()
+    c.need(0 < cap <= c.MAX_TOOL_OUTPUT and started < deadline, 'PROCESS_BOUNDS')
+    c.need(signal.getsignal(signal.SIGCHLD) == signal.SIG_DFL, 'PROCESS_REAPER')
     env = {'PATH': '/usr/bin:/bin', 'HOME': str(scratch), 'TMPDIR': str(scratch), 'LC_ALL': 'C'}
     c.need(os.path.isabs(argv[0]), 'TOOL_PATH')
-    with subprocess.Popen(argv, cwd=scratch, env=env, stdin=subprocess.DEVNULL,
-                          stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True) as child:
-        buffers = [bytearray(), bytearray()]; total = 0
-        try:
-            with selectors.DefaultSelector() as sel:
-                for i, pipe in enumerate((child.stdout, child.stderr)):
-                    sel.register(pipe, selectors.EVENT_READ, i)
-                while sel.get_map():
-                    remaining = deadline - time.monotonic()
-                    c.need(remaining > 0, 'PROCESS_TIMEOUT')
-                    events = sel.select(remaining)
-                    c.need(bool(events), 'PROCESS_TIMEOUT')
-                    for key, _ in events:
-                        chunk = os.read(key.fd, min(c.CHUNK, cap - total + 1))
-                        if not chunk:
-                            sel.unregister(key.fileobj); continue
-                        total += len(chunk)
-                        c.need(total <= cap, 'PROCESS_OUTPUT_CAP')
-                        buffers[key.data].extend(chunk)
-            remaining = deadline - time.monotonic()
+    # Reserve part of the caller's existing deadline for kill and bounded reaping.
+    work_deadline = deadline - min(0.5, (deadline - started) / 2)
+    child = subprocess.Popen(argv, cwd=scratch, env=env, stdin=subprocess.DEVNULL,
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True)
+    buffers = [bytearray(), bytearray()]; total = 0
+    try:
+        with selectors.DefaultSelector() as sel:
+            for i, pipe in enumerate((child.stdout, child.stderr)):
+                sel.register(pipe, selectors.EVENT_READ, i)
+            while sel.get_map():
+                remaining = work_deadline - time.monotonic()
+                c.need(remaining > 0, 'PROCESS_TIMEOUT')
+                events = sel.select(remaining)
+                c.need(bool(events), 'PROCESS_TIMEOUT')
+                for key, _ in events:
+                    chunk = os.read(key.fd, min(c.CHUNK, cap - total + 1))
+                    if not chunk:
+                        sel.unregister(key.fileobj); continue
+                    total += len(chunk)
+                    c.need(total <= cap, 'PROCESS_OUTPUT_CAP')
+                    buffers[key.data].extend(chunk)
+        # Observe exit without reaping: no poll()/wait() before killpg().
+        while True:
+            remaining = work_deadline - time.monotonic()
             c.need(remaining > 0, 'PROCESS_TIMEOUT')
+            if os.waitid(os.P_PID, child.pid, os.WEXITED | os.WNOHANG | os.WNOWAIT) is not None:
+                break
+            time.sleep(min(0.01, remaining))
+    finally:
+        try:
+            # ECHILD means ownership is lost; never signal a potentially reused ID.
             try:
-                code = child.wait(timeout=remaining)
-            except subprocess.TimeoutExpired:
-                raise c.Refused('PROCESS_TIMEOUT') from None
-            return code, bytes(buffers[0]), bytes(buffers[1])
-        finally:
-            # Kill remaining group even if parent already exited; no descendants retained.
+                os.waitid(os.P_PID, child.pid, os.WEXITED | os.WNOHANG | os.WNOWAIT)
+            except ChildProcessError:
+                raise c.Refused('PROCESS_REAPER') from None
             try:
                 os.killpg(child.pid, signal.SIGKILL)
             except ProcessLookupError:
                 pass
-            child.wait(timeout=5)
+            try:
+                child.wait(timeout=max(0, deadline - time.monotonic()))
+            except subprocess.TimeoutExpired:
+                raise c.Refused('PROCESS_SETTLEMENT') from None
+        finally:
+            child.stdout.close(); child.stderr.close()
+    c.need(time.monotonic() < deadline, 'PROCESS_SETTLEMENT')
+    return child.returncode, bytes(buffers[0]), bytes(buffers[1])
 
 
 def linkage(fmt, code, stdout, stderr):
