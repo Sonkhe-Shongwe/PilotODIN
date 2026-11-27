@@ -5,18 +5,11 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-RUNNER-BLOCKER-SEQUENCING-20261127",
-    "parent_sha": "70aeb78ebe4489ed9a18bddb45f60aec271baf38",
-    "previous_snapshot_sha": "70aeb78ebe4489ed9a18bddb45f60aec271baf38",
-    "scope": "Record owner-approved sequencing exception limited to current C-D10 runner blocker; prioritize independent C5 preparation.",
-    "state": "RECONCILED",
-    "receipt": {
-      "path": "docs/C5_RUNNER_BLOCKER_SEQUENCING_DECISION_2026-11-27.md",
-      "anchor": "pilotodin--owner-decision-narrow-runner-blocker-sequencing-exception",
-      "blob_sha": "082b7431644723ed009a290bb6949771f868b15d",
-      "start_line": 1,
-      "end_line": 12
-    }
+    "operation_id": "C5-INDEPENDENT-VALIDATION-COORDINATOR-20261127",
+    "parent_sha": "2fac25b660c6e2864ba81484555d0bd1f74847a4",
+    "previous_snapshot_sha": "2fac25b660c6e2864ba81484555d0bd1f74847a4",
+    "scope": "Independent disarmed validation coordinator source and exact detached overlay; focused synthetic CI only.",
+    "state": "PREPARED"
   },
   "product": {
     "sha": "8da7f33cb418e453a7b5c250b960fb6370e9e9d0",
@@ -117,10 +110,10 @@
   },
   "task": {
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
-    "status": "BLOCKED",
+    "status": "PREPARED",
     "scope": "C-D08 development reproducibility/build safety as revised by C-D09 limited managed-development evidence method; D native and P8 release boundaries unchanged.",
     "blocker": "C-D10 runner security/inspection remains blocked; owner approved independent C5 preparation to continue while this particular blocker is unresolved. 46/46 synthetic pass retained; no active restricted grants.",
-    "next_action": "Prioritize one consolidated independent C5 validation preparation batch: review/finish conditional PDFium overlay and exact Windows/Linux source-test orchestration using existing 29-path overlay, 172-use manifest, Stage A/B and mixed/font/frontend witnesses, standalone Rust/browser requirements. Produce meaningful disarmed candidate or concrete source defect correction; no migration, acquisition or restricted execution. Runner inspection remains pending and must rejoin before closure; no repeated standalone runner checks as primary work.",
+    "next_action": "Run only ordinary synthetic coordinator regression on exact QA source; reconcile and retain runner blocker independently.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "Resolve current runner blocker via reviewed patched provider image or separately approved supported alternative; exact tool rights/security, approved 42-row inspection and applicable use dispositions; no bypass of blocked assembly.",
@@ -330,18 +323,30 @@
     ]
   },
   "operation": {
-    "id": "C5-RUNNER-BLOCKER-SEQUENCING-20261127",
-    "state": "RECONCILED",
-    "starting_sha": "70aeb78ebe4489ed9a18bddb45f60aec271baf38",
-    "outcome": "Owner-specific sequencing exception recorded; no execution, application, workflow or acceptance changes. Independent C5 preparation prioritized; verification blocker retained.",
-    "reconcile_before_retry": false,
-    "receipt": {
-      "path": "docs/C5_RUNNER_BLOCKER_SEQUENCING_DECISION_2026-11-27.md",
-      "anchor": "pilotodin--owner-decision-narrow-runner-blocker-sequencing-exception",
-      "blob_sha": "082b7431644723ed009a290bb6949771f868b15d",
-      "start_line": 1,
-      "end_line": 12
-    }
+    "id": "C5-INDEPENDENT-VALIDATION-COORDINATOR-20261127",
+    "state": "PREPARED",
+    "starting_sha": "2fac25b660c6e2864ba81484555d0bd1f74847a4",
+    "scope": "Three inert QA source/test paths, exact detached overlay 37f4a3fec3997162aada3093cd3fc1318392dd62; one additional synthetic test step on existing read-only offline proposal workflow. No native import, dependency acquisition, install, migration, product or owner access.",
+    "intended_paths": [
+      "qa/c5_managed_dev/validation_coordinator.py",
+      "qa/c5_managed_dev/pytest_receipt.py",
+      "qa/c5_managed_dev/test_validation_coordinator.py",
+      ".github/workflows/c5-input-proposal-review.yml"
+    ],
+    "authority_ref": {
+      "scope": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next.",
+      "reference": {
+        "path": "docs/C5_RUNNER_BLOCKER_SEQUENCING_DECISION_2026-11-27.md",
+        "anchor": "pilotodin--owner-decision-narrow-runner-blocker-sequencing-exception",
+        "blob_sha": "082b7431644723ed009a290bb6949771f868b15d",
+        "start_line": 1,
+        "end_line": 12
+      }
+    },
+    "expected_evidence": "Six exact coordinator tests, existing offline workflow and live gates remain false; retain actual terminal evidence.",
+    "recovery": "Reconcile exact source/run/job/log before retry, no restricted activation.",
+    "reconcile_before_retry": true,
+    "workflow_blob": "a0398ea94c4b3d7d67423c6f2b0c0492aff84b37"
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next.",
@@ -481,6 +486,10 @@
       {
         "sha": "3239d8c65ec8e94219242b4b87654ac8cb132e2f",
         "scope": "Exact detached corrected simulation workflow, single-path diff, inverse transformation and exact read-back PASS; full fresh parser/compile not run, no activation/marker/run, fresh explicit execution approval required."
+      },
+      {
+        "sha": "37f4a3fec3997162aada3093cd3fc1318392dd62",
+        "scope": "Exact current-base detached conditional PDFium overlay (29 paths) plus three inert coordinator QA paths; all 120 workflows unchanged, zero runs; not applied, no execution approval."
       }
     ]
   },
