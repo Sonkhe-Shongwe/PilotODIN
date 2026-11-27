@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-INDEPENDENT-PYTHON-STAGING-20261127",
-    "parent_sha": "dfdd5cd0aa0677adf282451c697e019090563a28",
-    "previous_snapshot_sha": "dfdd5cd0aa0677adf282451c697e019090563a28",
-    "scope": "Reconcile independent Python staging, detached candidate and 58/58 ordinary synthetic CI; no restricted execution.",
+    "operation_id": "C5-PROPORTIONATE-INSPECTION-DECISION-20261127",
+    "parent_sha": "acf231c80c7ed465e43e97a6543ee8ccf61237be",
+    "previous_snapshot_sha": "acf231c80c7ed465e43e97a6543ee8ccf61237be",
+    "scope": "Record owner-approved one-time C5 evidence method simplification and exact 42-row historical identity reconciliation.",
     "state": "RECONCILED",
     "receipt": {
-      "path": "docs/C5_INDEPENDENT_PYTHON_STAGING_2026-11-27.md",
-      "anchor": "pilotodin--independent-python-staging-and-final-witness-source-integration",
-      "blob_sha": "a29e8585b0b38492d16cb22b3c9ceaeb31ae29a4",
+      "path": "docs/C5_PROPORTIONATE_INSPECTION_DECISION_2026-11-27.md",
+      "anchor": "pilotodin--one-time-c5-proportionate-inspection-method",
+      "blob_sha": "1fc6542e523f4a4393c01f419bb4db8f158ec5e2",
       "start_line": 1,
-      "end_line": 26
+      "end_line": 75
     }
   },
   "product": {
@@ -119,14 +119,21 @@
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
     "status": "BLOCKED",
     "scope": "C-D08 development reproducibility/build safety as revised by C-D09 limited managed-development evidence method; D native and P8 release boundaries unchanged.",
-    "blocker": "Independent Python staging/profile/final witness source prepared; 58/58 synthetic pass. Actual runner inspection/rights plus finite controller acquisition, bounded cross-platform descendant settlement, exact setup/source/disposition and final P1/P4/Windows browser-dev binding remain unresolved. No active restricted grants.",
-    "next_action": "Finish only concrete existing one-use controller boundary and final matched source-test witness binding, reusing exact staging and candidate dad0856. Review supported bounded transport/process settlement and cleanup, setup/tool rights, exact source/disposition; do not create another generic framework, repeat unchanged-source tests or standalone runner research. If no supported material independent work remains, report concrete blocker and await reviewed patched image or separate approved alternative. No migration/acquisition/restricted execution.",
+    "blocker": "C5 actual pre-use rights and compatible execution remain open. Owner approved targeted publisher-first review; blanket 42-row binary inspection no longer planned. Specific PDFium build/libgcc linkage and other concrete unresolved component facts must be settled before use. Controller binding/cleanup and final validation remain pending.",
+    "next_action": "Use one-time simplified method: prioritise exact Stage A smoke dependency rights (PDFium/Pillow/pip), reuse existing receipts and exact publisher build/component/notice evidence; close specific applicable facts, identify only necessary secure inspection, then Stage B. Prefer one separately approved hash-locked staging/validation transaction with pre-use notice checks, no identity-only acquisition; resolve controller source/cleanup defects before activation. No vulnerable parser, privileged assembly bypass, acquisition/install/native execution, generic framework, or repeated runner polling.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
-      "Resolve current runner blocker via reviewed patched provider image or separately approved supported alternative; exact tool rights/security, approved 42-row inspection and applicable use dispositions; no bypass of blocked assembly.",
-      "Execute exact approved conditional overlay and Windows/Linux consolidated validation, standalone Rust and browser-dev, then C5 eight-row audit. D/G2/E2/P5/installer gates unchanged."
+      "Complete targeted applicable pre-use evidence and exact approved staging/inspection for genuinely unresolved components; no blanket binutils requirement or rights waiver.",
+      "Execute separately approved conditional validation with all retained Stage A/B, font, frontend, Rust and matched P1/P4 predicates; audit eight C5 rows; D/G2/E2/P5/installer boundaries unchanged."
     ],
     "read": [
+      {
+        "path": "docs/C5_PROPORTIONATE_INSPECTION_DECISION_2026-11-27.md",
+        "anchor": "pilotodin--one-time-c5-proportionate-inspection-method",
+        "blob_sha": "1fc6542e523f4a4393c01f419bb4db8f158ec5e2",
+        "start_line": 1,
+        "end_line": 75
+      },
       {
         "path": "docs/C5_INDEPENDENT_PYTHON_STAGING_2026-11-27.md",
         "anchor": "pilotodin--independent-python-staging-and-final-witness-source-integration",
@@ -344,22 +351,22 @@
     ]
   },
   "operation": {
-    "id": "C5-INDEPENDENT-PYTHON-STAGING-20261127",
+    "id": "C5-PROPORTIONATE-INSPECTION-DECISION-20261127",
     "state": "RECONCILED",
-    "starting_sha": "6a7972ceacb6f66e2524d7e2c253923cd3c3be6e",
-    "outcome": "Detached dad0856 exact 29 overlay + 4 QA + 2 inactive browser config paths, zero candidate runs. Live run 45983871418 job 140454371175 attempt 1 SUCCESS, 6 new + 52 retained synthetic methods and 3 Rust/5 browser command projections. No actual pip/native/browser/installation/migration or acquisition.",
+    "starting_sha": "acf231c80c7ed465e43e97a6543ee8ccf61237be",
+    "outcome": "42/42 exact historical identity matches; routed 9 notice/metadata, 31 publisher-first, 2 specific PDFium linkage. No rights waiver, acquisition, workflow/product change or execution.",
     "reconcile_before_retry": false,
     "receipt": {
-      "path": "docs/C5_INDEPENDENT_PYTHON_STAGING_2026-11-27.md",
-      "anchor": "pilotodin--independent-python-staging-and-final-witness-source-integration",
-      "blob_sha": "a29e8585b0b38492d16cb22b3c9ceaeb31ae29a4",
+      "path": "docs/C5_PROPORTIONATE_INSPECTION_DECISION_2026-11-27.md",
+      "anchor": "pilotodin--one-time-c5-proportionate-inspection-method",
+      "blob_sha": "1fc6542e523f4a4393c01f419bb4db8f158ec5e2",
       "start_line": 1,
-      "end_line": 26
+      "end_line": 75
     }
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next.",
-    "preparation_only": "Owner approved consolidated shared-bundle disarmed acquisition-before-signature source and exact limited existing host bootstrap; owner approved proposed limited local Docker control-plane and host-derived rootfs trust/no-pull isolation method for preparation only. Authentication before extraction/use; no Docker invocation, acquisition, verification execution, installation or live cutover authorised. Owner approved bounded first-collision encoded public member-path diagnostic preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-bounded-first-collision-diagnostic-preparation-only. No restricted execution authority. Owner approved finite exact Linux data-only terminfo inventory policy and bounded receipt projection as proposed in 8cc1a696, preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-finite-exact-linux-terminfo-inventory-policy-and-bounded-receipt-preparation-only. Strict Windows/gh and other safeguards unchanged; no acquisition, extraction or restricted execution. Owner explicitly approved preparation and static/synthetic verification only of Approach C observation-only candidate (11 fixed roles, five minutes); no restricted execution, acquisition, Docker invocation or active policy change. Exact reference in C5 spec owner-approved-bounded-approach-c-observation-candidate-preparation-only. Owner approved Approach C metadata-only preparation/static/synthetic verification under 13 GET/10-minute proposed limits; no actual acquisition, package downloads, installation, Docker invocation, restricted execution or active trust policy change. Exact spec anchor owner-approved-bounded-approach-c-metadata-only-preparation-and-synthetic-core. Owner approved narrow metadata bootstrap preparation on existing two reviewed images including GnuPG/necessary existing dependencies, no acquisition/restricted execution/integrated verification/active policy change, original 13 GET/10 min bounds. Exact spec anchor owner-approved-narrow-metadata-bootstrap-preparation-and-finite-key-evidence-contract. Owner approved two-stage key/metadata sequence preparation including bounded public signing-key private repository retention proposal, combined 13 GET/600s/256 MiB; no actual acquisition, restricted execution or active policy change. Exact spec anchor owner-approved-two-stage-preparation-and-consolidated-custody-core. Owner approved exact C-D09 managed-development CI evidence rationalisation at proposal 2cbed51, recorded in C5 implementation spec; limited bootstrap trust and residual risk accepted, prepare concrete bounded validation candidate only, no acquisition, installation, restricted execution, migration, new expenditure or phase advancement.",
+    "preparation_only": "Owner approved consolidated shared-bundle disarmed acquisition-before-signature source and exact limited existing host bootstrap; owner approved proposed limited local Docker control-plane and host-derived rootfs trust/no-pull isolation method for preparation only. Authentication before extraction/use; no Docker invocation, acquisition, verification execution, installation or live cutover authorised. Owner approved bounded first-collision encoded public member-path diagnostic preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-bounded-first-collision-diagnostic-preparation-only. No restricted execution authority. Owner approved finite exact Linux data-only terminfo inventory policy and bounded receipt projection as proposed in 8cc1a696, preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-finite-exact-linux-terminfo-inventory-policy-and-bounded-receipt-preparation-only. Strict Windows/gh and other safeguards unchanged; no acquisition, extraction or restricted execution. Owner explicitly approved preparation and static/synthetic verification only of Approach C observation-only candidate (11 fixed roles, five minutes); no restricted execution, acquisition, Docker invocation or active policy change. Exact reference in C5 spec owner-approved-bounded-approach-c-observation-candidate-preparation-only. Owner approved Approach C metadata-only preparation/static/synthetic verification under 13 GET/10-minute proposed limits; no actual acquisition, package downloads, installation, Docker invocation, restricted execution or active trust policy change. Exact spec anchor owner-approved-bounded-approach-c-metadata-only-preparation-and-synthetic-core. Owner approved narrow metadata bootstrap preparation on existing two reviewed images including GnuPG/necessary existing dependencies, no acquisition/restricted execution/integrated verification/active policy change, original 13 GET/10 min bounds. Exact spec anchor owner-approved-narrow-metadata-bootstrap-preparation-and-finite-key-evidence-contract. Owner approved two-stage key/metadata sequence preparation including bounded public signing-key private repository retention proposal, combined 13 GET/600s/256 MiB; no actual acquisition, restricted execution or active policy change. Exact spec anchor owner-approved-two-stage-preparation-and-consolidated-custody-core. Owner approved exact C-D09 managed-development CI evidence rationalisation at proposal 2cbed51, recorded in C5 implementation spec; limited bootstrap trust and residual risk accepted, prepare concrete bounded validation candidate only, no acquisition, installation, restricted execution, migration, new expenditure or phase advancement. Owner approved one-time C5 proportionate publisher-first inspection method (okay lets try that), recorded at docs/C5_PROPORTIONATE_INSPECTION_DECISION_2026-11-27.md; no new restricted authority or acceptance waiver.",
     "restricted_active": [],
     "consumed_disarmed_count": 45,
     "consumed_history": {
