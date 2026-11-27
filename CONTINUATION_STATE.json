@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-LINUX-BROTLI-SOURCE-TRACE-20261127",
-    "parent_sha": "d56226c85ee2cf21bb1cf65e32a948902a4068d5",
-    "previous_snapshot_sha": "d56226c85ee2cf21bb1cf65e32a948902a4068d5",
-    "scope": "Targeted actual wheel and publisher source security evidence; no restricted execution or acceptance change.",
+    "operation_id": "C5-LINUX-SIX-WHEEL-INSPECTION-20261127",
+    "parent_sha": "ee197d982c8ab25c131b0a2b94bb3d2566455f87",
+    "previous_snapshot_sha": "ee197d982c8ab25c131b0a2b94bb3d2566455f87",
+    "scope": "Actual owner-supplied six-wheel hash/metadata/notice inspection and finite Stage A preparation; no restricted execution or acceptance change.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--pdfium-brotli-source-fix-traced-and-official-pillow-nightly-option",
-      "blob_sha": "f439e2a8331710dcb5d101ceb8b7d2615afa3144",
-      "start_line": 237,
-      "end_line": 243
+      "anchor": "27-november--six-uploaded-linux-stage-a-wheels-verified",
+      "blob_sha": "eb3f824badab7a0f2dfcba1eaee42d9c8f6f3b2b",
+      "start_line": 245,
+      "end_line": 253
     }
   },
   "product": {
@@ -119,8 +119,8 @@
     "id": "C5-LINUX-FIRST-20261127",
     "status": "BLOCKED",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "Specific PDFium CVE source applicability strongly supports patched revision, but exact build/usage disposition remains conditional. Six other exact Stage A wheel files absent; managed CP311 execution not authorised. Full Linux Pillow stable pin confirmed affected; official nightly is an unpinned candidate.",
-    "next_action": "Obtain six exact remaining Stage A wheels (3,787,557 bytes) via owner upload, hash-first inspect actual vendor/ordinary notices and review all seven pre-use dispositions together. Prepare one exact supported Linux functional transaction, no new general verifier or individual repeated research. Independently pin an official corrected stable Pillow release or exact publisher nightly artifact for separate owner-reviewed development-only replacement; preserve Windows D pre-use verification. No C5 acceptance until full Linux requirements met.",
+    "blocker": "Seven exact Stage A archive identities now evidenced. PDFium expected source CVE fix strongly supported but exact build/usage and host pre-use disposition conditional; complete exact Linux execution candidate/settlement and separate approval absent. Full Linux Pillow stable pin affected; official nightly remains unpinned.",
+    "next_action": "Complete one bounded source-pinned standalone Linux Stage A execution candidate using existing bootstrap, native identity and exact pytest witnesses; resolve remaining applicable pre-use security/rights/host facts and owned process settlement, then obtain one exact restricted execution approval. Seven archive identities evidenced, no further owner uploads for A identity. Independently pin an official corrected Pillow release or exact publisher nightly for separate owner-reviewed full-profile development use. No generic verifier, Stage B, Windows or phase advance.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
@@ -130,22 +130,29 @@
     "read": [
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "27-november--six-uploaded-linux-stage-a-wheels-verified",
+        "blob_sha": "eb3f824badab7a0f2dfcba1eaee42d9c8f6f3b2b",
+        "start_line": 245,
+        "end_line": 253
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--pdfium-brotli-source-fix-traced-and-official-pillow-nightly-option",
-        "blob_sha": "f439e2a8331710dcb5d101ceb8b7d2615afa3144",
+        "blob_sha": "eb3f824badab7a0f2dfcba1eaee42d9c8f6f3b2b",
         "start_line": 237,
         "end_line": 243
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--actual-uploaded-linux-pillow-and-pdfium-inspection",
-        "blob_sha": "f439e2a8331710dcb5d101ceb8b7d2615afa3144",
+        "blob_sha": "eb3f824badab7a0f2dfcba1eaee42d9c8f6f3b2b",
         "start_line": 227,
         "end_line": 235
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--owner-approved-linux-first-c5-allocation-and-exact-reduced-input-plan",
-        "blob_sha": "f439e2a8331710dcb5d101ceb8b7d2615afa3144",
+        "blob_sha": "eb3f824badab7a0f2dfcba1eaee42d9c8f6f3b2b",
         "start_line": 211,
         "end_line": 219
       },
@@ -184,17 +191,17 @@
     ]
   },
   "operation": {
-    "id": "C5-LINUX-BROTLI-SOURCE-TRACE-20261127",
+    "id": "C5-LINUX-SIX-WHEEL-INSPECTION-20261127",
     "state": "RECONCILED",
-    "starting_sha": "d56226c85ee2cf21bb1cf65e32a948902a4068d5",
-    "outcome": "Traced expected PDFium branch and Chromium Brotli upstream fix ancestry, corroborated exact source revision through port; direct DEPS and actual build checkout unverified. Official patched-source Pillow nightly channel identified but exact artifact not pinned. No new downloads or native execution.",
+    "starting_sha": "ee197d982c8ab25c131b0a2b94bb3d2566455f87",
+    "outcome": "All six supplied archives and five pinned metadata hashes match; ZIP CRC/RECORD and declared notices checked. Combined with prior PDFium, 7/7 archive identities evidenced. Pip vendored component and Windows-launcher scope reviewed; PDFium/host pre-use disposition, exact execution adapter and approval remain. No package installed/imported, no functional run.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--pdfium-brotli-source-fix-traced-and-official-pillow-nightly-option",
-      "blob_sha": "f439e2a8331710dcb5d101ceb8b7d2615afa3144",
-      "start_line": 237,
-      "end_line": 243
+      "anchor": "27-november--six-uploaded-linux-stage-a-wheels-verified",
+      "blob_sha": "eb3f824badab7a0f2dfcba1eaee42d9c8f6f3b2b",
+      "start_line": 245,
+      "end_line": 253
     }
   },
   "authority": {
@@ -402,7 +409,8 @@
     "Legacy shutdown source now published at b574e0ab07da17fa322a9c5a464e0d0ce1d27b13 with local 10/10 source checks and old-source negative control; ordinary CI pending, Windows desktop compile and actual whole-job settlement not demonstrated. Do not mistake live source for previous verified baseline.",
     "Uncertain-spawn correction candidate dae0cda99f11cb6adf609e29de7b55039f135bfa retains original storage/model witnesses and refuses Windows legacy graceful close after uncertain spawn; local static 11/11 only, no native compilation or actual runtime evidence. Conservative refusal also for early spawn failures; no recovery of missing child handle.",
     "Actual uploaded Pillow Brotli 1.2.0 linked via FreeType; held for CVE-2026-111497. PDFium direct linkage/37 notices verified; static Brotli version/patch and applicable rights unresolved.",
-    "PDFium expected source Brotli cfa184a contains upstream CVE fix; direct exact DEPS/build checkout unavailable and byte markers inconclusive. Official Pillow nightly channel exists, artifact/source/hash not qualified. Local CPython 3.13.5 is not approved CP311 target."
+    "PDFium expected source Brotli cfa184a contains upstream CVE fix; direct exact DEPS/build checkout unavailable and byte markers inconclusive. Official Pillow nightly channel exists, artifact/source/hash not qualified. Local CPython 3.13.5 is not approved CP311 target.",
+    "All seven Stage A archive identities now evidenced (six uploaded static checks plus prior PDFium); pip primary/vendor notices present and PE Windows launchers excluded in Linux scope. Limited advisory review and static dependency compatibility are not actual pre-use runtime/security or functional acceptance. Exact Linux standalone runner/settlement, PDFium conditional disposition, 19 predicates and full-profile corrected Pillow remain."
   ],
   "context": {
     "protocol": {
