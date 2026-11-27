@@ -5,34 +5,34 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "P4-LEGACY-JOB-SOURCE-INTEGRATION-20261127",
-    "parent_sha": "b574e0ab07da17fa322a9c5a464e0d0ce1d27b13",
-    "previous_snapshot_sha": "b574e0ab07da17fa322a9c5a464e0d0ce1d27b13",
-    "scope": "Reconciled exact source publication; record targeted source regression and two pending ordinary CI runs. No new acceptance or restricted execution.",
-    "state": "RECONCILED",
+    "operation_id": "P4-LEGACY-SPAWN-UNCERTAINTY-20261127",
+    "parent_sha": "e1b8958a35c34a1971e339522d7e0e2ec3adfcb9",
+    "previous_snapshot_sha": "e1b8958a35c34a1971e339522d7e0e2ec3adfcb9",
+    "scope": "Routine independent P4 source integration: narrow ambiguous worker spawn correction, existing regression and terminal prior CI reconciliation, no native desktop execution or acceptance change.",
+    "state": "PREPARED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--legacy-desktop-shutdown-source-integration-and-regression",
-      "blob_sha": "1d23590971f055872b23d6229d8bb63c66e4bf11",
-      "start_line": 183,
-      "end_line": 191
+      "anchor": "27-november--shutdown-regression-reconciliation-and-uncertain-startup-correction",
+      "blob_sha": "8e93f16de1f26c85839344cdb64307b40b762829",
+      "start_line": 193,
+      "end_line": 201
     }
   },
   "product": {
-    "sha": "8da7f33cb418e453a7b5c250b960fb6370e9e9d0",
-    "scope": "last paired product baseline; not latest documentation or QA SHA",
+    "sha": "b574e0ab07da17fa322a9c5a464e0d0ce1d27b13",
+    "scope": "Latest verified P2/P4 source/synthetic baseline; not native desktop verification or latest candidate",
     "verification": [
       {
-        "run_id": 45693703789,
-        "sha": "8da7f33cb418e453a7b5c250b960fb6370e9e9d0",
+        "run_id": 46007678852,
+        "sha": "b574e0ab07da17fa322a9c5a464e0d0ce1d27b13",
         "status": "SUCCESS",
-        "scope": "P4 source/synthetic and disposable browser; native collector skipped"
+        "scope": "P2 report source safety, standalone report writer, production frontend build"
       },
       {
-        "run_id": 45693704390,
-        "sha": "8da7f33cb418e453a7b5c250b960fb6370e9e9d0",
+        "run_id": 46007678824,
+        "sha": "b574e0ab07da17fa322a9c5a464e0d0ce1d27b13",
         "status": "SUCCESS",
-        "scope": "P1 frontend, TypeScript/Vite, Chromium"
+        "scope": "P4 source/synthetic, Windows storage object compilation, synthetic engine lifecycle, disposable browser; native collector skipped"
       }
     ]
   },
@@ -116,11 +116,11 @@
     }
   },
   "task": {
-    "id": "P4-LEGACY-JOB-SETTLEMENT-20261127",
+    "id": "P4-LEGACY-SPAWN-UNCERTAINTY-20261127",
     "status": "VERIFYING",
-    "scope": "Independent concrete P4 product-source remediation under PRODUCT-FIRST-20261127; C5 parked at actual independent pre-use facts, existing detached preparation preserved. No D/native/E2/phase credit.",
-    "blocker": "Exact shutdown correction source integrated and 10 local source checks passed; P2 46007678852 and P4 46007678824 terminal outcomes pending. Actual native Windows settlement, compile and close/reopen unverified; C5 independently parked.",
-    "next_action": "Reconcile exact runs 46007678852 and 46007678824 at source b574e0ab07da17fa322a9c5a464e0d0ce1d27b13 before further publication/retry; record terminal outcomes, correct only concrete failures. Preserve previous verified product baseline until evidence disposition; no native or D credit. Once reconciled, identify bounded actual Windows verification dependency or another independently actionable P4 defect under current authority. C5 stays parked at independent pre-use evidence; no phase advance.",
+    "scope": "Independent bounded P4 product remediation; previous shutdown source regression passed; C5 parked, no native/D/E2/phase credit.",
+    "blocker": "New uncertain-spawn source correction prepared, local static 11/11 and negative control pass; exact publication/CI requires reconciliation. Actual native compile, process and close/reopen unverified; C5 independent pre-use blocker remains.",
+    "next_action": "Reconcile exact uncertain-spawn integration publication and matching P2/P4 runs before further publication or retry. Record terminal results and only actual failures. Preserve verified previous shutdown baseline until new source evidence. Then prefer a concrete product defect or exact bounded native verification dependency, not generic QA. C5 stays parked at independent pre-use evidence; no phase advance.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "Targeted product regression and safe publication of legacy shutdown correction; no native D acceptance inferred.",
@@ -130,22 +130,29 @@
     "read": [
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "27-november--shutdown-regression-reconciliation-and-uncertain-startup-correction",
+        "blob_sha": "8e93f16de1f26c85839344cdb64307b40b762829",
+        "start_line": 193,
+        "end_line": 201
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--legacy-desktop-shutdown-source-integration-and-regression",
-        "blob_sha": "1d23590971f055872b23d6229d8bb63c66e4bf11",
+        "blob_sha": "8e93f16de1f26c85839344cdb64307b40b762829",
         "start_line": 183,
         "end_line": 191
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--c5-pre-use-hold-and-independent-legacy-desktop-shutdown-correction",
-        "blob_sha": "1d23590971f055872b23d6229d8bb63c66e4bf11",
+        "blob_sha": "8e93f16de1f26c85839344cdb64307b40b762829",
         "start_line": 171,
         "end_line": 181
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--standalone-windows-a-archive-staging-preparation",
-        "blob_sha": "1d23590971f055872b23d6229d8bb63c66e4bf11",
+        "blob_sha": "8e93f16de1f26c85839344cdb64307b40b762829",
         "start_line": 159,
         "end_line": 169
       },
@@ -170,19 +177,38 @@
     ]
   },
   "operation": {
-    "id": "P4-LEGACY-JOB-SOURCE-INTEGRATION-20261127",
-    "state": "RECONCILED",
-    "starting_sha": "e845f7b807cb60dd7b649c60f1b03411851128fc",
-    "outcome": "Published exact two-file product/test correction plus prepared state at b574e0ab07da17fa322a9c5a464e0d0ce1d27b13; 10 local static tests PASS and old-source negative control failed as intended. Two matching push runs in progress, native collector skipped; terminal evidence pending.",
+    "id": "P4-LEGACY-SPAWN-UNCERTAINTY-20261127",
+    "state": "PREPARED",
+    "starting_sha": "e1b8958a35c34a1971e339522d7e0e2ec3adfcb9",
+    "scope": "Routine independent P4 source integration: narrow ambiguous worker spawn correction, existing regression and terminal prior CI reconciliation, no native desktop execution or acceptance change.",
+    "intended_paths": [
+      "CONTINUATION_STATE.json",
+      "docs/ENGINEERING_DECISIONS_CURRENT.md",
+      "frontend/src-tauri/src/lib.rs",
+      "tests/test_p4_n12_worker_scratch_source.py"
+    ],
+    "authority_ref": {
+      "path": "docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md",
+      "anchor": "27-november-2026--owner-approved-aggressive-product-first-development-framework",
+      "blob_sha": "ad8d559bc9cd3d8da66779e18332fc6db8ae7c56",
+      "start_line": 283,
+      "end_line": 297
+    },
+    "expected_evidence": "11/11 existing static tests with negative control; same ordinary P2/P4 push workflows as prior source, exact new source SHA, restricted collector skipped; native desktop compile/run not included.",
+    "recovery": "Inspect actual branch, four-path diff and exact push runs before any retry. Retain verified b574e0a baseline; if CI fails record actual failure, correct only concrete regression.",
     "reconcile_before_retry": false,
+    "source_candidate": "dae0cda99f11cb6adf609e29de7b55039f135bfa",
+    "source_pins": {
+      "frontend/src-tauri/src/lib.rs": "0e2f4e9b25f21b7b8a22d9dc536e3d3cbeac4c24",
+      "tests/test_p4_n12_worker_scratch_source.py": "4ecf50d13e3ec29ef2090171826ee48efa1605db"
+    },
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--legacy-desktop-shutdown-source-integration-and-regression",
-      "blob_sha": "1d23590971f055872b23d6229d8bb63c66e4bf11",
-      "start_line": 183,
-      "end_line": 191
-    },
-    "source_sha": "b574e0ab07da17fa322a9c5a464e0d0ce1d27b13"
+      "anchor": "27-november--shutdown-regression-reconciliation-and-uncertain-startup-correction",
+      "blob_sha": "8e93f16de1f26c85839344cdb64307b40b762829",
+      "start_line": 193,
+      "end_line": 201
+    }
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next.",
@@ -222,20 +248,7 @@
       }
     }
   },
-  "pending_runs": [
-    {
-      "run_id": 46007678852,
-      "sha": "b574e0ab07da17fa322a9c5a464e0d0ce1d27b13",
-      "status": "IN_PROGRESS",
-      "scope": "Exact P2 report-export-draft-safety attempt 1; existing source and frontend regression, no desktop execution"
-    },
-    {
-      "run_id": 46007678824,
-      "sha": "b574e0ab07da17fa322a9c5a464e0d0ce1d27b13",
-      "status": "IN_PROGRESS",
-      "scope": "Exact P4 target-ranking attempt 1; source/synthetic and browser jobs, Windows native collector skipped"
-    }
-  ],
+  "pending_runs": [],
   "pending_operations": [],
   "unpublished": {
     "owner_local": "UNINSPECTED_PRESERVE; never infer clean or publish",
@@ -375,6 +388,10 @@
       {
         "sha": "b8fa995ae1b86c044c77610abd1db1b7fa8cedd0",
         "scope": "One-file detached active legacy desktop shutdown correction, original OwnedJob retained through leader and positive zero-job settlement, interruption across retries; exact source reviewed, no compilation/native/regression or merge."
+      },
+      {
+        "sha": "dae0cda99f11cb6adf609e29de7b55039f135bfa",
+        "scope": "Exact uncertain legacy startup correction and one existing source regression; 11/11 local static PASS and negative control fails. Candidate for ordinary source integration; no native execution."
       }
     ]
   },
@@ -391,7 +408,8 @@
     "Detached fa610dcff5e73b89290cc5df3ec99e5b7d45a17f owned Windows runner is disarmed; eight byte-matched pure/mock tests only, no full module/native execution. Actual host nested-job/API/pipe behavior, pre-assignment controller failure, exact tool environment and integrated cleanup remain unverified; no sandbox or acceptance claim.",
     "Detached bb31566cda9cd35e4e8ce8a6a1c8470537c141e3 post-review staging and fixed verifier argument source only; actual bounded transfer, credential/controller integration, signed provenance, pre-use disposition and real archive layout/native settlement unverified. Five pure/synthetic local checks are not functional acceptance.",
     "C5 single-job route parked at independent actual pre-use review, not abandoned. Detached product b8fa995ae1b86c044c77610abd1db1b7fa8cedd0 improves legacy whole-job settlement and interruption retention but is uncompiled/untested/unmerged; emergency exit and actual G2/native evidence remain unresolved.",
-    "Legacy shutdown source now published at b574e0ab07da17fa322a9c5a464e0d0ce1d27b13 with local 10/10 source checks and old-source negative control; ordinary CI pending, Windows desktop compile and actual whole-job settlement not demonstrated. Do not mistake live source for previous verified baseline."
+    "Legacy shutdown source now published at b574e0ab07da17fa322a9c5a464e0d0ce1d27b13 with local 10/10 source checks and old-source negative control; ordinary CI pending, Windows desktop compile and actual whole-job settlement not demonstrated. Do not mistake live source for previous verified baseline.",
+    "Uncertain-spawn correction candidate dae0cda99f11cb6adf609e29de7b55039f135bfa retains original storage/model witnesses and refuses Windows legacy graceful close after uncertain spawn; local static 11/11 only, no native compilation or actual runtime evidence. Conservative refusal also for early spawn failures; no recovery of missing child handle."
   ],
   "context": {
     "protocol": {

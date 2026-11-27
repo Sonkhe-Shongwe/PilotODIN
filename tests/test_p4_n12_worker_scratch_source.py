@@ -201,5 +201,23 @@ class BundledWorkerProductFilesystemContract(unittest.TestCase):
         self.assertLess(inference.index("*active = None"), inference.index("state.shutdown_interrupted.swap(false"))
 
 
+    def test_uncertain_worker_spawn_keeps_original_protections_and_blocks_close(self):
+        src = RUST.read_text(encoding="utf-8")
+        launch = slice_between(src, "async fn launch_backend(", "fn verify_bundled_model(")
+        legacy = launch.split("return Ok(connection);", 1)[1]
+        self.assertIn("catch_unwind(std::panic::AssertUnwindSafe(|| command.spawn()))", legacy)
+        self.assertLess(legacy.index("Some(storage_pins)"), legacy.index("owned_engine_uncertain.store(true"))
+        self.assertLess(legacy.index("owned_engine_uncertain.store(true"), legacy.index("stopping.store(true"))
+        self.assertLess(legacy.index("stopping.store(true"), legacy.index('return Err("Owned engine launch outcome unconfirmed"'))
+        shutdown = slice_between(src, "fn stop_owned_workers(", "#[tauri::command]\nasync fn launch_backend")
+        legacy_shutdown = shutdown.split("None => Ok(()), // launch gate held above", 1)[1]
+        self.assertLess(legacy_shutdown.index("owned_engine_uncertain.load"), legacy_shutdown.index("let mut active = state.backend.lock()"))
+        inference = slice_between(src, "fn start_owned_inference(", "const MAX_REPORT_EXPORT_BYTES")
+        self.assertIn("catch_unwind(std::panic::AssertUnwindSafe(|| command.spawn()))", inference)
+        self.assertLess(inference.index("Some((storage_pins, model))"), inference.index("attempt.uncertain.store(true"))
+        self.assertLess(inference.index("attempt.uncertain.store(true"), inference.index("state.stopping.store(true"))
+        self.assertIn("uncertain_inference_pins: Mutex<Option<(storage_boundary::DirectoryPins, VerifiedModel)>>", src)
+
+
 if __name__ == "__main__":
     unittest.main()

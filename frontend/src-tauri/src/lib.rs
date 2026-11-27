@@ -114,6 +114,9 @@ struct DesktopState {
     backend: Mutex<Option<ActiveBackend>>,
     inference: Mutex<Option<ActiveInference>>,
     inference_startup: Mutex<Option<Arc<InferenceStartup>>>,
+    // A failed spawn can leave a worker without a returned child handle.
+    // Retain its original storage and model witnesses until desktop exit.
+    uncertain_inference_pins: Mutex<Option<(storage_boundary::DirectoryPins, VerifiedModel)>>,
     inference_settings: Mutex<Option<InferenceSettings>>,
 }
 
@@ -546,6 +549,10 @@ fn stop_owned_workers(app: &AppHandle) -> Result<(), String> {
             _ => return Err("Worker launch is not finished; retry close".into()),
         }
     };
+    #[cfg(windows)]
+    if state.owned_engine_uncertain.load(Ordering::Acquire) {
+        return Err("Owned engine launch outcome unconfirmed; shutdown blocked".into());
+    }
     {
         let mut active = state.backend.lock().map_err(|_| "Engine state unavailable")?;
         if let Some(worker) = active.as_mut() {
@@ -694,6 +701,19 @@ async fn launch_backend(window: tauri::WebviewWindow, app: AppHandle, state: Sta
         }
         return Ok(connection);
     }
+    #[cfg(windows)]
+    let (mut events, child) = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| command.spawn())) {
+        Ok(Ok(value)) => value,
+        _ => {
+            // The shell can fail after process creation; no returned child
+            // handle is not evidence of a settled job. Keep the original pins.
+            *state.owned_engine_uncertain_pins.lock().unwrap_or_else(|e| e.into_inner()) = Some(storage_pins);
+            state.owned_engine_uncertain.store(true, Ordering::Release);
+            state.stopping.store(true, Ordering::Release);
+            return Err("Owned engine launch outcome unconfirmed".into());
+        },
+    };
+    #[cfg(not(windows))]
     let (mut events, child) = command.spawn()
         .map_err(|e| format!("Could not start analytical engine: {e}"))?;
     let connection = BackendConnection { port, token: token.clone(), backend_driven_inference: false };
@@ -982,11 +1002,12 @@ fn start_owned_inference(app: AppHandle, attempt: Arc<InferenceStartup>) -> Resu
     let mut active = state.inference.lock().map_err(|_| "AI state unavailable")?;
     if active.is_some() { return Err("Previous inference worker remains owned".into()); }
     attempt.check(&state.stopping)?;
-    let (mut events, child) = match command.spawn() {
-        Ok(value) => value,
-        Err(_) => {
-            // The locked shell can fail after creating a child. A failed
-            // return is not conclusive evidence that no group exists.
+    let (mut events, child) = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| command.spawn())) {
+        Ok(Ok(value)) => value,
+        _ => {
+            // A failed or panicking spawn may leave a group behind. Keep the
+            // exact storage and model witnesses while the generation is uncertain.
+            *state.uncertain_inference_pins.lock().unwrap_or_else(|e| e.into_inner()) = Some((storage_pins, model));
             attempt.uncertain.store(true, Ordering::Release);
             state.stopping.store(true, Ordering::Release);
             return Err("Local inference launch outcome unconfirmed".into());
