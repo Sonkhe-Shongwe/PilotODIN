@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-REPORTLAB-5-1-2-OWNER-APPROVED-ISOLATED-PREPARATION-20261128",
-    "parent_sha": "2b84c36b5242700897f2f172be85b4fa0d149309",
-    "previous_snapshot_sha": "2b84c36b5242700897f2f172be85b4fa0d149309",
-    "scope": "Owner-approved isolated ReportLab 5.1.2 preparation, five inert dependency projections and exact remaining metadata holds.",
+    "operation_id": "C5-REPORTLAB-URL-AND-FINITE-STAGED-FACTS-SCOPE-20261128",
+    "parent_sha": "00d08f0594fb0c474cc62ee5cb6d8a3fde664148",
+    "previous_snapshot_sha": "00d08f0594fb0c474cc62ee5cb6d8a3fde664148",
+    "scope": "ReportLab exact locator corroboration and finite disarmed staged-fact inspection envelope; no execution authority.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "28-november--owner-approved-isolated-reportlab-512-projections-and-metadata-holds",
-      "blob_sha": "0963a8e2645234df473e202b5599efd240e05c2c",
-      "start_line": 697,
-      "end_line": 705
+      "anchor": "28-november--reportlab-url-and-finite-staged-facts-scope",
+      "blob_sha": "d8c61f69cd8d0ba772d96e8da2b27612d5ceae3a",
+      "start_line": 707,
+      "end_line": 715
     }
   },
   "product": {
@@ -137,8 +137,8 @@
     "id": "C5-LINUX-FIRST-20261127",
     "status": "BLOCKED",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "Candidate 4dd5525 disarmed; approved ReportLab 5.1.2 preparation complete at inert projection scope, exact publisher wheel hash obtained; URL/size/METADATA/notice/security and actual resolver still held. Current 4.5.1 HOLD remains. Independent host whole-job/dual-root custody and exact regression callbacks remain unverified; 0/23 final dispositions, zero execution authority.",
-    "next_action": "Obtain exact public non-body ReportLab metadata if available and scope finite independent staged facts decision for the replacement and other outstanding targeted inputs; rebind exact verified dependency graph, budgets, guard/manifest and successor regression projections only after sufficient facts. Establish existing hosted whole-job containment and dual-root custody feasibility before binding remaining regression commands. Do not repeat broad publisher research, acquire packages, self-certify facts, weaken tests or seek full install while security/rights/host holds persist.",
+    "blocker": "Candidate d9119bd disarmed. ReportLab URL corroborated by external scan/full published digest, exact bytes and METADATA unresolved; actual security/rights and 0/23 dispositions remain held. Finite static facts scope ceiling proposed, not authorised. Full hosted boundary/dual-root cleanup remains unproved.",
+    "next_action": "Review retained exact artifact facts to reduce 28-row ceiling to irreducible missing facts, then present exact one-use static inspection and custody/settlement scope for explicit owner decision, not full install. Resolve ReportLab exact metadata and relevant scan signals within bounded approved scope only; no repeat hash-only acquisitions, broad publisher research, self-certification or security weakening. If existing hosted whole-job membership cannot be proved, present distinct owner method decision. Preserve all original gates.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
@@ -146,6 +146,13 @@
       "D2, G2 and remaining physical E2/P4 acceptance; no phase advance without evidence and owner signoff."
     ],
     "read": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "28-november--reportlab-url-and-finite-staged-facts-scope",
+        "blob_sha": "d8c61f69cd8d0ba772d96e8da2b27612d5ceae3a",
+        "start_line": 707,
+        "end_line": 715
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--owner-approved-isolated-reportlab-512-projections-and-metadata-holds",
@@ -569,17 +576,17 @@
     ]
   },
   "operation": {
-    "id": "C5-REPORTLAB-5-1-2-OWNER-APPROVED-ISOLATED-PREPARATION-20261128",
+    "id": "C5-REPORTLAB-URL-AND-FINITE-STAGED-FACTS-SCOPE-20261128",
     "state": "RECONCILED",
-    "starting_sha": "2b84c36b5242700897f2f172be85b4fa0d149309",
-    "outcome": "Detached 4dd5525: exact published wheel digest obtained; five inert dependency projections, coordinated pin rebindings, 15 static/readback checks and six pure version comparisons passed. Actual wheel identity/metadata, graph, use, host and regression execution unverified. No restricted execution.",
+    "starting_sha": "00d08f0594fb0c474cc62ee5cb6d8a3fde664148",
+    "outcome": "Detached d9119bd: exact URL corroborated, 28 named artifact scope ceiling and independent missing facts/host holds; 14/14 static/readback PASS. Exact byte count/metadata and host membership remain unresolved. No package acquisition or restricted execution.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "28-november--owner-approved-isolated-reportlab-512-projections-and-metadata-holds",
-      "blob_sha": "0963a8e2645234df473e202b5599efd240e05c2c",
-      "start_line": 697,
-      "end_line": 705
+      "anchor": "28-november--reportlab-url-and-finite-staged-facts-scope",
+      "blob_sha": "d8c61f69cd8d0ba772d96e8da2b27612d5ceae3a",
+      "start_line": 707,
+      "end_line": 715
     }
   },
   "authority": {
@@ -917,6 +924,10 @@
       {
         "sha": "4dd55250bf7cb43d47338493d656afb9eaf5b6c9",
         "scope": "Disarmed one-file ReportLab 5.1.2 inert proposal successor of 9970039. Exact published hash, five full dependency projections and coordinated pin rebindings, 15 static/readback and six pure packaging comparisons PASS. Actual metadata/rights/security/graph/host/regression unresolved; no acquisition or active lock change."
+      },
+      {
+        "sha": "d9119bdd0fd9973fdd288fd789a43c8492ac2993",
+        "scope": "Disarmed data-only successor of 4dd5525; ReportLab URL corroborated and finite 28-row static inspection ceiling (29 GETs/116350181 bytes, not authorised); 14/14 static/readback pass. Metadata/rights/security, exact reduced scope and host containment unresolved."
       }
     ]
   },
@@ -951,7 +962,8 @@
     "2235d38 disarmed common command runner; command-group evidence does not contain detached/root children, Chrome urllib deadline and partial transfer accounting and actual whole-job boundary pending. No use authority or credit.",
     "e441431 disarmed: failed transfer receipts record reserved slots and observed file size, never assert actual requests/wire bytes; independently bound whole-job containment and real host preflight/cleanup, regression/credits and ReportLab/rights decisions pending. No new authority or credit.",
     "9970039 disarmed; host fixture requires independent separate RUNNER_TEMP root and sibling backend source layout, no existing positive whole-job boundary proved. ReportLab 5.1.2 requires coordinated <5 range/lock scope review. No new authority or credit.",
-    "4dd5525 disarmed; ReportLab 5.1.2 published digest confirmed but exact URL/bytes/METADATA/notice inventory and actual offline graph/security/rights held. Existing 4.5.1 HOLD and whole-job/fixture cleanup requirements unchanged. No new restricted authority or acceptance credit."
+    "4dd5525 disarmed; ReportLab 5.1.2 published digest confirmed but exact URL/bytes/METADATA/notice inventory and actual offline graph/security/rights held. Existing 4.5.1 HOLD and whole-job/fixture cleanup requirements unchanged. No new restricted authority or acceptance credit.",
+    "d9119bd: third-party ReportLab scan locator and unresolved builtins-write flag; exact archive facts unknown. Static-only proposed ceiling not executable and must reduce to independent missing facts; custody and whole-job host boundary unproved."
   ],
   "context": {
     "protocol": {
