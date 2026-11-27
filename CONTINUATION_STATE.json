@@ -6,10 +6,17 @@
   },
   "checkpoint": {
     "operation_id": "C5-INDEPENDENT-PYTHON-STAGING-20261127",
-    "parent_sha": "6a7972ceacb6f66e2524d7e2c253923cd3c3be6e",
-    "previous_snapshot_sha": "6a7972ceacb6f66e2524d7e2c253923cd3c3be6e",
-    "scope": "Independent disarmed Python staging and final witness projections; routine synthetic CI only.",
-    "state": "PREPARED"
+    "parent_sha": "dfdd5cd0aa0677adf282451c697e019090563a28",
+    "previous_snapshot_sha": "dfdd5cd0aa0677adf282451c697e019090563a28",
+    "scope": "Reconcile independent Python staging, detached candidate and 58/58 ordinary synthetic CI; no restricted execution.",
+    "state": "RECONCILED",
+    "receipt": {
+      "path": "docs/C5_INDEPENDENT_PYTHON_STAGING_2026-11-27.md",
+      "anchor": "pilotodin--independent-python-staging-and-final-witness-source-integration",
+      "blob_sha": "a29e8585b0b38492d16cb22b3c9ceaeb31ae29a4",
+      "start_line": 1,
+      "end_line": 26
+    }
   },
   "product": {
     "sha": "8da7f33cb418e453a7b5c250b960fb6370e9e9d0",
@@ -110,16 +117,23 @@
   },
   "task": {
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
-    "status": "PREPARED",
+    "status": "BLOCKED",
     "scope": "C-D08 development reproducibility/build safety as revised by C-D09 limited managed-development evidence method; D native and P8 release boundaries unchanged.",
-    "blocker": "Current runner inspection/rights blocker remains separate; independent exact 29-path PDFium overlay and disarmed validation coordinator prepared, 52/52 synthetic pass. Actual staging/runner/loaded native identity and final Rust/browser/P1/P4 witnesses still need binding; no restricted grants.",
-    "next_action": "Run ordinary exact synthetic staging tests and command projections, then reconcile. No restricted activity.",
+    "blocker": "Independent Python staging/profile/final witness source prepared; 58/58 synthetic pass. Actual runner inspection/rights plus finite controller acquisition, bounded cross-platform descendant settlement, exact setup/source/disposition and final P1/P4/Windows browser-dev binding remain unresolved. No active restricted grants.",
+    "next_action": "Finish only concrete existing one-use controller boundary and final matched source-test witness binding, reusing exact staging and candidate dad0856. Review supported bounded transport/process settlement and cleanup, setup/tool rights, exact source/disposition; do not create another generic framework, repeat unchanged-source tests or standalone runner research. If no supported material independent work remains, report concrete blocker and await reviewed patched image or separate approved alternative. No migration/acquisition/restricted execution.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "Resolve current runner blocker via reviewed patched provider image or separately approved supported alternative; exact tool rights/security, approved 42-row inspection and applicable use dispositions; no bypass of blocked assembly.",
       "Execute exact approved conditional overlay and Windows/Linux consolidated validation, standalone Rust and browser-dev, then C5 eight-row audit. D/G2/E2/P5/installer gates unchanged."
     ],
     "read": [
+      {
+        "path": "docs/C5_INDEPENDENT_PYTHON_STAGING_2026-11-27.md",
+        "anchor": "pilotodin--independent-python-staging-and-final-witness-source-integration",
+        "blob_sha": "a29e8585b0b38492d16cb22b3c9ceaeb31ae29a4",
+        "start_line": 1,
+        "end_line": 26
+      },
       {
         "path": "docs/C5_INDEPENDENT_VALIDATION_COORDINATOR_2026-11-27.md",
         "anchor": "pilotodin--independent-conditional-validation-coordinator",
@@ -331,30 +345,17 @@
   },
   "operation": {
     "id": "C5-INDEPENDENT-PYTHON-STAGING-20261127",
-    "state": "PREPARED",
+    "state": "RECONCILED",
     "starting_sha": "6a7972ceacb6f66e2524d7e2c253923cd3c3be6e",
-    "scope": "Four inert QA paths; detached candidate dad085669e3a130437e8a25751834784a5b611c5; one appended standard-library synthetic test step on existing offline proposal workflow. No actual pip, dependency acquisition, PDFium import, rustc, browser, native, installer, migration or owner access.",
-    "intended_paths": [
-      "qa/c5_managed_dev/python_stage.py",
-      "qa/c5_managed_dev/profile_operations.py",
-      "qa/c5_managed_dev/test_python_stage.py",
-      "qa/c5_managed_dev/final_witnesses.py",
-      ".github/workflows/c5-input-proposal-review.yml"
-    ],
-    "authority_ref": {
-      "scope": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next.",
-      "reference": {
-        "path": "docs/C5_RUNNER_BLOCKER_SEQUENCING_DECISION_2026-11-27.md",
-        "anchor": "pilotodin--owner-decision-narrow-runner-blocker-sequencing-exception",
-        "blob_sha": "082b7431644723ed009a290bb6949771f868b15d",
-        "start_line": 1,
-        "end_line": 12
-      }
-    },
-    "expected_evidence": "Six new synthetic staging tests, three Rust/five browser command projections, no live gates or restricted jobs.",
-    "recovery": "Inspect exact run/job/log before retry; no restricted activation.",
-    "reconcile_before_retry": true,
-    "workflow_blob": "2e16f106e5099e4489420ed573e5f29c735e168c"
+    "outcome": "Detached dad0856 exact 29 overlay + 4 QA + 2 inactive browser config paths, zero candidate runs. Live run 45983871418 job 140454371175 attempt 1 SUCCESS, 6 new + 52 retained synthetic methods and 3 Rust/5 browser command projections. No actual pip/native/browser/installation/migration or acquisition.",
+    "reconcile_before_retry": false,
+    "receipt": {
+      "path": "docs/C5_INDEPENDENT_PYTHON_STAGING_2026-11-27.md",
+      "anchor": "pilotodin--independent-python-staging-and-final-witness-source-integration",
+      "blob_sha": "a29e8585b0b38492d16cb22b3c9ceaeb31ae29a4",
+      "start_line": 1,
+      "end_line": 26
+    }
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next.",
