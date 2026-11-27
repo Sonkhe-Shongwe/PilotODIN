@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-PILLOW-STANDARD-PACKAGE-20261127",
-    "parent_sha": "089e44708fe8f3c1e4b7873b178330426c6233b6",
-    "previous_snapshot_sha": "089e44708fe8f3c1e4b7873b178330426c6233b6",
-    "scope": "Reconcile successful exact Pillow public acquisition and archive inventory assertion hold; disarm.",
+    "operation_id": "C5-CONSOLIDATED-GITHUB-PREPARATION-20261127",
+    "parent_sha": "dd5ec0dbe2e5062a35efa82da3af043d95c03438",
+    "previous_snapshot_sha": "dd5ec0dbe2e5062a35efa82da3af043d95c03438",
+    "scope": "Owner-approved consolidated C5 development policy and disarmed source/regression preparation.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--exact-corrected-pillow-public-acquisition-pass-archive-inventory-assertion-hold",
-      "blob_sha": "520f42446c7c93324c5dea828da28ce35c2eac65",
-      "start_line": 537,
-      "end_line": 541
+      "anchor": "27-november--consolidated-c5-github-source-recovery-and-regression-preparation",
+      "blob_sha": "cb214fa2d4dfc99111f9ac7c01e31178d1df0cff",
+      "start_line": 543,
+      "end_line": 549
     }
   },
   "product": {
@@ -137,8 +137,8 @@
     "id": "C5-LINUX-FIRST-20261127",
     "status": "BLOCKED",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "Exact corrected Pillow public acquisition is proven. Subsequent inventory assertion conflicts with prior exact regular-file inspection; actual individual values unlogged. No installation or full-profile verification.",
-    "next_action": "Reconcile previous regular-file inventory vs ZIP entry predicate using existing exact inspection evidence without standalone reacquisition; integrate demonstrated standard acquisition into consolidated C5 candidate with exact applicable member/notice and full graph review, managed pip and regressions. No further isolated transport probes. Exact scoped execution authority required for consolidated batch.",
+    "blocker": "Consolidated isolated candidate 9402a08 prepared; actual pre-use review, new manifest/staging/receipt callbacks and settlement, @playwright/test size evidence and report-writer command unresolved. No execution authority.",
+    "next_action": "Finish existing consolidated candidate's finite staging/pre-use/settlement and regression bindings; retain 23 targeted rows and exact new browser/Pillow checks, no standalone acquisition probe. Validate source-only as authorised; seek one exact consolidated execution approval when ready.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
@@ -146,6 +146,20 @@
       "D2, G2 and remaining physical E2/P4 acceptance; no phase advance without evidence and owner signoff."
     ],
     "read": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "27-november--consolidated-c5-github-source-recovery-and-regression-preparation",
+        "blob_sha": "cb214fa2d4dfc99111f9ac7c01e31178d1df0cff",
+        "start_line": 543,
+        "end_line": 549
+      },
+      {
+        "path": "docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md",
+        "anchor": "27-november-2026--owner-approved-consolidated-c5-development-preparation-and-engineering-autonomy",
+        "blob_sha": "31668711986abf8b1a7fec28c1c74be661eff842",
+        "start_line": 3,
+        "end_line": 5
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--exact-corrected-pillow-public-acquisition-pass-archive-inventory-assertion-hold",
@@ -436,20 +450,18 @@
     ]
   },
   "operation": {
-    "id": "C5-PILLOW-STANDARD-PACKAGE-20261127",
+    "id": "C5-CONSOLIDATED-GITHUB-PREPARATION-20261127",
     "state": "RECONCILED",
-    "starting_sha": "f748ab79ad2766336cd76bb8408ef3c479b2f096",
-    "outcome": "Run 46062661845 job 140720402642 attempt 1: exact public wheel acquisition size 7577621 and SHA256 match PASS, combined ZIP inventory assertion failed, individual values unlogged; no installation/fixture. Two GETs, consumed/disarmed.",
+    "starting_sha": "dd5ec0dbe2e5062a35efa82da3af043d95c03438",
+    "outcome": "Recovered isolated candidate 9402a08, exact Playwright lock rows, reusable Pillow/Chrome methods, corrected inventory/npm configuration, regression draft and proposed bounds. Final staging/use/settlement binding remains; zero acquisition/execution.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--exact-corrected-pillow-public-acquisition-pass-archive-inventory-assertion-hold",
-      "blob_sha": "520f42446c7c93324c5dea828da28ce35c2eac65",
-      "start_line": 537,
-      "end_line": 541
-    },
-    "cumulative_input_gets": 2,
-    "cumulative_accepted_bytes": 7577621
+      "anchor": "27-november--consolidated-c5-github-source-recovery-and-regression-preparation",
+      "blob_sha": "cb214fa2d4dfc99111f9ac7c01e31178d1df0cff",
+      "start_line": 543,
+      "end_line": 549
+    }
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next. Owner-approved GitHub-only development installation and bounded technical autonomy amendment applies within exact approved batches; no broader authority.",
@@ -474,7 +486,7 @@
       "release",
       "replay of consumed or uncertain approval"
     ],
-    "guards": "52 historical restricted grants consumed/closed/disarmed, zero active; never replay. Codespace preflight refused and stop requested but not confirmed; three consumed variables owner cleanup unverified; existing exact false workflows restored, C1/C2 workflows and OWNED_RESOURCE_ENABLED false, no fallback. Bounded technical retry only for proven terminal zero-job pre-execution failure and new exact write-ahead, no automatic second replacement. Linux Stage A exact 304b24d run 46031011314 success consumed/disarmed, dispatch-only false and marker removed. Pillow one-use artifact retrieval/inspection consumed; no broader use or retry. Preserve earlier exact grant chronology in reviewed parent dac2149 and ledger. Browser smoke run 46054007845 started, failed at duplicate npm config, consumed/disarmed; no replay. Corrected browser run 46054682735 consumed/disarmed after user namespace refusal; no replay. GitHub-only amendment permits up to two fresh bounded technical replacements in approved development batches, never replay; cumulative limits, security/rights/host holds retained. Standard Chrome run 46057698579 consumed/disarmed; aggregate 4 GETs/152764710 bytes, 0/2 replacements; no additional acquisition authority. Specific embedded-credits browser batch has owner-approved per-attempt cap, maximum three attempts, total 18 GETs/490860288 bytes; other scopes unchanged. Browser run 46058183125 success, six GETs/156907312 bytes, zero replacements; entire batch closed/disarmed. Public Pillow run 46058890965 consumed/disarmed on missing index digest, one GET/20129 bytes; no wheel acquisition or technical retry. Direct Pillow run 46059207493 consumed/disarmed after one GET and refused redirect; zero body bytes; no replay. Pillow storage run 46059721700 consumed/disarmed on combined URL hold, one GET/zero bytes; no replay. Standard Pillow run 46062661845 acquired exact matching wheel, two GETs/7577621 wheel bytes; inventory assertion hold, batch consumed/disarmed; no replay.",
+    "guards": "52 historical restricted grants consumed/closed/disarmed, zero active; never replay. Codespace preflight refused and stop requested but not confirmed; three consumed variables owner cleanup unverified; existing exact false workflows restored, C1/C2 workflows and OWNED_RESOURCE_ENABLED false, no fallback. Bounded technical retry only for proven terminal zero-job pre-execution failure and new exact write-ahead, no automatic second replacement. Linux Stage A exact 304b24d run 46031011314 success consumed/disarmed, dispatch-only false and marker removed. Pillow one-use artifact retrieval/inspection consumed; no broader use or retry. Preserve earlier exact grant chronology in reviewed parent dac2149 and ledger. Browser smoke run 46054007845 started, failed at duplicate npm config, consumed/disarmed; no replay. Corrected browser run 46054682735 consumed/disarmed after user namespace refusal; no replay. GitHub-only amendment permits up to two fresh bounded technical replacements in approved development batches, never replay; cumulative limits, security/rights/host holds retained. Standard Chrome run 46057698579 consumed/disarmed; aggregate 4 GETs/152764710 bytes, 0/2 replacements; no additional acquisition authority. Specific embedded-credits browser batch has owner-approved per-attempt cap, maximum three attempts, total 18 GETs/490860288 bytes; other scopes unchanged. Browser run 46058183125 success, six GETs/156907312 bytes, zero replacements; entire batch closed/disarmed. Public Pillow run 46058890965 consumed/disarmed on missing index digest, one GET/20129 bytes; no wheel acquisition or technical retry. Direct Pillow run 46059207493 consumed/disarmed after one GET and refused redirect; zero body bytes; no replay. Pillow storage run 46059721700 consumed/disarmed on combined URL hold, one GET/zero bytes; no replay. Standard Pillow run 46062661845 acquired exact matching wheel, two GETs/7577621 wheel bytes; inventory assertion hold, batch consumed/disarmed; no replay. Consolidated GitHub-only C5 preparation policy approved; future exact single execution batch only after finite scope binding; max two qualifying technical replacements within explicit caps; zero new GETs authorised.",
     "last_consumed": {
       "id": "C5-PILLOW-STANDARD-PACKAGE-20261127",
       "source_sha": "b1836a87f3a79d06bae47c8c7ab51ee327d8af71",
@@ -726,6 +738,22 @@
       {
         "sha": "b1836a87f3a79d06bae47c8c7ab51ee327d8af71",
         "scope": "Standard bounded curl and offline hash-locked pip Pillow candidate; no execution yet."
+      },
+      {
+        "sha": "60df105a215a899113709c9a58580e58e3f2c308",
+        "scope": "Recovered isolated C5 overlay, exact Playwright lock proposal, disarmed."
+      },
+      {
+        "sha": "f7a6f6b0eab868090fdbc2d5ea72a17d7aa073ef",
+        "scope": "Corrected reusable Pillow/Chrome acquisition and npm/browser guards; disarmed."
+      },
+      {
+        "sha": "73243c94d1b5743eba98ce8ffaebc95287509ca1",
+        "scope": "Consolidated manifest, credits witness, disarmed draft."
+      },
+      {
+        "sha": "9402a0859d2586b5e25bdaaed2aecad90ac9b9b9",
+        "scope": "Consolidated draft with regression commands and finite input bounds, not execution-ready."
       }
     ]
   },
@@ -748,7 +776,8 @@
     "Public Pillow index 46058890965 confirms exact link but supplies no usable SHA256 fragment; current wheel may differ under mutable version. No actual wheel acquisition or compatibility proof.",
     "Direct public Pillow acquisition 46059207493 refused observed 302 to binstar-cio-packages-prod.s3.amazonaws.com; actual wheel identity not established. Exact one-hop scope requires approval.",
     "Pillow controlled storage 46059721700 refused combined redirect URL predicate, individual cause unknown. Exact storage bytes not obtained; no unsupported filename inference or repeated probe.",
-    "Exact Pillow SHA256/size from public source verified 46062661845; combined ZIP entry-count/size assertion failed, prior regular-file count may differ from infolist including directories. No installation or current durable custody; full profile open."
+    "Exact Pillow SHA256/size from public source verified 46062661845; combined ZIP entry-count/size assertion failed, prior regular-file count may differ from infolist including directories. No installation or current durable custody; full profile open.",
+    "Candidate 9402a08 pending exact pre-use/manifest/callback/settlement binding; @playwright/test size cap proposed, not measured; no full tests run. Pillow inventory correction unexecuted."
   ],
   "context": {
     "protocol": {
