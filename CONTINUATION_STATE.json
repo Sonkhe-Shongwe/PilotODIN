@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-CD09-INSPECTION-ADAPTER-20261127",
-    "parent_sha": "131df991f9f418aada77aecff12d0ee8edc910a9",
-    "previous_snapshot_sha": "131df991f9f418aada77aecff12d0ee8edc910a9",
-    "scope": "Disarmed C-D09 adapter primitives, exact 21-method synthetic local regression; no live acquisition.",
+    "operation_id": "C5-CD09-INSPECTION-DRIVER-20261127",
+    "parent_sha": "3f6c190f7d6e4761242a22a28720a9ec5f0785d9",
+    "previous_snapshot_sha": "3f6c190f7d6e4761242a22a28720a9ec5f0785d9",
+    "scope": "Integrated disarmed inspection driver, 30-method local synthetic regression and new managed binutils security blocker.",
     "state": "RECONCILED",
     "receipt": {
-      "path": "docs/C5_CD09_INSPECTION_ADAPTER_2026-11-27.md",
-      "anchor": "pilotodin--c-d09-disarmed-inspection-adapter-primitives",
-      "blob_sha": "cf1447c6d7e6da394b9ef1545c57e681f69d1138",
+      "path": "docs/C5_CD09_INSPECTION_DRIVER_2026-11-27.md",
+      "anchor": "pilotodin--c-d09-integrated-disarmed-inspection-driver",
+      "blob_sha": "de8b16ede762a891c8cd6c3f6debd75e4e58ca7a",
       "start_line": 1,
-      "end_line": 16
+      "end_line": 20
     }
   },
   "product": {
@@ -119,14 +119,21 @@
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
     "status": "BLOCKED",
     "scope": "C-D08 development reproducibility/build safety as revised by C-D09 limited managed-development evidence method; D native and P8 release boundaries unchanged.",
-    "blocker": "Disarmed core and adapter primitives pass 21 local synthetic methods; exact integrated driver, actual archive/component rights/linkage, managed runner/tool review and end-to-end bounds/receipt settlement remain unproven.",
-    "next_action": "Complete the single disarmed integrated inspection driver using existing tested primitives: positive exact Python manifest projection, owned scratch floor/cleanup and staged identity, bounded curl and static tool command bindings, ordered row reservations and schema-safe aggregate receipts, whole-operation deadline and refusal settlement. Review tool versions/rights/security and targeted negative fixtures; no activation/acquisition without fresh exact approval. Retain Certifi exclusion, exact 42 rows/214328914 bytes and all conditional PDFium Stage A/B and final compatibility gates.",
+    "blocker": "Integrated driver passes 30 local synthetic methods; new Ubuntu USN-9214-1 fixes binutils at 2.42-4ubuntu2.11, newer than latest listed reviewed managed image .10. No patched image selected, exact positive manifest Python test, final source/workflow binding, real format/tool/security review and actual dependency rights/linkage remain outstanding.",
+    "next_action": "Continue independent authorised source-only review of existing 29-path conditional PDFium overlay and exact Stage A/B predicate equivalence without applying or activating it. Recheck the provider-managed ubuntu-24.04 patched binutils image when available; complete exact positive pinned manifest Python projection, final runner/tool/security/rights and one-use driver/workflow binding before fresh restricted execution approval. No package updates, alternate infrastructure, acquisition, Certifi re-acquisition, install/import/load or legacy replay. Preserve exact 42 rows/214328914-byte cap and all final compatibility/acceptance gates.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "Complete applicable rights and static linkage, conditional exact PDFium source integration and final managed source-test candidate; explicit bounded execution permission, no owner/native/installer.",
       "Run authorised exact Stage A/B and consolidated Windows/Linux development regressions, standalone Rust and browser-dev, final checklist audit; C5 closure only on evidence. D/G2 and phase gates unchanged."
     ],
     "read": [
+      {
+        "path": "docs/C5_CD09_INSPECTION_DRIVER_2026-11-27.md",
+        "anchor": "pilotodin--c-d09-integrated-disarmed-inspection-driver",
+        "blob_sha": "de8b16ede762a891c8cd6c3f6debd75e4e58ca7a",
+        "start_line": 1,
+        "end_line": 20
+      },
       {
         "path": "docs/C5_CD09_INSPECTION_ADAPTER_2026-11-27.md",
         "anchor": "pilotodin--c-d09-disarmed-inspection-adapter-primitives",
@@ -207,17 +214,17 @@
     ]
   },
   "operation": {
-    "id": "C5-CD09-INSPECTION-ADAPTER-20261127",
+    "id": "C5-CD09-INSPECTION-DRIVER-20261127",
     "state": "RECONCILED",
-    "starting_sha": "131df991f9f418aada77aecff12d0ee8edc910a9",
-    "outcome": "21/21 local synthetic methods pass, two exact new source blobs; strict classic ZIP, exclusive staging, bounded synthetic process capture, linkage/receipt primitives. No integrated live adapter, actual acquisition, native tools, CI or score.",
+    "starting_sha": "3f6c190f7d6e4761242a22a28720a9ec5f0785d9",
+    "outcome": "30/30 local synthetic tests pass; exact integrated driver/test blobs. USN-9214-1 requires binutils .11 while latest listed historical managed image has .10; IMAGE unset, live gate false, no acquisition, native tools, CI or acceptance credit.",
     "reconcile_before_retry": false,
     "receipt": {
-      "path": "docs/C5_CD09_INSPECTION_ADAPTER_2026-11-27.md",
-      "anchor": "pilotodin--c-d09-disarmed-inspection-adapter-primitives",
-      "blob_sha": "cf1447c6d7e6da394b9ef1545c57e681f69d1138",
+      "path": "docs/C5_CD09_INSPECTION_DRIVER_2026-11-27.md",
+      "anchor": "pilotodin--c-d09-integrated-disarmed-inspection-driver",
+      "blob_sha": "de8b16ede762a891c8cd6c3f6debd75e4e58ca7a",
       "start_line": 1,
-      "end_line": 16
+      "end_line": 20
     }
   },
   "authority": {
