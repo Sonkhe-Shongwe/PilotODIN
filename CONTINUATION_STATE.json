@@ -6,10 +6,17 @@
   },
   "checkpoint": {
     "operation_id": "C5-CD10-INTEGRATED-REGRESSION-20261127",
-    "parent_sha": "581fa90dfe38ab38f797992220d5752542384b41",
-    "previous_snapshot_sha": "581fa90dfe38ab38f797992220d5752542384b41",
-    "scope": "Routine exact source/synthetic CI regression of existing C-D09/C-D10 modules, no restricted execution.",
-    "state": "PREPARED"
+    "parent_sha": "80fe142cd7e5ea4265efb4c197d82b9d9e6aab93",
+    "previous_snapshot_sha": "80fe142cd7e5ea4265efb4c197d82b9d9e6aab93",
+    "scope": "Reconcile successful exact retained synthetic CI; keep privileged candidate disarmed and unresolved.",
+    "state": "RECONCILED",
+    "receipt": {
+      "path": "docs/C5_CD10_INTEGRATED_REGRESSION_2026-11-27.md",
+      "anchor": "pilotodin--c-d10-complete-retained-synthetic-regression",
+      "blob_sha": "e3a3712a238453e78c71f13a80d8473fac317c5a",
+      "start_line": 1,
+      "end_line": 18
+    }
   },
   "product": {
     "sha": "8da7f33cb418e453a7b5c250b960fb6370e9e9d0",
@@ -110,16 +117,23 @@
   },
   "task": {
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
-    "status": "PREPARED",
+    "status": "BLOCKED",
     "scope": "C-D08 development reproducibility/build safety as revised by C-D09 limited managed-development evidence method; D native and P8 release boundaries unchanged.",
-    "blocker": "Corrected pure APT parser and bounded_process source implemented; full integration/retained suite pending. Exact distro security/rights and local-cache root-side installation settlement/transaction binding still need review. No restricted grants.",
-    "next_action": "Run scoped source/synthetic regression once then reconcile; continue disarmed integrated security update candidate preparation; no restricted execution.",
+    "blocker": "Full exact retained and corrected synthetic suite now PASS (46/46). Integrated privileged update draft assembly blocked by safety check; reviewed supported root-side update/settlement and actual distro tool security/rights remain unresolved. No restricted grants.",
+    "next_action": "Prefer a reviewed provider-patched Ubuntu image; otherwise review a supported bounded standard security-update method, exact same-job transaction and root settlement, actual tool package versions and applicable rights, then prepare an exact disarmed inspection candidate. Do not bypass blocked assembly, run another standalone metadata simulation, repeat successful synthetic tests without source changes, or execute any restricted activity absent fresh explicit scope approval.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "Complete applicable rights and static linkage, conditional exact PDFium source integration and final managed source-test candidate; explicit bounded execution permission, no owner/native/installer.",
       "Run authorised exact Stage A/B and consolidated Windows/Linux development regressions, standalone Rust and browser-dev, final checklist audit; C5 closure only on evidence. D/G2 and phase gates unchanged."
     ],
     "read": [
+      {
+        "path": "docs/C5_CD10_INTEGRATED_REGRESSION_2026-11-27.md",
+        "anchor": "pilotodin--c-d10-complete-retained-synthetic-regression",
+        "blob_sha": "e3a3712a238453e78c71f13a80d8473fac317c5a",
+        "start_line": 1,
+        "end_line": 18
+      },
       {
         "path": "docs/C5_CD10_PARSER_SETTLEMENT_CORRECTION_2026-11-27.md",
         "anchor": "pilotodin--c-d10-focused-transaction-and-settlement-corrections",
@@ -310,26 +324,17 @@
   },
   "operation": {
     "id": "C5-CD10-INTEGRATED-REGRESSION-20261127",
-    "state": "PREPARED",
+    "state": "RECONCILED",
     "starting_sha": "581fa90dfe38ab38f797992220d5752542384b41",
-    "scope": "Existing offline proposal workflow, append only standard-library unittest of six exact pinned modules (46 methods); existing read-only checkout, no package install, archive acquisition, native product/model execution, or owner access.",
-    "intended_paths": [
-      ".github/workflows/c5-input-proposal-review.yml"
-    ],
-    "authority_ref": {
-      "scope": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next.",
-      "reference": {
-        "path": "docs/C5_CD10_PARSER_SETTLEMENT_CORRECTION_2026-11-27.md",
-        "anchor": "pilotodin--c-d10-focused-transaction-and-settlement-corrections",
-        "blob_sha": "32726e118b7fc5cc78d018b4ca81b14d67a71019",
-        "start_line": 1,
-        "end_line": 19
-      }
-    },
-    "expected_evidence": "Exact source run with 46 tests, zero failures/errors/skips, all live gates remain false, no restricted jobs.",
-    "recovery": "Inspect actual branch commit/run/jobs/logs before retry; retain failure and no automatic retry. No restricted approval.",
-    "reconcile_before_retry": true,
-    "workflow_blob": "b4f4d8067376fd2e4a92f9d44e74bd37e07289b6"
+    "outcome": "Run 45980541604 job 140443009973 attempt 1 completed SUCCESS, 46/46 synthetic methods, 11 exact source/test pins, exact manifest projection 42 rows / 214328914 bytes. No restricted execution. Integrated privileged draft assembly blocked by safety check; not published/activated.",
+    "reconcile_before_retry": false,
+    "receipt": {
+      "path": "docs/C5_CD10_INTEGRATED_REGRESSION_2026-11-27.md",
+      "anchor": "pilotodin--c-d10-complete-retained-synthetic-regression",
+      "blob_sha": "e3a3712a238453e78c71f13a80d8473fac317c5a",
+      "start_line": 1,
+      "end_line": 18
+    }
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next.",
