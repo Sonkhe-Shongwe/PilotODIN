@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-CODESPACE-OBSERVATION-20261127",
-    "parent_sha": "e290aef208764829749cce636d28bbce64c66c3a",
-    "previous_snapshot_sha": "e290aef208764829749cce636d28bbce64c66c3a",
-    "scope": "Owner-supplied blank Codespace availability observations and read-only exact standard CLI route review; no new trust or execution authority.",
+    "operation_id": "C5-CODESPACE-BOOTSTRAP-PREP-20261127",
+    "parent_sha": "17bde613ab49bf048559c740c8ab9408472825c4",
+    "previous_snapshot_sha": "17bde613ab49bf048559c740c8ab9408472825c4",
+    "scope": "Owner-approved limited Codespace bootstrap preparation; exact consolidated no-acquisition preflight proposal, not execution.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "27-november--c5-blank-codespace-candidate-observation-and-standard-tool-limitation",
-      "blob_sha": "7f070c63bef5eed3d23bb2c6780d75e63626ef4f",
-      "start_line": 2860,
-      "end_line": 2868
+      "anchor": "27-november--owner-approved-codespace-bootstrap-preparation-and-consolidated-no-acquisition-preflight-proposal",
+      "blob_sha": "9201e243c6d64c3bcd67280953836592f6cb9b24",
+      "start_line": 2870,
+      "end_line": 2905
     }
   },
   "product": {
@@ -119,8 +119,8 @@
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
     "status": "BLOCKED",
     "scope": "C-D08 revised C5-A/B development reproducibility and build safety only; D retains native prerequisites, P8 release-only",
-    "blocker": "Blank Codespace exists (owner screenshots); exact trusted environment, isolation, gh 2.104.0 and bounded Snappy dependency route not established. Independent complete CP311 inventory and licence/use evidence remain open.",
-    "next_action": "Obtain explicit narrow Codespace bootstrap preparation-only trust decision (GitHub provider/OS/system tools declared trusted reference boundary, not independent host provenance; independent exact archive/actual-use proof unchanged). If approved, review minimal exact standard dependency/isolation/custody route without acquisition; one consolidated reviewed user-operated step only after fresh bounded execution authority. No direct agent terminal access, no more fragmented checks or infrastructure loops. Remain BLOCKED if route unproven.",
+    "blocker": "Codespace limited bootstrap preparation approved. Actual offline isolation and independently authenticated exact Snappy package identity unavailable; no execution-ready verification route.",
+    "next_action": "Obtain explicit one-use approval for exact 45-second no-acquisition preflight in the existing blank Codespace (receipt command SHA256 d3cfd7106eadb85194dd5081f15d3b12f373442105654764cd974146f3590ab7), then provide exact command for owner execution once and output. No sudo, downloads, installations, external requests, fallback or retry. Stop Codespace after output; no further fragmented checks. Local metadata is observation only; if missing/refused, report blocker. Fresh separate authority needed for exact data-only verification after independent pins, isolation and custody reviewed.",
     "next_action_kind": "OWNER_DECISION",
     "after": [
       "Once concrete verifier access/manifest exists, reconcile independent provenance and exact method under unchanged safeguards and seek fresh scoped authority before acquisition or use; no reuse of consumed approvals.",
@@ -129,22 +129,29 @@
     "read": [
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
+        "anchor": "27-november--owner-approved-codespace-bootstrap-preparation-and-consolidated-no-acquisition-preflight-proposal",
+        "blob_sha": "9201e243c6d64c3bcd67280953836592f6cb9b24",
+        "start_line": 2870,
+        "end_line": 2905
+      },
+      {
+        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "27-november--c5-blank-codespace-candidate-observation-and-standard-tool-limitation",
-        "blob_sha": "7f070c63bef5eed3d23bb2c6780d75e63626ef4f",
+        "blob_sha": "9201e243c6d64c3bcd67280953836592f6cb9b24",
         "start_line": 2860,
         "end_line": 2868
       },
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "27-november--c5-independently-controlled-standard-tool-verifier-feasibility-assessment",
-        "blob_sha": "7f070c63bef5eed3d23bb2c6780d75e63626ef4f",
+        "blob_sha": "9201e243c6d64c3bcd67280953836592f6cb9b24",
         "start_line": 2846,
         "end_line": 2858
       },
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "27-november--c5-exact-source-test-actual-use-licence-gap-reconciliation",
-        "blob_sha": "7f070c63bef5eed3d23bb2c6780d75e63626ef4f",
+        "blob_sha": "9201e243c6d64c3bcd67280953836592f6cb9b24",
         "start_line": 2834,
         "end_line": 2844
       },
@@ -163,21 +170,21 @@
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "26-november--c5-development-licence-and-browser-toolchain-evidence-reconciliation",
-        "blob_sha": "7f070c63bef5eed3d23bb2c6780d75e63626ef4f",
+        "blob_sha": "9201e243c6d64c3bcd67280953836592f6cb9b24",
         "start_line": 2017,
         "end_line": 2053
       },
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "26-november--c5-pdf-test-dependency-licence-decision-boundary",
-        "blob_sha": "7f070c63bef5eed3d23bb2c6780d75e63626ef4f",
+        "blob_sha": "9201e243c6d64c3bcd67280953836592f6cb9b24",
         "start_line": 2134,
         "end_line": 2145
       },
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "26-november--c5-pdfium-notice-hashes-and-conditional-development-use-disposition",
-        "blob_sha": "7f070c63bef5eed3d23bb2c6780d75e63626ef4f",
+        "blob_sha": "9201e243c6d64c3bcd67280953836592f6cb9b24",
         "start_line": 2369,
         "end_line": 2382
       },
@@ -187,28 +194,21 @@
         "blob_sha": "e0c428ab105c409660c4530dc3e82e39d75b6fa9",
         "start_line": 84,
         "end_line": 96
-      },
-      {
-        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
-        "anchor": "owner-approved-c5-delivery-checklist-26-november-2026",
-        "blob_sha": "a764346faed8ed7d0526ab41eac2f13a5b22823d",
-        "start_line": 273,
-        "end_line": 294
       }
     ]
   },
   "operation": {
-    "id": "C5-CODESPACE-OBSERVATION-20261127",
+    "id": "C5-CODESPACE-BOOTSTRAP-PREP-20261127",
     "state": "RECONCILED",
-    "starting_sha": "e290aef208764829749cce636d28bbce64c66c3a",
-    "outcome": "Candidate Codespace exists; observed Ubuntu x64 adequate resources, system Python 3.12.3, existing readers, gh version mismatch and libsnappy missing. Standard gh download fails existing finite transfer/no-retry safeguards. No independent verifier qualification.",
+    "starting_sha": "17bde613ab49bf048559c740c8ab9408472825c4",
+    "outcome": "Preparation approved and reviewed; exact standard Ubuntu decoder candidate identified but publisher size/hash not retrieved; 45-second no-download preflight prepared, Bash syntax checked only. No Codespace execution or qualification.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "27-november--c5-blank-codespace-candidate-observation-and-standard-tool-limitation",
-      "blob_sha": "7f070c63bef5eed3d23bb2c6780d75e63626ef4f",
-      "start_line": 2860,
-      "end_line": 2868
+      "anchor": "27-november--owner-approved-codespace-bootstrap-preparation-and-consolidated-no-acquisition-preflight-proposal",
+      "blob_sha": "9201e243c6d64c3bcd67280953836592f6cb9b24",
+      "start_line": 2870,
+      "end_line": 2905
     }
   },
   "authority": {
