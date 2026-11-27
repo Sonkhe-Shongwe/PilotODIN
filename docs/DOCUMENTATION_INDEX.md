@@ -9,6 +9,7 @@
 | Purpose | Canonical record |
 | --- | --- |
 | Start and resume | [AGENTS](../AGENTS.md), [live state](../CONTINUATION_STATE.json), [v2 protocol](./continuation/PROTOCOL.md) |
+| Permanent master documents and source recovery | [Owner-held revision package and exact source checkpoint](./DOCUMENTATION_AUDIT_C5_D1_MIGRATION_2026-11-27.md#7-master-document-package-and-source-recovery-checkpoint); original master + Rev 1.1 amendment, Rev 2.0 status, Rev 1.0 recovery guide; current source ZIP not yet exported or sanitised. |
 | Continuity and safe recovery | [Protocol](./CONTINUATION_PROTOCOL_CURRENT.md), [recovery checks](./CONTINUATION_RECOVERY_CHECKS.md) |
 | Authority and implementation order | [Live directive](./PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md), [current PRODUCT-FIRST-20261127 policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md#27-november-2026--owner-approved-aggressive-product-first-development-framework) |
 | Architecture and decisions | [Architecture review](./PILOTODIN_PRODUCT_ARCHITECTURE_REVIEW_AND_REMEDIATION_2026-11-24.md), [decision index](./ENGINEERING_DECISIONS_CURRENT.md), owner Master Reconstruction Blueprint |

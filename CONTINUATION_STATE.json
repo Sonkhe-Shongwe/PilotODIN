@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "DOC-AUDIT-PRODUCT-FIRST-20261127",
-    "parent_sha": "4a314409968e21fa77c42636c8c6bfa80beba374",
-    "previous_snapshot_sha": "4a314409968e21fa77c42636c8c6bfa80beba374",
-    "scope": "Document-only reconciliation of product-first framework, canonical routing, exact state references and verified acceptance/CI baseline; no new policy, execution, or evidence credit.",
+    "operation_id": "MASTER-RECOVERY-20261127",
+    "parent_sha": "1d033ce891f01728a2957d7959596252ac568a19",
+    "previous_snapshot_sha": "1d033ce891f01728a2957d7959596252ac568a19",
+    "scope": "Master documentation package checksum and immutable source inventory reconciliation, permanent recovery pointers; actual current ZIP export unavailable. No execution or acceptance change.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/DOCUMENTATION_AUDIT_C5_D1_MIGRATION_2026-11-27.md",
-      "anchor": "6-post-framework-document-audit-27-november-2026",
-      "blob_sha": "a201314f2fedc12c1185354d5b3e44563ee318b8",
-      "start_line": 49,
-      "end_line": 59
+      "anchor": "7-master-document-package-and-source-recovery-checkpoint",
+      "blob_sha": "3502c3213cbea8f1f9644a48880e17c8d8623281",
+      "start_line": 61,
+      "end_line": 69
     }
   },
   "product": {
@@ -181,17 +181,17 @@
     ]
   },
   "operation": {
-    "id": "DOC-AUDIT-PRODUCT-FIRST-20261127",
+    "id": "MASTER-RECOVERY-20261127",
     "state": "RECONCILED",
-    "starting_sha": "4a314409968e21fa77c42636c8c6bfa80beba374",
-    "outcome": "Audited canonical docs, original Blueprint constraints, 30 structured refs, 120 unchanged workflow blobs, exact historical runs and 20 score rows; corrected superseded navigation and retained all gates/authorities/history. No product/test/lock/workflow change or restricted activity.",
+    "starting_sha": "1d033ce891f01728a2957d7959596252ac568a19",
+    "outcome": "Verified owner-held document package manifest and exact complete Git tree metadata; recorded original plus controlled amendment precedence, updated README/index recovery pointers. Current source bytes could not be transferred or sanitised; not a build proof. No product or restricted activity.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/DOCUMENTATION_AUDIT_C5_D1_MIGRATION_2026-11-27.md",
-      "anchor": "6-post-framework-document-audit-27-november-2026",
-      "blob_sha": "a201314f2fedc12c1185354d5b3e44563ee318b8",
-      "start_line": 49,
-      "end_line": 59
+      "anchor": "7-master-document-package-and-source-recovery-checkpoint",
+      "blob_sha": "3502c3213cbea8f1f9644a48880e17c8d8623281",
+      "start_line": 61,
+      "end_line": 69
     }
   },
   "authority": {
