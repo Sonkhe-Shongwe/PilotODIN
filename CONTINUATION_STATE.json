@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-CONSOLIDATED-TARGETED-PUBLISHER-REVIEW-20261127",
-    "parent_sha": "ccf56801a912370dc22b99fad8849054755b3718",
-    "previous_snapshot_sha": "ccf56801a912370dc22b99fad8849054755b3718",
-    "scope": "Exact publisher source review of seven targeted Linux dependency rows; no execution or code changes.",
+    "operation_id": "C5-CONSOLIDATED-TARGETED-PYTHON-PUBLISHER-REVIEW-20261127",
+    "parent_sha": "150973d17e62fa7b178eec6bd813f10028a2a070",
+    "previous_snapshot_sha": "150973d17e62fa7b178eec6bd813f10028a2a070",
+    "scope": "Ten additional exact-release Linux Python publisher reviews; no execution or source change.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--targeted-dependency-publisher-review-seven-linux-rows",
-      "blob_sha": "d71036bb951772bac07528a6d959ee0ed1bfe969",
-      "start_line": 583,
-      "end_line": 592
+      "anchor": "27-november--targeted-dependency-publisher-review-ten-additional-python-rows",
+      "blob_sha": "17a04fd053acbb35bcfb5ff3a1e1238f706ce2fd",
+      "start_line": 594,
+      "end_line": 609
     }
   },
   "product": {
@@ -137,8 +137,8 @@
     "id": "C5-LINUX-FIRST-20261127",
     "status": "BLOCKED",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "Candidate ee5df25 unchanged/disarmed. Seven targeted rows now have exact source evidence; 16 remain for this focused review, all 23 final use dispositions still open. Native component/security and actual Tauri loader discrepancy need resolution; independently reviewed full-scope disposition, host/settlement and regression receipt binding outstanding. No execution authority.",
-    "next_action": "Continue the 16 remaining targeted publisher reviews, prioritising et-xmlfile/reportlab/fontsource notices then native Python and lzma component applicability. Resolve exact-version source lookup failures using official publishers, and finish scoped security/component gaps for seven reviewed rows including actual Tauri loader. Reuse PDFium 8149/Stage A evidence and corrected Pillow receipts; no repeated provenance or identity-only acquisition. Bind independently reviewed expectations, complete hosted runner/settlement and regression receipts; source-only verify then seek one bounded approval.",
+    "blocker": "Candidate ee5df25 remains disarmed. 17/23 targeted publisher rows reviewed; six remaining exact release reviews, all 23 final use dispositions open. Concrete bundled component/security, Tauri loader, and independently reviewed expectations, hosted settlement and regression receipt bindings pending. No execution authority.",
+    "next_action": "Complete six remaining targeted publisher reviews (et-xmlfile, reportlab, pydantic-core, Fontsource Inter/Manrope, napi-rs LZMA) using authoritative release metadata/source; then finite specific component/advisory applicability for all reviewed rows, including http-parser/llhttp/libuv/libyaml/BLAS/GCC and Tauri loader. Reuse existing PDFium/Pillow/Stage A evidence; no identity-only acquisition. Bind independently reviewed expectations and complete hosted runner/settlement/regression receipts, source-only verify then seek one bounded approval.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
@@ -146,6 +146,13 @@
       "D2, G2 and remaining physical E2/P4 acceptance; no phase advance without evidence and owner signoff."
     ],
     "read": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "27-november--targeted-dependency-publisher-review-ten-additional-python-rows",
+        "blob_sha": "17a04fd053acbb35bcfb5ff3a1e1238f706ce2fd",
+        "start_line": 594,
+        "end_line": 609
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--targeted-dependency-publisher-review-seven-linux-rows",
@@ -492,17 +499,17 @@
     ]
   },
   "operation": {
-    "id": "C5-CONSOLIDATED-TARGETED-PUBLISHER-REVIEW-20261127",
+    "id": "C5-CONSOLIDATED-TARGETED-PYTHON-PUBLISHER-REVIEW-20261127",
     "state": "RECONCILED",
-    "starting_sha": "ccf56801a912370dc22b99fad8849054755b3718",
-    "outcome": "7/23 targeted rows newly source-reviewed; all seven match historical identity receipts. tzdata wrapper/data terms evidenced; esbuild/Rollup/Tauri native components and actual Tauri generated loader require further scoped checks. No final use disposition, code changes or execution.",
+    "starting_sha": "150973d17e62fa7b178eec6bd813f10028a2a070",
+    "outcome": "17/23 targeted rows now have source-review evidence (10 new; 10/10 historical receipt matches). Exact parser/libuv gitlinks and Linux libgomp terms reconciled; six publisher reviews and all 23 final dispositions remain. No code change/execution.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--targeted-dependency-publisher-review-seven-linux-rows",
-      "blob_sha": "d71036bb951772bac07528a6d959ee0ed1bfe969",
-      "start_line": 583,
-      "end_line": 592
+      "anchor": "27-november--targeted-dependency-publisher-review-ten-additional-python-rows",
+      "blob_sha": "17a04fd053acbb35bcfb5ff3a1e1238f706ce2fd",
+      "start_line": 594,
+      "end_line": 609
     }
   },
   "authority": {
@@ -841,7 +848,7 @@
     "Exact Pillow SHA256/size from public source verified 46062661845; combined ZIP entry-count/size assertion failed, prior regular-file count may differ from infolist including directories. No installation or current durable custody; full profile open.",
     "Candidate 9402a08 pending exact pre-use/manifest/callback/settlement binding; @playwright/test size cap proposed, not measured; no full tests run. Pillow inventory correction unexecuted.",
     "ee5df25 disarmed consolidated fixture setup correction. Exact PDFium 8149 source build, linkage and Stage A prior evidence recovered; 37/37 notices mapped. Full pre-use disposition, targeted 23/Pillow/browser/pip/fonts, host and regression receipts still pending; no execution authority or acceptance credit.",
-    "Seven targeted Linux rows source-reviewed, not use-cleared; 16 remaining source reviews, all 23 final dispositions pending. Tauri 2.12.4 source loader references 2.11.4; actual package check needed, no bypass. Native component/advisory review remains; no acceptance increase."
+    "17/23 targeted Linux rows source-reviewed; six remaining publisher reviews; all 23 final dispositions pending. Specific parser/libuv/libyaml and native component/advisory applicability and Tauri loader discrepancy remain, no acceptance increase."
   ],
   "context": {
     "protocol": {
