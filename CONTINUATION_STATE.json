@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-APPLICABILITY-20261127",
-    "parent_sha": "15c479c2ffd4c5874b542def9f998fa7b21c41c3",
-    "previous_snapshot_sha": "15c479c2ffd4c5874b542def9f998fa7b21c41c3",
-    "scope": "Owner-approved finite standard-tool applicability policy and disarmed consolidated Stage A transaction preparation; no execution or acceptance change.",
+    "operation_id": "C5-STAGE-A-PROVENANCE-STOP-20261127",
+    "parent_sha": "916665c10d1e3e4f2c87064d11a0afb0d98823ee",
+    "previous_snapshot_sha": "916665c10d1e3e4f2c87064d11a0afb0d98823ee",
+    "scope": "Targeted standard CLI route review and formal stop under existing limits; no execution, evidence-method, product or acceptance change.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--owner-approved-c5-applicability-policy-and-consolidated-stage-a-transaction",
-      "blob_sha": "21394dfa0bdd015517091c8bc294ec8c40f4a34f",
-      "start_line": 72,
-      "end_line": 97
+      "anchor": "27-november--c5-standard-provenance-route-stopping-decision",
+      "blob_sha": "5524848a80fa48ff8ce008427ae79814e0de3af2",
+      "start_line": 99,
+      "end_line": 107
     }
   },
   "product": {
@@ -119,9 +119,9 @@
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
     "status": "BLOCKED",
     "scope": "C-D08/C-D09 plus owner-approved finite applicability-based standard-tool qualification for disposable C5 development only. Existing D/P8 boundaries unchanged.",
-    "blocker": "Consolidated Windows Stage A scope bound to existing detached source, plan and locks; actual bounded provenance control traffic, pre-use runtime/wheel rights/security/linkage, Windows staging and process settlement adapter and exact one-use source activation remain unresolved. No supported execution-ready transaction or active restricted grant.",
-    "next_action": "Use the owner-approved applicability decision and consolidated transaction in ENGINEERING_DECISIONS_CURRENT.md; address only concrete bounded provenance control/settlement/staging adapter feasibility and applicable pre-use facts using standard tools, not recursive verifier qualification. No new broad research, unchanged synthetic testing, runner polling or actual restricted activity. If the supported route cannot meet retained constraints, state formal no-go and discuss G2 equivalent proof as separate owner decision. Fresh exact approval only after execution-ready source and scope.",
-    "next_action_kind": "MISSING_EVIDENCE",
+    "blocker": "C5 standalone A standard release verification route cannot enforce retained exact provenance control traffic bounds using demonstrated tools. No approved authenticated local release-evidence route; actual pre-use rights/security, Windows settlement and exact activation remain open. G2 separate method blocked.",
+    "next_action": "Seek explicit owner decision on bounded feasibility/design of the equivalent independent operation-level G2 physical-file-object witness in the existing G2 consolidated decision. No G2 method change, D implementation, native action or phase advance inferred. C5 remains blocked; reopen only for an identified supported release/build provenance route meeting retained constraints or a distinct explicitly approved method decision. No repeated C5 infrastructure, synthetic tests or provider polling.",
+    "next_action_kind": "OWNER_DECISION",
     "after": [
       "Once supported C5 method and exact authority exist, resolve applicable pre-use security/licence/provenance and settlement facts, then run one separately approved finite standalone Windows Stage A transaction with all 19 predicates; no implied qualification.",
       "Rejoin full C5 Stage A/B and retained font/frontend/Rust/P1/P4 evidence, audit eight C5 rows; resolve production Pillow/Brotli concern and exact remaining profiles before closure.",
@@ -130,8 +130,15 @@
     "read": [
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "27-november--c5-standard-provenance-route-stopping-decision",
+        "blob_sha": "5524848a80fa48ff8ce008427ae79814e0de3af2",
+        "start_line": 99,
+        "end_line": 107
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--owner-approved-c5-applicability-policy-and-consolidated-stage-a-transaction",
-        "blob_sha": "21394dfa0bdd015517091c8bc294ec8c40f4a34f",
+        "blob_sha": "5524848a80fa48ff8ce008427ae79814e0de3af2",
         "start_line": 72,
         "end_line": 97
       },
@@ -191,17 +198,17 @@
     ]
   },
   "operation": {
-    "id": "C5-APPLICABILITY-20261127",
+    "id": "C5-STAGE-A-PROVENANCE-STOP-20261127",
     "state": "RECONCILED",
-    "starting_sha": "15c479c2ffd4c5874b542def9f998fa7b21c41c3",
-    "outcome": "Recorded explicit owner method/preparation approval, exact 10 source pins, two locks, 19 test identifiers and nine-archive transaction proposal. Targeted CLI applicability and VS version mapping; remaining supported control and Windows settlement/pre-use feasibility blocked. No execution, test, product or acceptance change.",
+    "starting_sha": "916665c10d1e3e4f2c87064d11a0afb0d98823ee",
+    "outcome": "Exact CLI source establishes live release-tag and attestation fetches, pagination/retries, external bundle retrieval and unbounded body read under existing route; no compliant standard enforcement route identified. Formal scoped C5 stop; G2 feasibility owner decision next. No product or execution changes.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--owner-approved-c5-applicability-policy-and-consolidated-stage-a-transaction",
-      "blob_sha": "21394dfa0bdd015517091c8bc294ec8c40f4a34f",
-      "start_line": 72,
-      "end_line": 97
+      "anchor": "27-november--c5-standard-provenance-route-stopping-decision",
+      "blob_sha": "5524848a80fa48ff8ce008427ae79814e0de3af2",
+      "start_line": 99,
+      "end_line": 107
     }
   },
   "authority": {
