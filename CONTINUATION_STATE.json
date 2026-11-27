@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-LINUX-STAGE-A-ACTIVATION-PREPARATION-20261127",
-    "parent_sha": "3db4013d04900d37f87c0953aaadf8df142e99a9",
-    "previous_snapshot_sha": "3db4013d04900d37f87c0953aaadf8df142e99a9",
-    "scope": "Exact bounded Stage A disposition proposal and rolling managed-host activation draft; no execution.",
-    "state": "RECONCILED",
+    "operation_id": "C5-LINUX-STAGE-A-ONCE-20261127",
+    "parent_sha": "29ffcd50598fda7f901a2b635c246a8c68bbd151",
+    "previous_snapshot_sha": "29ffcd50598fda7f901a2b635c246a8c68bbd151",
+    "scope": "Explicit owner approval and write-ahead for one bounded Linux Stage A execution; no execution yet.",
+    "state": "PREPARED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--exact-stage-a-disposition-proposal-and-managed-rolling-image-activation-draft",
-      "blob_sha": "fad9bc0cacf9323a781351174a48bbcd68ac4df3",
-      "start_line": 303,
-      "end_line": 309
+      "anchor": "27-november--owner-approved-one-use-linux-stage-a-execution",
+      "blob_sha": "4d30548eecfb8469b58136e6a8bea70cb97a2210",
+      "start_line": 311,
+      "end_line": 315
     }
   },
   "product": {
@@ -117,11 +117,11 @@
   },
   "task": {
     "id": "C5-LINUX-FIRST-20261127",
-    "status": "BLOCKED",
+    "status": "PREPARED",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "Owner decision required on specific residual PDFium compiled Brotli checkout uncertainty for exact generated-fixture use and one bounded Stage A execution. Actual host package/ABI facts will be observed at approved use. Exact one-use activation SHA and grant not yet minted. Full-profile Pillow and patched managed Chrome remain held.",
-    "next_action": "Obtain explicit owner decision on exact proposal adfc019: conditional generated-fixture PDFium use and one bounded Stage A transaction. If approved, bind review and disposition digests, final exact isolated source/workflow/run/one-use grant and required gates; verify expected HEAD/diff/triggers/write-ahead before dispatch. Seven fixed GETs/7,808,390 expected bytes/zero redirects/retries; managed setup distinct; CP311.18/pip 26.3; isolated hash-locked install, original 19 predicates and owned settlement. Refuse any material mismatch or unresolved applicable risk. No separate qualification cycle. Full Linux requires corrected Pillow, actual patched managed Chrome and final relevant regressions. Windows mandatory before D1.",
-    "next_action_kind": "OWNER_DECISION",
+    "blocker": "Owner-approved generated-fixture disposition; exact final activation binding and actual host pre-use/test result pending.",
+    "next_action": "Verify and publish the single marker-only activation for 304b24d under this explicit approval, then reconcile actual exact workflow run. No replay, no other work.",
+    "next_action_kind": "RECONCILE",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
       "Windows-specific verified input and compatibility prerequisites before actual production-equivalent D1, separately authorised; no installer.",
@@ -130,78 +130,85 @@
     "read": [
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "27-november--owner-approved-one-use-linux-stage-a-execution",
+        "blob_sha": "4d30548eecfb8469b58136e6a8bea70cb97a2210",
+        "start_line": 311,
+        "end_line": 315
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--exact-stage-a-disposition-proposal-and-managed-rolling-image-activation-draft",
-        "blob_sha": "fad9bc0cacf9323a781351174a48bbcd68ac4df3",
+        "blob_sha": "4d30548eecfb8469b58136e6a8bea70cb97a2210",
         "start_line": 303,
         "end_line": 309
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--c55-exact-setup-drafts-and-managed-chrome-candidate",
-        "blob_sha": "fad9bc0cacf9323a781351174a48bbcd68ac4df3",
+        "blob_sha": "4d30548eecfb8469b58136e6a8bea70cb97a2210",
         "start_line": 297,
         "end_line": 301
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--c55-proportionate-baseline-consolidation",
-        "blob_sha": "fad9bc0cacf9323a781351174a48bbcd68ac4df3",
+        "blob_sha": "4d30548eecfb8469b58136e6a8bea70cb97a2210",
         "start_line": 289,
         "end_line": 295
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--c551-isolated-managed-operating-system-review",
-        "blob_sha": "fad9bc0cacf9323a781351174a48bbcd68ac4df3",
+        "blob_sha": "4d30548eecfb8469b58136e6a8bea70cb97a2210",
         "start_line": 285,
         "end_line": 287
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--stage-a-generated-fixture-applicability-and-targeted-host-preflight",
-        "blob_sha": "fad9bc0cacf9323a781351174a48bbcd68ac4df3",
+        "blob_sha": "4d30548eecfb8469b58136e6a8bea70cb97a2210",
         "start_line": 275,
         "end_line": 283
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--exact-pdfium-publisher-build-chain-and-managed-linux-bootstrap",
-        "blob_sha": "fad9bc0cacf9323a781351174a48bbcd68ac4df3",
+        "blob_sha": "4d30548eecfb8469b58136e6a8bea70cb97a2210",
         "start_line": 265,
         "end_line": 273
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--disarmed-standalone-linux-stage-a-source-candidate",
-        "blob_sha": "fad9bc0cacf9323a781351174a48bbcd68ac4df3",
+        "blob_sha": "4d30548eecfb8469b58136e6a8bea70cb97a2210",
         "start_line": 255,
         "end_line": 263
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--six-uploaded-linux-stage-a-wheels-verified",
-        "blob_sha": "fad9bc0cacf9323a781351174a48bbcd68ac4df3",
+        "blob_sha": "4d30548eecfb8469b58136e6a8bea70cb97a2210",
         "start_line": 245,
         "end_line": 253
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--pdfium-brotli-source-fix-traced-and-official-pillow-nightly-option",
-        "blob_sha": "fad9bc0cacf9323a781351174a48bbcd68ac4df3",
+        "blob_sha": "4d30548eecfb8469b58136e6a8bea70cb97a2210",
         "start_line": 237,
         "end_line": 243
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--actual-uploaded-linux-pillow-and-pdfium-inspection",
-        "blob_sha": "fad9bc0cacf9323a781351174a48bbcd68ac4df3",
+        "blob_sha": "4d30548eecfb8469b58136e6a8bea70cb97a2210",
         "start_line": 227,
         "end_line": 235
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--owner-approved-linux-first-c5-allocation-and-exact-reduced-input-plan",
-        "blob_sha": "fad9bc0cacf9323a781351174a48bbcd68ac4df3",
+        "blob_sha": "4d30548eecfb8469b58136e6a8bea70cb97a2210",
         "start_line": 211,
         "end_line": 219
       },
@@ -240,23 +247,53 @@
     ]
   },
   "operation": {
-    "id": "C5-LINUX-STAGE-A-ACTIVATION-PREPARATION-20261127",
-    "state": "RECONCILED",
-    "starting_sha": "3db4013d04900d37f87c0953aaadf8df142e99a9",
-    "outcome": "Detached adfc019 five changed paths, 12 static checks and exact readbacks; actual invocation drafted, proposed narrow PDFium disposition, rolling image and specific patched package minimums. All gates disarmed; explicit approval and actual one-use activation binding pending.",
-    "reconcile_before_retry": false,
-    "receipt": {
+    "id": "C5-LINUX-STAGE-A-ONCE-20261127",
+    "state": "PREPARED",
+    "starting_sha": "29ffcd50598fda7f901a2b635c246a8c68bbd151",
+    "scope": "One disposable Ubuntu 24.04 x64 job, attempt 1 only, exact CPython 3.11.18/pip 26.3, seven fixed wheel GETs/7,808,390 expected body bytes/zero redirects or retries, isolated hash-locked install and unchanged 19 generated-fixture PDFium tests, 30-minute outer/1500-second inner bound, owned settlement. No Stage B, browser, Pillow, Windows, Node, Rust, owner data, native product, model, installer, distribution or phase change.",
+    "source_sha": "304b24d71aef1c8e3e98211bb5e8ba2430932f4f",
+    "source_tree": "e0c23e3f123c7b46d5bc175330b4f34359fe419e",
+    "intended_paths": [
+      ".github/workflows/c5-linux-stage-a-once.yml",
+      "qa/c5_managed_dev/APPROVAL_LINUX_STAGE_A_ONCE_20261127.json",
+      "CONTINUATION_STATE.json",
+      "docs/ENGINEERING_DECISIONS_CURRENT.md"
+    ],
+    "authority_ref": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--exact-stage-a-disposition-proposal-and-managed-rolling-image-activation-draft",
-      "blob_sha": "fad9bc0cacf9323a781351174a48bbcd68ac4df3",
-      "start_line": 303,
-      "end_line": 309
-    }
+      "anchor": "27-november--owner-approved-one-use-linux-stage-a-execution",
+      "blob_sha": "4d30548eecfb8469b58136e6a8bea70cb97a2210",
+      "start_line": 311,
+      "end_line": 315,
+      "owner_statement": "I approve the narrow generated-fixture PDFium disposition and one bounded Linux Stage A execution as proposed in candidate adfc019. Preserve all applicable security requirements, exact dependency hashes, original tests and execution restrictions. Proceed with the final activation binding and execution.",
+      "proposal_sha": "adfc019d8706c665099621884e74f8509fa3b866"
+    },
+    "expected_evidence": "Exact activation SHA, attempt-1 one-job workflow and logs; structured C5_LINUX_STAGE_A_JSON only after actual 19 unchanged passes and cleanup; failure or missing receipt recorded distinctly.",
+    "recovery": "Read actual live HEAD and exact activation diff/runs before any action. A failed or uncertain execution is not permission to retry; disarm only owned workflow/marker under expected HEAD; preserve all detached work.",
+    "reconcile_before_retry": false
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next.",
     "preparation_only": "Owner approved consolidated shared-bundle disarmed acquisition-before-signature source and exact limited existing host bootstrap; owner approved proposed limited local Docker control-plane and host-derived rootfs trust/no-pull isolation method for preparation only. Authentication before extraction/use; no Docker invocation, acquisition, verification execution, installation or live cutover authorised. Owner approved bounded first-collision encoded public member-path diagnostic preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-bounded-first-collision-diagnostic-preparation-only. No restricted execution authority. Owner approved finite exact Linux data-only terminfo inventory policy and bounded receipt projection as proposed in 8cc1a696, preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-finite-exact-linux-terminfo-inventory-policy-and-bounded-receipt-preparation-only. Strict Windows/gh and other safeguards unchanged; no acquisition, extraction or restricted execution. Owner explicitly approved preparation and static/synthetic verification only of Approach C observation-only candidate (11 fixed roles, five minutes); no restricted execution, acquisition, Docker invocation or active policy change. Exact reference in C5 spec owner-approved-bounded-approach-c-observation-candidate-preparation-only. Owner approved Approach C metadata-only preparation/static/synthetic verification under 13 GET/10-minute proposed limits; no actual acquisition, package downloads, installation, Docker invocation, restricted execution or active trust policy change. Exact spec anchor owner-approved-bounded-approach-c-metadata-only-preparation-and-synthetic-core. Owner approved narrow metadata bootstrap preparation on existing two reviewed images including GnuPG/necessary existing dependencies, no acquisition/restricted execution/integrated verification/active policy change, original 13 GET/10 min bounds. Exact spec anchor owner-approved-narrow-metadata-bootstrap-preparation-and-finite-key-evidence-contract. Owner approved two-stage key/metadata sequence preparation including bounded public signing-key private repository retention proposal, combined 13 GET/600s/256 MiB; no actual acquisition, restricted execution or active policy change. Exact spec anchor owner-approved-two-stage-preparation-and-consolidated-custody-core. Owner approved exact C-D09 managed-development CI evidence rationalisation at proposal 2cbed51, recorded in C5 implementation spec; limited bootstrap trust and residual risk accepted, prepare concrete bounded validation candidate only, no acquisition, installation, restricted execution, migration, new expenditure or phase advancement. Owner approved one-time C5 proportionate publisher-first inspection method (okay lets try that), recorded at docs/C5_PROPORTIONATE_INSPECTION_DECISION_2026-11-27.md; no new restricted authority or acceptance waiver. Owner explicitly approved standalone Windows Stage A preparation preserving all security and acceptance requirements; see docs/C5_STANDALONE_WINDOWS_A_PREPARATION_2026-11-27.md. No restricted execution grant. Owner explicitly approved exact Astral CPython 3.11.18 Windows x64 candidate for standalone Stage A preparation only; docs/C5_WINDOWS_A_ASTRAL_PREPARATION_2026-11-27.md. No new restricted grant. Owner explicitly approved simplified C5 applicability-based development policy and preparation of consolidated Stage A transaction; see ENGINEERING_DECISIONS_CURRENT.md section 27-november--owner-approved-c5-applicability-policy-and-consolidated-stage-a-transaction. No restricted authority or acceptance waiver. Owner explicitly approved bounded G2 equivalent evidence feasibility assessment and design only; see ENGINEERING_DECISIONS_CURRENT.md section 27-november--g2-equivalent-evidence-feasibility-and-design-disposition. Assessment complete, no implementation, live method adoption or restricted execution authority. Owner adopted aggressive product-first framework (okay lets follow you new frame work); PRODUCT-FIRST-20261127 in phase policy. Independent concrete scoped P4 source work and narrowly rationalised standard C5 control metadata preparation, no new restricted execution grant.",
-    "restricted_active": [],
+    "restricted_active": [
+      {
+        "id": "C5-LINUX-STAGE-A-ONCE-20261127",
+        "state": "APPROVED",
+        "source_sha": "304b24d71aef1c8e3e98211bb5e8ba2430932f4f",
+        "scope": "One disposable Ubuntu 24.04 x64 job, attempt 1 only, exact CPython 3.11.18/pip 26.3, seven fixed wheel GETs/7,808,390 expected body bytes/zero redirects or retries, isolated hash-locked install and unchanged 19 generated-fixture PDFium tests, 30-minute outer/1500-second inner bound, owned settlement. No Stage B, browser, Pillow, Windows, Node, Rust, owner data, native product, model, installer, distribution or phase change.",
+        "owner_authority_ref": {
+          "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+          "anchor": "27-november--owner-approved-one-use-linux-stage-a-execution",
+          "blob_sha": "4d30548eecfb8469b58136e6a8bea70cb97a2210",
+          "start_line": 311,
+          "end_line": 315,
+          "owner_statement": "I approve the narrow generated-fixture PDFium disposition and one bounded Linux Stage A execution as proposed in candidate adfc019. Preserve all applicable security requirements, exact dependency hashes, original tests and execution restrictions. Proceed with the final activation binding and execution.",
+          "proposal_sha": "adfc019d8706c665099621884e74f8509fa3b866"
+        },
+        "attempt": 1,
+        "reconcile_before_retry": false
+      }
+    ],
     "consumed_disarmed_count": 46,
     "consumed_history": {
       "commit": "b9864b70fb9bb5a72d0f79c37f15b94100722192",
@@ -276,7 +313,7 @@
       "release",
       "replay of consumed or uncertain approval"
     ],
-    "guards": "45 prior restricted grants consumed/closed or disarmed; no execution authority remains. Codespace preflight refused, no persistent activation; stop requested not confirmed. Existing exact false workflow restored; approved Actions images unchanged; no fallback/replay. Three C1/C2 workflows and OWNED_RESOURCE_ENABLED false; three consumed variables owner cleanup unverified. Owner-approved bounded technical retry rule permits one corrected replacement only after proven terminal zero-job pre-execution failure; prior activation remains closed; no automatic second replacement. Latest local two-wheel read-only grant consumed/closed after both DNS failures, total 46, no active grant or replay.",
+    "guards": "45 prior restricted grants consumed/closed or disarmed; no execution authority remains. Codespace preflight refused, no persistent activation; stop requested not confirmed. Existing exact false workflow restored; approved Actions images unchanged; no fallback/replay. Three C1/C2 workflows and OWNED_RESOURCE_ENABLED false; three consumed variables owner cleanup unverified. Owner-approved bounded technical retry rule permits one corrected replacement only after proven terminal zero-job pre-execution failure; prior activation remains closed; no automatic second replacement. Latest local two-wheel read-only grant consumed/closed after both DNS failures, total 46, no active grant or replay. Current exact one-use Stage A grant approved for source 304b24d only; all other restrictions and 46 consumed grants retained.",
     "last_consumed": {
       "id": "C5-LINUX-TWO-WHEEL-INSPECTION-20261127",
       "source_sha": "4118d4708d33d616bd58f1835a6c78ea528af066",
@@ -463,6 +500,10 @@
       {
         "sha": "adfc019d8706c665099621884e74f8509fa3b866",
         "scope": "Five Stage A preparation paths; exact bounded proposal, rolling host observations with concrete security minimums and disarmed invocation. Twelve static checks/exact readbacks; no actual setup, host check, installation or test. Approval pending."
+      },
+      {
+        "sha": "304b24d71aef1c8e3e98211bb5e8ba2430932f4f",
+        "scope": "Owner-approved exact isolated Stage A source activation; five source gates/pin and two disposition/review paths only. No live product or workflow activation yet; one-use scope only."
       }
     ]
   },
