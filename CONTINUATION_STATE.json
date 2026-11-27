@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-CD09-INSPECTION-DRIVER-20261127",
-    "parent_sha": "3f6c190f7d6e4761242a22a28720a9ec5f0785d9",
-    "previous_snapshot_sha": "3f6c190f7d6e4761242a22a28720a9ec5f0785d9",
-    "scope": "Integrated disarmed inspection driver, 30-method local synthetic regression and new managed binutils security blocker.",
+    "operation_id": "C5-CD09-PDFIUM-OVERLAY-REVIEW-20261127",
+    "parent_sha": "1a7761d16dd20e282a74e51d948429c45625c515",
+    "previous_snapshot_sha": "1a7761d16dd20e282a74e51d948429c45625c515",
+    "scope": "Exact 29-path conditional PDFium source review and retained Stage A/B predicate/adapter gap reconciliation.",
     "state": "RECONCILED",
     "receipt": {
-      "path": "docs/C5_CD09_INSPECTION_DRIVER_2026-11-27.md",
-      "anchor": "pilotodin--c-d09-integrated-disarmed-inspection-driver",
-      "blob_sha": "de8b16ede762a891c8cd6c3f6debd75e4e58ca7a",
+      "path": "docs/C5_CD09_PDFIUM_OVERLAY_REVIEW_2026-11-27.md",
+      "anchor": "pilotodin--c-d09-conditional-pdfium-overlay-source-review",
+      "blob_sha": "f6271252a8844d8be498c693d4aae1fa174e8fe7",
       "start_line": 1,
-      "end_line": 20
+      "end_line": 26
     }
   },
   "product": {
@@ -119,14 +119,21 @@
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
     "status": "BLOCKED",
     "scope": "C-D08 development reproducibility/build safety as revised by C-D09 limited managed-development evidence method; D native and P8 release boundaries unchanged.",
-    "blocker": "Integrated driver passes 30 local synthetic methods; new Ubuntu USN-9214-1 fixes binutils at 2.42-4ubuntu2.11, newer than latest listed reviewed managed image .10. No patched image selected, exact positive manifest Python test, final source/workflow binding, real format/tool/security review and actual dependency rights/linkage remain outstanding.",
-    "next_action": "Continue independent authorised source-only review of existing 29-path conditional PDFium overlay and exact Stage A/B predicate equivalence without applying or activating it. Recheck the provider-managed ubuntu-24.04 patched binutils image when available; complete exact positive pinned manifest Python projection, final runner/tool/security/rights and one-use driver/workflow binding before fresh restricted execution approval. No package updates, alternate infrastructure, acquisition, Certifi re-acquisition, install/import/load or legacy replay. Preserve exact 42 rows/214328914-byte cap and all final compatibility/acceptance gates.",
+    "blocker": "Exact 29-path overlay source review complete, no runtime equivalence; old font witness binds consumed executor and unresolved pre-use/coverage disposition. Integrated inspection driver disarmed; USN-9214-1 patched binutils managed image not selected. Actual use rights/linkage and final managed validation remain open.",
+    "next_action": "Prepare minimal disarmed C-D09 validation candidate integration of existing font/mixed/frontend witnesses (recover exact historical font coverage expectations; job-owned synthetic LOCALAPPDATA, six pinned inputs, preserve all guards, 19 Stage A nodes, 10+3 modules, 6 selectors, mixed 3+9, 10 font and 4 frontend outcomes and Windows A/B before Linux A/B). No overlay application or activation. Complete exact positive pinned manifest Python projection and recheck patched managed runner/tool/security/rights and final one-use binding when available; no acquisition, package update, old executor replay or native/owner work. Preserve 42-row/214328914-byte inspection cap and all final compatibility and acceptance gates.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "Complete applicable rights and static linkage, conditional exact PDFium source integration and final managed source-test candidate; explicit bounded execution permission, no owner/native/installer.",
       "Run authorised exact Stage A/B and consolidated Windows/Linux development regressions, standalone Rust and browser-dev, final checklist audit; C5 closure only on evidence. D/G2 and phase gates unchanged."
     ],
     "read": [
+      {
+        "path": "docs/C5_CD09_PDFIUM_OVERLAY_REVIEW_2026-11-27.md",
+        "anchor": "pilotodin--c-d09-conditional-pdfium-overlay-source-review",
+        "blob_sha": "f6271252a8844d8be498c693d4aae1fa174e8fe7",
+        "start_line": 1,
+        "end_line": 26
+      },
       {
         "path": "docs/C5_CD09_INSPECTION_DRIVER_2026-11-27.md",
         "anchor": "pilotodin--c-d09-integrated-disarmed-inspection-driver",
@@ -214,17 +221,17 @@
     ]
   },
   "operation": {
-    "id": "C5-CD09-INSPECTION-DRIVER-20261127",
+    "id": "C5-CD09-PDFIUM-OVERLAY-REVIEW-20261127",
     "state": "RECONCILED",
-    "starting_sha": "3f6c190f7d6e4761242a22a28720a9ec5f0785d9",
-    "outcome": "30/30 local synthetic tests pass; exact integrated driver/test blobs. USN-9214-1 requires binutils .11 while latest listed historical managed image has .10; IMAGE unset, live gate false, no acquisition, native tools, CI or acceptance credit.",
+    "starting_sha": "1a7761d16dd20e282a74e51d948429c45625c515",
+    "outcome": "29/29 overlay identities match; all source pairs/additions read; Stage A/B objects exactly match historical plan; actual font/runner integration gap recorded. No overlay, execution, acquisition, CI or score.",
     "reconcile_before_retry": false,
     "receipt": {
-      "path": "docs/C5_CD09_INSPECTION_DRIVER_2026-11-27.md",
-      "anchor": "pilotodin--c-d09-integrated-disarmed-inspection-driver",
-      "blob_sha": "de8b16ede762a891c8cd6c3f6debd75e4e58ca7a",
+      "path": "docs/C5_CD09_PDFIUM_OVERLAY_REVIEW_2026-11-27.md",
+      "anchor": "pilotodin--c-d09-conditional-pdfium-overlay-source-review",
+      "blob_sha": "f6271252a8844d8be498c693d4aae1fa174e8fe7",
       "start_line": 1,
-      "end_line": 20
+      "end_line": 26
     }
   },
   "authority": {
