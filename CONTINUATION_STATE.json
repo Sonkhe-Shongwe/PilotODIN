@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-FONT-USE-SCOPE-RECONCILE-20261127",
-    "parent_sha": "28bfca02afd51bd8363679787bbe8934ce7bbb09",
-    "previous_snapshot_sha": "28bfca02afd51bd8363679787bbe8934ce7bbb09",
-    "scope": "Read-only expected font/notice identities and use scope; historical P2 evidence and frontend font receipt reuse.",
+    "operation_id": "C5-CONSOLIDATED-COMPLETION-PLAN-20261127",
+    "parent_sha": "ebc8027a4a7a5836ebb81d6e20b5e306d41ccbe3",
+    "previous_snapshot_sha": "ebc8027a4a7a5836ebb81d6e20b5e306d41ccbe3",
+    "scope": "Consolidated finite C5 completion plan and exact npm receipt/plan coverage reconciliation; no execution authority.",
     "state": "RECONCILED",
     "receipt": {
-      "path": "docs/C5_FONT_USE_EVIDENCE_2026-11-27.md",
-      "anchor": "27-november--c5-exact-font-and-notice-use-reconciliation-preserve-initial-10-scope",
-      "blob_sha": "d7f3bb7fa2fd8675c1e0160f98a15eaeb6ee15fa",
+      "path": "docs/C5_CONSOLIDATED_COMPLETION_PLAN_2026-11-27.md",
+      "anchor": "pilotodin--consolidated-c5-completion-plan",
+      "blob_sha": "a75a9bbe10f82e8b62a8331d6a59741135f03402",
       "start_line": 1,
-      "end_line": 26
+      "end_line": 46
     }
   },
   "product": {
@@ -119,14 +119,21 @@
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
     "status": "BLOCKED",
     "scope": "C-D08 revised C5-A/B development reproducibility and build safety only; D retains native prerequisites, P8 release-only",
-    "blocker": "Independent CP311 expected installed inventory or qualified verifier remains unavailable; applicable component/licence/PDF test-use, actual font and development toolchain/browser/Rust verification and final regressions remain. Font reference selection and source notice review complete; no standalone acquisition needed.",
-    "next_action": "Consolidate remaining actual-use evidence for C5; only pursue concrete new read-only component/licence facts or independently authenticated CP311 manifest/method. Do not repeat prior source, notice, Codespace or font reviews; no standalone font acquisition. If no new material evidence, stop BLOCKED and present specific consolidated evidence/owner decision rather than another generic approval or infrastructure loop.",
+    "blocker": "Independent authenticated expected CP311 installed runtime manifests or concrete qualified standard reference method unavailable; actual-use component/licence dispositions and full toolchain/browser/PDF witnesses remain. Consolidated plan complete, no execution-ready scope.",
+    "next_action": "Use consolidated C5 plan. Await material new independent expected CP311 runtime manifest or demonstrably feasible concrete reference method, or specific new applicable pre-use component/notice evidence. No generic approval, repeated source/notice/font reviews, Codespace/Approach C, identity-only acquisition or redundant checkpoint. If no new evidence, report BLOCKED. Review exact bounded missing-evidence and use operations only when justified; no inferred execution approval.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
-      "If concrete independent interpreter manifest or feasible standard method exists, review unchanged pre-use contract and request fresh exact bounded operation; combine font, toolchain and dependency use verification where permitted, preserve PDF test predicates.",
-      "Complete exact authorised Stage A/B and final source regressions, resolve Windows browser-dev and necessary Rust evidence, close C5 only after all eight rows; preserve D and phase gates."
+      "After concrete independent reference and pre-use evidence, obtain exact restricted scope where required; consolidate compatible actual-use source testing including PDFium Stage A/B, necessary Rust and Windows browser-dev, with no owner migration or native/installer.",
+      "If equivalent test-only PDF replacement proven and explicitly approved, integrate and final matched source regression; binary C5 closure only on all eight rows. Preserve D, G2 and phase gates."
     ],
     "read": [
+      {
+        "path": "docs/C5_CONSOLIDATED_COMPLETION_PLAN_2026-11-27.md",
+        "anchor": "pilotodin--consolidated-c5-completion-plan",
+        "blob_sha": "a75a9bbe10f82e8b62a8331d6a59741135f03402",
+        "start_line": 1,
+        "end_line": 46
+      },
       {
         "path": "docs/C5_FONT_USE_EVIDENCE_2026-11-27.md",
         "anchor": "27-november--c5-exact-font-and-notice-use-reconciliation-preserve-initial-10-scope",
@@ -140,13 +147,6 @@
         "blob_sha": "9c4c131e776a14406e27b462a2f5b35e461adbd1",
         "start_line": 2929,
         "end_line": 2939
-      },
-      {
-        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "27-november--c5-independently-controlled-standard-tool-verifier-feasibility-assessment",
-        "blob_sha": "9c4c131e776a14406e27b462a2f5b35e461adbd1",
-        "start_line": 2846,
-        "end_line": 2858
       },
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
@@ -170,17 +170,17 @@
     ]
   },
   "operation": {
-    "id": "C5-FONT-USE-SCOPE-RECONCILE-20261127",
+    "id": "C5-CONSOLIDATED-COMPLETION-PLAN-20261127",
     "state": "RECONCILED",
-    "starting_sha": "28bfca02afd51bd8363679787bbe8934ce7bbb09",
-    "outcome": "12/12 expected Stage B font rows match pinned manifest and six upstream tree identities; 3/3 OFL source texts reviewed, 2/2 separate npm font archive lock/receipt matches; recovered initial 1.0 Unicode feature deferral. No actual candidate consumption or release approval; 12 actual-use rows remain open.",
+    "starting_sha": "ebc8027a4a7a5836ebb81d6e20b5e306d41ccbe3",
+    "outcome": "Plan prepared; 34/34 historical npm archive receipts match current lock and 60/60 staged npm uses match receipts. Identified missing Rust/Windows browser witness in detached plan and unresolved pre-use disposition. No executable route or new acceptance evidence; no generic approval requested.",
     "reconcile_before_retry": false,
     "receipt": {
-      "path": "docs/C5_FONT_USE_EVIDENCE_2026-11-27.md",
-      "anchor": "27-november--c5-exact-font-and-notice-use-reconciliation-preserve-initial-10-scope",
-      "blob_sha": "d7f3bb7fa2fd8675c1e0160f98a15eaeb6ee15fa",
+      "path": "docs/C5_CONSOLIDATED_COMPLETION_PLAN_2026-11-27.md",
+      "anchor": "pilotodin--consolidated-c5-completion-plan",
+      "blob_sha": "a75a9bbe10f82e8b62a8331d6a59741135f03402",
       "start_line": 1,
-      "end_line": 26
+      "end_line": 46
     }
   },
   "authority": {
