@@ -1,45 +1,13 @@
-# Exact one-use public Pillow verification; owned temporary CI slot.
-name: C5 standard Pillow package once 20261127
+# Consumed after standard Pillow verification run 46062661845; do not replay.
+name: C5 owned temporary verification slot (disarmed)
 on:
-  push:
-    branches: [feature/live-dev-workspace-20261023]
-    paths:
-      - qa/c5_managed_dev/APPROVAL_BROWSER_SMOKE_ONCE_20261127.json
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
-  pillow:
-    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/feature/live-dev-workspace-20261023' && github.event.before == '2124dfdf24645db895e631ebd24169b359b8633c' && github.event.after == github.sha && github.event.head_commit.id == github.sha && github.event.head_commit.message == 'Execute approved standard Pillow package verification once' && github.run_attempt == 1 && github.event.forced == false && github.event.deleted == false }}
+  disabled:
+    if: ${{ false }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
-    env:
-      C5_CHECKOUT_SOURCE: "b1836a87f3a79d06bae47c8c7ab51ee327d8af71"
-      C5_CHECKOUT_TREE: "f5751a6e3d1239eb272a1b034d7fbd34ba476c6f"
     steps:
-      - name: Checkout exact approved source
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-        with:
-          ref: "b1836a87f3a79d06bae47c8c7ab51ee327d8af71"
-          persist-credentials: false
-          fetch-depth: 1
-      - name: Verify exact source and syntax before acquisition
-        shell: bash
-        run: |
-          set -euo pipefail
-          test "$GITHUB_RUN_ATTEMPT" = 1
-          test "$(id -u)" != 0
-          test "$(git rev-parse HEAD)" = "$C5_CHECKOUT_SOURCE"
-          test "$(git rev-parse 'HEAD^{tree}')" = "$C5_CHECKOUT_TREE"
-          git diff --quiet HEAD --
-          test -z "$(git status --porcelain)"
-          test "$(git hash-object qa/c5_managed_dev/pillow_standard_verify.py)" = 9ebb24f058d30106c408c99c2d224168b51ddfec
-          /usr/bin/python3 -I -B -c 'from pathlib import Path; p=Path("qa/c5_managed_dev/pillow_standard_verify.py"); compile(p.read_bytes(),str(p),"exec")'
-          echo "C5_PILLOW_SOURCE_SYNTAX_PASS"
-      - name: Verify exact wheel with standard tools
-        shell: bash
-        run: |
-          set -euo pipefail
-          test "$GITHUB_RUN_ATTEMPT" = 1
-          test "$(git rev-parse HEAD)" = "$C5_CHECKOUT_SOURCE"
-          git diff --quiet HEAD --
-          /usr/bin/python3 -I -B qa/c5_managed_dev/pillow_standard_verify.py
+      - run: exit 2
