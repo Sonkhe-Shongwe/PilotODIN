@@ -98,3 +98,25 @@ jobs:
           print("C5_CD10_REGRESSION " + json.dumps({"status":"PASS" if ok else "FAIL", "tests":result.testsRun, "failures":len(result.failures), "errors":len(result.errors), "skipped":len(result.skipped), "source":os.environ.get("GITHUB_SHA"), "image":os.environ.get("ImageVersion"), "pins":pins, "scope":"synthetic fixtures only; no archive acquisition or tool installation"}, sort_keys=True), flush=True)
           sys.exit(0 if ok else 1)
           PY
+      - name: Independent conditional validation coordinator synthetic contracts
+        shell: bash
+        run: |
+          /usr/bin/python3 -I -B - <<'PY'
+          import hashlib, json, os, sys, unittest
+          from pathlib import Path
+          pins = {"qa/c5_managed_dev/validation_coordinator.py":"e847920061d8ce3d7b696dc5c837ab93fe8a1db8","qa/c5_managed_dev/pytest_receipt.py":"99c4b02e1242dcccfa32f241deeb7a315c090c89","qa/c5_managed_dev/test_validation_coordinator.py":"9e9c00b63ef042be5542f023919cef7944f40183","qa/c5_managed_dev/validation_witnesses.py":"23aa61aee49cecf154e41f859d81e290e15a0dfd","qa/c5_managed_dev/pdfium_use_candidate_20261127.json":"7d89ba820429b2005f7a70cc1b5ed1415f7b1161"}
+          for name, expected in pins.items():
+              p = Path(name)
+              assert p.is_file() and not p.is_symlink() and p.stat().st_size < 2*1024**2
+              raw = p.read_bytes()
+              assert hashlib.sha1(b"blob " + str(len(raw)).encode() + b"\0" + raw).hexdigest() == expected
+          sys.path.insert(0, str(Path.cwd()))
+          from qa.c5_managed_dev import validation_coordinator, validation_witnesses
+          assert validation_coordinator.LIVE_ENABLED is False and validation_witnesses.LIVE_ENABLED is False
+          suite = unittest.defaultTestLoader.loadTestsFromName("qa.c5_managed_dev.test_validation_coordinator")
+          assert suite.countTestCases() == 6
+          result = unittest.TextTestRunner(verbosity=2).run(suite)
+          ok = result.wasSuccessful() and result.testsRun == 6 and not result.skipped and not result.expectedFailures and not result.unexpectedSuccesses
+          print("C5_COORDINATOR_REGRESSION "+json.dumps({"source":os.environ["GITHUB_SHA"],"image":os.environ.get("ImageVersion"),"tests":result.testsRun,"failures":len(result.failures),"errors":len(result.errors),"skipped":len(result.skipped),"status":"PASS" if ok else "FAIL","pins":pins},sort_keys=True),flush=True)
+          sys.exit(0 if ok else 1)
+          PY
