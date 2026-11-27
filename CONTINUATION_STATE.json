@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-CONSOLIDATED-COMPLETION-PLAN-20261127",
-    "parent_sha": "ebc8027a4a7a5836ebb81d6e20b5e306d41ccbe3",
-    "previous_snapshot_sha": "ebc8027a4a7a5836ebb81d6e20b5e306d41ccbe3",
-    "scope": "Consolidated finite C5 completion plan and exact npm receipt/plan coverage reconciliation; no execution authority.",
+    "operation_id": "C5-PROPORTIONALITY-REVIEW-20261127",
+    "parent_sha": "2d143c0393dd7f830a8e91052105afbcc509539b",
+    "previous_snapshot_sha": "2d143c0393dd7f830a8e91052105afbcc509539b",
+    "scope": "Proposed C-D09 development-only proportional evidence method; not adopted or execution authority.",
     "state": "RECONCILED",
     "receipt": {
-      "path": "docs/C5_CONSOLIDATED_COMPLETION_PLAN_2026-11-27.md",
-      "anchor": "pilotodin--consolidated-c5-completion-plan",
-      "blob_sha": "a75a9bbe10f82e8b62a8331d6a59741135f03402",
+      "path": "docs/C5_PROPORTIONALITY_REVIEW_2026-11-27.md",
+      "anchor": "pilotodin--c5-critical-proportionality-review-and-proposed-decision-c-d09",
+      "blob_sha": "27e39f814cd29a738526b5a5aceb11407680c8f4",
       "start_line": 1,
-      "end_line": 46
+      "end_line": 40
     }
   },
   "product": {
@@ -119,14 +119,21 @@
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
     "status": "BLOCKED",
     "scope": "C-D08 revised C5-A/B development reproducibility and build safety only; D retains native prerequisites, P8 release-only",
-    "blocker": "Independent authenticated expected CP311 installed runtime manifests or concrete qualified standard reference method unavailable; actual-use component/licence dispositions and full toolchain/browser/PDF witnesses remain. Consolidated plan complete, no execution-ready scope.",
-    "next_action": "Use consolidated C5 plan. Await material new independent expected CP311 runtime manifest or demonstrably feasible concrete reference method, or specific new applicable pre-use component/notice evidence. No generic approval, repeated source/notice/font reviews, Codespace/Approach C, identity-only acquisition or redundant checkpoint. If no new evidence, report BLOCKED. Review exact bounded missing-evidence and use operations only when justified; no inferred execution approval.",
-    "next_action_kind": "MISSING_EVIDENCE",
+    "blocker": "Existing independent CP311 installed inventory/method unavailable. C-D09 narrower managed development CI evidence proposal awaits explicit owner decision; applicable dependency/use and exact test scope remain unresolved.",
+    "next_action": "Obtain explicit approval or rejection of exact proposed C-D09 in docs/C5_PROPORTIONALITY_REVIEW_2026-11-27.md (section 4). If approved, record superseding limited method and prepare concrete bounded candidate only; no acquisition/execution until fresh exact permission. If declined, retain prior blocked plan. No repeated generic research or bootstrap approval.",
+    "next_action_kind": "OWNER_DECISION",
     "after": [
       "After concrete independent reference and pre-use evidence, obtain exact restricted scope where required; consolidate compatible actual-use source testing including PDFium Stage A/B, necessary Rust and Windows browser-dev, with no owner migration or native/installer.",
       "If equivalent test-only PDF replacement proven and explicitly approved, integrate and final matched source regression; binary C5 closure only on all eight rows. Preserve D, G2 and phase gates."
     ],
     "read": [
+      {
+        "path": "docs/C5_PROPORTIONALITY_REVIEW_2026-11-27.md",
+        "anchor": "pilotodin--c5-critical-proportionality-review-and-proposed-decision-c-d09",
+        "blob_sha": "27e39f814cd29a738526b5a5aceb11407680c8f4",
+        "start_line": 1,
+        "end_line": 40
+      },
       {
         "path": "docs/C5_CONSOLIDATED_COMPLETION_PLAN_2026-11-27.md",
         "anchor": "pilotodin--consolidated-c5-completion-plan",
@@ -170,17 +177,17 @@
     ]
   },
   "operation": {
-    "id": "C5-CONSOLIDATED-COMPLETION-PLAN-20261127",
+    "id": "C5-PROPORTIONALITY-REVIEW-20261127",
     "state": "RECONCILED",
-    "starting_sha": "ebc8027a4a7a5836ebb81d6e20b5e306d41ccbe3",
-    "outcome": "Plan prepared; 34/34 historical npm archive receipts match current lock and 60/60 staged npm uses match receipts. Identified missing Rust/Windows browser witness in detached plan and unresolved pre-use disposition. No executable route or new acceptance evidence; no generic approval requested.",
+    "starting_sha": "2d143c0393dd7f830a8e91052105afbcc509539b",
+    "outcome": "Blueprint and active C-D08 reviewed. Proposed explicit limited provider bootstrap trust and standard package/use evidence method, residual risk disclosed. No existing acceptance method or runtime policy changed. Owner decision pending.",
     "reconcile_before_retry": false,
     "receipt": {
-      "path": "docs/C5_CONSOLIDATED_COMPLETION_PLAN_2026-11-27.md",
-      "anchor": "pilotodin--consolidated-c5-completion-plan",
-      "blob_sha": "a75a9bbe10f82e8b62a8331d6a59741135f03402",
+      "path": "docs/C5_PROPORTIONALITY_REVIEW_2026-11-27.md",
+      "anchor": "pilotodin--c5-critical-proportionality-review-and-proposed-decision-c-d09",
+      "blob_sha": "27e39f814cd29a738526b5a5aceb11407680c8f4",
       "start_line": 1,
-      "end_line": 46
+      "end_line": 40
     }
   },
   "authority": {
