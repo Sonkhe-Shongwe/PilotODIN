@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-BROWSER-SMOKE-NPM-CORRECTION-ONCE-20261127",
-    "parent_sha": "ecfda955a401982952ba6f4c18eea8611bec5d68",
-    "previous_snapshot_sha": "ecfda955a401982952ba6f4c18eea8611bec5d68",
-    "scope": "Reconcile corrected npm smoke host prerequisite refusal, disarm consumed approval.",
-    "state": "RECONCILED",
+    "operation_id": "C5-GITHUB-STANDARD-BROWSER-20261127",
+    "parent_sha": "6443daf47c7e2601f1e2beac7b80a7da3e653c6e",
+    "previous_snapshot_sha": "6443daf47c7e2601f1e2beac7b80a7da3e653c6e",
+    "scope": "Owner-approved GitHub-only development installation amendment and exact standard Chrome write-ahead.",
+    "state": "PREPARED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--corrected-npm-smoke-confirms-hosted-sandbox-prerequisite-refusal",
-      "blob_sha": "c3b9d0443496e731db79e9811a09dccf148a44d4",
-      "start_line": 467,
-      "end_line": 473
+      "anchor": "27-november--github-only-development-authority-and-standard-chrome-installation-write-ahead",
+      "blob_sha": "3d52cd1d400b330eeed341d312d8282ffd6ca597",
+      "start_line": 475,
+      "end_line": 477
     }
   },
   "product": {
@@ -135,17 +135,31 @@
   },
   "task": {
     "id": "C5-LINUX-FIRST-20261127",
-    "status": "BLOCKED",
+    "status": "PREPARED",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "Actual corrected browser smoke passed Node/npm but Ubuntu runner 20261122.23.1 refused scratch Chrome user namespace preflight; no input GETs. Managed patched Chrome or supported isolated environment required. Full C5 private Pillow custody/regression remains blocked.",
-    "next_action": "Resolve concrete supported provider-managed patched Chrome with sandbox or independently reviewed disposable environment, preferably one that also resolves private Pillow custody. No repeated scratch-route runs or provider polling without new evidence, no sandbox or OS/security weakening, no speculative adapters. Resume applicable pre-use review and browser/full-profile regressions only with material evidence and exact authority.",
-    "next_action_kind": "MISSING_EVIDENCE",
+    "blocker": "Standard authenticated Chrome route approved, exact execution and actual sandbox compatibility pending.",
+    "next_action": "Bind and publish exact one-use standard Chrome/Playwright activation, reconcile actual results under approved GitHub-only bounded autonomy.",
+    "next_action_kind": "RECONCILE",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
       "Windows-specific verified input and compatibility prerequisites before actual production-equivalent D1, separately authorised; no installer.",
       "D2, G2 and remaining physical E2/P4 acceptance; no phase advance without evidence and owner signoff."
     ],
     "read": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "27-november--github-only-development-authority-and-standard-chrome-installation-write-ahead",
+        "blob_sha": "3d52cd1d400b330eeed341d312d8282ffd6ca597",
+        "start_line": 475,
+        "end_line": 477
+      },
+      {
+        "path": "docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md",
+        "anchor": "27-november-2026--owner-approved-github-only-development-installation-and-bounded-technical-autonomy",
+        "blob_sha": "a31169c9ce1a22328fa87395a3883e59a70a2e44",
+        "start_line": 3,
+        "end_line": 9
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--corrected-npm-smoke-confirms-hosted-sandbox-prerequisite-refusal",
@@ -331,23 +345,51 @@
     ]
   },
   "operation": {
-    "id": "C5-BROWSER-SMOKE-NPM-CORRECTION-ONCE-20261127",
-    "state": "RECONCILED",
-    "starting_sha": "5e1978ffee21e3b88fd7d6e57c3f59a2f0ec1e7c",
-    "outcome": "Run 46054682735 job 140694188064 attempt 1 failed at user namespace preflight; exact checkout/syntax and Node/npm version checks passed, npm fix verified. Zero input GETs/bytes, no Chrome or Playwright execution. Grant consumed, route parked.",
-    "reconcile_before_retry": false,
-    "receipt": {
+    "id": "C5-GITHUB-STANDARD-BROWSER-20261127",
+    "state": "PREPARED",
+    "starting_sha": "6443daf47c7e2601f1e2beac7b80a7da3e653c6e",
+    "scope": "Disposable GitHub-hosted Ubuntu 24.04 x64 job, nonroot browser and tests; five minutes per attempt, one initial plus at most two bounded technical corrections under this batch; cumulative maximum six fixed acquisition GETs and 163620096 accepted input body bytes, no transfer retry, redirects, proxy or fallback. Exact Chrome 158.0.8127.88-1 and Playwright/core 1.65.1; authenticated exact publisher deb standard dpkg installation only if managed Chrome mismatch, existing sudo network namespace for no external network during dpkg, no extra dependency resolver or downloads; preserve default AppArmor and browser sandbox, no OS security changes, no owner/native product/model/Pillow/installer/release. Standard CI checkout control plane distinct.",
+    "source_sha": "2809df9781e803af7c43bc882576b5dfeeb2bdee",
+    "source_tree": "5e4d2a96a530aa4698bc033281f1d7441456e511",
+    "intended_paths": [
+      ".github/workflows/c5-browser-smoke-once.yml",
+      "qa/c5_managed_dev/APPROVAL_BROWSER_SMOKE_ONCE_20261127.json",
+      "CONTINUATION_STATE.json"
+    ],
+    "authority_ref": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--corrected-npm-smoke-confirms-hosted-sandbox-prerequisite-refusal",
-      "blob_sha": "c3b9d0443496e731db79e9811a09dccf148a44d4",
-      "start_line": 467,
-      "end_line": 473
-    }
+      "anchor": "27-november--github-only-development-authority-and-standard-chrome-installation-write-ahead",
+      "blob_sha": "3d52cd1d400b330eeed341d312d8282ffd6ca597",
+      "start_line": 475,
+      "end_line": 477
+    },
+    "expected_evidence": "One exact attempt-1 job; source/syntax, versions, actual authenticated standard install or managed Chrome, package checks and browser fixture; terminal results and disarm; only bounded technical replacements.",
+    "recovery": "Inspect exact activation, terminal run/jobs/logs before retry; disarm prior marker; fresh exact source/activation for at most two technical replacements, cumulative budgets; stop on security/host or unknown.",
+    "reconcile_before_retry": false,
+    "technical_replacements_used": 0,
+    "max_technical_replacements": 2,
+    "cumulative_input_gets": 0,
+    "cumulative_accepted_bytes": 0
   },
   "authority": {
-    "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next.",
+    "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next. Owner-approved GitHub-only development installation and bounded technical autonomy amendment applies within exact approved batches; no broader authority.",
     "preparation_only": "Owner approved consolidated shared-bundle disarmed acquisition-before-signature source and exact limited existing host bootstrap; owner approved proposed limited local Docker control-plane and host-derived rootfs trust/no-pull isolation method for preparation only. Authentication before extraction/use; no Docker invocation, acquisition, verification execution, installation or live cutover authorised. Owner approved bounded first-collision encoded public member-path diagnostic preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-bounded-first-collision-diagnostic-preparation-only. No restricted execution authority. Owner approved finite exact Linux data-only terminfo inventory policy and bounded receipt projection as proposed in 8cc1a696, preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-finite-exact-linux-terminfo-inventory-policy-and-bounded-receipt-preparation-only. Strict Windows/gh and other safeguards unchanged; no acquisition, extraction or restricted execution. Owner explicitly approved preparation and static/synthetic verification only of Approach C observation-only candidate (11 fixed roles, five minutes); no restricted execution, acquisition, Docker invocation or active policy change. Exact reference in C5 spec owner-approved-bounded-approach-c-observation-candidate-preparation-only. Owner approved Approach C metadata-only preparation/static/synthetic verification under 13 GET/10-minute proposed limits; no actual acquisition, package downloads, installation, Docker invocation, restricted execution or active trust policy change. Exact spec anchor owner-approved-bounded-approach-c-metadata-only-preparation-and-synthetic-core. Owner approved narrow metadata bootstrap preparation on existing two reviewed images including GnuPG/necessary existing dependencies, no acquisition/restricted execution/integrated verification/active policy change, original 13 GET/10 min bounds. Exact spec anchor owner-approved-narrow-metadata-bootstrap-preparation-and-finite-key-evidence-contract. Owner approved two-stage key/metadata sequence preparation including bounded public signing-key private repository retention proposal, combined 13 GET/600s/256 MiB; no actual acquisition, restricted execution or active policy change. Exact spec anchor owner-approved-two-stage-preparation-and-consolidated-custody-core. Owner approved exact C-D09 managed-development CI evidence rationalisation at proposal 2cbed51, recorded in C5 implementation spec; limited bootstrap trust and residual risk accepted, prepare concrete bounded validation candidate only, no acquisition, installation, restricted execution, migration, new expenditure or phase advancement. Owner approved one-time C5 proportionate publisher-first inspection method (okay lets try that), recorded at docs/C5_PROPORTIONATE_INSPECTION_DECISION_2026-11-27.md; no new restricted authority or acceptance waiver. Owner explicitly approved standalone Windows Stage A preparation preserving all security and acceptance requirements; see docs/C5_STANDALONE_WINDOWS_A_PREPARATION_2026-11-27.md. No restricted execution grant. Owner explicitly approved exact Astral CPython 3.11.18 Windows x64 candidate for standalone Stage A preparation only; docs/C5_WINDOWS_A_ASTRAL_PREPARATION_2026-11-27.md. No new restricted grant. Owner explicitly approved simplified C5 applicability-based development policy and preparation of consolidated Stage A transaction; see ENGINEERING_DECISIONS_CURRENT.md section 27-november--owner-approved-c5-applicability-policy-and-consolidated-stage-a-transaction. No restricted authority or acceptance waiver. Owner explicitly approved bounded G2 equivalent evidence feasibility assessment and design only; see ENGINEERING_DECISIONS_CURRENT.md section 27-november--g2-equivalent-evidence-feasibility-and-design-disposition. Assessment complete, no implementation, live method adoption or restricted execution authority. Owner adopted aggressive product-first framework (okay lets follow you new frame work); PRODUCT-FIRST-20261127 in phase policy. Independent concrete scoped P4 source work and narrowly rationalised standard C5 control metadata preparation, no new restricted execution grant. Owner approved preparation of bounded browser-only GitHub verification (okay do ti); detached 26ab490, no activation/acquisition/execution grant; exact receipt in engineering decisions. Owner approved proceeding with corrected Chrome .88 and Playwright 1.65.1 alternative (do it), exact candidate 920df39 prepared; no exact bounded activation grant yet; preserve original locks.",
-    "restricted_active": [],
+    "restricted_active": [
+      {
+        "id": "C5-GITHUB-STANDARD-BROWSER-20261127",
+        "state": "APPROVED",
+        "source_sha": "2809df9781e803af7c43bc882576b5dfeeb2bdee",
+        "scope": "Disposable GitHub-hosted Ubuntu 24.04 x64 job, nonroot browser and tests; five minutes per attempt, one initial plus at most two bounded technical corrections under this batch; cumulative maximum six fixed acquisition GETs and 163620096 accepted input body bytes, no transfer retry, redirects, proxy or fallback. Exact Chrome 158.0.8127.88-1 and Playwright/core 1.65.1; authenticated exact publisher deb standard dpkg installation only if managed Chrome mismatch, existing sudo network namespace for no external network during dpkg, no extra dependency resolver or downloads; preserve default AppArmor and browser sandbox, no OS security changes, no owner/native product/model/Pillow/installer/release. Standard CI checkout control plane distinct.",
+        "owner_authority_ref": {
+          "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+          "anchor": "27-november--github-only-development-authority-and-standard-chrome-installation-write-ahead",
+          "blob_sha": "3d52cd1d400b330eeed341d312d8282ffd6ca597",
+          "start_line": 475,
+          "end_line": 477
+        },
+        "reconcile_before_retry": false
+      }
+    ],
     "consumed_disarmed_count": 50,
     "consumed_history": {
       "commit": "b9864b70fb9bb5a72d0f79c37f15b94100722192",
@@ -359,7 +401,7 @@
       "native compilation or execution",
       "model fitting/inference/download",
       "owner data or owner workspace access/migration",
-      "OS/security changes",
+      "OS/security changes outside standard authenticated development package installation in explicitly approved disposable GitHub scope; no security weakening",
       "installer/packaging",
       "workflow activation outside scope",
       "evidence-method changes",
@@ -367,7 +409,7 @@
       "release",
       "replay of consumed or uncertain approval"
     ],
-    "guards": "50 historical restricted grants consumed/closed/disarmed, zero active; never replay. Codespace preflight refused and stop requested but not confirmed; three consumed variables owner cleanup unverified; existing exact false workflows restored, C1/C2 workflows and OWNED_RESOURCE_ENABLED false, no fallback. Bounded technical retry only for proven terminal zero-job pre-execution failure and new exact write-ahead, no automatic second replacement. Linux Stage A exact 304b24d run 46031011314 success consumed/disarmed, dispatch-only false and marker removed. Pillow one-use artifact retrieval/inspection consumed; no broader use or retry. Preserve earlier exact grant chronology in reviewed parent dac2149 and ledger. Browser smoke run 46054007845 started, failed at duplicate npm config, consumed/disarmed; no replay. Corrected browser run 46054682735 consumed/disarmed after user namespace refusal; no replay.",
+    "guards": "50 historical restricted grants consumed/closed/disarmed, zero active; never replay. Codespace preflight refused and stop requested but not confirmed; three consumed variables owner cleanup unverified; existing exact false workflows restored, C1/C2 workflows and OWNED_RESOURCE_ENABLED false, no fallback. Bounded technical retry only for proven terminal zero-job pre-execution failure and new exact write-ahead, no automatic second replacement. Linux Stage A exact 304b24d run 46031011314 success consumed/disarmed, dispatch-only false and marker removed. Pillow one-use artifact retrieval/inspection consumed; no broader use or retry. Preserve earlier exact grant chronology in reviewed parent dac2149 and ledger. Browser smoke run 46054007845 started, failed at duplicate npm config, consumed/disarmed; no replay. Corrected browser run 46054682735 consumed/disarmed after user namespace refusal; no replay. GitHub-only amendment permits up to two fresh bounded technical replacements in approved development batches, never replay; cumulative limits, security/rights/host holds retained.",
     "last_consumed": {
       "id": "C5-BROWSER-SMOKE-NPM-CORRECTION-ONCE-20261127",
       "source_sha": "c5a8faf9ef9826f312807005eb60eab36ebbbc3d",
@@ -595,6 +637,10 @@
       {
         "sha": "c5a8faf9ef9826f312807005eb60eab36ebbbc3d",
         "scope": "Single-path exact isolated npm user/global config correction after actual run 46054007845 failed; inverse diff/readback PASS; no run, compile or approval for correction."
+      },
+      {
+        "sha": "2809df9781e803af7c43bc882576b5dfeeb2bdee",
+        "scope": "Authenticated standard Chrome disposable-runner candidate after prior host namespace refusal; one-path diff, 13 static checks, no actual run yet."
       }
     ]
   },
