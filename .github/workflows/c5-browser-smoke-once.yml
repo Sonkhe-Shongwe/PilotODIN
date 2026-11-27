@@ -1,48 +1,13 @@
-# Exact one-use owner-approved browser verification. Do not replay.
-name: C5 corrected browser smoke once 20261127
+# Consumed after successful run 46058183125, attempt 1; do not replay.
+name: C5 corrected browser smoke once 20261127 (disarmed)
 on:
-  push:
-    branches: [feature/live-dev-workspace-20261023]
-    paths:
-      - qa/c5_managed_dev/APPROVAL_BROWSER_SMOKE_ONCE_20261127.json
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
   browser:
-    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/feature/live-dev-workspace-20261023' && github.event.before == '19a6ec86b29a679854d959bec65b5bc34fd71858' && github.event.after == github.sha && github.event.head_commit.id == github.sha && github.event.head_commit.message == 'Execute approved embedded credits browser smoke once 20261127' && github.run_attempt == 1 && github.event.forced == false && github.event.deleted == false }}
+    if: ${{ false }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
-    env:
-      C5_CHECKOUT_SOURCE: "9d35fe7f223d459a3c9fd8b17f37838aedf849a4"
-      C5_CHECKOUT_TREE: "1e0df176f5e6eb234fd2532fde07c9f98ff66569"
     steps:
-      - name: Checkout exact isolated approved source
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-        with:
-          ref: "9d35fe7f223d459a3c9fd8b17f37838aedf849a4"
-          persist-credentials: false
-          fetch-depth: 1
-      - name: Verify exact source and syntax before acquisition
-        shell: bash
-        run: |
-          set -euo pipefail
-          test "$GITHUB_RUN_ATTEMPT" = 1
-          test "$(id -u)" != 0
-          test "$(git rev-parse HEAD)" = "$C5_CHECKOUT_SOURCE"
-          test "$(git rev-parse 'HEAD^{tree}')" = "$C5_CHECKOUT_TREE"
-          git diff --quiet HEAD --
-          test -z "$(git status --porcelain)"
-          test "$(git hash-object qa/c5_managed_dev/browser_smoke_1651.py)" = c5ef2c4db0977bfc518d73af02e290a58bf8415c
-          test "$(git hash-object qa/c5_managed_dev/browser_smoke_1651.cjs)" = 6de6893c3df909f8feb005ffa5fa185c9df7644b
-          test "$(git hash-object qa/c5_managed_dev/browser_smoke_1651_workflow.DRAFT.yml)" = 34979eca6412132ac66b60abfaf420e7c794ef76
-          /usr/bin/python3 -I -B -c 'from pathlib import Path; p=Path("qa/c5_managed_dev/browser_smoke_1651.py"); compile(p.read_bytes(),str(p),"exec")'
-          /opt/hostedtoolcache/node/22.23.5/x64/bin/node --check qa/c5_managed_dev/browser_smoke_1651.cjs
-          echo "C5_BROWSER_SOURCE_SYNTAX_PASS"
-      - name: Execute approved browser-only transaction
-        shell: bash
-        run: |
-          set -euo pipefail
-          test "$GITHUB_RUN_ATTEMPT" = 1
-          test "$(git rev-parse HEAD)" = "$C5_CHECKOUT_SOURCE"
-          git diff --quiet HEAD --
-          /usr/bin/python3 -I -B qa/c5_managed_dev/browser_smoke_1651.py
+      - run: exit 2
