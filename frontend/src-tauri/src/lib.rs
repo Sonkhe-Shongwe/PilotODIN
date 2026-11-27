@@ -14,6 +14,8 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, Manager, RunEvent, State};
 use tauri::ipc::{InvokeBody, Request};
 use tauri_plugin_shell::{process::{CommandChild, CommandEvent}, ShellExt};
+#[cfg(windows)]
+use tauri_plugin_shell::process::OwnedJob;
 use tauri_plugin_dialog::DialogExt;
 
 mod report_file;
@@ -51,6 +53,8 @@ struct ActiveBackend {
     child: Option<CommandChild>,
     exit: Arc<AtomicU8>,
     stop_requested: bool,
+    #[cfg(windows)]
+    legacy_job: Option<OwnedJob>,
     _storage_pins: storage_boundary::DirectoryPins,
     #[cfg(windows)]
     owned: Option<Arc<resource_desktop::OwnedSession>>,
@@ -63,6 +67,8 @@ struct InferenceSettings {
 
 struct ActiveInference {
     child: Option<CommandChild>,
+    #[cfg(windows)]
+    legacy_job: Option<OwnedJob>,
     exit: Arc<AtomicU8>,
     _storage_pins: storage_boundary::DirectoryPins,
     _model: VerifiedModel,
@@ -97,6 +103,9 @@ struct DesktopState {
     profile_verified: AtomicBool,
     dataset_save_busy: AtomicBool,
     stopping: AtomicBool,
+    // An interrupted engine drain must remain visible if another worker
+    // delays close, even after the engine's own state has been released.
+    shutdown_interrupted: AtomicBool,
     #[cfg(windows)]
     owned_engine_uncertain: AtomicBool,
     #[cfg(windows)]
@@ -435,6 +444,37 @@ fn wait_for_worker(exit: &AtomicU8, timeout: Duration) -> u8 {
     }
 }
 
+// The shell's Terminated event establishes leader exit and pipe drain,
+// not whole-job exit. Keep the exact job independently of CommandChild.
+// The caller has already closed launch admission and joined startup.
+#[cfg(windows)]
+fn settle_legacy_job(job: Option<&OwnedJob>, interrupted: &AtomicBool) -> Result<(), String> {
+    let job = job.ok_or("Owned worker job identity unavailable; retry close")?;
+    let deadline = Instant::now() + Duration::from_secs(4);
+    let mut termination_requested = false;
+    loop {
+        if Instant::now() >= deadline {
+            return Err("Owned worker group exit is not confirmed; retry close".into());
+        }
+        let count = job.active_processes()
+            .map_err(|_| "Owned worker group accounting unavailable; retry close")?;
+        if Instant::now() >= deadline {
+            return Err("Owned worker group exit is not confirmed; retry close".into());
+        }
+        if count == 0 {
+            return Ok(());
+        }
+        if !termination_requested {
+            // Even a successful termination request is not settlement.
+            // Preserve this fact if a subsequent query fails.
+            interrupted.store(true, Ordering::Release);
+            job.terminate().map_err(|_| "Owned worker group termination failed; retry close")?;
+            termination_requested = true;
+        }
+        std::thread::sleep(Duration::from_millis(25));
+    }
+}
+
 fn stop_owned_workers(app: &AppHandle) -> Result<(), String> {
     let state = app.state::<DesktopState>();
     state.stopping.store(true, Ordering::Release);
@@ -506,7 +546,6 @@ fn stop_owned_workers(app: &AppHandle) -> Result<(), String> {
             _ => return Err("Worker launch is not finished; retry close".into()),
         }
     };
-    let mut interrupted = false;
     {
         let mut active = state.backend.lock().map_err(|_| "Engine state unavailable")?;
         if let Some(worker) = active.as_mut() {
@@ -520,16 +559,22 @@ fn stop_owned_workers(app: &AppHandle) -> Result<(), String> {
             }
             let mut status = wait_for_worker(&worker.exit, Duration::from_secs(12));
             if status == 0 {
-                // Windows owned job group kill-on-drop is non-waiting.
-                // Keep the termination witness even after the handle is dropped.
+                state.shutdown_interrupted.store(true, Ordering::Release);
+                // Request termination of the exact retained job before
+                // releasing the child. A failed query retains ownership.
+                #[cfg(windows)]
+                settle_legacy_job(worker.legacy_job.as_ref(), &state.shutdown_interrupted)?;
                 terminate_owned_child(worker.child.take());
-                interrupted = true;
                 status = wait_for_worker(&worker.exit, Duration::from_secs(4));
             }
             if status == 0 {
                 return Err("Analytical engine exit is not confirmed; retry close".into());
             }
-            if status != 1 { interrupted = true; }
+            if status != 1 { state.shutdown_interrupted.store(true, Ordering::Release); }
+            // A zero exit code cannot justify releasing storage pins while
+            // an owned descendant remains. Keep the entire worker on error.
+            #[cfg(windows)]
+            settle_legacy_job(worker.legacy_job.as_ref(), &state.shutdown_interrupted)?;
         }
         *active = None;
     }
@@ -538,15 +583,27 @@ fn stop_owned_workers(app: &AppHandle) -> Result<(), String> {
         if let Some(worker) = active.as_mut() {
             // There is no reviewed inference shutdown endpoint. Terminate
             // only the owned group once analytical work has drained.
+            #[cfg(windows)]
+            {
+                let termination_requested = AtomicBool::new(false);
+                settle_legacy_job(worker.legacy_job.as_ref(), &termination_requested)?;
+            }
             terminate_owned_child(worker.child.take());
             if wait_for_worker(&worker.exit, Duration::from_secs(4)) == 0 {
                 return Err("Local inference exit is not confirmed; retry close".into());
+            }
+            // Retain the model and storage pins until leader and whole-job
+            // settlement are confirmed, even on a retry with no child handle.
+            #[cfg(windows)]
+            {
+                let termination_requested = AtomicBool::new(false);
+                settle_legacy_job(worker.legacy_job.as_ref(), &termination_requested)?;
             }
         }
         *active = None;
     }
     *state.inference_settings.lock().map_err(|_| "AI state unavailable")? = None;
-    if interrupted {
+    if state.shutdown_interrupted.swap(false, Ordering::AcqRel) {
         return Err("Analytical engine was interrupted during shutdown. Retry close to finish exiting.".into());
     }
     Ok(())
@@ -627,7 +684,8 @@ async fn launch_backend(window: tauri::WebviewWindow, app: AppHandle, state: Sta
         // Install ownership before scheduling the independent timer. A
         // failed timer creation does not clear the installed owner.
         *guard = Some(ActiveBackend { connection: connection.clone(), dataset_export_key,
-            child: None, exit, stop_requested: false, _storage_pins: storage_pins,
+            child: None, exit, stop_requested: false,
+            legacy_job: None, _storage_pins: storage_pins,
             owned: Some(owner.clone()) });
         drop(guard);
         if let Err(error) = owner.start_timer(app.clone()) {
@@ -640,8 +698,13 @@ async fn launch_backend(window: tauri::WebviewWindow, app: AppHandle, state: Sta
         .map_err(|e| format!("Could not start analytical engine: {e}"))?;
     let connection = BackendConnection { port, token: token.clone(), backend_driven_inference: false };
     let exit = Arc::new(AtomicU8::new(0));
+    #[cfg(windows)]
+    let legacy_job = child.owned_job();
     *guard = Some(ActiveBackend { connection: connection.clone(), dataset_export_key, child: Some(child),
-        exit: exit.clone(), stop_requested: false, _storage_pins: storage_pins,
+        exit: exit.clone(), stop_requested: false,
+        #[cfg(windows)]
+        legacy_job,
+        _storage_pins: storage_pins,
         #[cfg(windows)]
         owned: None });
     *state.inference_settings.lock().map_err(|_| "AI state unavailable".to_string())? =
@@ -930,7 +993,11 @@ fn start_owned_inference(app: AppHandle, attempt: Arc<InferenceStartup>) -> Resu
         }
     };
     let exit = Arc::new(AtomicU8::new(0));
+    #[cfg(windows)]
+    let legacy_job = child.owned_job();
     *active = Some(ActiveInference { child: Some(child), exit: exit.clone(),
+        #[cfg(windows)]
+        legacy_job,
         _storage_pins: storage_pins, _model: model });
     drop(active);
     // The owned event task retains the leader witness. Never discard the

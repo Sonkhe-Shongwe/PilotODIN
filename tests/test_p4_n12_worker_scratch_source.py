@@ -169,5 +169,37 @@ class BundledWorkerProductFilesystemContract(unittest.TestCase):
         self.assertIn("exit is not confirmed", shutdown)
 
 
+    def test_legacy_shutdown_retains_original_job_until_full_settlement(self):
+        src = RUST.read_text(encoding="utf-8")
+        for name, end in (("struct ActiveBackend {", "struct InferenceSettings {"),
+                          ("struct ActiveInference {", "struct InferenceStartup {")):
+            worker = slice_between(src, name, end)
+            self.assertIn("legacy_job: Option<OwnedJob>", worker)
+        for start, end in (("async fn launch_backend(", "fn verify_bundled_model("),
+                           ("fn start_owned_inference(", "const MAX_REPORT_EXPORT_BYTES")):
+            launch = slice_between(src, start, end)
+            self.assertIn("let legacy_job = child.owned_job();", launch)
+            self.assertIn("legacy_job,", launch)
+        fence = slice_between(src, "fn settle_legacy_job(", "fn stop_owned_workers(")
+        self.assertIn('job.ok_or("Owned worker job identity unavailable; retry close")?', fence)
+        self.assertLess(fence.index("job.active_processes()"), fence.index("if count == 0"))
+        self.assertIn("if count == 0 {\n            return Ok(());", fence)
+        self.assertLess(fence.index("interrupted.store(true"), fence.index("job.terminate()"))
+        self.assertIn('accounting unavailable; retry close")?', fence)
+        self.assertIn('termination failed; retry close")?', fence)
+        self.assertGreaterEqual(fence.count("Instant::now() >= deadline"), 2)
+        shutdown = slice_between(src, "fn stop_owned_workers(", "#[tauri::command]\nasync fn launch_backend")
+        backend = shutdown.split("let mut active = state.backend.lock()", 1)[1].split("let mut active = state.inference.lock()", 1)[0]
+        inference = shutdown.split("let mut active = state.inference.lock()", 1)[1]
+        for section, leader_guard in ((backend, 'return Err("Analytical engine exit is not confirmed'),
+                                      (inference, 'return Err("Local inference exit is not confirmed')):
+            self.assertLess(section.index(leader_guard), section.rindex("settle_legacy_job("))
+            self.assertLess(section.rindex("settle_legacy_job("), section.index("*active = None"))
+            self.assertLess(section.index("settle_legacy_job("), section.index("terminate_owned_child(worker.child.take())"))
+        self.assertIn("shutdown_interrupted: AtomicBool", src)
+        self.assertIn("state.shutdown_interrupted.store(true", backend)
+        self.assertLess(inference.index("*active = None"), inference.index("state.shutdown_interrupted.swap(false"))
+
+
 if __name__ == "__main__":
     unittest.main()

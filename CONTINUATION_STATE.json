@@ -5,11 +5,11 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "P4-LEGACY-JOB-SETTLEMENT-20261127",
-    "parent_sha": "ff11c57086e9dc450667fd525b0c3b819da075c7",
-    "previous_snapshot_sha": "ff11c57086e9dc450667fd525b0c3b819da075c7",
-    "scope": "C5 exact pre-use hold and independently established legacy desktop whole-job shutdown guard correction; detached product source only, no restricted execution or acceptance change.",
-    "state": "RECONCILED",
+    "operation_id": "P4-LEGACY-JOB-SOURCE-INTEGRATION-20261127",
+    "parent_sha": "e845f7b807cb60dd7b649c60f1b03411851128fc",
+    "previous_snapshot_sha": "e845f7b807cb60dd7b649c60f1b03411851128fc",
+    "scope": "Routine P4 source integration: exact detached legacy shutdown correction and targeted existing source regression; only existing P2/P4 ordinary source/synthetic jobs; no native desktop build/run, phase or acceptance change.",
+    "state": "PREPARED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
       "anchor": "27-november--c5-pre-use-hold-and-independent-legacy-desktop-shutdown-correction",
@@ -117,10 +117,10 @@
   },
   "task": {
     "id": "P4-LEGACY-JOB-SETTLEMENT-20261127",
-    "status": "BLOCKED",
+    "status": "VERIFYING",
     "scope": "Independent concrete P4 product-source remediation under PRODUCT-FIRST-20261127; C5 parked at actual independent pre-use facts, existing detached preparation preserved. No D/native/E2/phase credit.",
-    "blocker": "Legacy desktop shutdown guard source correction detached; actual regression and safe publication scope not established. C5 consolidated route parked: independently reviewed actual provenance/security/rights/pip metadata disposition and supported execution/custody method unavailable; no activation-ready transaction. G2 attribution/coverage unchanged.",
-    "next_action": "Review exact detached product correction b8fa995ae1b86c044c77610abd1db1b7fa8cedd0 against existing relevant regression tests and exact matching workflow scopes; prepare minimum targeted regression evidence, merge only when safe and authorized. If restricted native verification is the remaining dependency, seek exact approval only for reviewable bounded transaction or pursue another independently demonstrated P4 product defect. C5 bb31566cda9cd35e4e8ce8a6a1c8470537c141e3 preserved; reopen only with concrete independent pre-use evidence and viable transaction, no new generic assurance layer. No phase advance.",
+    "blocker": "Source regression 10/10 passed, negative control detects original defect. Exact published source and ordinary CI pending reconciliation; no native compilation or process-settlement proof.",
+    "next_action": "Reconcile this exact source publication and its two expected ordinary CI runs before retry or further changes. Preserve last verified paired product baseline until qualifying terminal results; no native settlement claim. If source/synthetic CI succeeds, identify exact bounded native regression dependency or independently actionable P4 product work. C5 parked and preserved.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "Targeted product regression and safe publication of legacy shutdown correction; no native D acceptance inferred.",
@@ -163,17 +163,29 @@
     ]
   },
   "operation": {
-    "id": "P4-LEGACY-JOB-SETTLEMENT-20261127",
-    "state": "RECONCILED",
-    "starting_sha": "ff11c57086e9dc450667fd525b0c3b819da075c7",
-    "outcome": "Parked C5 consolidated route at missing independent pre-use facts; prepared actual one-file detached legacy desktop job-settlement correction and interruption persistence. Exact diff reviewed; not compiled, tested, merged or activated.",
+    "id": "P4-LEGACY-JOB-SOURCE-INTEGRATION-20261127",
+    "state": "PREPARED",
+    "starting_sha": "e845f7b807cb60dd7b649c60f1b03411851128fc",
+    "scope": "Routine P4 source integration: exact detached legacy shutdown correction and targeted existing source regression; only existing P2/P4 ordinary source/synthetic jobs; no native desktop build/run, phase or acceptance change.",
+    "intended_paths": [
+      "frontend/src-tauri/src/lib.rs",
+      "tests/test_p4_n12_worker_scratch_source.py",
+      "CONTINUATION_STATE.json"
+    ],
+    "authority_ref": {
+      "path": "docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md",
+      "anchor": "27-november-2026--owner-approved-aggressive-product-first-development-framework",
+      "blob_sha": "ad8d559bc9cd3d8da66779e18332fc6db8ae7c56",
+      "start_line": 283,
+      "end_line": 297
+    },
+    "expected_evidence": "Exact local 10/10 worker source tests with baseline negative control; P2 report export source workflow c56104d43b40054c3f4cf3896e9787195aac09b2 and P4 target ranking source/synthetic workflow 6ba5d8ce15b199325e44e0fd6c2511b0d623a399 on exact published SHA. P4 readonly Windows probe remains literal false. No native desktop evidence.",
+    "recovery": "Inspect branch and exact three-path diff, exact push runs and job scopes. Do not replay if ref update or CI uncertain. Preserve last verified product baseline; do not claim native acceptance. If CI fails, record and correct only the concrete failure.",
     "reconcile_before_retry": false,
-    "receipt": {
-      "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--c5-pre-use-hold-and-independent-legacy-desktop-shutdown-correction",
-      "blob_sha": "03eb3a0c5af4d1fb61b577fe9a1a45dbed75a70c",
-      "start_line": 171,
-      "end_line": 181
+    "source_candidate": "b8fa995ae1b86c044c77610abd1db1b7fa8cedd0",
+    "source_pins": {
+      "frontend/src-tauri/src/lib.rs": "432c391ed317e447d63303829b2274ba2d40f4de",
+      "tests/test_p4_n12_worker_scratch_source.py": "92971bdfbde33601675d317019594e64bd244511"
     }
   },
   "authority": {
