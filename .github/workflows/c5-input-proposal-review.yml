@@ -73,3 +73,28 @@ jobs:
               "live_requests": 0, "native_tool_invocations": 0, "dependency_installations": 0
           }, sort_keys=True), flush=True)
           PY
+      - name: Exact retained and C-D10 synthetic regression suite
+        shell: bash
+        run: |
+          /usr/bin/python3 -I -B - <<'PY'
+          import hashlib, json, os, sys, unittest
+          from pathlib import Path
+          root = Path("qa/c5_managed_dev").resolve()
+          pins = {"cd10_apt_plan.py":"68d480b5030fe3a2a4676176c5ae2fafc709bba9","inspection_adapter.py":"39f485c5241884443cd7dfdf76a60040f25b11f9","inspection_core.py":"bb8a2d5b61d98bbff4bd4599e0a3762f2b01ecdf","inspection_driver.py":"46e7a6386899434c79ed212c260f385b3f4c50d5","test_cd10_apt_plan.py":"6c4ffefb773285b25b5e60bf1efbbef124491919","test_cd10_process_settlement.py":"5855c16ba21807ff9b6819d51979811bda0591b4","test_inspection_adapter.py":"6346dee361b1d7c112929a983e1b587cfb32a8c9","test_inspection_core.py":"e15317496ad5f754cbd0f74b49bd484df0a541d0","test_inspection_driver.py":"c1cf84bffa8e12349e391fde90742b25586b9f4f","test_validation_witnesses.py":"427d8fd43c961e362d3f65e1fa470f41b05b946b","validation_witnesses.py":"23aa61aee49cecf154e41f859d81e290e15a0dfd"}
+          for name, expected in pins.items():
+              path = root / name
+              assert path.is_file() and not path.is_symlink() and path.stat().st_size < 2 * 1024**2
+              raw = path.read_bytes()
+              assert hashlib.sha1(b"blob " + str(len(raw)).encode() + b"\0" + raw).hexdigest() == expected
+          sys.path.insert(0, str(root))
+          import inspection_driver, validation_witnesses
+          assert inspection_driver.LIVE_ENABLED is False and inspection_driver.IMAGE is None
+          assert validation_witnesses.LIVE_ENABLED is False
+          modules = ["test_inspection_core", "test_inspection_adapter", "test_inspection_driver", "test_validation_witnesses", "test_cd10_apt_plan", "test_cd10_process_settlement"]
+          suite = unittest.defaultTestLoader.loadTestsFromNames(modules)
+          assert suite.countTestCases() == 46, suite.countTestCases()
+          result = unittest.TextTestRunner(verbosity=2).run(suite)
+          ok = result.wasSuccessful() and result.testsRun == 46 and not result.skipped and not result.expectedFailures and not result.unexpectedSuccesses
+          print("C5_CD10_REGRESSION " + json.dumps({"status":"PASS" if ok else "FAIL", "tests":result.testsRun, "failures":len(result.failures), "errors":len(result.errors), "skipped":len(result.skipped), "source":os.environ.get("GITHUB_SHA"), "image":os.environ.get("ImageVersion"), "pins":pins, "scope":"synthetic fixtures only; no archive acquisition or tool installation"}, sort_keys=True), flush=True)
+          sys.exit(0 if ok else 1)
+          PY
