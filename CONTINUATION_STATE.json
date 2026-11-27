@@ -6,16 +6,16 @@
   },
   "checkpoint": {
     "operation_id": "C5-LINUX-TWO-WHEEL-INSPECTION-20261127",
-    "parent_sha": "e88f8f77aa43ce4ec34c85672a232c112170d190",
-    "previous_snapshot_sha": "e88f8f77aa43ce4ec34c85672a232c112170d190",
-    "scope": "Owner explicitly authorises downloading two exact pinned Linux Pillow/PDFium wheels for read-only security/licensing inspection, no install or execution. Local disposable scratch only, no CI. Two HTTPS GET attempts maximum, no redirects/retries, body caps 7140667 and 4020833 bytes, total 11161500, 30s each. Standard host curl, no credentials, hash before parse. No imports of wheel code, no raw publication.",
-    "state": "PREPARED",
+    "parent_sha": "a8e894b9963ebe2f84f6c6ae746f962af6022d52",
+    "previous_snapshot_sha": "a8e894b9963ebe2f84f6c6ae746f962af6022d52",
+    "scope": "Reconcile exact two-wheel local download attempt; zero bytes, DNS failure, no inspection or acceptance.",
+    "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--owner-approved-linux-first-c5-allocation-and-exact-reduced-input-plan",
-      "blob_sha": "9729204e12b3e80b239f1a90355b7a3fc31f2a6d",
-      "start_line": 211,
-      "end_line": 219
+      "anchor": "27-november--exact-linux-two-wheel-download-attempt-blocked-by-dns",
+      "blob_sha": "d5769bcfd9dc3a7ef1ad953942015870b3921fc2",
+      "start_line": 221,
+      "end_line": 225
     }
   },
   "product": {
@@ -117,10 +117,10 @@
   },
   "task": {
     "id": "C5-LINUX-FIRST-20261127",
-    "status": "VERIFYING",
+    "status": "BLOCKED",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "Linux reduced A data-only candidate exists. Exact Pillow embedded SBOM/security and PDFium actual linkage/security/rights remain unverified, plus pip and remaining applicable input clearance. No complete executable transaction or archive bytes available.",
-    "next_action": "Perform only exact owner-authorised two-wheel local download/inspection transaction, then reconcile outcome. No CI, install, import, runtime or score change.",
+    "blocker": "Exact approved Pillow and PDFium download attempts both failed DNS resolution with zero bytes. Actual files unavailable. No actual security/licence/linkage review completed.",
+    "next_action": "Obtain owner-uploaded two exact pinned public Linux wheels and perform local hash-first read-only security/licensing inspection; no install or execution. No automated transfer replay or unrelated preparation. Linux-first C5 allocation remains, full relevant verification and Windows before D1 required.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
@@ -130,8 +130,15 @@
     "read": [
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "27-november--exact-linux-two-wheel-download-attempt-blocked-by-dns",
+        "blob_sha": "d5769bcfd9dc3a7ef1ad953942015870b3921fc2",
+        "start_line": 221,
+        "end_line": 225
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--owner-approved-linux-first-c5-allocation-and-exact-reduced-input-plan",
-        "blob_sha": "9729204e12b3e80b239f1a90355b7a3fc31f2a6d",
+        "blob_sha": "d5769bcfd9dc3a7ef1ad953942015870b3921fc2",
         "start_line": 211,
         "end_line": 219
       },
@@ -171,24 +178,23 @@
   },
   "operation": {
     "id": "C5-LINUX-TWO-WHEEL-INSPECTION-20261127",
-    "state": "PREPARED",
+    "state": "RECONCILED",
     "starting_sha": "e88f8f77aa43ce4ec34c85672a232c112170d190",
-    "scope": "Owner explicitly authorises downloading two exact pinned Linux Pillow/PDFium wheels for read-only security/licensing inspection, no install or execution. Local disposable scratch only, no CI. Two HTTPS GET attempts maximum, no redirects/retries, body caps 7140667 and 4020833 bytes, total 11161500, 30s each. Standard host curl, no credentials, hash before parse. No imports of wheel code, no raw publication.",
-    "intended_paths": [
-      "CONTINUATION_STATE.json"
-    ],
-    "approval_text": "I authorise downloading the two exact pinned Linux Pillow and PDFium wheels for read-only security and licensing inspection. No installation or execution.",
-    "source_candidate": "4118d4708d33d616bd58f1835a6c78ea528af066",
-    "plan_blob": "e23e0806fb4332b3ad0ab09966da641862dd4ed5",
-    "expected_evidence": "Exact response status/size/SHA256, bounded static ZIP metadata/SBOM/notice and native inventory; if no accessible network or mismatch, stop and record actual outcome.",
-    "recovery": "No replay of attempted download or unknown result. Inspect own scratch and record each attempt, preserve prior evidence; no alternate acquisition or package execution.",
-    "reconcile_before_retry": true
+    "outcome": "Two exact HTTPS transfer attempts returned curl 6 / HTTP 000 / zero bytes, hostname resolution unavailable. No archive returned, no install/import/inspection; grant consumed, no retry.",
+    "reconcile_before_retry": false,
+    "receipt": {
+      "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+      "anchor": "27-november--exact-linux-two-wheel-download-attempt-blocked-by-dns",
+      "blob_sha": "d5769bcfd9dc3a7ef1ad953942015870b3921fc2",
+      "start_line": 221,
+      "end_line": 225
+    }
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next.",
     "preparation_only": "Owner approved consolidated shared-bundle disarmed acquisition-before-signature source and exact limited existing host bootstrap; owner approved proposed limited local Docker control-plane and host-derived rootfs trust/no-pull isolation method for preparation only. Authentication before extraction/use; no Docker invocation, acquisition, verification execution, installation or live cutover authorised. Owner approved bounded first-collision encoded public member-path diagnostic preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-bounded-first-collision-diagnostic-preparation-only. No restricted execution authority. Owner approved finite exact Linux data-only terminfo inventory policy and bounded receipt projection as proposed in 8cc1a696, preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-finite-exact-linux-terminfo-inventory-policy-and-bounded-receipt-preparation-only. Strict Windows/gh and other safeguards unchanged; no acquisition, extraction or restricted execution. Owner explicitly approved preparation and static/synthetic verification only of Approach C observation-only candidate (11 fixed roles, five minutes); no restricted execution, acquisition, Docker invocation or active policy change. Exact reference in C5 spec owner-approved-bounded-approach-c-observation-candidate-preparation-only. Owner approved Approach C metadata-only preparation/static/synthetic verification under 13 GET/10-minute proposed limits; no actual acquisition, package downloads, installation, Docker invocation, restricted execution or active trust policy change. Exact spec anchor owner-approved-bounded-approach-c-metadata-only-preparation-and-synthetic-core. Owner approved narrow metadata bootstrap preparation on existing two reviewed images including GnuPG/necessary existing dependencies, no acquisition/restricted execution/integrated verification/active policy change, original 13 GET/10 min bounds. Exact spec anchor owner-approved-narrow-metadata-bootstrap-preparation-and-finite-key-evidence-contract. Owner approved two-stage key/metadata sequence preparation including bounded public signing-key private repository retention proposal, combined 13 GET/600s/256 MiB; no actual acquisition, restricted execution or active policy change. Exact spec anchor owner-approved-two-stage-preparation-and-consolidated-custody-core. Owner approved exact C-D09 managed-development CI evidence rationalisation at proposal 2cbed51, recorded in C5 implementation spec; limited bootstrap trust and residual risk accepted, prepare concrete bounded validation candidate only, no acquisition, installation, restricted execution, migration, new expenditure or phase advancement. Owner approved one-time C5 proportionate publisher-first inspection method (okay lets try that), recorded at docs/C5_PROPORTIONATE_INSPECTION_DECISION_2026-11-27.md; no new restricted authority or acceptance waiver. Owner explicitly approved standalone Windows Stage A preparation preserving all security and acceptance requirements; see docs/C5_STANDALONE_WINDOWS_A_PREPARATION_2026-11-27.md. No restricted execution grant. Owner explicitly approved exact Astral CPython 3.11.18 Windows x64 candidate for standalone Stage A preparation only; docs/C5_WINDOWS_A_ASTRAL_PREPARATION_2026-11-27.md. No new restricted grant. Owner explicitly approved simplified C5 applicability-based development policy and preparation of consolidated Stage A transaction; see ENGINEERING_DECISIONS_CURRENT.md section 27-november--owner-approved-c5-applicability-policy-and-consolidated-stage-a-transaction. No restricted authority or acceptance waiver. Owner explicitly approved bounded G2 equivalent evidence feasibility assessment and design only; see ENGINEERING_DECISIONS_CURRENT.md section 27-november--g2-equivalent-evidence-feasibility-and-design-disposition. Assessment complete, no implementation, live method adoption or restricted execution authority. Owner adopted aggressive product-first framework (okay lets follow you new frame work); PRODUCT-FIRST-20261127 in phase policy. Independent concrete scoped P4 source work and narrowly rationalised standard C5 control metadata preparation, no new restricted execution grant.",
     "restricted_active": [],
-    "consumed_disarmed_count": 45,
+    "consumed_disarmed_count": 46,
     "consumed_history": {
       "commit": "b9864b70fb9bb5a72d0f79c37f15b94100722192",
       "path": "docs/TAB_MIGRATION_HANDOFF_CURRENT.md",
@@ -207,18 +213,18 @@
       "release",
       "replay of consumed or uncertain approval"
     ],
-    "guards": "45 prior restricted grants consumed/closed or disarmed; no execution authority remains. Codespace preflight refused, no persistent activation; stop requested not confirmed. Existing exact false workflow restored; approved Actions images unchanged; no fallback/replay. Three C1/C2 workflows and OWNED_RESOURCE_ENABLED false; three consumed variables owner cleanup unverified. Owner-approved bounded technical retry rule permits one corrected replacement only after proven terminal zero-job pre-execution failure; prior activation remains closed; no automatic second replacement.",
+    "guards": "45 prior restricted grants consumed/closed or disarmed; no execution authority remains. Codespace preflight refused, no persistent activation; stop requested not confirmed. Existing exact false workflow restored; approved Actions images unchanged; no fallback/replay. Three C1/C2 workflows and OWNED_RESOURCE_ENABLED false; three consumed variables owner cleanup unverified. Owner-approved bounded technical retry rule permits one corrected replacement only after proven terminal zero-job pre-execution failure; prior activation remains closed; no automatic second replacement. Latest local two-wheel read-only grant consumed/closed after both DNS failures, total 46, no active grant or replay.",
     "last_consumed": {
-      "id": "C5-CD10-CORRECTED-SIMULATION-ONCE-20261127",
-      "source_sha": "3239d8c65ec8e94219242b4b87654ac8cb132e2f",
-      "activation_sha": "4cd6797d41244fec5a767c0529a9c52b5f33fbae",
-      "outcome": "APT_RC0_EXACT_PLAN_PARSER_REFUSED_DISARMED",
+      "id": "C5-LINUX-TWO-WHEEL-INSPECTION-20261127",
+      "source_sha": "4118d4708d33d616bd58f1835a6c78ea528af066",
+      "activation_sha": "a8e894b9963ebe2f84f6c6ae746f962af6022d52",
+      "outcome": "BOTH_DNS_REFUSED_ZERO_BYTES_NO_INSPECTION",
       "receipt": {
-        "path": "docs/C5_CD10_CORRECTED_SIMULATION_RECEIPT_2026-11-27.md",
-        "anchor": "pilotodin--c-d10-corrected-simulation-receipt",
-        "blob_sha": "81d4b8706d0c4608fff6768d0fa4fffaf3da15fd",
-        "start_line": 1,
-        "end_line": 17
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "27-november--exact-linux-two-wheel-download-attempt-blocked-by-dns",
+        "blob_sha": "d5769bcfd9dc3a7ef1ad953942015870b3921fc2",
+        "start_line": 221,
+        "end_line": 225
       }
     }
   },
