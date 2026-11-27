@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-CD09-VALIDATION-PREP-20261127",
-    "parent_sha": "6007fc480d24aac763d15f4f6c1b348edc379475",
-    "previous_snapshot_sha": "6007fc480d24aac763d15f4f6c1b348edc379475",
-    "scope": "Disarmed C-D09 validation draft and exact conditional-retention application input manifest; no execution.",
+    "operation_id": "C5-CD09-TARGETED-USE-QUALIFICATION-20261127",
+    "parent_sha": "6323e0ca39b9ad1dd5bdefadb21b20eb8a576109",
+    "previous_snapshot_sha": "6323e0ca39b9ad1dd5bdefadb21b20eb8a576109",
+    "scope": "Conditional PDFium preferred data-only candidate, exact source overlay, pip source review, targeted inspection and managed browser feasibility.",
     "state": "RECONCILED",
     "receipt": {
-      "path": "docs/C5_CD09_VALIDATION_CANDIDATE_2026-11-27.md",
-      "anchor": "pilotodin--c-d09-consolidated-validation-candidate",
-      "blob_sha": "d3342ec2496b104e22353f2ab295f269dffe9d6e",
+      "path": "docs/C5_CD09_TARGETED_USE_QUALIFICATION_2026-11-27.md",
+      "anchor": "pilotodin--c-d09-targeted-dependency-use-qualification",
+      "blob_sha": "3d1b8d3697e51d531e4fd8ca7c31bcaf69a2ef58",
       "start_line": 1,
-      "end_line": 18
+      "end_line": 29
     }
   },
   "product": {
@@ -119,14 +119,21 @@
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
     "status": "BLOCKED",
     "scope": "C-D08 development reproducibility/build safety as revised by C-D09 limited managed-development evidence method; D native and P8 release boundaries unchanged.",
-    "blocker": "C-D09 managed bootstrap evidence method approved; exact conditional PyMuPDF use rights and relevant native/component terms, verified disposable inputs, browser selection and complete execution scope remain unresolved. Candidate disarmed, not execution-ready.",
-    "next_action": "Review concrete remaining C-D09 use-specific evidence, primarily test-only PyMuPDF or PDFium disposition and targeted native/composite/pip terms; exact approved input staging, browser selection and bounded managed setup/validation route. Use disarmed manifest/draft, no repeat interpreter/identity-only work. If actual missing evidence needs acquisition, propose one exact bounded inspection-only operation, no consumption; request execution approval only after complete reviewed candidate. No generic approval or unsupported use clearance.",
+    "blocker": "C-D09 conditional PDFium route preferred but actual applicable native/component/notice terms, exact inspection/staging transport, final source/activation and managed browser compatibility remain unproven.",
+    "next_action": "Use exact targeted C-D09 PDFium data-only candidate; prepare minimum existing-standard-tool inspection-only route for genuinely missing actual component/use evidence within 43 unique archive upper bound, narrow from retained evidence, exact caps/rights/source review before fresh bounded approval. No repeated general licence or interpreter work. Preserve disarmed source overlay and all Stage A/B predicates; final execution only after verified staging/use and managed browser/runner scope.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
-      "Complete exact application pre-use dispositions, candidate source/runner/action/transport/installed graph/child controls and managed browser compatibility; fresh bounded execution approval only when ready.",
-      "Complete qualified source tests, preserve all PDF predicates if dependency changed, final matched regression and eight-row closure audit. D/G2 and phase gates unchanged."
+      "Complete applicable rights and static linkage, conditional exact PDFium source integration and final managed source-test candidate; explicit bounded execution permission, no owner/native/installer.",
+      "Run authorised exact Stage A/B and consolidated Windows/Linux development regressions, standalone Rust and browser-dev, final checklist audit; C5 closure only on evidence. D/G2 and phase gates unchanged."
     ],
     "read": [
+      {
+        "path": "docs/C5_CD09_TARGETED_USE_QUALIFICATION_2026-11-27.md",
+        "anchor": "pilotodin--c-d09-targeted-dependency-use-qualification",
+        "blob_sha": "3d1b8d3697e51d531e4fd8ca7c31bcaf69a2ef58",
+        "start_line": 1,
+        "end_line": 29
+      },
       {
         "path": "docs/C5_CD09_VALIDATION_CANDIDATE_2026-11-27.md",
         "anchor": "pilotodin--c-d09-consolidated-validation-candidate",
@@ -179,17 +186,17 @@
     ]
   },
   "operation": {
-    "id": "C5-CD09-VALIDATION-PREP-20261127",
+    "id": "C5-CD09-TARGETED-USE-QUALIFICATION-20261127",
     "state": "RECONCILED",
-    "starting_sha": "6007fc480d24aac763d15f4f6c1b348edc379475",
-    "outcome": "Prepared two-platform draft and exact 98 wheel/60 npm/2 pip use manifest, static pin/gate checks. No live workflow, execution, use clearance or score. Remaining exact input staging, applicable licence/native terms, managed browser and execution scope blocked.",
+    "starting_sha": "6323e0ca39b9ad1dd5bdefadb21b20eb8a576109",
+    "outcome": "29-path conditional PDFium overlay identified, one-for-one lock/preflight edits checked; 43 unique targeted inspection upper-bound rows; pip exact source/vendor evidence; managed Chrome candidate. No migration, use clearance, execution or score.",
     "reconcile_before_retry": false,
     "receipt": {
-      "path": "docs/C5_CD09_VALIDATION_CANDIDATE_2026-11-27.md",
-      "anchor": "pilotodin--c-d09-consolidated-validation-candidate",
-      "blob_sha": "d3342ec2496b104e22353f2ab295f269dffe9d6e",
+      "path": "docs/C5_CD09_TARGETED_USE_QUALIFICATION_2026-11-27.md",
+      "anchor": "pilotodin--c-d09-targeted-dependency-use-qualification",
+      "blob_sha": "3d1b8d3697e51d531e4fd8ca7c31bcaf69a2ef58",
       "start_line": 1,
-      "end_line": 18
+      "end_line": 29
     }
   },
   "authority": {
