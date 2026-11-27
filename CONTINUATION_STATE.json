@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-PRIMARY-NOTICE-RECONCILE-20261127",
-    "parent_sha": "5253a0a1145013612cfdcb78c1fdc45ddd8726cd",
-    "previous_snapshot_sha": "5253a0a1145013612cfdcb78c1fdc45ddd8726cd",
-    "scope": "Read-only exact retained primary notice digest reconciliation for et-xmlfile/openpyxl/ReportLab; PDF conditional use boundary retained.",
+    "operation_id": "C5-FONT-USE-SCOPE-RECONCILE-20261127",
+    "parent_sha": "28bfca02afd51bd8363679787bbe8934ce7bbb09",
+    "previous_snapshot_sha": "28bfca02afd51bd8363679787bbe8934ce7bbb09",
+    "scope": "Read-only expected font/notice identities and use scope; historical P2 evidence and frontend font receipt reuse.",
     "state": "RECONCILED",
     "receipt": {
-      "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "27-november--c5-three-primary-notice-fingerprints-reconciled-and-residual-licence-use-facts",
-      "blob_sha": "9c4c131e776a14406e27b462a2f5b35e461adbd1",
-      "start_line": 2929,
-      "end_line": 2939
+      "path": "docs/C5_FONT_USE_EVIDENCE_2026-11-27.md",
+      "anchor": "27-november--c5-exact-font-and-notice-use-reconciliation-preserve-initial-10-scope",
+      "blob_sha": "d7f3bb7fa2fd8675c1e0160f98a15eaeb6ee15fa",
+      "start_line": 1,
+      "end_line": 26
     }
   },
   "product": {
@@ -119,41 +119,27 @@
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
     "status": "BLOCKED",
     "scope": "C-D08 revised C5-A/B development reproducibility and build safety only; D retains native prerequisites, P8 release-only",
-    "blocker": "No qualified CP311 interpreter/reference inventory. Three primary licence content hashes now matched; additional et-xmlfile PSF/attribution and applicable component/use/PDF, font/toolchain/browser/Rust, matched regression gaps remain.",
-    "next_action": "Within C5, review exact outstanding actual-use component/notice facts and 12 font/notice use rows (six unique files) against retained pins and existing evidence; no repeat broad inventory, inaccessible source searches or acquisition. Preserve conditional PDFium test-only preference and unchanged live PyMuPDF pending linkage, use and equivalence proof. Interpreter remains parked pending concrete independent inventory/method. If facts exhausted, remain BLOCKED; no speculative verifier work.",
+    "blocker": "Independent CP311 expected installed inventory or qualified verifier remains unavailable; applicable component/licence/PDF test-use, actual font and development toolchain/browser/Rust verification and final regressions remain. Font reference selection and source notice review complete; no standalone acquisition needed.",
+    "next_action": "Consolidate remaining actual-use evidence for C5; only pursue concrete new read-only component/licence facts or independently authenticated CP311 manifest/method. Do not repeat prior source, notice, Codespace or font reviews; no standalone font acquisition. If no new material evidence, stop BLOCKED and present specific consolidated evidence/owner decision rather than another generic approval or infrastructure loop.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
-      "If independent expected interpreter manifests or a concrete method become available, reconcile unchanged provenance/use criteria and seek fresh exact scope before execution.",
-      "Resolve remaining actual-use component/font/toolchain/browser/Rust conditions and final exact matched regression; C5 binary closure only after all eight rows. Preserve D and phase gates."
+      "If concrete independent interpreter manifest or feasible standard method exists, review unchanged pre-use contract and request fresh exact bounded operation; combine font, toolchain and dependency use verification where permitted, preserve PDF test predicates.",
+      "Complete exact authorised Stage A/B and final source regressions, resolve Windows browser-dev and necessary Rust evidence, close C5 only after all eight rows; preserve D and phase gates."
     ],
     "read": [
+      {
+        "path": "docs/C5_FONT_USE_EVIDENCE_2026-11-27.md",
+        "anchor": "27-november--c5-exact-font-and-notice-use-reconciliation-preserve-initial-10-scope",
+        "blob_sha": "d7f3bb7fa2fd8675c1e0160f98a15eaeb6ee15fa",
+        "start_line": 1,
+        "end_line": 26
+      },
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "27-november--c5-three-primary-notice-fingerprints-reconciled-and-residual-licence-use-facts",
         "blob_sha": "9c4c131e776a14406e27b462a2f5b35e461adbd1",
         "start_line": 2929,
         "end_line": 2939
-      },
-      {
-        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "27-november--c5-product-first-minimum-evidence-review-after-codespace-refusal",
-        "blob_sha": "9c4c131e776a14406e27b462a2f5b35e461adbd1",
-        "start_line": 2919,
-        "end_line": 2927
-      },
-      {
-        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "27-november--codespace-one-use-preflight-refused-reconcile-and-park-route",
-        "blob_sha": "9c4c131e776a14406e27b462a2f5b35e461adbd1",
-        "start_line": 2913,
-        "end_line": 2917
-      },
-      {
-        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "27-november--c5-blank-codespace-candidate-observation-and-standard-tool-limitation",
-        "blob_sha": "9c4c131e776a14406e27b462a2f5b35e461adbd1",
-        "start_line": 2860,
-        "end_line": 2868
       },
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
@@ -184,17 +170,17 @@
     ]
   },
   "operation": {
-    "id": "C5-PRIMARY-NOTICE-RECONCILE-20261127",
+    "id": "C5-FONT-USE-SCOPE-RECONCILE-20261127",
     "state": "RECONCILED",
-    "starting_sha": "5253a0a1145013612cfdcb78c1fdc45ddd8726cd",
-    "outcome": "Five exact notice paths, three primary notice content hashes matched; two remaining et-xmlfile notice texts not matched, no exact upstream tag proof or package clearance. PDFium conditional preference unchanged.",
+    "starting_sha": "28bfca02afd51bd8363679787bbe8934ce7bbb09",
+    "outcome": "12/12 expected Stage B font rows match pinned manifest and six upstream tree identities; 3/3 OFL source texts reviewed, 2/2 separate npm font archive lock/receipt matches; recovered initial 1.0 Unicode feature deferral. No actual candidate consumption or release approval; 12 actual-use rows remain open.",
     "reconcile_before_retry": false,
     "receipt": {
-      "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "27-november--c5-three-primary-notice-fingerprints-reconciled-and-residual-licence-use-facts",
-      "blob_sha": "9c4c131e776a14406e27b462a2f5b35e461adbd1",
-      "start_line": 2929,
-      "end_line": 2939
+      "path": "docs/C5_FONT_USE_EVIDENCE_2026-11-27.md",
+      "anchor": "27-november--c5-exact-font-and-notice-use-reconciliation-preserve-initial-10-scope",
+      "blob_sha": "d7f3bb7fa2fd8675c1e0160f98a15eaeb6ee15fa",
+      "start_line": 1,
+      "end_line": 26
     }
   },
   "authority": {
