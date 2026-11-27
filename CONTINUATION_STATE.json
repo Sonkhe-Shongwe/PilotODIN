@@ -6,10 +6,10 @@
   },
   "checkpoint": {
     "operation_id": "C5-PILLOW-DIRECT-QUARANTINE-20261127",
-    "parent_sha": "43adcbf7bfda603bef8409392f0572eb67e7ee7f",
-    "previous_snapshot_sha": "43adcbf7bfda603bef8409392f0572eb67e7ee7f",
-    "scope": "Exact owner-approved direct Pillow quarantine write-ahead.",
-    "state": "PREPARED",
+    "parent_sha": "0b209c3cd2c75c6780f0126947bc1eb4d40e4ea0",
+    "previous_snapshot_sha": "0b209c3cd2c75c6780f0126947bc1eb4d40e4ea0",
+    "scope": "Exact direct Pillow quarantine one-use activation issued.",
+    "state": "ISSUED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
       "anchor": "27-november--owner-approved-direct-exact-pillow-quarantine-verification-write-ahead",
@@ -135,10 +135,10 @@
   },
   "task": {
     "id": "C5-LINUX-FIRST-20261127",
-    "status": "PREPARED",
+    "status": "IN_PROGRESS",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "Approved exact direct acquisition awaits execution.",
-    "next_action": "Publish exact activation and reconcile direct wheel identity result.",
+    "blocker": "Actual direct exact Pillow quarantine verification pending.",
+    "next_action": "Inspect terminal exact run/job/log evidence and disarm; no silent substitution or second GET.",
     "next_action_kind": "RECONCILE",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
@@ -402,7 +402,7 @@
   },
   "operation": {
     "id": "C5-PILLOW-DIRECT-QUARANTINE-20261127",
-    "state": "PREPARED",
+    "state": "ISSUED",
     "starting_sha": "43adcbf7bfda603bef8409392f0572eb67e7ee7f",
     "scope": "One disposable nonroot Ubuntu 24.04 x64 job, five minutes, one fixed unauthenticated HTTPS GET and 7577621 accepted body bytes aggregate; exact observed public versioned URL; no index GET, redirect, proxy, transfer retry, fallback or credentials. Buffer untrusted body only within exact cap, require size and prior independent SHA256 before writing quarantine wheel and recheck stored bytes before ZIP parsing; preserve prior metadata/RECORD/license/Brotli member checks. No install, import, native execution, product lock, owner or release changes. Technical correction only within unchanged one-GET aggregate authority if no request issued, no identity or transport hold override.",
     "source_sha": "a2a61cca9c141496f428467928985d7ef0031d5c",
@@ -421,9 +421,14 @@
     },
     "expected_evidence": "One exact attempt-1 job; actual fixed URL response and exact size/hash, conditional static member checks or terminal refusal; no install.",
     "recovery": "Inspect exact activation/run/job/logs, disarm and reconcile; no replay, no new wheel GET after one issued, no silent substitution.",
-    "reconcile_before_retry": false,
+    "reconcile_before_retry": true,
     "cumulative_input_gets": 0,
-    "cumulative_accepted_bytes": 0
+    "cumulative_accepted_bytes": 0,
+    "activation_parent": "0b209c3cd2c75c6780f0126947bc1eb4d40e4ea0",
+    "workflow": ".github/workflows/c5-browser-smoke-once.yml",
+    "workflow_blob": "611de684f2f2adc3f5a9d0b1ff1a54b76090c097",
+    "marker": "qa/c5_managed_dev/APPROVAL_BROWSER_SMOKE_ONCE_20261127.json",
+    "marker_blob": "4939de362ec7297114ba41f3d3cae7d4e3aa7112"
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next. Owner-approved GitHub-only development installation and bounded technical autonomy amendment applies within exact approved batches; no broader authority.",
@@ -431,7 +436,7 @@
     "restricted_active": [
       {
         "id": "C5-PILLOW-DIRECT-QUARANTINE-20261127",
-        "state": "APPROVED",
+        "state": "ISSUED",
         "source_sha": "a2a61cca9c141496f428467928985d7ef0031d5c",
         "scope": "One disposable nonroot Ubuntu 24.04 x64 job, five minutes, one fixed unauthenticated HTTPS GET and 7577621 accepted body bytes aggregate; exact observed public versioned URL; no index GET, redirect, proxy, transfer retry, fallback or credentials. Buffer untrusted body only within exact cap, require size and prior independent SHA256 before writing quarantine wheel and recheck stored bytes before ZIP parsing; preserve prior metadata/RECORD/license/Brotli member checks. No install, import, native execution, product lock, owner or release changes. Technical correction only within unchanged one-GET aggregate authority if no request issued, no identity or transport hold override.",
         "owner_authority_ref": {
@@ -441,7 +446,7 @@
           "start_line": 513,
           "end_line": 515
         },
-        "reconcile_before_retry": false
+        "reconcile_before_retry": true
       }
     ],
     "consumed_disarmed_count": 53,
