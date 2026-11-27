@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-SOURCE-TEST-LICENCE-USE-RECONCILE-20261127",
-    "parent_sha": "3e8b5e86e2b6dba82cd4490fb2622bc56b14794b",
-    "previous_snapshot_sha": "3e8b5e86e2b6dba82cd4490fb2622bc56b14794b",
-    "scope": "Read-only exact source-test wheel licence-use evidence reconciliation; identify concrete remaining use facts and interpreter decision without acquisition or clearance.",
+    "operation_id": "C5-CONTROLLED-VERIFIER-FEASIBILITY-20261127",
+    "parent_sha": "ec211b28dfb4a80b328cbda0c7a52cf3977b1ec0",
+    "previous_snapshot_sha": "ec211b28dfb4a80b328cbda0c7a52cf3977b1ec0",
+    "scope": "Owner-approved read-only feasibility assessment of independently controlled standard-tool interpreter verification; no method adoption or acquisition.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "27-november--c5-exact-source-test-actual-use-licence-gap-reconciliation",
-      "blob_sha": "2b391cac2772d789f8e74aeb3d847a06760b80bd",
-      "start_line": 2834,
-      "end_line": 2844
+      "anchor": "27-november--c5-independently-controlled-standard-tool-verifier-feasibility-assessment",
+      "blob_sha": "633192e4fdaac6f5e9dd67081040e57b22230099",
+      "start_line": 2846,
+      "end_line": 2858
     }
   },
   "product": {
@@ -119,18 +119,25 @@
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
     "status": "BLOCKED",
     "scope": "C-D08 revised C5-A/B development reproducibility and build safety only; D retains native prerequisites, P8 release-only",
-    "blocker": "No independently supported full installed CP311 interpreter provenance/use route under current authority; licence actual-use conditions still open (three exact tagged primary-source gaps, live PyMuPDF vs detached PDFium, applicable native component notices/linkage), 12 staged font/notice uses, pip/Node/npm/browser/Rust actual use and final matched regression. Approach C parked; public repository cannot meet prior private custody proposal.",
-    "next_action": "Obtain independently supplied expected complete installed interpreter file/link/notice manifests for compatible exact CP311 distributions, or an explicit owner decision on a concrete independently controlled standard verification route that meets unchanged pre-use conditions. No route proven yet; do not build more bespoke infrastructure, reacquire, replay or consume inputs. If no concrete feasible route is offered, remain BLOCKED.",
-    "next_action_kind": "OWNER_DECISION",
+    "blocker": "Controlled verifier feasibility assessment completed: no actual independent verifier/operator, reviewed host/tool trust, access or custody established, and no authenticated complete expected installed CP311 manifest supplied. Licence-use, font, pip/Node/npm/browser/Rust and regression gaps remain. No generic approval can resolve the missing environment.",
+    "next_action": "Identify an existing independently administered disposable verifier/operator or independently supplied complete authenticated expected runtime manifest. Alternatively owner explicitly selects a specific disposable cloud environment and establishes access, exact image/tool trust, cost and custody for review; no provisioning or execution implied. Without concrete evidence/access stay BLOCKED; no further generic feasibility loops, blind retries or Approach C work. Fresh exact method and bounded operation approval only after the required facts exist.",
+    "next_action_kind": "MISSING_ACCESS",
     "after": [
-      "Resolve the specific applicable licence/use gaps recorded in the current receipt, live PDF test choice and exact font/toolchain/browser/Rust conditions; any changed method or actual acquisition/use requires distinct bounded authority.",
-      "When prerequisites are evidenced, propose exact scoped use/regression and final C5 closure audit; no C5 credit until all eight rows met. Preserve D and phase gates."
+      "Once concrete verifier access/manifest exists, reconcile independent provenance and exact method under unchanged safeguards and seek fresh scoped authority before acquisition or use; no reuse of consumed approvals.",
+      "Resolve applicable licence/use gaps, live PDF test choice, font/toolchain/browser/Rust conditions, then exact scoped regression and C5 closure audit. Preserve all D and phase gates."
     ],
     "read": [
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
+        "anchor": "27-november--c5-independently-controlled-standard-tool-verifier-feasibility-assessment",
+        "blob_sha": "633192e4fdaac6f5e9dd67081040e57b22230099",
+        "start_line": 2846,
+        "end_line": 2858
+      },
+      {
+        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "27-november--c5-exact-source-test-actual-use-licence-gap-reconciliation",
-        "blob_sha": "2b391cac2772d789f8e74aeb3d847a06760b80bd",
+        "blob_sha": "633192e4fdaac6f5e9dd67081040e57b22230099",
         "start_line": 2834,
         "end_line": 2844
       },
@@ -149,21 +156,21 @@
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "26-november--c5-development-licence-and-browser-toolchain-evidence-reconciliation",
-        "blob_sha": "2b391cac2772d789f8e74aeb3d847a06760b80bd",
+        "blob_sha": "633192e4fdaac6f5e9dd67081040e57b22230099",
         "start_line": 2017,
         "end_line": 2053
       },
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "26-november--c5-pdf-test-dependency-licence-decision-boundary",
-        "blob_sha": "2b391cac2772d789f8e74aeb3d847a06760b80bd",
+        "blob_sha": "633192e4fdaac6f5e9dd67081040e57b22230099",
         "start_line": 2134,
         "end_line": 2145
       },
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "26-november--c5-pdfium-notice-hashes-and-conditional-development-use-disposition",
-        "blob_sha": "2b391cac2772d789f8e74aeb3d847a06760b80bd",
+        "blob_sha": "633192e4fdaac6f5e9dd67081040e57b22230099",
         "start_line": 2369,
         "end_line": 2382
       },
@@ -184,17 +191,17 @@
     ]
   },
   "operation": {
-    "id": "C5-SOURCE-TEST-LICENCE-USE-RECONCILE-20261127",
+    "id": "C5-CONTROLLED-VERIFIER-FEASIBILITY-20261127",
     "state": "RECONCILED",
-    "starting_sha": "3e8b5e86e2b6dba82cd4490fb2622bc56b14794b",
-    "outcome": "98/98 live source lock/candidate/receipt joins; 62 unique, 38 declarations and 24 absent; four historical inspections, 44 fingerprint-only (98 notices), one refused and 13 unattempted in notice discovery. Concrete remaining use and PDF conditions recorded; no clearance or score. Next independent interpreter provenance method decision.",
+    "starting_sha": "ec211b28dfb4a80b328cbda0c7a52cf3977b1ec0",
+    "outcome": "Conditional technical feasibility confirmed from standard offline verification documentation and existing pinned source/partial results; no concrete verifier environment or independently supplied complete runtime manifest available. No execution-ready route, method adoption or C5 credit.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "27-november--c5-exact-source-test-actual-use-licence-gap-reconciliation",
-      "blob_sha": "2b391cac2772d789f8e74aeb3d847a06760b80bd",
-      "start_line": 2834,
-      "end_line": 2844
+      "anchor": "27-november--c5-independently-controlled-standard-tool-verifier-feasibility-assessment",
+      "blob_sha": "633192e4fdaac6f5e9dd67081040e57b22230099",
+      "start_line": 2846,
+      "end_line": 2858
     }
   },
   "authority": {
