@@ -6,35 +6,53 @@
   },
   "checkpoint": {
     "operation_id": "P4-TEMPORARY-SOURCE-CI-INTEGRATION-20261127",
-    "parent_sha": "544a22be60333ca91b09a28f350d8f626cd64dc8",
-    "previous_snapshot_sha": "544a22be60333ca91b09a28f350d8f626cd64dc8",
-    "scope": "Owner-approved temporary dependency-free CI routing; integrate exact 9006133 two-path product correction. Two source-only jobs; original jobs retained held, C5 candidate 982435f remains detached.",
-    "state": "ISSUED",
+    "parent_sha": "afcb3d614ce42a419191b6d20b3c9fe39b35c830",
+    "previous_snapshot_sha": "afcb3d614ce42a419191b6d20b3c9fe39b35c830",
+    "scope": "Reconcile exact owner-approved product source integration and actual temporary source-only CI results.",
+    "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--engine-admission-full-source-contract-replay-and-legacy-ci-hold",
-      "blob_sha": "500cb539ef85a680b13043113842b2af2634f554",
-      "start_line": 419,
-      "end_line": 425
+      "anchor": "27-november--owner-approved-temporary-source-ci-and-engine-admission-integration",
+      "blob_sha": "f5d2692427b4b95278ccd692310810879764c619",
+      "start_line": 427,
+      "end_line": 433
     }
   },
   "product": {
-    "sha": "c5f4bd8b9737e62de5010ee483f3405f2809cc4b",
-    "scope": "Latest verified P2/P4 ordinary source/synthetic baseline; not Windows desktop compilation or native acceptance",
+    "sha": "afcb3d614ce42a419191b6d20b3c9fe39b35c830",
+    "scope": "Latest integrated product source-only verification; full dependency-consuming regression deferred, not broad or native acceptance.",
     "verification": [
       {
-        "run_id": 46008752167,
-        "sha": "c5f4bd8b9737e62de5010ee483f3405f2809cc4b",
+        "run_id": 46049494187,
+        "sha": "afcb3d614ce42a419191b6d20b3c9fe39b35c830",
         "status": "SUCCESS",
-        "scope": "P2 report safety, standalone writer, actual production frontend build"
+        "scope": "P2 3/3 built-in Node source contracts; full regression deferred"
       },
       {
-        "run_id": 46008752135,
-        "sha": "c5f4bd8b9737e62de5010ee483f3405f2809cc4b",
+        "run_id": 46049494186,
+        "sha": "afcb3d614ce42a419191b6d20b3c9fe39b35c830",
         "status": "SUCCESS",
-        "scope": "P4 source/synthetic, Windows storage object compile and synthetic engine lifecycle, disposable browser; native preservation collector skipped"
+        "scope": "P4 12/12 original standard-library unittest source contracts; full regression deferred"
       }
-    ]
+    ],
+    "prior_broad_baseline": {
+      "sha": "c5f4bd8b9737e62de5010ee483f3405f2809cc4b",
+      "scope": "Latest verified P2/P4 ordinary source/synthetic baseline; not Windows desktop compilation or native acceptance",
+      "verification": [
+        {
+          "run_id": 46008752167,
+          "sha": "c5f4bd8b9737e62de5010ee483f3405f2809cc4b",
+          "status": "SUCCESS",
+          "scope": "P2 report safety, standalone writer, actual production frontend build"
+        },
+        {
+          "run_id": 46008752135,
+          "sha": "c5f4bd8b9737e62de5010ee483f3405f2809cc4b",
+          "status": "SUCCESS",
+          "scope": "P4 source/synthetic, Windows storage object compile and synthetic engine lifecycle, disposable browser; native preservation collector skipped"
+        }
+      ]
+    }
   },
   "phase": {
     "active": "P4",
@@ -117,11 +135,11 @@
   },
   "task": {
     "id": "C5-LINUX-FIRST-20261127",
-    "status": "VERIFYING",
+    "status": "BLOCKED",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "C5 full-profile parked on environment/private custody, actual pre-use/security and regressions. Independent 9006133 full-source static replay 12/12; active branch publication would trigger two legacy workflows with unresolved unqualified dependency/lifecycle/browser acquisition. Need owner decision on narrowly dependency-free CI routing, or full C5 first.",
-    "next_action": "Reconcile exact issued product/source-only workflow publication and actual P2/P4 run IDs; do not replay.",
-    "next_action_kind": "SOURCE_INTEGRATION",
+    "blocker": "C5 full-profile remains blocked on compatible isolated environment/private patched Pillow custody, actual pre-use security/notice and functional regression. Independent desktop correction integrated and source CI passed; original dependency-consuming jobs held.",
+    "next_action": "Resolve a concrete supported C5 environment/private single-object handoff or exact reviewed patched published candidate; integrate recovered 982435f into final isolated C5 source only after exact binding and clearance. Restore deferred existing functional CI only through reviewed safe route. No repeated source replay or speculative adapters, no restricted action inferred.",
+    "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
       "Windows-specific verified input and compatibility prerequisites before actual production-equivalent D1, separately authorised; no installer.",
@@ -130,99 +148,106 @@
     "read": [
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "27-november--owner-approved-temporary-source-ci-and-engine-admission-integration",
+        "blob_sha": "f5d2692427b4b95278ccd692310810879764c619",
+        "start_line": 427,
+        "end_line": 433
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--engine-admission-full-source-contract-replay-and-legacy-ci-hold",
-        "blob_sha": "500cb539ef85a680b13043113842b2af2634f554",
+        "blob_sha": "f5d2692427b4b95278ccd692310810879764c619",
         "start_line": 419,
         "end_line": 425
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--exact-23-row-linux-targeted-pre-use-review",
-        "blob_sha": "500cb539ef85a680b13043113842b2af2634f554",
+        "blob_sha": "f5d2692427b4b95278ccd692310810879764c619",
         "start_line": 407,
         "end_line": 417
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--stage-b-result-collision-correction-recovered-and-source-regression-executed",
-        "blob_sha": "500cb539ef85a680b13043113842b2af2634f554",
+        "blob_sha": "f5d2692427b4b95278ccd692310810879764c619",
         "start_line": 399,
         "end_line": 405
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--disposable-linux-environment-feasibility-stop",
-        "blob_sha": "500cb539ef85a680b13043113842b2af2634f554",
+        "blob_sha": "f5d2692427b4b95278ccd692310810879764c619",
         "start_line": 393,
         "end_line": 397
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--zero-scope-credential-route-rejected",
-        "blob_sha": "500cb539ef85a680b13043113842b2af2634f554",
+        "blob_sha": "f5d2692427b4b95278ccd692310810879764c619",
         "start_line": 387,
         "end_line": 391
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--hosted-pillow-access-stop-and-independent-backend-admission-fix",
-        "blob_sha": "500cb539ef85a680b13043113842b2af2634f554",
+        "blob_sha": "f5d2692427b4b95278ccd692310810879764c619",
         "start_line": 377,
         "end_line": 385
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--owner-approved-hosted-pillow-route-preparation",
-        "blob_sha": "500cb539ef85a680b13043113842b2af2634f554",
+        "blob_sha": "f5d2692427b4b95278ccd692310810879764c619",
         "start_line": 369,
         "end_line": 375
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--linux-stage-b-adapter-reconciled-and-finite-pre-use-boundary",
-        "blob_sha": "500cb539ef85a680b13043113842b2af2634f554",
+        "blob_sha": "f5d2692427b4b95278ccd692310810879764c619",
         "start_line": 359,
         "end_line": 367
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--isolated-linux-full-profile-source-overlay-and-guard-binding",
-        "blob_sha": "500cb539ef85a680b13043113842b2af2634f554",
+        "blob_sha": "f5d2692427b4b95278ccd692310810879764c619",
         "start_line": 351,
         "end_line": 357
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--exact-linux-full-profile-pillow-pin-and-consolidated-verification-inventory",
-        "blob_sha": "500cb539ef85a680b13043113842b2af2634f554",
+        "blob_sha": "f5d2692427b4b95278ccd692310810879764c619",
         "start_line": 341,
         "end_line": 349
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--corrected-linux-pillow-exact-final-wheel-inspected",
-        "blob_sha": "500cb539ef85a680b13043113842b2af2634f554",
+        "blob_sha": "f5d2692427b4b95278ccd692310810879764c619",
         "start_line": 331,
         "end_line": 339
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--linux-stage-a-actual-19-test-pass-and-one-use-disarm",
-        "blob_sha": "500cb539ef85a680b13043113842b2af2634f554",
+        "blob_sha": "f5d2692427b4b95278ccd692310810879764c619",
         "start_line": 317,
         "end_line": 323
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--c55-exact-setup-drafts-and-managed-chrome-candidate",
-        "blob_sha": "500cb539ef85a680b13043113842b2af2634f554",
+        "blob_sha": "f5d2692427b4b95278ccd692310810879764c619",
         "start_line": 297,
         "end_line": 301
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--owner-approved-linux-first-c5-allocation-and-exact-reduced-input-plan",
-        "blob_sha": "500cb539ef85a680b13043113842b2af2634f554",
+        "blob_sha": "f5d2692427b4b95278ccd692310810879764c619",
         "start_line": 211,
         "end_line": 219
       },
@@ -258,49 +283,17 @@
   },
   "operation": {
     "id": "P4-TEMPORARY-SOURCE-CI-INTEGRATION-20261127",
-    "state": "ISSUED",
+    "state": "RECONCILED",
     "starting_sha": "ade13c88507256acc4b5237f0f3589e35c063022",
-    "scope": "Owner-approved temporary dependency-free CI routing; integrate exact 9006133 two-path product correction. Two source-only jobs; original jobs retained held, C5 candidate 982435f remains detached.",
-    "intended_paths": [
-      ".github/workflows/p2-report-export-draft-safety.yml",
-      ".github/workflows/p4-target-ranking.yml",
-      "frontend/src-tauri/src/lib.rs",
-      "tests/test_p4_n12_worker_scratch_source.py",
-      "CONTINUATION_STATE.json"
-    ],
-    "authority_ref": {
-      "owner_statement": "i approve next",
-      "context": "Approve temporary CI change in preceding assistant proposal; preserve all functional tests and C5 requirements; no restricted acquisition."
-    },
-    "expected_evidence": "Exact four intended workflow/product blobs, one source-only P2 job and one P4 job, three Node and twelve unittest cases expected, legacy jobs skipped, no package downloads, original baseline retained until reconciliation.",
-    "recovery": "Inspect exact HEAD, tree and matching runs before retry; no forced update or rearming. Keep temporary hold until C5 pre-use clearance; preserve any unknown owner work.",
-    "reconcile_before_retry": true,
-    "planned_entries": [
-      {
-        "path": ".github/workflows/p2-report-export-draft-safety.yml",
-        "mode": "100644",
-        "type": "blob",
-        "sha": "bfb419df89c015466c63af3f4db0204e06538679"
-      },
-      {
-        "path": ".github/workflows/p4-target-ranking.yml",
-        "mode": "100644",
-        "type": "blob",
-        "sha": "f85ed8f723d63100840bc2cc44f6855bea1b6363"
-      },
-      {
-        "path": "frontend/src-tauri/src/lib.rs",
-        "mode": "100644",
-        "type": "blob",
-        "sha": "fbb3763dbcb74b39e1f8a066d41df4c5f3650c5d"
-      },
-      {
-        "path": "tests/test_p4_n12_worker_scratch_source.py",
-        "mode": "100644",
-        "type": "blob",
-        "sha": "50181c8a12bce807ff69d0b3ae010f17455a4769"
-      }
-    ]
+    "outcome": "Integrated 9006133 exact product correction at afcb3d6 with temporary source-only routing. P2 3/3 Node and P4 12/12 actual unittest tests passed; five held jobs skipped; no full functional/compile/native acceptance or C5 credit.",
+    "reconcile_before_retry": false,
+    "receipt": {
+      "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+      "anchor": "27-november--owner-approved-temporary-source-ci-and-engine-admission-integration",
+      "blob_sha": "f5d2692427b4b95278ccd692310810879764c619",
+      "start_line": 427,
+      "end_line": 433
+    }
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next.",
@@ -335,7 +328,7 @@
       "receipt": {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--corrected-linux-pillow-exact-final-wheel-inspected",
-        "blob_sha": "500cb539ef85a680b13043113842b2af2634f554",
+        "blob_sha": "f5d2692427b4b95278ccd692310810879764c619",
         "start_line": 331,
         "end_line": 339
       }
@@ -549,7 +542,7 @@
     "Stage A 19/19 passed only for exact generated fixtures at 304b24d; PDFium direct Brotli build checkout/attestation and general rights/security not established. Corrected Pillow Linux static Brotli 1.2.1 addresses targeted concern only; production/Windows Pillow and broader use remain held. Windows candidate Astral 3.11.18, source/rights/security, owned settlement, browser-dev and actual inputs/regression mandatory before D1; no Windows/production adoption.",
     "C-D09 and PRODUCT-FIRST-20261127 are narrow development trust/control-traffic decisions, not blanket security/provenance, CLI suitability, archive acquisition or execution authority. No new custom framework, no changed method or weakened acceptance.",
     "G2 original handle/physical destination/independent coverage unresolved; 44838416004 and 45342345634 native filesystem/network failures retained; G2 equivalent design original-writer mapped/cache/background and deployment unproven. G3/G4 pending, no method adoption or native closure.",
-    "Physical 8 GB bundled Qwen/coexistence, DPAPI, desktop egress/durability, production IPC/physical destination and actual legacy whole-job settlement unverified. Product baseline c5f4bd8 scoped ordinary CI only, uncertain-spawn/other detached work preserved; no Windows desktop compile/runtime inference. D1/D2 and E2/Gate C remain mandatory; no phase or release credit.",
+    "Physical 8 GB bundled Qwen/coexistence, DPAPI, desktop egress/durability, production IPC/physical destination and actual legacy whole-job settlement unverified. Latest integrated source-only baseline afcb3d6 (15 source tests), prior broad CI baseline c5f4bd8; full dependency-consuming CI temporarily held, no Windows desktop compile/runtime inference. D1/D2 and E2/Gate C mandatory.",
     "R06 historical 74 original-data differences with unknown writer; prospective owner-device preservation pending. No original data loss or owner-local access; 49 detached records preserved. Codespace stop and consumed-variable cleanup unverified, no replay.",
     "Owner-held recovery copy delivered for exact historical 1d033ce, not current HEAD/full Git history/detached backup or build proof. Root LICENSE/NOTICE/SECURITY.md absent, owner decision outstanding. Prior risk chronology and exact references preserved at dac2149 and historical ledger."
   ],
