@@ -6,10 +6,10 @@
   },
   "checkpoint": {
     "operation_id": "C5-PILLOW-STANDARD-PACKAGE-20261127",
-    "parent_sha": "f748ab79ad2766336cd76bb8408ef3c479b2f096",
-    "previous_snapshot_sha": "f748ab79ad2766336cd76bb8408ef3c479b2f096",
-    "scope": "Owner-approved standard Pillow acquisition and conditional offline hash-locked generated fixture write-ahead.",
-    "state": "PREPARED",
+    "parent_sha": "2124dfdf24645db895e631ebd24169b359b8633c",
+    "previous_snapshot_sha": "2124dfdf24645db895e631ebd24169b359b8633c",
+    "scope": "Exact standard Pillow one-use activation issued.",
+    "state": "ISSUED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
       "anchor": "27-november--standard-pillow-package-verification-write-ahead",
@@ -135,10 +135,10 @@
   },
   "task": {
     "id": "C5-LINUX-FIRST-20261127",
-    "status": "PREPARED",
+    "status": "IN_PROGRESS",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "Approved conventional exact Pillow verification awaits execution.",
-    "next_action": "Publish exact activation and reconcile standard package verification.",
+    "blocker": "Actual standard Pillow verification pending.",
+    "next_action": "Inspect terminal exact run/job/log evidence and disarm; no silent substitution or excess acquisition.",
     "next_action_kind": "RECONCILE",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
@@ -430,7 +430,7 @@
   },
   "operation": {
     "id": "C5-PILLOW-STANDARD-PACKAGE-20261127",
-    "state": "PREPARED",
+    "state": "ISSUED",
     "starting_sha": "f748ab79ad2766336cd76bb8408ef3c479b2f096",
     "scope": "One disposable nonroot Ubuntu 24.04 x64 job, five minutes, two fixed HTTPS GETs maximum (exact previously established publisher wheel URL then one 302 HTTPS redirect to exact binstar-cio-packages-prod.s3.amazonaws.com host, default port), standard curl with no proxy/config/automatic redirects/retries, 65536-byte maximum discarded publisher response and 7577621-byte wheel cap; exact length and prior independent SHA256 before ZIP parsing, storage opaque object path allowed without unsupported basename assumption, no signed-query logging or credentials. Exact prior static metadata/RECORD/LICENSE/Brotli member checks. If exact match and already-present reviewed CPython 3.11.18/pip 26.3, offline no-index/no-deps/binary-only require-hashes pip install to isolated scratch and synthetic 3x2 RGB PNG roundtrip, no product use or other acquisition; if managed pip unavailable stop after static verification. No redistribution, alternative wheel, product lock, native product, owner data, model, installer or security changes. No second transaction within exhausted scope.",
     "source_sha": "b1836a87f3a79d06bae47c8c7ab51ee327d8af71",
@@ -449,9 +449,14 @@
     },
     "expected_evidence": "Exact run: standard transport, independent size/hash and prior member checks, eligible offline pip install and PNG fixture or terminal refusal; reconcile.",
     "recovery": "Inspect exact activation/run/job/logs; disarm and reconcile. No replay/substitution or new GETs beyond exact batch.",
-    "reconcile_before_retry": false,
+    "reconcile_before_retry": true,
     "cumulative_input_gets": 0,
-    "cumulative_accepted_bytes": 0
+    "cumulative_accepted_bytes": 0,
+    "activation_parent": "2124dfdf24645db895e631ebd24169b359b8633c",
+    "workflow": ".github/workflows/c5-browser-smoke-once.yml",
+    "workflow_blob": "11fb8bd3ec0e2c7ac02eaa38f79de24be4ae44c2",
+    "marker": "qa/c5_managed_dev/APPROVAL_BROWSER_SMOKE_ONCE_20261127.json",
+    "marker_blob": "a1f5e8c4a4b3b0756c1564475f8e08ca27ab09eb"
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next. Owner-approved GitHub-only development installation and bounded technical autonomy amendment applies within exact approved batches; no broader authority.",
@@ -459,7 +464,7 @@
     "restricted_active": [
       {
         "id": "C5-PILLOW-STANDARD-PACKAGE-20261127",
-        "state": "APPROVED",
+        "state": "ISSUED",
         "source_sha": "b1836a87f3a79d06bae47c8c7ab51ee327d8af71",
         "scope": "One disposable nonroot Ubuntu 24.04 x64 job, five minutes, two fixed HTTPS GETs maximum (exact previously established publisher wheel URL then one 302 HTTPS redirect to exact binstar-cio-packages-prod.s3.amazonaws.com host, default port), standard curl with no proxy/config/automatic redirects/retries, 65536-byte maximum discarded publisher response and 7577621-byte wheel cap; exact length and prior independent SHA256 before ZIP parsing, storage opaque object path allowed without unsupported basename assumption, no signed-query logging or credentials. Exact prior static metadata/RECORD/LICENSE/Brotli member checks. If exact match and already-present reviewed CPython 3.11.18/pip 26.3, offline no-index/no-deps/binary-only require-hashes pip install to isolated scratch and synthetic 3x2 RGB PNG roundtrip, no product use or other acquisition; if managed pip unavailable stop after static verification. No redistribution, alternative wheel, product lock, native product, owner data, model, installer or security changes. No second transaction within exhausted scope.",
         "owner_authority_ref": {
@@ -469,7 +474,7 @@
           "start_line": 533,
           "end_line": 535
         },
-        "reconcile_before_retry": false
+        "reconcile_before_retry": true
       }
     ],
     "consumed_disarmed_count": 55,
