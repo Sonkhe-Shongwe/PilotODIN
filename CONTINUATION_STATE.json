@@ -6,10 +6,10 @@
   },
   "checkpoint": {
     "operation_id": "P4-LEGACY-SPAWN-UNCERTAINTY-20261127",
-    "parent_sha": "e1b8958a35c34a1971e339522d7e0e2ec3adfcb9",
-    "previous_snapshot_sha": "e1b8958a35c34a1971e339522d7e0e2ec3adfcb9",
-    "scope": "Routine independent P4 source integration: narrow ambiguous worker spawn correction, existing regression and terminal prior CI reconciliation, no native desktop execution or acceptance change.",
-    "state": "PREPARED",
+    "parent_sha": "c5f4bd8b9737e62de5010ee483f3405f2809cc4b",
+    "previous_snapshot_sha": "c5f4bd8b9737e62de5010ee483f3405f2809cc4b",
+    "scope": "Exact uncertain worker startup source publication reconciled; two ordinary CI runs pending. Prior source regression baseline verified; no native acceptance.",
+    "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
       "anchor": "27-november--shutdown-regression-reconciliation-and-uncertain-startup-correction",
@@ -119,8 +119,8 @@
     "id": "P4-LEGACY-SPAWN-UNCERTAINTY-20261127",
     "status": "VERIFYING",
     "scope": "Independent bounded P4 product remediation; previous shutdown source regression passed; C5 parked, no native/D/E2/phase credit.",
-    "blocker": "New uncertain-spawn source correction prepared, local static 11/11 and negative control pass; exact publication/CI requires reconciliation. Actual native compile, process and close/reopen unverified; C5 independent pre-use blocker remains.",
-    "next_action": "Reconcile exact uncertain-spawn integration publication and matching P2/P4 runs before further publication or retry. Record terminal results and only actual failures. Preserve verified previous shutdown baseline until new source evidence. Then prefer a concrete product defect or exact bounded native verification dependency, not generic QA. C5 stays parked at independent pre-use evidence; no phase advance.",
+    "blocker": "Uncertain worker startup source correction integrated, 11/11 local static checks and negative control; P2 46008752167 and P4 46008752135 terminal results pending. Native Windows compile, actual startup/settlement unverified; C5 independent pre-use hold.",
+    "next_action": "Reconcile exact runs 46008752167 and 46008752135 at c5f4bd8b9737e62de5010ee483f3405f2809cc4b before further publication or retry. Preserve verified b574e0a baseline until new qualifying terminal results; correct actual failures only. Then prefer a concrete independent P4 product defect or exact bounded native verification dependency. C5 remains parked at independent pre-use evidence; no native/D/E2 acceptance or phase advance.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "Targeted product regression and safe publication of legacy shutdown correction; no native D acceptance inferred.",
@@ -178,37 +178,18 @@
   },
   "operation": {
     "id": "P4-LEGACY-SPAWN-UNCERTAINTY-20261127",
-    "state": "PREPARED",
+    "state": "RECONCILED",
     "starting_sha": "e1b8958a35c34a1971e339522d7e0e2ec3adfcb9",
-    "scope": "Routine independent P4 source integration: narrow ambiguous worker spawn correction, existing regression and terminal prior CI reconciliation, no native desktop execution or acceptance change.",
-    "intended_paths": [
-      "CONTINUATION_STATE.json",
-      "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "frontend/src-tauri/src/lib.rs",
-      "tests/test_p4_n12_worker_scratch_source.py"
-    ],
-    "authority_ref": {
-      "path": "docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md",
-      "anchor": "27-november-2026--owner-approved-aggressive-product-first-development-framework",
-      "blob_sha": "ad8d559bc9cd3d8da66779e18332fc6db8ae7c56",
-      "start_line": 283,
-      "end_line": 297
-    },
-    "expected_evidence": "11/11 existing static tests with negative control; same ordinary P2/P4 push workflows as prior source, exact new source SHA, restricted collector skipped; native desktop compile/run not included.",
-    "recovery": "Inspect actual branch, four-path diff and exact push runs before any retry. Retain verified b574e0a baseline; if CI fails record actual failure, correct only concrete regression.",
+    "outcome": "Prior shutdown P2/P4 CI succeeded. Exact four-file startup correction publication verified at c5f4bd8b9737e62de5010ee483f3405f2809cc4b; local 11/11 static checks and negative control. Two matching attempt-1 push runs in progress, restricted collector skipped. No native desktop test.",
     "reconcile_before_retry": false,
-    "source_candidate": "dae0cda99f11cb6adf609e29de7b55039f135bfa",
-    "source_pins": {
-      "frontend/src-tauri/src/lib.rs": "0e2f4e9b25f21b7b8a22d9dc536e3d3cbeac4c24",
-      "tests/test_p4_n12_worker_scratch_source.py": "4ecf50d13e3ec29ef2090171826ee48efa1605db"
-    },
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
       "anchor": "27-november--shutdown-regression-reconciliation-and-uncertain-startup-correction",
       "blob_sha": "8e93f16de1f26c85839344cdb64307b40b762829",
       "start_line": 193,
       "end_line": 201
-    }
+    },
+    "source_sha": "c5f4bd8b9737e62de5010ee483f3405f2809cc4b"
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next.",
@@ -248,7 +229,20 @@
       }
     }
   },
-  "pending_runs": [],
+  "pending_runs": [
+    {
+      "run_id": 46008752167,
+      "sha": "c5f4bd8b9737e62de5010ee483f3405f2809cc4b",
+      "status": "IN_PROGRESS",
+      "scope": "Exact P2 report safety/frontend source push attempt 1"
+    },
+    {
+      "run_id": 46008752135,
+      "sha": "c5f4bd8b9737e62de5010ee483f3405f2809cc4b",
+      "status": "IN_PROGRESS",
+      "scope": "Exact P4 source/synthetic and browser push attempt 1; native collector skipped"
+    }
+  ],
   "pending_operations": [],
   "unpublished": {
     "owner_local": "UNINSPECTED_PRESERVE; never infer clean or publish",
