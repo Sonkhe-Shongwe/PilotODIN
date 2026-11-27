@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-PILLOW-PUBLISHER-NIGHTLY-ROUTE-20261127",
-    "parent_sha": "d7485c76797fd1082ce041c55ab079c57e870ec8",
-    "previous_snapshot_sha": "d7485c76797fd1082ce041c55ab079c57e870ec8",
-    "scope": "Establish new publisher public nightly route for exact corrected Pillow wheel.",
-    "state": "RECONCILED",
+    "operation_id": "C5-PILLOW-NIGHTLY-EXACT-20261127",
+    "parent_sha": "9cd025cbceb5bdd590a733907ab6db7607cb945a",
+    "previous_snapshot_sha": "9cd025cbceb5bdd590a733907ab6db7607cb945a",
+    "scope": "Exact owner-approved bounded public Pillow nightly verification write-ahead.",
+    "state": "PREPARED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--pillow-publisher-nightly-index-route-established",
-      "blob_sha": "c288cdfd6cec10be0611af3ebc1e228e96445e8f",
-      "start_line": 497,
-      "end_line": 501
+      "anchor": "27-november--owner-approved-exact-public-pillow-nightly-verification-write-ahead",
+      "blob_sha": "db0f530578aeeb658c944aab1ee5d83ceb59e51c",
+      "start_line": 503,
+      "end_line": 505
     }
   },
   "product": {
@@ -135,17 +135,24 @@
   },
   "task": {
     "id": "C5-LINUX-FIRST-20261127",
-    "status": "BLOCKED",
+    "status": "PREPARED",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "Pillow publisher public nightly route now established by exact original build upload job; current file identity not yet verified. Need bounded metadata/hash match or separately reviewed new candidate, then full-profile integration/regressions.",
-    "next_action": "Prepare and bind one finite GitHub public nightly index acquisition/check for exact CP311 Linux Pillow filename and prior expected SHA256 1efce334; if mutable hash differs, establish separate exact candidate and applicable review before use. No PAT/private handoff, no unreviewed redirect or silent replacement. Seek exact new acquisition scope approval; consolidate with full-profile plan, not repeated isolated qualification.",
-    "next_action_kind": "OWNER_DECISION",
+    "blocker": "Approved exact public nightly verification awaits execution.",
+    "next_action": "Publish exact activation, inspect actual result and reconcile, no silent substitution.",
+    "next_action_kind": "RECONCILE",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
       "Windows-specific verified input and compatibility prerequisites before actual production-equivalent D1, separately authorised; no installer.",
       "D2, G2 and remaining physical E2/P4 acceptance; no phase advance without evidence and owner signoff."
     ],
     "read": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "27-november--owner-approved-exact-public-pillow-nightly-verification-write-ahead",
+        "blob_sha": "db0f530578aeeb658c944aab1ee5d83ceb59e51c",
+        "start_line": 503,
+        "end_line": 505
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--pillow-publisher-nightly-index-route-established",
@@ -380,23 +387,51 @@
     ]
   },
   "operation": {
-    "id": "C5-PILLOW-PUBLISHER-NIGHTLY-ROUTE-20261127",
-    "state": "RECONCILED",
-    "starting_sha": "d7485c76797fd1082ce041c55ab079c57e870ec8",
-    "outcome": "Publisher run 45528042532 upload job 139035615630 successfully published exact wheel filename to public nightly index. Current hash/URL/size unverified, mutable filename; no acquisition or execution. New supported route identified.",
-    "reconcile_before_retry": false,
-    "receipt": {
+    "id": "C5-PILLOW-NIGHTLY-EXACT-20261127",
+    "state": "PREPARED",
+    "starting_sha": "9cd025cbceb5bdd590a733907ab6db7607cb945a",
+    "scope": "One disposable nonroot Ubuntu 24.04 x64 job, five minutes, at most two fixed HTTPS GETs and 8626197 accepted bytes aggregate (1048576-byte simple index and conditional exact 7577621-byte wheel), no redirect/proxy/retry/fallback, no credentials, only exact publisher index and same-host exact wheel URL. Require independent expected SHA256 in index before wheel retrieval and same SHA256/size before ZIP reads; compare prior exact metadata/RECORD/license/Brotli member hashes. No installation/import/native execution or product lock change. At most two technical replacements only if eligible under same cumulative cap and prior terminal evidence; no different wheel, no automatic retry on identity/rights/host or unreviewed redirect hold.",
+    "source_sha": "4cbb1370227c180fda6a7b8e5c4e24297b2c672f",
+    "source_tree": "de82fc03accc8d110312d8760e9af808ab9088f3",
+    "intended_paths": [
+      ".github/workflows/c5-browser-smoke-once.yml",
+      "qa/c5_managed_dev/APPROVAL_BROWSER_SMOKE_ONCE_20261127.json",
+      "CONTINUATION_STATE.json"
+    ],
+    "authority_ref": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--pillow-publisher-nightly-index-route-established",
-      "blob_sha": "c288cdfd6cec10be0611af3ebc1e228e96445e8f",
-      "start_line": 497,
-      "end_line": 501
-    }
+      "anchor": "27-november--owner-approved-exact-public-pillow-nightly-verification-write-ahead",
+      "blob_sha": "db0f530578aeeb658c944aab1ee5d83ceb59e51c",
+      "start_line": 503,
+      "end_line": 505
+    },
+    "expected_evidence": "One exact attempt-1 job; current exact filename/index digest, conditional exact body/member digest verification or terminal refusal; no native use.",
+    "recovery": "Inspect exact activation/run/jobs/logs; disarm prior, only eligible bounded corrections within unchanged aggregate scope, no silent substitution.",
+    "reconcile_before_retry": false,
+    "technical_replacements_used": 0,
+    "max_technical_replacements": 2,
+    "cumulative_input_gets": 0,
+    "cumulative_accepted_bytes": 0
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next. Owner-approved GitHub-only development installation and bounded technical autonomy amendment applies within exact approved batches; no broader authority.",
     "preparation_only": "Owner approved consolidated shared-bundle disarmed acquisition-before-signature source and exact limited existing host bootstrap; owner approved proposed limited local Docker control-plane and host-derived rootfs trust/no-pull isolation method for preparation only. Authentication before extraction/use; no Docker invocation, acquisition, verification execution, installation or live cutover authorised. Owner approved bounded first-collision encoded public member-path diagnostic preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-bounded-first-collision-diagnostic-preparation-only. No restricted execution authority. Owner approved finite exact Linux data-only terminfo inventory policy and bounded receipt projection as proposed in 8cc1a696, preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-finite-exact-linux-terminfo-inventory-policy-and-bounded-receipt-preparation-only. Strict Windows/gh and other safeguards unchanged; no acquisition, extraction or restricted execution. Owner explicitly approved preparation and static/synthetic verification only of Approach C observation-only candidate (11 fixed roles, five minutes); no restricted execution, acquisition, Docker invocation or active policy change. Exact reference in C5 spec owner-approved-bounded-approach-c-observation-candidate-preparation-only. Owner approved Approach C metadata-only preparation/static/synthetic verification under 13 GET/10-minute proposed limits; no actual acquisition, package downloads, installation, Docker invocation, restricted execution or active trust policy change. Exact spec anchor owner-approved-bounded-approach-c-metadata-only-preparation-and-synthetic-core. Owner approved narrow metadata bootstrap preparation on existing two reviewed images including GnuPG/necessary existing dependencies, no acquisition/restricted execution/integrated verification/active policy change, original 13 GET/10 min bounds. Exact spec anchor owner-approved-narrow-metadata-bootstrap-preparation-and-finite-key-evidence-contract. Owner approved two-stage key/metadata sequence preparation including bounded public signing-key private repository retention proposal, combined 13 GET/600s/256 MiB; no actual acquisition, restricted execution or active policy change. Exact spec anchor owner-approved-two-stage-preparation-and-consolidated-custody-core. Owner approved exact C-D09 managed-development CI evidence rationalisation at proposal 2cbed51, recorded in C5 implementation spec; limited bootstrap trust and residual risk accepted, prepare concrete bounded validation candidate only, no acquisition, installation, restricted execution, migration, new expenditure or phase advancement. Owner approved one-time C5 proportionate publisher-first inspection method (okay lets try that), recorded at docs/C5_PROPORTIONATE_INSPECTION_DECISION_2026-11-27.md; no new restricted authority or acceptance waiver. Owner explicitly approved standalone Windows Stage A preparation preserving all security and acceptance requirements; see docs/C5_STANDALONE_WINDOWS_A_PREPARATION_2026-11-27.md. No restricted execution grant. Owner explicitly approved exact Astral CPython 3.11.18 Windows x64 candidate for standalone Stage A preparation only; docs/C5_WINDOWS_A_ASTRAL_PREPARATION_2026-11-27.md. No new restricted grant. Owner explicitly approved simplified C5 applicability-based development policy and preparation of consolidated Stage A transaction; see ENGINEERING_DECISIONS_CURRENT.md section 27-november--owner-approved-c5-applicability-policy-and-consolidated-stage-a-transaction. No restricted authority or acceptance waiver. Owner explicitly approved bounded G2 equivalent evidence feasibility assessment and design only; see ENGINEERING_DECISIONS_CURRENT.md section 27-november--g2-equivalent-evidence-feasibility-and-design-disposition. Assessment complete, no implementation, live method adoption or restricted execution authority. Owner adopted aggressive product-first framework (okay lets follow you new frame work); PRODUCT-FIRST-20261127 in phase policy. Independent concrete scoped P4 source work and narrowly rationalised standard C5 control metadata preparation, no new restricted execution grant. Owner approved preparation of bounded browser-only GitHub verification (okay do ti); detached 26ab490, no activation/acquisition/execution grant; exact receipt in engineering decisions. Owner approved proceeding with corrected Chrome .88 and Playwright 1.65.1 alternative (do it), exact candidate 920df39 prepared; no exact bounded activation grant yet; preserve original locks.",
-    "restricted_active": [],
+    "restricted_active": [
+      {
+        "id": "C5-PILLOW-NIGHTLY-EXACT-20261127",
+        "state": "APPROVED",
+        "source_sha": "4cbb1370227c180fda6a7b8e5c4e24297b2c672f",
+        "scope": "One disposable nonroot Ubuntu 24.04 x64 job, five minutes, at most two fixed HTTPS GETs and 8626197 accepted bytes aggregate (1048576-byte simple index and conditional exact 7577621-byte wheel), no redirect/proxy/retry/fallback, no credentials, only exact publisher index and same-host exact wheel URL. Require independent expected SHA256 in index before wheel retrieval and same SHA256/size before ZIP reads; compare prior exact metadata/RECORD/license/Brotli member hashes. No installation/import/native execution or product lock change. At most two technical replacements only if eligible under same cumulative cap and prior terminal evidence; no different wheel, no automatic retry on identity/rights/host or unreviewed redirect hold.",
+        "owner_authority_ref": {
+          "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+          "anchor": "27-november--owner-approved-exact-public-pillow-nightly-verification-write-ahead",
+          "blob_sha": "db0f530578aeeb658c944aab1ee5d83ceb59e51c",
+          "start_line": 503,
+          "end_line": 505
+        },
+        "reconcile_before_retry": false
+      }
+    ],
     "consumed_disarmed_count": 52,
     "consumed_history": {
       "commit": "b9864b70fb9bb5a72d0f79c37f15b94100722192",
@@ -652,6 +687,10 @@
       {
         "sha": "9d35fe7f223d459a3c9fd8b17f37838aedf849a4",
         "scope": "Embedded Chrome credits correction; two-file exact diff, 13 static checks, not executed."
+      },
+      {
+        "sha": "4cbb1370227c180fda6a7b8e5c4e24297b2c672f",
+        "scope": "Exact public Pillow nightly static verification candidate; no acquisition yet."
       }
     ]
   },
