@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-LINUX-FIXTURE-APPLICABILITY-HOST-PREFLIGHT-20261127",
-    "parent_sha": "3b7955263d6d121a51265c8af0b42668f4515062",
-    "previous_snapshot_sha": "3b7955263d6d121a51265c8af0b42668f4515062",
-    "scope": "Generated-fixture applicability review and detached targeted managed-host preflight; conditional recommendation only, no restricted execution or score change.",
+    "operation_id": "C5-5-1-OS-REVIEW-20261127",
+    "parent_sha": "e644bdee5bfa6af163474e9bf87871d45df7172f",
+    "previous_snapshot_sha": "e644bdee5bfa6af163474e9bf87871d45df7172f",
+    "scope": "Isolated C5.5.1 OS/host review, recovered historical baseline compatibility; actual use preflight pending.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--stage-a-generated-fixture-applicability-and-targeted-host-preflight",
-      "blob_sha": "ed2642b8ae3d4b47368da1606ece99717363cf01",
-      "start_line": 275,
-      "end_line": 283
+      "anchor": "27-november--c551-isolated-managed-operating-system-review",
+      "blob_sha": "7a3ffd36dac67e3f8891073903de0deacb838ab2",
+      "start_line": 285,
+      "end_line": 287
     }
   },
   "product": {
@@ -120,7 +120,7 @@
     "status": "BLOCKED",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
     "blocker": "Conditional narrow PDFium generated-fixture recommendation supported by fixed input scope and publisher evidence; exact compiled Brotli revision not independently established, final disposition and owner review pending. Detached 783027c targeted host preflight prepared; actual future image/package/ABI/security facts not observed. Exact activation and one-use execution authority absent. Full-profile Pillow held.",
-    "next_action": "Prepare one exact reviewed disarmed source-bound Stage A activation from 783027c with narrow generated-fixture disposition/host review, fixed managed setup/job and one-use binding, seven fixed GETs/7,808,390 bytes/zero redirects or retries, isolated offline locked install, 19 exact tests and owned settlement. Review concrete residual PDFium uncertainty and applicable host facts; seek explicit owner disposition and exact execution authority when ready, refuse mismatches, park route if mandatory evidence inadequate. No repeated broad research, independent host qualification or new verifier. Corrected official Pillow pin and full Linux regressions separately required before C5 credit. All Windows pre-use before D1.",
+    "next_action": "Owner-requested isolated C5.5 reporting: C5.5.1 baseline verified, actual use preflight pending. Next C5.5.2 Python: consolidate exact managed CP311.18 identity/path/ABI, pinned setup action and existing actual compatibility evidence under C-D09; no recursive qualification or separate identity-only run. Continue pip, Node/npm, Rust/Cargo and browser isolated review, retaining actual pre-use holds. Then prepare one exact reviewed disarmed source-bound Stage A activation from 783027c with narrow generated-fixture disposition/host review, fixed managed setup/job and one-use binding, seven fixed GETs/7,808,390 bytes/zero redirects or retries, isolated offline locked install, 19 exact tests and owned settlement. Explicit owner review and execution authority required when ready; refuse mismatches, park if mandatory evidence inadequate. Corrected official Pillow pin and full Linux regressions required before C5 credit; Windows pre-use before D1.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
@@ -130,50 +130,57 @@
     "read": [
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "27-november--c551-isolated-managed-operating-system-review",
+        "blob_sha": "7a3ffd36dac67e3f8891073903de0deacb838ab2",
+        "start_line": 285,
+        "end_line": 287
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--stage-a-generated-fixture-applicability-and-targeted-host-preflight",
-        "blob_sha": "ed2642b8ae3d4b47368da1606ece99717363cf01",
+        "blob_sha": "7a3ffd36dac67e3f8891073903de0deacb838ab2",
         "start_line": 275,
         "end_line": 283
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--exact-pdfium-publisher-build-chain-and-managed-linux-bootstrap",
-        "blob_sha": "ed2642b8ae3d4b47368da1606ece99717363cf01",
+        "blob_sha": "7a3ffd36dac67e3f8891073903de0deacb838ab2",
         "start_line": 265,
         "end_line": 273
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--disarmed-standalone-linux-stage-a-source-candidate",
-        "blob_sha": "ed2642b8ae3d4b47368da1606ece99717363cf01",
+        "blob_sha": "7a3ffd36dac67e3f8891073903de0deacb838ab2",
         "start_line": 255,
         "end_line": 263
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--six-uploaded-linux-stage-a-wheels-verified",
-        "blob_sha": "ed2642b8ae3d4b47368da1606ece99717363cf01",
+        "blob_sha": "7a3ffd36dac67e3f8891073903de0deacb838ab2",
         "start_line": 245,
         "end_line": 253
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--pdfium-brotli-source-fix-traced-and-official-pillow-nightly-option",
-        "blob_sha": "ed2642b8ae3d4b47368da1606ece99717363cf01",
+        "blob_sha": "7a3ffd36dac67e3f8891073903de0deacb838ab2",
         "start_line": 237,
         "end_line": 243
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--actual-uploaded-linux-pillow-and-pdfium-inspection",
-        "blob_sha": "ed2642b8ae3d4b47368da1606ece99717363cf01",
+        "blob_sha": "7a3ffd36dac67e3f8891073903de0deacb838ab2",
         "start_line": 227,
         "end_line": 235
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--owner-approved-linux-first-c5-allocation-and-exact-reduced-input-plan",
-        "blob_sha": "ed2642b8ae3d4b47368da1606ece99717363cf01",
+        "blob_sha": "7a3ffd36dac67e3f8891073903de0deacb838ab2",
         "start_line": 211,
         "end_line": 219
       },
@@ -212,17 +219,17 @@
     ]
   },
   "operation": {
-    "id": "C5-LINUX-FIXTURE-APPLICABILITY-HOST-PREFLIGHT-20261127",
+    "id": "C5-5-1-OS-REVIEW-20261127",
     "state": "RECONCILED",
-    "starting_sha": "3b7955263d6d121a51265c8af0b42668f4515062",
-    "outcome": "Conditional narrow PDFium generated-fixture eligibility recommendation only. Detached 783027c implements fixed seven-package managed-host query; exact two-path readback and eight copied synthetic parser cases PASS. Actual host, full module, transfers, install, native load and 19 functional tests NOT RUN. Initial documentation checkpoint connection dropped; live branch reconciled unchanged before a newly constructed checkpoint.",
+    "starting_sha": "e644bdee5bfa6af163474e9bf87871d45df7172f",
+    "outcome": "C5.5.1 managed OS baseline verified from existing exact image and successful scoped source CI, prior nonroot host observation. Actual targeted package preflight pending; no new run or acceptance credit.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--stage-a-generated-fixture-applicability-and-targeted-host-preflight",
-      "blob_sha": "ed2642b8ae3d4b47368da1606ece99717363cf01",
-      "start_line": 275,
-      "end_line": 283
+      "anchor": "27-november--c551-isolated-managed-operating-system-review",
+      "blob_sha": "7a3ffd36dac67e3f8891073903de0deacb838ab2",
+      "start_line": 285,
+      "end_line": 287
     }
   },
   "authority": {
