@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-CONSOLIDATED-PARSER-UV-YAML-APPLICABILITY-20261127",
-    "parent_sha": "b344514a411ae3f2a42c6269bd08a28f474001d0",
-    "previous_snapshot_sha": "b344514a411ae3f2a42c6269bd08a28f474001d0",
-    "scope": "Scoped parser, libuv and libyaml source advisory review; no execution or code change.",
+    "operation_id": "C5-CONSOLIDATED-NUMERICAL-RUNTIME-APPLICABILITY-20261127",
+    "parent_sha": "a1572cb4599d59108237f2e7c15bdbd94d307ab4",
+    "previous_snapshot_sha": "a1572cb4599d59108237f2e7c15bdbd94d307ab4",
+    "scope": "Numerical runtime release build pins, licence families and specific outstanding security review.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--scoped-http-parser-libuv-and-libyaml-advisory-reconciliation",
-      "blob_sha": "040665bdcebe791e45d9d7c0101bae93d8a2b7df",
-      "start_line": 634,
-      "end_line": 642
+      "anchor": "27-november--numerical-runtime-publisher-build-binding-and-remaining-staged-checks",
+      "blob_sha": "2c14797624c91186e1fcc6ea4099d6a545fcb8ec",
+      "start_line": 644,
+      "end_line": 653
     }
   },
   "product": {
@@ -137,8 +137,8 @@
     "id": "C5-LINUX-FIRST-20261127",
     "status": "BLOCKED",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "Candidate ee5df25 disarmed; 23/23 publisher evidence, 0/23 final dispositions. ReportLab hold retained; libuv/libyaml two exact source fix ancestries resolved conditionally, parser advisory applicability narrowed, actual staged composition and other component/security checks, BLAS/GCC/LZMA/Tauri, host and regression receipts remain. No execution authority.",
-    "next_action": "Review concrete BLAS/GCC runtime and LZMA/Tauri component/security issues, reuse scoped libuv/libyaml fixed ancestry and parser source applicability (do not repeat). Bind independently reviewed expectations to actual staged notice/component verification, keep ReportLab hold until explicit changed lock authority or sufficient non-applicability evidence. Finish exact hosted runner/settlement/regression receipts, source-only verify before one bounded approval; no standalone identity acquisition.",
+    "blocker": "Candidate ee5df25 disarmed; 23/23 publisher evidence, 0/23 final dispositions. ReportLab hold retained; numerical OpenBLAS pins and licence families identified, actual bundled runtime versions/notice/rights/security pending. LZMA/Tauri, staged applicability expectations, host and regression receipt bindings remain. No execution authority.",
+    "next_action": "Resolve concrete LZMA and Tauri component/loader conditions, then consolidate finite staged applicability predicates based on existing publisher and historical evidence (do not repeat unavailable log/identity research). Keep ReportLab hold until explicit changed lock authority or sufficient non-applicability evidence; stop before install on unresolved rights/security. Finish exact hosted runner/settlement/regression receipts, source-only verify before one bounded approval; no standalone acquisition.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
@@ -146,6 +146,13 @@
       "D2, G2 and remaining physical E2/P4 acceptance; no phase advance without evidence and owner signoff."
     ],
     "read": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "27-november--numerical-runtime-publisher-build-binding-and-remaining-staged-checks",
+        "blob_sha": "2c14797624c91186e1fcc6ea4099d6a545fcb8ec",
+        "start_line": 644,
+        "end_line": 653
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--scoped-http-parser-libuv-and-libyaml-advisory-reconciliation",
@@ -520,17 +527,17 @@
     ]
   },
   "operation": {
-    "id": "C5-CONSOLIDATED-PARSER-UV-YAML-APPLICABILITY-20261127",
+    "id": "C5-CONSOLIDATED-NUMERICAL-RUNTIME-APPLICABILITY-20261127",
     "state": "RECONCILED",
-    "starting_sha": "b344514a411ae3f2a42c6269bd08a28f474001d0",
-    "outcome": "Three targeted rows advanced: exact libuv and libyaml fixed-source ancestry verified; legacy parser and Node TLS applicability narrowed by source/loopback scope. Actual staged build/rights/security not cleared; no execution.",
+    "starting_sha": "a1572cb4599d59108237f2e7c15bdbd94d307ab4",
+    "outcome": "Three numerical rows advanced: NumPy publication metadata and exact builder OpenBLAS64 pin, SciPy exact OpenBLAS32 source pin, runtime licence supplements. Old logs unavailable, actual compiler/native composition unresolved; no final dispositions or execution.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--scoped-http-parser-libuv-and-libyaml-advisory-reconciliation",
-      "blob_sha": "040665bdcebe791e45d9d7c0101bae93d8a2b7df",
-      "start_line": 634,
-      "end_line": 642
+      "anchor": "27-november--numerical-runtime-publisher-build-binding-and-remaining-staged-checks",
+      "blob_sha": "2c14797624c91186e1fcc6ea4099d6a545fcb8ec",
+      "start_line": 644,
+      "end_line": 653
     }
   },
   "authority": {
@@ -871,7 +878,8 @@
     "ee5df25 disarmed consolidated fixture setup correction. Exact PDFium 8149 source build, linkage and Stage A prior evidence recovered; 37/37 notices mapped. Full pre-use disposition, targeted 23/Pillow/browser/pip/fonts, host and regression receipts still pending; no execution authority or acceptance credit.",
     "23/23 targeted release records reviewed (21 exact source commits, two metadata/source corroborations), 0/23 final dispositions. ReportLab later security fixes need scoped applicability; parser/native/runtime/LZMA and Tauri loader actual evidence outstanding; no acceptance increase.",
     "ReportLab 4.5.1 HOLD: publisher 5.0/5.1 security changes verified, source exposure controls positive but incomplete reachability. 5.1.2 is proposed alternative only; explicit changed lock scope approval required, no new digest/use authority. Other targeted dispositions still open.",
-    "Parser/libuv/libyaml source advisory review advanced: two fixed-source ancestry checks, message vs URL and Node TLS scopes narrowed, staged composition and full pre-use decisions remain unresolved; no clearance or acceptance increase."
+    "Parser/libuv/libyaml source advisory review advanced: two fixed-source ancestry checks, message vs URL and Node TLS scopes narrowed, staged composition and full pre-use decisions remain unresolved; no clearance or acceptance increase.",
+    "Numerical runtimes: NumPy OpenBLAS64 0.3.31.188.0 and SciPy OpenBLAS32 0.3.30.0.8 exact source-side build pins and bundled licence families identified; actual wheel members/compiler runtime identity and advisory applicability still required. NumPy/SciPy logs unavailable, scikit-learn tag wheel job skipped. No clearance or credit."
   ],
   "context": {
     "protocol": {
