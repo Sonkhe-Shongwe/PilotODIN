@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "P4-TEMPORARY-SOURCE-CI-INTEGRATION-20261127",
-    "parent_sha": "afcb3d614ce42a419191b6d20b3c9fe39b35c830",
-    "previous_snapshot_sha": "afcb3d614ce42a419191b6d20b3c9fe39b35c830",
-    "scope": "Reconcile exact owner-approved product source integration and actual temporary source-only CI results.",
+    "operation_id": "C5-BROWSER-SMOKE-PREPARATION-20261127",
+    "parent_sha": "b9763605ac799390b21c7abac160cbcf9d734f56",
+    "previous_snapshot_sha": "b9763605ac799390b21c7abac160cbcf9d734f56",
+    "scope": "Prepare and verify disarmed narrow C5.5 browser-only candidate, no execution.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--owner-approved-temporary-source-ci-and-engine-admission-integration",
-      "blob_sha": "f5d2692427b4b95278ccd692310810879764c619",
-      "start_line": 427,
-      "end_line": 433
+      "anchor": "27-november--owner-approved-browser-only-smoke-preparation",
+      "blob_sha": "33b3781ad729c9bb6515050767ab9c2b074fcb39",
+      "start_line": 435,
+      "end_line": 439
     }
   },
   "product": {
@@ -137,15 +137,22 @@
     "id": "C5-LINUX-FIRST-20261127",
     "status": "BLOCKED",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "C5 full-profile remains blocked on compatible isolated environment/private patched Pillow custody, actual pre-use security/notice and functional regression. Independent desktop correction integrated and source CI passed; original dependency-consuming jobs held.",
-    "next_action": "Resolve a concrete supported C5 environment/private single-object handoff or exact reviewed patched published candidate; integrate recovered 982435f into final isolated C5 source only after exact binding and clearance. Restore deferred existing functional CI only through reviewed safe route. No repeated source replay or speculative adapters, no restricted action inferred.",
-    "next_action_kind": "MISSING_EVIDENCE",
+    "blocker": "C5.5 focused browser smoke prepared but actual managed patched Chrome, applicable input pre-use disposition and exact execution authority pending. Full C5 still blocked on isolated environment/private Pillow custody and functional regression.",
+    "next_action": "Finish finite exact browser-only pre-use/activation review for detached 26ab490 and seek explicit one-use execution approval; do not activate draft unchanged. No browser/toolchain downloads; no Pillow or backend in smoke. Then resume full C5 only with supported environment/custody and mandatory regressions.",
+    "next_action_kind": "OWNER_DECISION",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
       "Windows-specific verified input and compatibility prerequisites before actual production-equivalent D1, separately authorised; no installer.",
       "D2, G2 and remaining physical E2/P4 acceptance; no phase advance without evidence and owner signoff."
     ],
     "read": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "27-november--owner-approved-browser-only-smoke-preparation",
+        "blob_sha": "33b3781ad729c9bb6515050767ab9c2b074fcb39",
+        "start_line": 435,
+        "end_line": 439
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--owner-approved-temporary-source-ci-and-engine-admission-integration",
@@ -282,22 +289,22 @@
     ]
   },
   "operation": {
-    "id": "P4-TEMPORARY-SOURCE-CI-INTEGRATION-20261127",
+    "id": "C5-BROWSER-SMOKE-PREPARATION-20261127",
     "state": "RECONCILED",
-    "starting_sha": "ade13c88507256acc4b5237f0f3589e35c063022",
-    "outcome": "Integrated 9006133 exact product correction at afcb3d6 with temporary source-only routing. P2 3/3 Node and P4 12/12 actual unittest tests passed; five held jobs skipped; no full functional/compile/native acceptance or C5 credit.",
+    "starting_sha": "b9763605ac799390b21c7abac160cbcf9d734f56",
+    "outcome": "Detached two-file draft 26ab490 verified; 13 static checks and 2/2 archive pin matches, zero runs, 121 existing workflow blobs unchanged. No activation, acquisition, actual smoke or score credit.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--owner-approved-temporary-source-ci-and-engine-admission-integration",
-      "blob_sha": "f5d2692427b4b95278ccd692310810879764c619",
-      "start_line": 427,
-      "end_line": 433
+      "anchor": "27-november--owner-approved-browser-only-smoke-preparation",
+      "blob_sha": "33b3781ad729c9bb6515050767ab9c2b074fcb39",
+      "start_line": 435,
+      "end_line": 439
     }
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next.",
-    "preparation_only": "Owner approved consolidated shared-bundle disarmed acquisition-before-signature source and exact limited existing host bootstrap; owner approved proposed limited local Docker control-plane and host-derived rootfs trust/no-pull isolation method for preparation only. Authentication before extraction/use; no Docker invocation, acquisition, verification execution, installation or live cutover authorised. Owner approved bounded first-collision encoded public member-path diagnostic preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-bounded-first-collision-diagnostic-preparation-only. No restricted execution authority. Owner approved finite exact Linux data-only terminfo inventory policy and bounded receipt projection as proposed in 8cc1a696, preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-finite-exact-linux-terminfo-inventory-policy-and-bounded-receipt-preparation-only. Strict Windows/gh and other safeguards unchanged; no acquisition, extraction or restricted execution. Owner explicitly approved preparation and static/synthetic verification only of Approach C observation-only candidate (11 fixed roles, five minutes); no restricted execution, acquisition, Docker invocation or active policy change. Exact reference in C5 spec owner-approved-bounded-approach-c-observation-candidate-preparation-only. Owner approved Approach C metadata-only preparation/static/synthetic verification under 13 GET/10-minute proposed limits; no actual acquisition, package downloads, installation, Docker invocation, restricted execution or active trust policy change. Exact spec anchor owner-approved-bounded-approach-c-metadata-only-preparation-and-synthetic-core. Owner approved narrow metadata bootstrap preparation on existing two reviewed images including GnuPG/necessary existing dependencies, no acquisition/restricted execution/integrated verification/active policy change, original 13 GET/10 min bounds. Exact spec anchor owner-approved-narrow-metadata-bootstrap-preparation-and-finite-key-evidence-contract. Owner approved two-stage key/metadata sequence preparation including bounded public signing-key private repository retention proposal, combined 13 GET/600s/256 MiB; no actual acquisition, restricted execution or active policy change. Exact spec anchor owner-approved-two-stage-preparation-and-consolidated-custody-core. Owner approved exact C-D09 managed-development CI evidence rationalisation at proposal 2cbed51, recorded in C5 implementation spec; limited bootstrap trust and residual risk accepted, prepare concrete bounded validation candidate only, no acquisition, installation, restricted execution, migration, new expenditure or phase advancement. Owner approved one-time C5 proportionate publisher-first inspection method (okay lets try that), recorded at docs/C5_PROPORTIONATE_INSPECTION_DECISION_2026-11-27.md; no new restricted authority or acceptance waiver. Owner explicitly approved standalone Windows Stage A preparation preserving all security and acceptance requirements; see docs/C5_STANDALONE_WINDOWS_A_PREPARATION_2026-11-27.md. No restricted execution grant. Owner explicitly approved exact Astral CPython 3.11.18 Windows x64 candidate for standalone Stage A preparation only; docs/C5_WINDOWS_A_ASTRAL_PREPARATION_2026-11-27.md. No new restricted grant. Owner explicitly approved simplified C5 applicability-based development policy and preparation of consolidated Stage A transaction; see ENGINEERING_DECISIONS_CURRENT.md section 27-november--owner-approved-c5-applicability-policy-and-consolidated-stage-a-transaction. No restricted authority or acceptance waiver. Owner explicitly approved bounded G2 equivalent evidence feasibility assessment and design only; see ENGINEERING_DECISIONS_CURRENT.md section 27-november--g2-equivalent-evidence-feasibility-and-design-disposition. Assessment complete, no implementation, live method adoption or restricted execution authority. Owner adopted aggressive product-first framework (okay lets follow you new frame work); PRODUCT-FIRST-20261127 in phase policy. Independent concrete scoped P4 source work and narrowly rationalised standard C5 control metadata preparation, no new restricted execution grant.",
+    "preparation_only": "Owner approved consolidated shared-bundle disarmed acquisition-before-signature source and exact limited existing host bootstrap; owner approved proposed limited local Docker control-plane and host-derived rootfs trust/no-pull isolation method for preparation only. Authentication before extraction/use; no Docker invocation, acquisition, verification execution, installation or live cutover authorised. Owner approved bounded first-collision encoded public member-path diagnostic preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-bounded-first-collision-diagnostic-preparation-only. No restricted execution authority. Owner approved finite exact Linux data-only terminfo inventory policy and bounded receipt projection as proposed in 8cc1a696, preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-finite-exact-linux-terminfo-inventory-policy-and-bounded-receipt-preparation-only. Strict Windows/gh and other safeguards unchanged; no acquisition, extraction or restricted execution. Owner explicitly approved preparation and static/synthetic verification only of Approach C observation-only candidate (11 fixed roles, five minutes); no restricted execution, acquisition, Docker invocation or active policy change. Exact reference in C5 spec owner-approved-bounded-approach-c-observation-candidate-preparation-only. Owner approved Approach C metadata-only preparation/static/synthetic verification under 13 GET/10-minute proposed limits; no actual acquisition, package downloads, installation, Docker invocation, restricted execution or active trust policy change. Exact spec anchor owner-approved-bounded-approach-c-metadata-only-preparation-and-synthetic-core. Owner approved narrow metadata bootstrap preparation on existing two reviewed images including GnuPG/necessary existing dependencies, no acquisition/restricted execution/integrated verification/active policy change, original 13 GET/10 min bounds. Exact spec anchor owner-approved-narrow-metadata-bootstrap-preparation-and-finite-key-evidence-contract. Owner approved two-stage key/metadata sequence preparation including bounded public signing-key private repository retention proposal, combined 13 GET/600s/256 MiB; no actual acquisition, restricted execution or active policy change. Exact spec anchor owner-approved-two-stage-preparation-and-consolidated-custody-core. Owner approved exact C-D09 managed-development CI evidence rationalisation at proposal 2cbed51, recorded in C5 implementation spec; limited bootstrap trust and residual risk accepted, prepare concrete bounded validation candidate only, no acquisition, installation, restricted execution, migration, new expenditure or phase advancement. Owner approved one-time C5 proportionate publisher-first inspection method (okay lets try that), recorded at docs/C5_PROPORTIONATE_INSPECTION_DECISION_2026-11-27.md; no new restricted authority or acceptance waiver. Owner explicitly approved standalone Windows Stage A preparation preserving all security and acceptance requirements; see docs/C5_STANDALONE_WINDOWS_A_PREPARATION_2026-11-27.md. No restricted execution grant. Owner explicitly approved exact Astral CPython 3.11.18 Windows x64 candidate for standalone Stage A preparation only; docs/C5_WINDOWS_A_ASTRAL_PREPARATION_2026-11-27.md. No new restricted grant. Owner explicitly approved simplified C5 applicability-based development policy and preparation of consolidated Stage A transaction; see ENGINEERING_DECISIONS_CURRENT.md section 27-november--owner-approved-c5-applicability-policy-and-consolidated-stage-a-transaction. No restricted authority or acceptance waiver. Owner explicitly approved bounded G2 equivalent evidence feasibility assessment and design only; see ENGINEERING_DECISIONS_CURRENT.md section 27-november--g2-equivalent-evidence-feasibility-and-design-disposition. Assessment complete, no implementation, live method adoption or restricted execution authority. Owner adopted aggressive product-first framework (okay lets follow you new frame work); PRODUCT-FIRST-20261127 in phase policy. Independent concrete scoped P4 source work and narrowly rationalised standard C5 control metadata preparation, no new restricted execution grant. Owner approved preparation of bounded browser-only GitHub verification (okay do ti); detached 26ab490, no activation/acquisition/execution grant; exact receipt in engineering decisions.",
     "restricted_active": [],
     "consumed_disarmed_count": 48,
     "consumed_history": {
@@ -534,6 +541,10 @@
       {
         "sha": "982435f458d4ed10006833c0141df40490b30315",
         "scope": "Recovered Linux Stage B mixed-callback result collision fix, two exact QA paths, 16/16 extracted mock checks, full module not run; disarmed."
+      },
+      {
+        "sha": "26ab490c657846cf05f11e2fcabbd6fdf4a18b7e",
+        "scope": "Disarmed two-file browser-only smoke draft; 13 static checks and 2/2 prior lock/receipt archive matches, unchanged 121 workflows, zero runs; exact pre-use, transport, settlement and one-use execution binding pending."
       }
     ]
   },
@@ -544,7 +555,8 @@
     "G2 original handle/physical destination/independent coverage unresolved; 44838416004 and 45342345634 native filesystem/network failures retained; G2 equivalent design original-writer mapped/cache/background and deployment unproven. G3/G4 pending, no method adoption or native closure.",
     "Physical 8 GB bundled Qwen/coexistence, DPAPI, desktop egress/durability, production IPC/physical destination and actual legacy whole-job settlement unverified. Latest integrated source-only baseline afcb3d6 (15 source tests), prior broad CI baseline c5f4bd8; full dependency-consuming CI temporarily held, no Windows desktop compile/runtime inference. D1/D2 and E2/Gate C mandatory.",
     "R06 historical 74 original-data differences with unknown writer; prospective owner-device preservation pending. No original data loss or owner-local access; 49 detached records preserved. Codespace stop and consumed-variable cleanup unverified, no replay.",
-    "Owner-held recovery copy delivered for exact historical 1d033ce, not current HEAD/full Git history/detached backup or build proof. Root LICENSE/NOTICE/SECURITY.md absent, owner decision outstanding. Prior risk chronology and exact references preserved at dac2149 and historical ledger."
+    "Owner-held recovery copy delivered for exact historical 1d033ce, not current HEAD/full Git history/detached backup or build proof. Root LICENSE/NOTICE/SECURITY.md absent, owner decision outstanding. Prior risk chronology and exact references preserved at dac2149 and historical ledger.",
+    "C5.5 basic Chrome/Playwright smoke candidate 26ab490 disarmed; availability, actual security/rights, use and full browser regression not proved. No separate toolchain or browser acquisition authorised."
   ],
   "context": {
     "protocol": {
