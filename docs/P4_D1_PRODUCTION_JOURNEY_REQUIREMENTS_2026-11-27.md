@@ -1,0 +1,33 @@
+# PilotODIN | D1 production-equivalent disposable journey requirements
+
+27 November 2026. Parent 2006718ad2e67d704eab386551dbd3a1150210ff. Independent D1 requirements preparation only under the narrow runner-blocker sequencing exception 082b7431644723ed009a290bb6949771f868b15d. C5 remains blocked; no D source closure, phase advance, build, packaging, native execution, model operation, owner access, OS changes, new evidence method or execution approval. This is a finite requirements deliverable, not a new workstream or diagnostic harness.
+
+## Exact source-derived production contract
+
+| Component | Exact source blob | Required distinction |
+| --- | --- | --- |
+| Base Tauri configuration | 0dcf6b0650efb2da8c94e55653df5134980f2f10 | com.pilotodin.studio; frontendDist ../dist; engine and inference externalBin; bundled model/manifest/runtime/licences; production installer guard remains. |
+| Isolated native-dev override | c24ca4dfca1861d44582d1d9bfe1672532baf70f | Different identifier, externalBin and resources emptied, npm dev startup; diagnostic only. |
+| Desktop lib.rs | b867be56af52f678b04a6e1a024e75424cf20fd0 | Lines 1425–1472 production-only deferred window/profile lease; 330–390 app-local data and effective UDF; 556–625 owned engine; 853–906 legacy inference; 438–554 worker drain; 130–155 one-use close. |
+| Desktop profile | 6d91128503dc05cf34d2b2be6ba5b30a09b81a2d | Reject WEBVIEW2_* overrides and registry override classes; exclusive zero-byte profile lease, pinned root and observed effective UDF. |
+| Production engine runner | e07526d9265be88f4430cd7b00ccfed1401f89c5 | Desktop trust before workspace lease/scratch and backend.main import; authenticated loopback; legacy owner pipe. |
+| Non-desktop ASGI factory | 096a3dd850db944ea57f2fd44c2854bbd3247e69 | Explicit non-desktop fixture trust; not production engine entrypoint. |
+| Resource composition | 9a8d9e2e2643cd109070e9193ddfb35653e7ed76 | OWNED_RESOURCE_ENABLED=false; selected() requires production identifier as well. Do not activate POD1 to make a test pass; actual legacy selection remains. |
+| Existing lifetime QA | 9cbc182f4beaa02983cae2c5bf9eed4afa602823 | Lines 115–130 external uvicorn 8000 and Vite 5173, not bundled startup. |
+| Packaged engine smoke | dc898364422cdef6a5ff7d24a09898b608f4972c | Direct engine auth/health/projects/owner-disconnect checks, not Tauri profile or desktop lifecycle. cwd passed as source root, listener timeout accepted as closed, taskkill conditional on parent still alive; cannot establish production cwd, definitive listener refusal or complete descendant settlement. Do not treat these limitations as observed product failures or reuse this as full D1 proof. |
+
+Concrete conclusion: changing the app identifier to isolate a test silently bypasses the production-only profile path in lib.rs, even if it launches a sidecar. For production-equivalent evidence preserve com.pilotodin.studio, actual release-mode frontend and entrypoint, no development server or WebView override. Use a separately authorized genuinely disposable Windows environment where the identifier's real app-local root belongs exclusively to this test and no owner workspace exists. Verify isolation before any launch, not a path-environment trick or a modified registry. Do not run the production identifier on the owner's device to simulate isolation. No proposal to build an installer; eventual reviewed unpackaged production-equivalent binary/asset route must first be authorized and validated, preserving exact source, actual resource resolution and release-mode behavior.
+
+## Finite witness matrix for the eventual D1 journey
+
+| Witness | Required observable outcome / negative control |
+| --- | --- |
+| D1 startup identity | Exact approved executable, frontend, engine and inference/resource identities; production identifier and build mode; no external Python/Vite, no dev token/override, no unrelated app. Review actual artifact readiness before any launch. |
+| D1 profile and storage | Production app-local root and data subdirectory physically admitted, profile lease before main window, actual effective WebView UDF verified against intended root, worker-specific temp roots and database lease; duplicate desktop refused before opening competing profile; no owner data. |
+| D1 analytics startup | Real Tauri launch_backend starts only bundled engine; exact owned process/group and loopback listener, authenticated health, wrong/missing token and foreign origin rejected; engine cwd under data root; no inference start or model load during analytics-only journey. |
+| D1 durable journey | Retain actual N12 import/Quality edit/Undo, stale refusal, no experiments, same-binary close/reopen and immutable original/endpoints; generated input only, no added permission or altered test assertions. |
+| D1 inference boundary | Preserve lazy deliberate request and verified model/runtime resources; no inference execution in analytics-only scope. Physical offline Qwen and coexistence remain separate mandatory R03 evidence; actual model request requires separate authorization. |
+| D1 shutdown and reopen | OS close ticket refusal/cancel and later consent; drain owned work; wait for actual worker and descendants to exit; verify listeners closed by affirmative evidence, not mere timeout; lease release/reopen and no leftovers; interrupted or uncertain exit must not count as graceful. |
+| D1 independent measurement | Actual scope attribution, storage and network observation with exact matched capture, original and protected endpoint comparison. G2 proof method must be independently resolved before any final D1/D2 acceptance transaction. No complete coverage claim from application config or self-report. |
+
+Existing production behavior may need correction if later approved tests show a failure. No speculative product change is justified from this review alone. Retain exact original acceptance worklist, all eleven G2 blockers and 74 historical original-data differences; no new evidence credit. C5 prior eight-wheel/Astral route remains disarmed and unqualified; no further ordinary C5 or D1 planning loop is justified. Next actual progress requires either a supported, reviewed C5 execution route with exact approved scope or a distinct owner decision on the remaining D2/G2 method. The latter is not part of this narrow exception and no implementation is inferred authorized. Report blocked rather than create more documents, repeated checks or synthetic-only milestones. No source/lock/workflow change or test run. C5 4/8, source 14/17, P4 14/20, D 0/2, 45 consumed/disarmed, zero active; P5 unauthorized, installer frozen, unknown owner-local and detached work preserved.

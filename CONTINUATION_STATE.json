@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-STANDARD-TOOL-STOP-D1-REJOIN-20261127",
-    "parent_sha": "5bcb18b07ed314f3498ecf4ebe78e292bcb2a005",
-    "previous_snapshot_sha": "5bcb18b07ed314f3498ecf4ebe78e292bcb2a005",
-    "scope": "Record actual gh security-release finding and exact D1 development/production evidence mismatch; independent requirements preparation only.",
+    "operation_id": "P4-D1-PRODUCTION-JOURNEY-REQUIREMENTS-20261127",
+    "parent_sha": "2006718ad2e67d704eab386551dbd3a1150210ff",
+    "previous_snapshot_sha": "2006718ad2e67d704eab386551dbd3a1150210ff",
+    "scope": "Finish finite independent D1 source-derived requirements; identify production identifier gate and limitations of existing smoke.",
     "state": "RECONCILED",
     "receipt": {
-      "path": "docs/C5_STANDARD_TOOL_STOP_AND_D1_REQUIREMENTS_2026-11-27.md",
-      "anchor": "pilotodin--c5-standard-tool-stopping-decision-and-d1-requirements",
-      "blob_sha": "c54955d0d960d0f6a919ebf8283b78e7f86a41da",
+      "path": "docs/P4_D1_PRODUCTION_JOURNEY_REQUIREMENTS_2026-11-27.md",
+      "anchor": "pilotodin--d1-production-equivalent-disposable-journey-requirements",
+      "blob_sha": "ce8cbe509a91823cbb37bbb62f30dc953d3ad664",
       "start_line": 1,
-      "end_line": 12
+      "end_line": 33
     }
   },
   "product": {
@@ -119,14 +119,21 @@
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
     "status": "BLOCKED",
     "scope": "C-D08 development reproducibility/build safety as revised by C-D09 limited managed-development evidence method; D native and P8 release boundaries unchanged.",
-    "blocker": "C5 standalone A pre-use provenance/tool qualification, control traffic, settlement and applicable rights/security unresolved. gh 2.106.0 fixes postdate reviewed 2.105.0 inventory; command applicability not settled. D1 independent requirements preparation only permitted under narrow existing exception.",
-    "next_action": "Under existing narrow runner-blocker exception, prepare finite D1 production-equivalent disposable journey requirements from actual sidecar entrypoints and current diagnostic QA mismatch; no phase advance, installer, packaging, native/model/owner data or changed evidence method. No new C5 framework or repeated polling. Rejoin C5 when exact supported standard inspection route and separate approval available; G2 D2 proof-method hard blocker remains.",
+    "blocker": "C5 standard verifier/control traffic/settlement and pre-use qualification unresolved. Independent D1 requirements preparation completed within existing exception; actual production-equivalent evidence requires reviewed artifact/environment and separately resolved G2 method and authority. No further supported independent work in current scope.",
+    "next_action": "Stop repetitive preparation. Rejoin C5 only on concrete supported reviewed standard inspection/execution route and separate exact authority, or await distinct owner decision on D2/G2 evidence method preserving all mandatory outcomes. No generic next approval, phase advance, additional speculative framework, repeated synthetic tests or provider polling. D1 finite requirements recorded; no D implementation or native execution authorized.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "Complete targeted applicable pre-use evidence and exact approved staging/inspection for genuinely unresolved components; no blanket binutils requirement or rights waiver.",
       "Execute separately approved conditional validation with all retained Stage A/B, font, frontend, Rust and matched P1/P4 predicates; audit eight C5 rows; D/G2/E2/P5/installer boundaries unchanged."
     ],
     "read": [
+      {
+        "path": "docs/P4_D1_PRODUCTION_JOURNEY_REQUIREMENTS_2026-11-27.md",
+        "anchor": "pilotodin--d1-production-equivalent-disposable-journey-requirements",
+        "blob_sha": "ce8cbe509a91823cbb37bbb62f30dc953d3ad664",
+        "start_line": 1,
+        "end_line": 33
+      },
       {
         "path": "docs/C5_STANDARD_TOOL_STOP_AND_D1_REQUIREMENTS_2026-11-27.md",
         "anchor": "pilotodin--c5-standard-tool-stopping-decision-and-d1-requirements",
@@ -407,17 +414,17 @@
     ]
   },
   "operation": {
-    "id": "C5-STANDARD-TOOL-STOP-D1-REJOIN-20261127",
+    "id": "P4-D1-PRODUCTION-JOURNEY-REQUIREMENTS-20261127",
     "state": "RECONCILED",
-    "starting_sha": "5bcb18b07ed314f3498ecf4ebe78e292bcb2a005",
-    "outcome": "Confirmed gh 2.106.0 security corrections after reviewed runner inventory; actual command applicability/qualification unresolved. D1 exact source mismatch confirmed. Stop repetitive C5 toolchain scaffolding; no execution or acceptance change.",
+    "starting_sha": "2006718ad2e67d704eab386551dbd3a1150210ff",
+    "outcome": "D1 exact production entrypoints/profile/legacy selection and required witness matrix documented; isolated QA identifier bypasses production profile path; no code, build, native run or acceptance change.",
     "reconcile_before_retry": false,
     "receipt": {
-      "path": "docs/C5_STANDARD_TOOL_STOP_AND_D1_REQUIREMENTS_2026-11-27.md",
-      "anchor": "pilotodin--c5-standard-tool-stopping-decision-and-d1-requirements",
-      "blob_sha": "c54955d0d960d0f6a919ebf8283b78e7f86a41da",
+      "path": "docs/P4_D1_PRODUCTION_JOURNEY_REQUIREMENTS_2026-11-27.md",
+      "anchor": "pilotodin--d1-production-equivalent-disposable-journey-requirements",
+      "blob_sha": "ce8cbe509a91823cbb37bbb62f30dc953d3ad664",
       "start_line": 1,
-      "end_line": 12
+      "end_line": 33
     }
   },
   "authority": {
