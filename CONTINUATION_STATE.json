@@ -6,10 +6,10 @@
   },
   "checkpoint": {
     "operation_id": "C5-LINUX-STAGE-A-ONCE-20261127",
-    "parent_sha": "29ffcd50598fda7f901a2b635c246a8c68bbd151",
-    "previous_snapshot_sha": "29ffcd50598fda7f901a2b635c246a8c68bbd151",
-    "scope": "Explicit owner approval and write-ahead for one bounded Linux Stage A execution; no execution yet.",
-    "state": "PREPARED",
+    "parent_sha": "a6273316e9ddc2516e172fe21f0fc8b010d4a2e8",
+    "previous_snapshot_sha": "a6273316e9ddc2516e172fe21f0fc8b010d4a2e8",
+    "scope": "One-use Stage A marker and exact workflow activation; reconcile actual run before any retry.",
+    "state": "ISSUED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
       "anchor": "27-november--owner-approved-one-use-linux-stage-a-execution",
@@ -117,10 +117,10 @@
   },
   "task": {
     "id": "C5-LINUX-FIRST-20261127",
-    "status": "PREPARED",
+    "status": "IN_PROGRESS",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "Owner-approved generated-fixture disposition; exact final activation binding and actual host pre-use/test result pending.",
-    "next_action": "Verify and publish the single marker-only activation for 304b24d under this explicit approval, then reconcile actual exact workflow run. No replay, no other work.",
+    "blocker": "Exact one-use Stage A activation issued; reconcile actual GitHub run before further action.",
+    "next_action": "Read exact live activation SHA and workflow run/job state; record terminal evidence and disarm owned workflow/marker with no replay. Do not dispatch again.",
     "next_action_kind": "RECONCILE",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
@@ -248,7 +248,7 @@
   },
   "operation": {
     "id": "C5-LINUX-STAGE-A-ONCE-20261127",
-    "state": "PREPARED",
+    "state": "ISSUED",
     "starting_sha": "29ffcd50598fda7f901a2b635c246a8c68bbd151",
     "scope": "One disposable Ubuntu 24.04 x64 job, attempt 1 only, exact CPython 3.11.18/pip 26.3, seven fixed wheel GETs/7,808,390 expected body bytes/zero redirects or retries, isolated hash-locked install and unchanged 19 generated-fixture PDFium tests, 30-minute outer/1500-second inner bound, owned settlement. No Stage B, browser, Pillow, Windows, Node, Rust, owner data, native product, model, installer, distribution or phase change.",
     "source_sha": "304b24d71aef1c8e3e98211bb5e8ba2430932f4f",
@@ -270,7 +270,12 @@
     },
     "expected_evidence": "Exact activation SHA, attempt-1 one-job workflow and logs; structured C5_LINUX_STAGE_A_JSON only after actual 19 unchanged passes and cleanup; failure or missing receipt recorded distinctly.",
     "recovery": "Read actual live HEAD and exact activation diff/runs before any action. A failed or uncertain execution is not permission to retry; disarm only owned workflow/marker under expected HEAD; preserve all detached work.",
-    "reconcile_before_retry": false
+    "reconcile_before_retry": true,
+    "activation_parent": "a6273316e9ddc2516e172fe21f0fc8b010d4a2e8",
+    "workflow": ".github/workflows/c5-linux-stage-a-once.yml",
+    "workflow_blob": "129b272b79a6b0c4be8192ebc1edd83b110ba862",
+    "marker": "qa/c5_managed_dev/APPROVAL_LINUX_STAGE_A_ONCE_20261127.json",
+    "marker_blob": "fc10d6fb0a4b8dbca5cc5f06f81e24a96ef482c9"
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next.",
@@ -278,7 +283,7 @@
     "restricted_active": [
       {
         "id": "C5-LINUX-STAGE-A-ONCE-20261127",
-        "state": "APPROVED",
+        "state": "ISSUED",
         "source_sha": "304b24d71aef1c8e3e98211bb5e8ba2430932f4f",
         "scope": "One disposable Ubuntu 24.04 x64 job, attempt 1 only, exact CPython 3.11.18/pip 26.3, seven fixed wheel GETs/7,808,390 expected body bytes/zero redirects or retries, isolated hash-locked install and unchanged 19 generated-fixture PDFium tests, 30-minute outer/1500-second inner bound, owned settlement. No Stage B, browser, Pillow, Windows, Node, Rust, owner data, native product, model, installer, distribution or phase change.",
         "owner_authority_ref": {
@@ -291,7 +296,10 @@
           "proposal_sha": "adfc019d8706c665099621884e74f8509fa3b866"
         },
         "attempt": 1,
-        "reconcile_before_retry": false
+        "reconcile_before_retry": true,
+        "activation_parent": "a6273316e9ddc2516e172fe21f0fc8b010d4a2e8",
+        "workflow_blob": "129b272b79a6b0c4be8192ebc1edd83b110ba862",
+        "marker_blob": "fc10d6fb0a4b8dbca5cc5f06f81e24a96ef482c9"
       }
     ],
     "consumed_disarmed_count": 46,
