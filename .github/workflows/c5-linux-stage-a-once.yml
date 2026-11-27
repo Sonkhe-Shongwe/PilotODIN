@@ -1,15 +1,12 @@
-# Exact owner-approved one-use generated-fixture execution. Do not replay.
+# Consumed and disarmed after run 46031011314. Do not replay.
 name: C5 Linux Stage A once 20261127
 on:
-  push:
-    branches: [feature/live-dev-workspace-20261023]
-    paths:
-      - qa/c5_managed_dev/APPROVAL_LINUX_STAGE_A_ONCE_20261127.json
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
   linux-stage-a:
-    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/feature/live-dev-workspace-20261023' && github.event.before == 'a6273316e9ddc2516e172fe21f0fc8b010d4a2e8' && github.event.after == github.sha && github.event.head_commit.id == github.sha && github.event.head_commit.message == 'Execute approved Linux Stage A once 20261127' && github.run_attempt == 1 && github.event.forced == false && github.event.deleted == false }}
+    if: ${{ false }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
