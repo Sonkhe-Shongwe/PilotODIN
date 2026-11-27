@@ -1,0 +1,1 @@
+Owner explicitly approved exact C-D10 corrected simulation-only candidate 3239d8c65ec8e94219242b4b87654ac8cb132e2f. Operation C5-CD10-CORRECTED-SIMULATION-ONCE-20261127. Workflow 053f957e3050f26fe615750b555e804a782bcc88. Two HTTPS metadata GETs, 16.5 MiB, five-minute disposable Ubuntu24.04 runner, no package downloads, installation or application inspection. One use; no replay.
