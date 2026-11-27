@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-GITHUB-BROWSER-EMBEDDED-CREDITS-20261127",
-    "parent_sha": "4490994ea984eadc76a558c0b7a2f4b907a092c8",
-    "previous_snapshot_sha": "4490994ea984eadc76a558c0b7a2f4b907a092c8",
-    "scope": "Reconcile successful authenticated Chrome/Playwright basic smoke and disarm completed batch.",
+    "operation_id": "C5-PILLOW-PUBLISHER-NIGHTLY-ROUTE-20261127",
+    "parent_sha": "d7485c76797fd1082ce041c55ab079c57e870ec8",
+    "previous_snapshot_sha": "d7485c76797fd1082ce041c55ab079c57e870ec8",
+    "scope": "Establish new publisher public nightly route for exact corrected Pillow wheel.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--authenticated-chrome-and-playwright-sandboxed-browser-smoke-pass",
-      "blob_sha": "de13e131b64bc14fa77c3975683d4ff93a569615",
-      "start_line": 489,
-      "end_line": 495
+      "anchor": "27-november--pillow-publisher-nightly-index-route-established",
+      "blob_sha": "c288cdfd6cec10be0611af3ebc1e228e96445e8f",
+      "start_line": 497,
+      "end_line": 501
     }
   },
   "product": {
@@ -137,15 +137,22 @@
     "id": "C5-LINUX-FIRST-20261127",
     "status": "BLOCKED",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "Basic Linux Chrome .88/Playwright 1.65.1 compatibility verified via authenticated standard GitHub runner installation. Full C5 remains blocked on corrected Pillow custody or exact reviewed compatible published candidate, actual full-profile use/rights/regressions and final product browser graph integration.",
-    "next_action": "Resolve concrete supported private Pillow handoff or exact reviewed compatible published candidate using GitHub-only development authority within exact scoped limits. Integrate reviewed Playwright 1.65.1 full three-package product lock and exact standard Chrome route into final isolated C5 source only with full applicable input review; recover 982435f after exact binding and clearance. No standalone browser replay. Run required full Linux validation/regressions, Windows before D1; preserve all product acceptance.",
-    "next_action_kind": "MISSING_EVIDENCE",
+    "blocker": "Pillow publisher public nightly route now established by exact original build upload job; current file identity not yet verified. Need bounded metadata/hash match or separately reviewed new candidate, then full-profile integration/regressions.",
+    "next_action": "Prepare and bind one finite GitHub public nightly index acquisition/check for exact CP311 Linux Pillow filename and prior expected SHA256 1efce334; if mutable hash differs, establish separate exact candidate and applicable review before use. No PAT/private handoff, no unreviewed redirect or silent replacement. Seek exact new acquisition scope approval; consolidate with full-profile plan, not repeated isolated qualification.",
+    "next_action_kind": "OWNER_DECISION",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
       "Windows-specific verified input and compatibility prerequisites before actual production-equivalent D1, separately authorised; no installer.",
       "D2, G2 and remaining physical E2/P4 acceptance; no phase advance without evidence and owner signoff."
     ],
     "read": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "27-november--pillow-publisher-nightly-index-route-established",
+        "blob_sha": "c288cdfd6cec10be0611af3ebc1e228e96445e8f",
+        "start_line": 497,
+        "end_line": 501
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--authenticated-chrome-and-playwright-sandboxed-browser-smoke-pass",
@@ -373,24 +380,18 @@
     ]
   },
   "operation": {
-    "id": "C5-GITHUB-BROWSER-EMBEDDED-CREDITS-20261127",
+    "id": "C5-PILLOW-PUBLISHER-NIGHTLY-ROUTE-20261127",
     "state": "RECONCILED",
-    "starting_sha": "07b1e0502c687b41493d51421a3e5edb09b7c037",
-    "outcome": "Run 46058183125 job 140705700363 attempt 1 SUCCESS; authenticated Chrome .88 install, Playwright/core 1.65.1 archive and targeted notice checks, embedded Chrome credits, sandboxed fixture and leader/group cleanup pass. Six GETs/156907312 bytes, 0/2 replacements. Basic compatibility verified; full C5 open.",
+    "starting_sha": "d7485c76797fd1082ce041c55ab079c57e870ec8",
+    "outcome": "Publisher run 45528042532 upload job 139035615630 successfully published exact wheel filename to public nightly index. Current hash/URL/size unverified, mutable filename; no acquisition or execution. New supported route identified.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--authenticated-chrome-and-playwright-sandboxed-browser-smoke-pass",
-      "blob_sha": "de13e131b64bc14fa77c3975683d4ff93a569615",
-      "start_line": 489,
-      "end_line": 495
-    },
-    "technical_replacements_used": 0,
-    "max_technical_replacements": 2,
-    "cumulative_input_gets": 6,
-    "cumulative_accepted_bytes": 156907312,
-    "per_attempt_gets": 6,
-    "per_attempt_bytes": 163620096
+      "anchor": "27-november--pillow-publisher-nightly-index-route-established",
+      "blob_sha": "c288cdfd6cec10be0611af3ebc1e228e96445e8f",
+      "start_line": 497,
+      "end_line": 501
+    }
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next. Owner-approved GitHub-only development installation and bounded technical autonomy amendment applies within exact approved batches; no broader authority.",
@@ -668,7 +669,8 @@
     "Run 46054007845 failed before acquisition at npm config duplicate; no Chrome/Playwright compatibility or sandbox evidence. Correction c5a8faf disarmed, fresh execution grant mandatory.",
     "Corrected npm smoke 46054682735 passed exact managed Node/npm and syntax but user namespace mapping denied before any input acquisition; scratch route parked, no actual Chrome/Playwright compatibility or security certification.",
     "Run 46057698579 authenticated and installed exact Chrome .88; missing standalone notice file stopped before browser launch. Embedded notice and actual Playwright 1.65.1 compatibility unresolved. Aggregate budget remaining 2 GETs/10855386 bytes cannot repeat standard acquisition.",
-    "Basic browser smoke 46058183125 passed exact Chrome .88 and Playwright/core 1.65.1; npm no-save root extraneous entries expected for isolated fixture, not full product graph. Full profile/browser regression, actual full lock and Windows compatibility remain open; no blanket legal or host egress assurance."
+    "Basic browser smoke 46058183125 passed exact Chrome .88 and Playwright/core 1.65.1; npm no-save root extraneous entries expected for isolated fixture, not full product graph. Full profile/browser regression, actual full lock and Windows compatibility remain open; no blanket legal or host egress assurance.",
+    "Publisher public nightly index file is mutable under same 13.1.0.dev0 filename; exact November 25 upload proven but current listed body/hash unavailable in read-only browser. No silent use of different artifact."
   ],
   "context": {
     "protocol": {
