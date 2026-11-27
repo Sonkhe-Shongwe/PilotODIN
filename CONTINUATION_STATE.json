@@ -6,10 +6,10 @@
   },
   "checkpoint": {
     "operation_id": "C5-PILLOW-PUBLISHER-STORAGE-20261127",
-    "parent_sha": "43a97c0d034a2ac92fb9e4de0984eaf95054118e",
-    "previous_snapshot_sha": "43a97c0d034a2ac92fb9e4de0984eaf95054118e",
-    "scope": "Exact owner-approved Pillow publisher storage route write-ahead.",
-    "state": "PREPARED",
+    "parent_sha": "89f200524b3e6107df52104de4b732c0e509fb8c",
+    "previous_snapshot_sha": "89f200524b3e6107df52104de4b732c0e509fb8c",
+    "scope": "Exact Pillow publisher storage one-use activation issued.",
+    "state": "ISSUED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
       "anchor": "27-november--owner-approved-exact-pillow-publisher-storage-route-write-ahead",
@@ -135,10 +135,10 @@
   },
   "task": {
     "id": "C5-LINUX-FIRST-20261127",
-    "status": "PREPARED",
+    "status": "IN_PROGRESS",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "Approved exact publisher storage acquisition awaits execution.",
-    "next_action": "Publish exact activation and reconcile controlled storage wheel identity result.",
+    "blocker": "Actual controlled publisher storage verification pending.",
+    "next_action": "Inspect terminal exact run/job/log evidence and disarm; no silent substitution or excess GETs.",
     "next_action_kind": "RECONCILE",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
@@ -416,7 +416,7 @@
   },
   "operation": {
     "id": "C5-PILLOW-PUBLISHER-STORAGE-20261127",
-    "state": "PREPARED",
+    "state": "ISSUED",
     "starting_sha": "43a97c0d034a2ac92fb9e4de0984eaf95054118e",
     "scope": "One disposable nonroot Ubuntu 24.04 x64 job, five minutes, at most two fixed HTTPS GETs aggregate, one HTTP 302 HTTPS redirect from exact established public publisher wheel URL to exact binstar-cio-packages-prod.s3.amazonaws.com host and default port, no other redirects, proxies, retries, credentials or signed-query logging. Require exact wheel filename on decoded storage path, no userinfo, no fragment, exact Content-Length 7577621, actual size and independent SHA256 1efce33464fee627feb788b97b6c709203b7eaa13a72c5226f3c2a51d08a714d before writing or parsing; recheck stored hash and prior metadata/RECORD/LICENSE/Brotli hashes. No install/import/native use, product lock, owner or release changes. Stop on mismatches; no substitution.",
     "source_sha": "65928fac7fa7392dd3d62a282633af25c4bc392c",
@@ -435,9 +435,14 @@
     },
     "expected_evidence": "One exact attempt-1 job; publisher response, controlled storage hop, actual size/hash and conditional static member checks or terminal refusal; no install.",
     "recovery": "Inspect exact activation/run/job/logs, disarm and reconcile; no replay or substitution, aggregate two GETs.",
-    "reconcile_before_retry": false,
+    "reconcile_before_retry": true,
     "cumulative_input_gets": 0,
-    "cumulative_accepted_bytes": 0
+    "cumulative_accepted_bytes": 0,
+    "activation_parent": "89f200524b3e6107df52104de4b732c0e509fb8c",
+    "workflow": ".github/workflows/c5-browser-smoke-once.yml",
+    "workflow_blob": "f67dec8e7ad45d2f6bbbe6e6f93f6bfabde7f1c4",
+    "marker": "qa/c5_managed_dev/APPROVAL_BROWSER_SMOKE_ONCE_20261127.json",
+    "marker_blob": "075b4336474c0f34940f15a099f3105cabae8c59"
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next. Owner-approved GitHub-only development installation and bounded technical autonomy amendment applies within exact approved batches; no broader authority.",
@@ -445,7 +450,7 @@
     "restricted_active": [
       {
         "id": "C5-PILLOW-PUBLISHER-STORAGE-20261127",
-        "state": "APPROVED",
+        "state": "ISSUED",
         "source_sha": "65928fac7fa7392dd3d62a282633af25c4bc392c",
         "scope": "One disposable nonroot Ubuntu 24.04 x64 job, five minutes, at most two fixed HTTPS GETs aggregate, one HTTP 302 HTTPS redirect from exact established public publisher wheel URL to exact binstar-cio-packages-prod.s3.amazonaws.com host and default port, no other redirects, proxies, retries, credentials or signed-query logging. Require exact wheel filename on decoded storage path, no userinfo, no fragment, exact Content-Length 7577621, actual size and independent SHA256 1efce33464fee627feb788b97b6c709203b7eaa13a72c5226f3c2a51d08a714d before writing or parsing; recheck stored hash and prior metadata/RECORD/LICENSE/Brotli hashes. No install/import/native use, product lock, owner or release changes. Stop on mismatches; no substitution.",
         "owner_authority_ref": {
@@ -455,7 +460,7 @@
           "start_line": 523,
           "end_line": 525
         },
-        "reconcile_before_retry": false
+        "reconcile_before_retry": true
       }
     ],
     "consumed_disarmed_count": 54,
