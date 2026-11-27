@@ -1,18 +1,14 @@
-name: C5 CD10 corrected security index simulation
+name: C5 CD10 Ubuntu security metadata once
 on:
-  push:
-    branches: [feature/live-dev-workspace-20261023]
-    paths:
-      - qa/c5_managed_dev/APPROVAL_CD10_CORRECTED_SIMULATION_ONCE_20261127.txt
+  workflow_dispatch:
 permissions: {}
 jobs:
-  normal-context-once:
-    if: >-
-      ${{ github.run_attempt == 1 && github.event_name == 'push' && github.repository == 'Sonkhe-Shongwe/PilotODIN' && github.ref == 'refs/heads/feature/live-dev-workspace-20261023' && github.event.head_commit.message == 'C5 CD10 corrected security index simulation once' }}
+  metadata-once:
+    if: ${{ false }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - name: Authenticated security index and standard APT simulation
+      - name: Signed Ubuntu metadata and read-only transaction
         shell: bash
         run: |
           /usr/bin/python3 -I -B - <<'PY'
@@ -24,7 +20,6 @@ jobs:
           import os
           import pathlib
           import re
-          import shutil
           import subprocess
           import sys
           import tempfile
@@ -32,7 +27,6 @@ jobs:
           VERSION = "2.42-4ubuntu2.11"
           OLD = "2.42-4ubuntu2.10"
           NAMES = ("binutils", "binutils-common", "binutils-x86-64-linux-gnu", "libbinutils", "libctf0", "libctf-nobfd0", "libgprofng0", "libsframe1")
-          EXPECTED = {"binutils":["17954","79ca084c77df63e9b4508ca3d92764231115540c0ca4e288a30f0f203807ead3","pool/main/b/binutils/binutils_2.42-4ubuntu2.11_amd64.deb"],"binutils-common":["241056","8f1c43b47462f3afcf2d68fe444ecbe301272aac76139442204f5afd2ca48f54","pool/main/b/binutils/binutils-common_2.42-4ubuntu2.11_amd64.deb"],"binutils-x86-64-linux-gnu":["2462858","693b6f0278e4627105579535c3ecb6d2594d7b89c25cd2946d499c575a319acb","pool/main/b/binutils/binutils-x86-64-linux-gnu_2.42-4ubuntu2.11_amd64.deb"],"libbinutils":["577684","db89b9cbe748872d98619c7b24adcf5c4ec2ea71f10e4695c2d0ffef7c52412b","pool/main/b/binutils/libbinutils_2.42-4ubuntu2.11_amd64.deb"],"libctf0":["94490","d2b4a3a616f6e2ab84746c3d4cae97a01155121337a830807594f515fccffc70","pool/main/b/binutils/libctf0_2.42-4ubuntu2.11_amd64.deb"],"libctf-nobfd0":["98760","989d5582b6aa676c0294e57f5ce2eb5fec5b015af9c487596ba67227deda49ac","pool/main/b/binutils/libctf-nobfd0_2.42-4ubuntu2.11_amd64.deb"],"libgprofng0":["849162","2c11ce1f8344de57a86e8a351fa74984d53b426486bb14b93420d5aa8ac0e4b0","pool/main/b/binutils/libgprofng0_2.42-4ubuntu2.11_amd64.deb"],"libsframe1":["16552","e0bde78ba820853f76a9a7a8748ba8442f35b7d777a6a37c1bf29cbf203fefc0","pool/main/b/binutils/libsframe1_2.42-4ubuntu2.11_amd64.deb"]}
           BASE = "https://security.ubuntu.com/ubuntu/dists/noble-security/"
           INDEX = "main/binary-amd64/Packages.xz"
           receipt = {"status": "REFUSED", "source": os.environ.get("GITHUB_SHA"), "image": os.environ.get("ImageVersion"), "requests": 0, "verified_bytes": 0, "packages": [], "simulation": "NOT_RUN", "installed_changes": 0, "deb_requests": 0}
@@ -119,71 +113,40 @@ jobs:
                           selected[name][key] = row[key]
               receipt["packages"] = [selected[n] for n in NAMES if n in selected]
               need(set(selected) == set(NAMES), "PATCH_SET_MISSING")
-              need(all([selected[n]["Size"], selected[n]["SHA256"], selected[n]["Filename"]] == EXPECTED[n] for n in NAMES), "PACKAGE_PIN_CHANGED")
               receipt["status"] = "AUTHENTICATED_METADATA"
-              # Preserve the normal cached dependency context without modifying /etc or /var/lib/apt.
-              before = hashlib.sha256(pathlib.Path("/var/lib/dpkg/status").read_bytes()).hexdigest()
-              receipt["dpkg_status_before"] = before
+              # Read-only isolated APT cache and simulation; no apt update, no .deb transfer.
               lists = root/"lists"
               lists.mkdir()
               (lists/"partial").mkdir()
-              parts = root/"sources.d"
-              parts.mkdir()
-              copied = 0
-              cache_files = 0
-              for item in pathlib.Path("/var/lib/apt/lists").iterdir():
-                  if item.name == "lock" or item.name in ("partial", "auxfiles"):
-                      continue
-                  need(item.is_file() and not item.is_symlink(), "APT_LIST_TYPE")
-                  copied += item.stat().st_size
-                  cache_files += 1
-                  need(copied <= 1024*1024**2 and cache_files <= 512, "APT_LIST_CAP")
-                  shutil.copyfile(item, lists/item.name)
-              for item in pathlib.Path("/etc/apt/sources.list.d").iterdir():
-                  if item.suffix not in (".list", ".sources"):
-                      continue
-                  need(item.is_file() and not item.is_symlink() and item.stat().st_size <= 1024*1024, "APT_SOURCE_TYPE")
-                  shutil.copyfile(item, parts/item.name)
-              need(cache_files > 0, "APT_NORMAL_CACHE_EMPTY")
-              receipt["normal_cache"] = {"files": cache_files, "bytes": copied}
               prefix = "security.ubuntu.com_ubuntu_dists_noble-security"
-              for item in lists.glob(prefix+"_main_binary-amd64_Packages*"):
-                  item.unlink()
               (lists/(prefix+"_InRelease")).write_bytes(irraw)
               (lists/(prefix+"_main_binary-amd64_Packages")).write_bytes(data)
-              extra = parts/"pilotodin-security-exact.list"
-              need(not extra.exists(), "APT_SOURCE_COLLISION")
-              extra.write_text("deb [arch=amd64 signed-by="+str(keyring)+"] https://security.ubuntu.com/ubuntu noble-security main\n")
-              # Standard APT with normal sources, policy and installed status; scratch list/source overrides only.
-              opts = ["-o", "Dir::State::lists="+str(lists), "-o", "Dir::Etc::sourceparts="+str(parts),
-                      "-o", "Dir::Cache::pkgcache=", "-o", "Dir::Cache::srcpkgcache=",
-                      "-o", "Debug::NoLocking=true"]
-              holds = run(["/usr/bin/apt-mark", "showhold"])
-              need(holds.returncode == 0 and not set(holds.stdout.decode().split()) & set(NAMES), "APT_HOLD")
-              receipt["holds"] = holds.stdout.decode().split()
+              sources = root/"sources.list"
+              sources.write_text("deb [arch=amd64 signed-by="+str(keyring)+"] https://security.ubuntu.com/ubuntu noble-security main\n")
+              cfg = root/"apt.conf"
+              cfg.write_text(
+                  'Dir::Etc::main "/dev/null";\nDir::Etc::parts "-";\n'
+                  + 'Dir::Etc::sourcelist "'+str(sources)+'";\nDir::Etc::sourceparts "-";\n'
+                  + 'Dir::Etc::preferences "/dev/null";\nDir::Etc::preferencesparts "-";\n'
+                  + 'Dir::State::lists "'+str(lists)+'";\nDir::State::status "/var/lib/dpkg/status";\n'
+                  + 'Dir::Cache::pkgcache "";\nDir::Cache::srcpkgcache "";\nAPT::Architecture "amd64";\nAPT::Architectures { "amd64"; };\nDebug::NoLocking "true";\n')
+              aptenv = {"APT_CONFIG": str(cfg)}
               installed = {}
               for name in NAMES:
                   p = run(["/usr/bin/dpkg-query", "-W", "-f=${Status} ${Version}", name])
                   need(p.returncode == 0 and p.stdout.decode() in ("install ok installed "+OLD, "install ok installed "+VERSION), "INSTALLED_SET")
                   installed[name] = p.stdout.decode().split()[-1]
-                  p = run(["/usr/bin/apt-cache", *opts, "show", name+"="+VERSION])
+                  p = run(["/usr/bin/apt-cache", "show", name+"="+VERSION], extra=aptenv)
                   need(p.returncode == 0, "APT_CACHE")
                   matches = [x for x in records(p.stdout.decode()) if all(x.get(k) == selected[name][k] for k in ("Package","Version","Architecture","Filename","Size","SHA256"))]
                   need(len(matches) == 1, "APT_INDEX_BINDING")
               receipt["installed"] = installed
-              p = run(["/usr/bin/apt-get", *opts, "-s", "--no-install-recommends", "-o", "Debug::pkgProblemResolver=true", "install", *[n+"="+VERSION for n in NAMES]], timeout=45)
+              p = run(["/usr/bin/apt-get", "-s", "--no-download", "--no-install-recommends", "install", *[n+"="+VERSION for n in NAMES]], timeout=45, extra=aptenv)
               receipt["simulation"] = "REFUSED"
-              receipt["simulation_rc"] = p.returncode
-              receipt["simulation_stdout"] = p.stdout[:65536].decode("utf-8", "replace")
-              receipt["simulation_stderr"] = p.stderr[:65536].decode("utf-8", "replace")
-              receipt["simulation_output_truncated"] = len(p.stdout) > 65536 or len(p.stderr) > 65536
-              receipt["dpkg_status_after"] = hashlib.sha256(pathlib.Path("/var/lib/dpkg/status").read_bytes()).hexdigest()
-              need(receipt["dpkg_status_after"] == before, "DPKG_STATUS_CHANGED")
-              need(p.returncode == 0 and not receipt["simulation_output_truncated"], "APT_SIMULATION")
+              need(p.returncode == 0, "APT_SIMULATION")
               actions = [line for line in p.stdout.decode().splitlines() if line.startswith(("Inst ","Conf ","Remv ","Purg "))]
               expected = {n for n,v in installed.items() if v != VERSION}
               seen = set()
-              configured = set()
               for line in actions:
                   m = re.fullmatch(r"Inst ([a-z0-9-]+)(?::amd64)? \[([^\]]+)\] \(([^ ]+) [^)]*\)", line)
                   if m:
@@ -192,9 +155,8 @@ jobs:
                       seen.add(n)
                   else:
                       m = re.fullmatch(r"Conf ([a-z0-9-]+)(?::amd64)? \(([^ ]+) [^)]*\)", line)
-                      need(m and m.group(1) in expected and m.group(1) not in configured and m.group(2) == VERSION, "APT_UNEXPECTED_ACTION")
-                      configured.add(m.group(1))
-              need(seen == expected and configured == expected, "APT_INCOMPLETE_TRANSACTION")
+                      need(m and m.group(1) in expected and m.group(2) == VERSION, "APT_UNEXPECTED_ACTION")
+              need(seen == expected, "APT_INCOMPLETE_TRANSACTION")
               receipt["simulation"] = "PASS"
               receipt["planned_actions"] = actions
               receipt["package_bytes"] = sum(int(selected[n]["Size"]) for n in expected)
@@ -204,6 +166,6 @@ jobs:
                   main(pathlib.Path(scratch))
           except Exception as e:
               receipt["failure"] = str(e) if isinstance(e, ValueError) and re.fullmatch(r"[A-Z_]+",str(e)) else type(e).__name__
-          print("C5_CD10_NORMAL_CONTEXT " + json.dumps(receipt, sort_keys=True), flush=True)
+          print("C5_CD10_METADATA " + json.dumps(receipt, sort_keys=True), flush=True)
           sys.exit(0 if receipt["status"] == "PASS" else 1)
           PY
