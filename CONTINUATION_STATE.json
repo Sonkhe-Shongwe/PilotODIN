@@ -6,10 +6,10 @@
   },
   "checkpoint": {
     "operation_id": "C5-GITHUB-BROWSER-EMBEDDED-CREDITS-20261127",
-    "parent_sha": "07b1e0502c687b41493d51421a3e5edb09b7c037",
-    "previous_snapshot_sha": "07b1e0502c687b41493d51421a3e5edb09b7c037",
-    "scope": "Exact new browser batch per-attempt budget and embedded credits write-ahead.",
-    "state": "PREPARED",
+    "parent_sha": "19a6ec86b29a679854d959bec65b5bc34fd71858",
+    "previous_snapshot_sha": "19a6ec86b29a679854d959bec65b5bc34fd71858",
+    "scope": "Exact embedded credits browser activation issued; reconcile before replacement.",
+    "state": "ISSUED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
       "anchor": "27-november--per-attempt-browser-budget-approval-and-embedded-credits-correction",
@@ -135,10 +135,10 @@
   },
   "task": {
     "id": "C5-LINUX-FIRST-20261127",
-    "status": "PREPARED",
+    "status": "IN_PROGRESS",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "Embedded notice correction and fresh per-attempt budget approved; actual verification pending.",
-    "next_action": "Publish exact one-use embedded-credits activation and reconcile actual result, use bounded technical replacement only if eligible.",
+    "blocker": "Embedded credits browser activation issued; actual result pending.",
+    "next_action": "Inspect exact activation HEAD and terminal run/job logs, reconcile and disarm. Apply per-attempt technical replacement authority only on qualifying fault.",
     "next_action_kind": "RECONCILE",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
@@ -367,7 +367,7 @@
   },
   "operation": {
     "id": "C5-GITHUB-BROWSER-EMBEDDED-CREDITS-20261127",
-    "state": "PREPARED",
+    "state": "ISSUED",
     "starting_sha": "07b1e0502c687b41493d51421a3e5edb09b7c037",
     "scope": "Disposable GitHub-hosted Ubuntu 24.04 x64 job; five minutes per attempt, initial plus maximum two qualifying technical replacements; per-attempt maximum six fixed acquisition GETs and 163620096 accepted bytes; batch maximum 18 GETs and 490860288 accepted bytes. No transfer retry, redirect, proxy, fallback, new inputs, owner/native product/model/Pillow/installer/release or security weakening. Exact Chrome .88 standard authenticated dpkg install, Playwright/core 1.65.1, actual local embedded chrome://credits before fixture, sandbox and all prior identity/hash/notice/settlement checks retained.",
     "source_sha": "9d35fe7f223d459a3c9fd8b17f37838aedf849a4",
@@ -386,13 +386,18 @@
     },
     "expected_evidence": "Attempt 1 exact run, signed package install or managed Chrome, verified Playwright, actual credits receipt and unchanged functional smoke, or exact terminal refusal; disarm and bounded technical corrections only.",
     "recovery": "Inspect live exact activation/run/job/logs before action. Disarm predecessor; at most two qualifying corrected replacements, six GETs/163620096 bytes each; stop on security/host/rights/uncertain refusal.",
-    "reconcile_before_retry": false,
+    "reconcile_before_retry": true,
     "technical_replacements_used": 0,
     "max_technical_replacements": 2,
     "cumulative_input_gets": 0,
     "cumulative_accepted_bytes": 0,
     "per_attempt_gets": 6,
-    "per_attempt_bytes": 163620096
+    "per_attempt_bytes": 163620096,
+    "activation_parent": "19a6ec86b29a679854d959bec65b5bc34fd71858",
+    "workflow": ".github/workflows/c5-browser-smoke-once.yml",
+    "workflow_blob": "dce8e6f3629ec4a8888fb5822710e2c70e0144c4",
+    "marker": "qa/c5_managed_dev/APPROVAL_BROWSER_SMOKE_ONCE_20261127.json",
+    "marker_blob": "b87dbb44c468f1b816ff8a2ee8e508a2a369ba39"
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next. Owner-approved GitHub-only development installation and bounded technical autonomy amendment applies within exact approved batches; no broader authority.",
@@ -400,7 +405,7 @@
     "restricted_active": [
       {
         "id": "C5-GITHUB-BROWSER-EMBEDDED-CREDITS-20261127",
-        "state": "APPROVED",
+        "state": "ISSUED",
         "source_sha": "9d35fe7f223d459a3c9fd8b17f37838aedf849a4",
         "scope": "Disposable GitHub-hosted Ubuntu 24.04 x64 job; five minutes per attempt, initial plus maximum two qualifying technical replacements; per-attempt maximum six fixed acquisition GETs and 163620096 accepted bytes; batch maximum 18 GETs and 490860288 accepted bytes. No transfer retry, redirect, proxy, fallback, new inputs, owner/native product/model/Pillow/installer/release or security weakening. Exact Chrome .88 standard authenticated dpkg install, Playwright/core 1.65.1, actual local embedded chrome://credits before fixture, sandbox and all prior identity/hash/notice/settlement checks retained.",
         "owner_authority_ref": {
@@ -410,7 +415,7 @@
           "start_line": 485,
           "end_line": 487
         },
-        "reconcile_before_retry": false
+        "reconcile_before_retry": true
       }
     ],
     "consumed_disarmed_count": 51,
