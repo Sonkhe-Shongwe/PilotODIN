@@ -26,6 +26,13 @@ This is an index of decisions, not a parallel requirements document. The Master 
 
 For a material design, safety, scope or evidence-method decision, record an ID, date, status (proposed/accepted/superseded/blocked), question, selected option, rejected alternatives, rationale, affected invariants, limitations, evidence, approval requirement and reopen condition. Write it before a consequential action where feasible; link from the journal. If an existing specification already owns it, update that specification and add a link here only if cross-cutting navigation needs it. Preserve superseded decisions and point to the replacement. A proposed method or agent recommendation never substitutes for owner acceptance or new authority.
 
+## 27 November | Current scoped decisions and unresolved proposals
+
+- **C-D09, adopted within scope:** [managed-development assurance](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md#27-november-2026--owner-approved-c-d09-proportionate-development-assurance), [one-time publisher-first review](./C5_PROPORTIONATE_INSPECTION_DECISION_2026-11-27.md), and [narrow runner-blocker sequencing exception](./C5_RUNNER_BLOCKER_SEQUENCING_DECISION_2026-11-27.md). No broader risk waiver or execution grant.
+- **Standalone Windows Stage A, preparation only:** [sequencing approval](./C5_STANDALONE_WINDOWS_A_PREPARATION_2026-11-27.md), [exact Astral runtime candidate approval](./C5_WINDOWS_A_ASTRAL_PREPARATION_2026-11-27.md). No actual runtime qualification or functional execution.
+- **D1 requirements prepared, not implementation or acceptance:** [production-equivalent journey](./P4_D1_PRODUCTION_JOURNEY_REQUIREMENTS_2026-11-27.md). Current independent preparation scope exhausted; rejoin C5 before closure.
+- **Proposed, not approved:** [latest decision discussion and migration audit](./DOCUMENTATION_AUDIT_C5_D1_MIGRATION_2026-11-27.md#3-d1d2-and-owner-discussion) records C5 applicability-based qualification, production-equivalent D1 testing, equivalent G2 proof and bounded consolidated approvals. Preserve the existing phase policy and [G2 closure decision](./P4_R02_5_G2_CONSOLIDATED_CLOSURE_DECISION_2026-11-24.md) until an explicit, sufficiently scoped owner decision is recorded. Live state controls the next discussion; no automatic execution.
+
 ## Package C decision references
 
 The dated R1/R2 proposals and approvals below are historical, at their recorded scopes. The later C-D08-SCOPE-RATIONALISATION decision controls current sequencing, and the [handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md) controls current approval state. No unresolved optional R2 wrapper is a mandatory C5 prerequisite absent an identified requirement.

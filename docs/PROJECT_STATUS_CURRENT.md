@@ -1,6 +1,6 @@
 # PilotODIN 1.0 | Current project status
 
-**CURRENT | Official acceptance scorecard.** The [P4 engineering scorecard](#p4-engineering-scorecard) is the authoritative earned acceptance record. The [live handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md) owns source progress and next action. [Current documentation audit](./DOCUMENTATION_AUDIT_C5_POST_PDFIUM_2026-11-26.md) · [Pre-audit scorecard and chronology](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/bd7c1639c3b98ae93e0d83b8170e189dc042b365/docs/PROJECT_STATUS_CURRENT.md). Historical material is not current instruction.
+**CURRENT | Official acceptance scorecard.** The [P4 engineering scorecard](#p4-engineering-scorecard) is the authoritative earned acceptance record. The [live operational state](../CONTINUATION_STATE.json) owns source progress and next action; the [legacy handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md) is a compatibility route. [Current documentation audit](./DOCUMENTATION_AUDIT_C5_D1_MIGRATION_2026-11-27.md) · [Pre-audit scorecard and chronology](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/bd7c1639c3b98ae93e0d83b8170e189dc042b365/docs/PROJECT_STATUS_CURRENT.md). Historical material is not current instruction.
 
 ## Phase ledger
 

@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "P4-D1-PRODUCTION-JOURNEY-REQUIREMENTS-20261127",
-    "parent_sha": "2006718ad2e67d704eab386551dbd3a1150210ff",
-    "previous_snapshot_sha": "2006718ad2e67d704eab386551dbd3a1150210ff",
-    "scope": "Finish finite independent D1 source-derived requirements; identify production identifier gate and limitations of existing smoke.",
+    "operation_id": "DOC-AUDIT-C5-D1-MIGRATION-20261127",
+    "parent_sha": "fdceaabaa37a78eb6e6f1fc48d437c63256204cc",
+    "previous_snapshot_sha": "fdceaabaa37a78eb6e6f1fc48d437c63256204cc",
+    "scope": "Owner-requested active-document audit and new-conversation continuity; no execution, product, permissions or acceptance changes.",
     "state": "RECONCILED",
     "receipt": {
-      "path": "docs/P4_D1_PRODUCTION_JOURNEY_REQUIREMENTS_2026-11-27.md",
-      "anchor": "pilotodin--d1-production-equivalent-disposable-journey-requirements",
-      "blob_sha": "ce8cbe509a91823cbb37bbb62f30dc953d3ad664",
+      "path": "docs/DOCUMENTATION_AUDIT_C5_D1_MIGRATION_2026-11-27.md",
+      "anchor": "pilotodin--c5d1-documentation-and-migration-audit",
+      "blob_sha": "8a25be369d7b40589fb9fbbf576a6cc78a736169",
       "start_line": 1,
-      "end_line": 33
+      "end_line": 47
     }
   },
   "product": {
@@ -87,7 +87,7 @@
       "owner": {
         "path": "docs/PROJECT_STATUS_CURRENT.md",
         "anchor": "p4-engineering-scorecard",
-        "blob_sha": "aa50bffe7b62aad25a69522da99d89237aa5547f",
+        "blob_sha": "16e153a761527f4f87898179abfe95882d77dd87",
         "start_line": 31,
         "end_line": 60
       }
@@ -119,14 +119,22 @@
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
     "status": "BLOCKED",
     "scope": "C-D08 development reproducibility/build safety as revised by C-D09 limited managed-development evidence method; D native and P8 release boundaries unchanged.",
-    "blocker": "C5 standard verifier/control traffic/settlement and pre-use qualification unresolved. Independent D1 requirements preparation completed within existing exception; actual production-equivalent evidence requires reviewed artifact/environment and separately resolved G2 method and authority. No further supported independent work in current scope.",
-    "next_action": "Stop repetitive preparation. Rejoin C5 only on concrete supported reviewed standard inspection/execution route and separate exact authority, or await distinct owner decision on D2/G2 evidence method preserving all mandatory outcomes. No generic next approval, phase advance, additional speculative framework, repeated synthetic tests or provider polling. D1 finite requirements recorded; no D implementation or native execution authorized.",
-    "next_action_kind": "MISSING_EVIDENCE",
+    "blocker": "C5 supported pre-use qualification/execution route remains unresolved; D1 independent requirements complete but no actual product evidence; G2 existing original-handle/physical-destination proof blocked. Latest discussion proposed applicability-based tool review, production-equivalent D1, equivalent G2 evidence and consolidated bounded approvals; none newly approved. No active restricted grants.",
+    "next_action": "Resume the owner's C5 decision discussion from the migration audit section 3. First distinguish existing approved C-D09/proportionate development assurance from any proposed change, define finite applicability-based standard-tool qualification and exact retained product/security/licensing/test invariants, then seek explicit scoped owner decision only where needed. No repeated infrastructure preparation, runner polling, unchanged synthetic tests, automatic acquisition or execution. If C5 cannot proceed, discuss G2 equivalent proof feasibility and separate owner decision, not a method change by inference. D1 requirements preparation exhausted within existing exception; no new D implementation or phase advance.",
+    "next_action_kind": "OWNER_DECISION",
     "after": [
-      "Complete targeted applicable pre-use evidence and exact approved staging/inspection for genuinely unresolved components; no blanket binutils requirement or rights waiver.",
-      "Execute separately approved conditional validation with all retained Stage A/B, font, frontend, Rust and matched P1/P4 predicates; audit eight C5 rows; D/G2/E2/P5/installer boundaries unchanged."
+      "Once supported C5 method and exact authority exist, resolve applicable pre-use security/licence/provenance and settlement facts, then run one separately approved finite standalone Windows Stage A transaction with all 19 predicates; no implied qualification.",
+      "Rejoin full C5 Stage A/B and retained font/frontend/Rust/P1/P4 evidence, audit eight C5 rows; resolve production Pillow/Brotli concern and exact remaining profiles before closure.",
+      "Separate explicit G2 method decision, independently proven feasibility, production-equivalent D1/D2 and physical 8 GB/original-data evidence before P4 closure/signoff. No P5 or installer activation."
     ],
     "read": [
+      {
+        "path": "docs/DOCUMENTATION_AUDIT_C5_D1_MIGRATION_2026-11-27.md",
+        "anchor": "pilotodin--c5d1-documentation-and-migration-audit",
+        "blob_sha": "8a25be369d7b40589fb9fbbf576a6cc78a736169",
+        "start_line": 1,
+        "end_line": 47
+      },
       {
         "path": "docs/P4_D1_PRODUCTION_JOURNEY_REQUIREMENTS_2026-11-27.md",
         "anchor": "pilotodin--d1-production-equivalent-disposable-journey-requirements",
@@ -156,67 +164,11 @@
         "end_line": 15
       },
       {
-        "path": "docs/C5_WINDOWS_A_CP311_RUNTIME_ALTERNATIVE_2026-11-27.md",
-        "anchor": "pilotodin--exact-windows-stage-a-cp311-runtime-alternative",
-        "blob_sha": "db6dad98c2df36cc09d56db3521ea51ac0552fe7",
-        "start_line": 1,
-        "end_line": 25
-      },
-      {
-        "path": "docs/C5_STANDALONE_WINDOWS_A_PREPARATION_2026-11-27.md",
-        "anchor": "pilotodin--standalone-windows-stage-a-preparation",
-        "blob_sha": "8afce88dd7298844fe6b862344db96491add6e8f",
-        "start_line": 1,
-        "end_line": 17
-      },
-      {
-        "path": "docs/C5_REDUCED_STAGE_A_CANDIDATE_2026-11-27.md",
-        "anchor": "pilotodin--reduced-stage-a-source-candidate",
-        "blob_sha": "1e32780b0ef1100c5ae772c013488bd5f22cec1c",
-        "start_line": 1,
-        "end_line": 23
-      },
-      {
-        "path": "docs/C5_DIRECT_RGB_ALTERNATIVE_2026-11-27.md",
-        "anchor": "pilotodin--direct-rgb-conversion-concrete-dependency-reduction",
-        "blob_sha": "db5a3fe359fcfe845b351bac57f86724960ef364",
-        "start_line": 1,
-        "end_line": 21
-      },
-      {
-        "path": "docs/C5_STAGE_A_PUBLISHER_REVIEW_2026-11-27.md",
-        "anchor": "pilotodin--stage-a-targeted-publisher-and-security-review",
-        "blob_sha": "796e6f56cb849c213089b0f523c9659a4be01e06",
-        "start_line": 1,
-        "end_line": 32
-      },
-      {
         "path": "docs/C5_PROPORTIONATE_INSPECTION_DECISION_2026-11-27.md",
         "anchor": "pilotodin--one-time-c5-proportionate-inspection-method",
         "blob_sha": "1fc6542e523f4a4393c01f419bb4db8f158ec5e2",
         "start_line": 1,
         "end_line": 75
-      },
-      {
-        "path": "docs/C5_INDEPENDENT_PYTHON_STAGING_2026-11-27.md",
-        "anchor": "pilotodin--independent-python-staging-and-final-witness-source-integration",
-        "blob_sha": "a29e8585b0b38492d16cb22b3c9ceaeb31ae29a4",
-        "start_line": 1,
-        "end_line": 26
-      },
-      {
-        "path": "docs/C5_INDEPENDENT_VALIDATION_COORDINATOR_2026-11-27.md",
-        "anchor": "pilotodin--independent-conditional-validation-coordinator",
-        "blob_sha": "bacb3244ba254da233e81a3248859165de9cecf0",
-        "start_line": 1,
-        "end_line": 25
-      },
-      {
-        "path": "docs/C5_CD09_VALIDATION_WITNESSES_2026-11-27.md",
-        "anchor": "pilotodin--c-d09-disarmed-validation-witness-integration",
-        "blob_sha": "898cc6034160d1a79e788a55d0523bb066f89030",
-        "start_line": 1,
-        "end_line": 24
       },
       {
         "path": "docs/C5_RUNNER_BLOCKER_SEQUENCING_DECISION_2026-11-27.md",
@@ -226,205 +178,23 @@
         "end_line": 12
       },
       {
-        "path": "docs/C5_CD10_INTEGRATED_REGRESSION_2026-11-27.md",
-        "anchor": "pilotodin--c-d10-complete-retained-synthetic-regression",
-        "blob_sha": "e3a3712a238453e78c71f13a80d8473fac317c5a",
-        "start_line": 1,
-        "end_line": 18
-      },
-      {
-        "path": "docs/C5_CD10_PARSER_SETTLEMENT_CORRECTION_2026-11-27.md",
-        "anchor": "pilotodin--c-d10-focused-transaction-and-settlement-corrections",
-        "blob_sha": "32726e118b7fc5cc78d018b4ca81b14d67a71019",
-        "start_line": 1,
-        "end_line": 19
-      },
-      {
-        "path": "docs/C5_CD10_CORRECTED_SIMULATION_RECEIPT_2026-11-27.md",
-        "anchor": "pilotodin--c-d10-corrected-simulation-receipt",
-        "blob_sha": "81d4b8706d0c4608fff6768d0fa4fffaf3da15fd",
-        "start_line": 1,
-        "end_line": 17
-      },
-      {
-        "path": "docs/C5_CD10_CORRECTED_SIMULATION_CANDIDATE_2026-11-27.md",
-        "anchor": "pilotodin--c-d10-corrected-simulation-candidate",
-        "blob_sha": "a08097b49f2ceee2fa98b6be89fff4b1c4b37ed0",
-        "start_line": 1,
-        "end_line": 13
-      },
-      {
-        "path": "docs/C5_CD10_NORMAL_CONTEXT_SIMULATION_RECEIPT_2026-11-27.md",
-        "anchor": "pilotodin--c-d10-normal-context-simulation-and-concrete-apt-flag-diagnosis",
-        "blob_sha": "fb510bdde0f3d38c038fe6d640e40c86e32ca7a3",
-        "start_line": 1,
-        "end_line": 19
-      },
-      {
-        "path": "docs/C5_CD10_NORMAL_CONTEXT_SIMULATION_CANDIDATE_2026-11-27.md",
-        "anchor": "pilotodin--c-d10-normal-context-simulation-candidate",
-        "blob_sha": "b8792ebaeeaf367261505a6ab40748bd7b0a2540",
-        "start_line": 1,
-        "end_line": 15
-      },
-      {
-        "path": "docs/C5_CD10_NORMAL_APT_DIAGNOSIS_2026-11-27.md",
-        "anchor": "pilotodin--c-d10-standard-read-only-apt-diagnosis",
-        "blob_sha": "4982da04099c899ca09454fa73f77ae1f9d5acf3",
-        "start_line": 1,
-        "end_line": 24
-      },
-      {
-        "path": "docs/C5_CD10_AUTHENTICATED_METADATA_RECEIPT_2026-11-27.md",
-        "anchor": "pilotodin--c-d10-corrected-one-use-authenticated-ubuntu-metadata-receipt",
-        "blob_sha": "cee63c29e993eda889d45dd6e1fc254808d94d55",
-        "start_line": 1,
-        "end_line": 19
-      },
-      {
-        "path": "docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md",
-        "anchor": "27-november-2026--owner-approved-bounded-technical-retry-rule",
-        "blob_sha": "89f7179175b22eaac88aee8c5fc337f8d7981276",
-        "start_line": 3,
-        "end_line": 9,
-        "owner_quote": "okay lets do that",
-        "original_owner_quote": "i aprove",
-        "original_run": 45972049954,
-        "previous_disarm": "dbb16ce41687a8504fe7b9b58502c682c6baaa5f"
-      },
-      {
-        "path": "docs/C5_CD10_UBUNTU_METADATA_ATTEMPT_2026-11-27.md",
-        "anchor": "pilotodin--c-d10-ubuntu-metadata-one-use-attempt-pre-job-configuration-failure",
-        "blob_sha": "11fd94971a0b9333331419913343931f6e493c4d",
-        "start_line": 1,
-        "end_line": 13
-      },
-      {
-        "path": "docs/C5_CD10_SECURITY_TRANSACTION_REVIEW_2026-11-27.md",
-        "anchor": "pilotodin--c-d10-security-transaction-preparation-and-concrete-blocker",
-        "blob_sha": "356cbaf3ab95845a3ae2b01d587fa0087774ea7f",
-        "start_line": 1,
-        "end_line": 11
-      },
-      {
-        "path": "docs/C5_PRODUCT_FIRST_REALIGNMENT_2026-11-27.md",
-        "anchor": "pilotodin--product-first-realignment-and-finite-c5-closure-proposal",
-        "blob_sha": "58a17facaaa338e41869254d64a0885a8e005ffe",
-        "start_line": 1,
-        "end_line": 25
-      },
-      {
-        "path": "docs/C5_CD09_EXACT_MANIFEST_RECEIPT_2026-11-27.md",
-        "anchor": "pilotodin--c-d09-exact-manifest-offline-source-ci-receipt",
-        "blob_sha": "ebc499e920b232d0d047f403e1623458d2fd6d7d",
-        "start_line": 1,
-        "end_line": 19
-      },
-      {
-        "path": "docs/C5_CD09_PDFIUM_OVERLAY_REVIEW_2026-11-27.md",
-        "anchor": "pilotodin--c-d09-conditional-pdfium-overlay-source-review",
-        "blob_sha": "f6271252a8844d8be498c693d4aae1fa174e8fe7",
-        "start_line": 1,
-        "end_line": 26
-      },
-      {
-        "path": "docs/C5_CD09_INSPECTION_DRIVER_2026-11-27.md",
-        "anchor": "pilotodin--c-d09-integrated-disarmed-inspection-driver",
-        "blob_sha": "de8b16ede762a891c8cd6c3f6debd75e4e58ca7a",
-        "start_line": 1,
-        "end_line": 20
-      },
-      {
-        "path": "docs/C5_CD09_INSPECTION_ADAPTER_2026-11-27.md",
-        "anchor": "pilotodin--c-d09-disarmed-inspection-adapter-primitives",
-        "blob_sha": "cf1447c6d7e6da394b9ef1545c57e681f69d1138",
-        "start_line": 1,
-        "end_line": 16
-      },
-      {
-        "path": "docs/C5_CD09_INSPECTION_CORE_2026-11-27.md",
-        "anchor": "pilotodin--c-d09-disarmed-inspection-core",
-        "blob_sha": "b4ccefc7d7709c272bcebb1da8d240db55047e21",
-        "start_line": 1,
-        "end_line": 17
-      },
-      {
-        "path": "docs/C5_CD09_INSPECTION_SCOPE_2026-11-27.md",
-        "anchor": "pilotodin--c-d09-inspection-only-scope-and-transport-preparation",
-        "blob_sha": "2a5c38752c3db77b45e59799198513916836b250",
-        "start_line": 1,
-        "end_line": 23
-      },
-      {
-        "path": "docs/C5_CD09_TARGETED_USE_QUALIFICATION_2026-11-27.md",
-        "anchor": "pilotodin--c-d09-targeted-dependency-use-qualification",
-        "blob_sha": "3d1b8d3697e51d531e4fd8ca7c31bcaf69a2ef58",
-        "start_line": 1,
-        "end_line": 29
-      },
-      {
-        "path": "docs/C5_CD09_VALIDATION_CANDIDATE_2026-11-27.md",
-        "anchor": "pilotodin--c-d09-consolidated-validation-candidate",
-        "blob_sha": "d3342ec2496b104e22353f2ab295f269dffe9d6e",
-        "start_line": 1,
-        "end_line": 18
-      },
-      {
-        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
-        "anchor": "27-november-2026--owner-approved-c-d09-proportionate-development-assurance",
-        "blob_sha": "460775ef4e6e233bb510142649160d49e6d55231",
-        "start_line": 3,
-        "end_line": 11
-      },
-      {
-        "path": "docs/C5_PROPORTIONALITY_REVIEW_2026-11-27.md",
-        "anchor": "pilotodin--c5-critical-proportionality-review-and-proposed-decision-c-d09",
-        "blob_sha": "27e39f814cd29a738526b5a5aceb11407680c8f4",
-        "start_line": 1,
-        "end_line": 40
-      },
-      {
-        "path": "docs/C5_CONSOLIDATED_COMPLETION_PLAN_2026-11-27.md",
-        "anchor": "pilotodin--consolidated-c5-completion-plan",
-        "blob_sha": "a75a9bbe10f82e8b62a8331d6a59741135f03402",
-        "start_line": 1,
-        "end_line": 46
-      },
-      {
-        "path": "docs/C5_FONT_USE_EVIDENCE_2026-11-27.md",
-        "anchor": "27-november--c5-exact-font-and-notice-use-reconciliation-preserve-initial-10-scope",
-        "blob_sha": "d7f3bb7fa2fd8675c1e0160f98a15eaeb6ee15fa",
-        "start_line": 1,
-        "end_line": 26
-      },
-      {
-        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "27-november--c5-three-primary-notice-fingerprints-reconciled-and-residual-licence-use-facts",
-        "blob_sha": "9c4c131e776a14406e27b462a2f5b35e461adbd1",
-        "start_line": 2929,
-        "end_line": 2939
-      },
-      {
-        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "27-november--c5-exact-source-test-actual-use-licence-gap-reconciliation",
-        "blob_sha": "9c4c131e776a14406e27b462a2f5b35e461adbd1",
-        "start_line": 2834,
-        "end_line": 2844
+        "path": "docs/P4_R02_5_G2_CONSOLIDATED_CLOSURE_DECISION_2026-11-24.md",
+        "blob_sha": "8906f34d7e3c29f16417506985e7a14da9afe319"
       }
     ]
   },
   "operation": {
-    "id": "P4-D1-PRODUCTION-JOURNEY-REQUIREMENTS-20261127",
+    "id": "DOC-AUDIT-C5-D1-MIGRATION-20261127",
     "state": "RECONCILED",
-    "starting_sha": "2006718ad2e67d704eab386551dbd3a1150210ff",
-    "outcome": "D1 exact production entrypoints/profile/legacy selection and required witness matrix documented; isolated QA identifier bypasses production profile path; no code, build, native run or acceptance change.",
+    "starting_sha": "fdceaabaa37a78eb6e6f1fc48d437c63256204cc",
+    "outcome": "Reconciled exact CI and scorecard, corrected stale policy binding and navigation, preserved 28 detached records and historical evidence; shortened task reading list. Latest C5/D1/G2 and bounded approval ideas remain proposals only.",
     "reconcile_before_retry": false,
     "receipt": {
-      "path": "docs/P4_D1_PRODUCTION_JOURNEY_REQUIREMENTS_2026-11-27.md",
-      "anchor": "pilotodin--d1-production-equivalent-disposable-journey-requirements",
-      "blob_sha": "ce8cbe509a91823cbb37bbb62f30dc953d3ad664",
+      "path": "docs/DOCUMENTATION_AUDIT_C5_D1_MIGRATION_2026-11-27.md",
+      "anchor": "pilotodin--c5d1-documentation-and-migration-audit",
+      "blob_sha": "8a25be369d7b40589fb9fbbf576a6cc78a736169",
       "start_line": 1,
-      "end_line": 33
+      "end_line": 47
     }
   },
   "authority": {
@@ -588,7 +358,8 @@
     "All four C5 machine profiles blocked; applicable toolchain/npm/PDFium notice/linkage and installed readiness incomplete.",
     "G2 original handle/physical destination/coverage proof unresolved; governing native runs 44838416004 and 45342345634 retain filesystem/network failures and unresolved credits; no new method or G2.x without owner decision.",
     "Physical 8 GB bundled inference/coexistence, DPAPI, actual desktop egress/durability and production IPC/physical destination unverified; D prerequisites retained.",
-    "R06 original-data historical full-tree 74 differences, unknown writer; prospective preservation pending. No loss of original data permitted."
+    "R06 original-data historical full-tree 74 differences, unknown writer; prospective preservation pending. No loss of original data permitted.",
+    "Standalone Windows A candidate 0c1590f57c4d62d58dca482c03ac9948009e90a4, exact Astral runtime and 8 application archives remain inactive; provenance, actual rights/security, Windows settlement and tool applicability pending. Production Pillow/Brotli concern remains unresolved."
   ],
   "context": {
     "protocol": {
@@ -598,23 +369,23 @@
       {
         "path": "docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md",
         "anchor": "1-source-of-truth-hierarchy",
-        "blob_sha": "492aa4410cf24a7b5f24551b8c4956cdf888d396",
+        "blob_sha": "8d858018d5d3aafdca8aade11c63d3f75a8df6a5",
         "start_line": 5,
         "end_line": 12
       },
       {
         "path": "docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md",
         "anchor": "5-authority-verification-and-stopping-rules",
-        "blob_sha": "492aa4410cf24a7b5f24551b8c4956cdf888d396",
+        "blob_sha": "8d858018d5d3aafdca8aade11c63d3f75a8df6a5",
         "start_line": 34,
         "end_line": 62
       },
       {
         "path": "docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md",
         "anchor": "26-november-2026--owner-decision-on-c5-scope-rationalisation",
-        "blob_sha": "9295b9d6591e3c43a26a817bfe76fd08fb3542e9",
-        "start_line": 15,
-        "end_line": 17
+        "blob_sha": "89f7179175b22eaac88aee8c5fc337f8d7981276",
+        "start_line": 23,
+        "end_line": 25
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md"
@@ -638,7 +409,7 @@
       {
         "path": "docs/PROJECT_STATUS_CURRENT.md",
         "anchor": "p4-engineering-scorecard",
-        "blob_sha": "aa50bffe7b62aad25a69522da99d89237aa5547f",
+        "blob_sha": "16e153a761527f4f87898179abfe95882d77dd87",
         "start_line": 31,
         "end_line": 60
       },
