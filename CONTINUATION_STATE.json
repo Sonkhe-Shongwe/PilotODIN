@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "MASTER-RECOVERY-20261127",
-    "parent_sha": "1d033ce891f01728a2957d7959596252ac568a19",
-    "previous_snapshot_sha": "1d033ce891f01728a2957d7959596252ac568a19",
-    "scope": "Master documentation package checksum and immutable source inventory reconciliation, permanent recovery pointers; actual current ZIP export unavailable. No execution or acceptance change.",
+    "operation_id": "C5-WINDOWS-A-FUNCTIONAL-PATH-20261127",
+    "parent_sha": "9f9aabc742153684413e57feb3a95711f10cfffa",
+    "previous_snapshot_sha": "9f9aabc742153684413e57feb3a95711f10cfffa",
+    "scope": "Detached standalone Stage A functional-path preparation, exact-plan/lock/refusal tests and source recovery receipt; no restricted execution or acceptance change.",
     "state": "RECONCILED",
     "receipt": {
-      "path": "docs/DOCUMENTATION_AUDIT_C5_D1_MIGRATION_2026-11-27.md",
-      "anchor": "7-master-document-package-and-source-recovery-checkpoint",
-      "blob_sha": "3502c3213cbea8f1f9644a48880e17c8d8623281",
-      "start_line": 61,
-      "end_line": 69
+      "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+      "anchor": "27-november--disarmed-standalone-windows-stage-a-functional-path",
+      "blob_sha": "693ac76e07c254448e046b179ce5d1aa5db370b4",
+      "start_line": 139,
+      "end_line": 147
     }
   },
   "product": {
@@ -119,8 +119,8 @@
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
     "status": "BLOCKED",
     "scope": "C5 development assurance under C-D08/C-D09 and PRODUCT-FIRST-20261127; independent concrete P4 source remediation may proceed without gate credit. D/P8 acceptance and execution boundaries unchanged.",
-    "blocker": "C5 exact internal metadata traffic objection rationalised for fixed standard verifier commands; remaining actual tool security/rights, signed provenance and wheel pre-use facts, Windows staging/settlement and exact one-use activation source not demonstrated. G2 full attribution/coverage remains blocked.",
-    "next_action": "Prepare the smallest disarmed standalone Windows Stage A functional transaction from the existing plan, exact fixed standard verifier commands within PRODUCT-FIRST-20261127, owned scratch/Windows process settlement and actual pre-use holds. Preserve exact locks, archive limits and all 19 predicates; no repeat policy, generic framework or unsupported tool use. Seek fresh consolidated exact execution approval only when ready. Independently address concrete P4 product-source defects or minimum D1 source preparation within existing authority; no native activity, D closure, E2 acceptance or phase advance.",
+    "blocker": "Standalone Stage A functional source path prepared; exact supported tool suitability, cryptographic provenance, actual archive/security/rights dispositions and Windows owned staging/extraction/command settlement/cleanup not demonstrated. No activation-ready transaction. G2 original attribution/coverage remains blocked.",
+    "next_action": "Continue concrete source implementation only: from detached 8ca9f6f9c96f2f9eb1473ae26ed8e1a7e7ac7010 finish the minimum Windows owned command/staging/settlement path and fixed supported standard-verifier provenance/pre-use disposition; preserve exact nine archive bounds, seven smoke wheels plus pip, all 19 predicates, disarm and no Stage B. Do not invent pre-use clearance or exact disposition hash. Seek one consolidated execution approval only when the actual candidate is ready; if route remains concretely blocked, park it and pursue independently established P4 product defects/minimum D1 preparation under existing authority. No generic framework, new policy audit or phase advance.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "One fresh exact-source scoped Stage A execution approval, real 19-predicate functional outcome and settlement; rejoin full C5 Stage A/B and other profiles before C5 closure.",
@@ -128,6 +128,13 @@
       "G2 complete feasible evidence method separately adopted, actual D1/D2 and physical 8 GB/original-data evidence before P4 closure; no installer or P5 activation."
     ],
     "read": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "27-november--disarmed-standalone-windows-stage-a-functional-path",
+        "blob_sha": "693ac76e07c254448e046b179ce5d1aa5db370b4",
+        "start_line": 139,
+        "end_line": 147
+      },
       {
         "path": "docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md",
         "anchor": "27-november-2026--owner-approved-aggressive-product-first-development-framework",
@@ -138,7 +145,7 @@
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--owner-approved-c5-applicability-policy-and-consolidated-stage-a-transaction",
-        "blob_sha": "85a0a56753c98ff635d5a05cf3bdcca1def4b410",
+        "blob_sha": "693ac76e07c254448e046b179ce5d1aa5db370b4",
         "start_line": 72,
         "end_line": 97
       },
@@ -170,7 +177,7 @@
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--g2-equivalent-evidence-feasibility-and-design-disposition",
-        "blob_sha": "85a0a56753c98ff635d5a05cf3bdcca1def4b410",
+        "blob_sha": "693ac76e07c254448e046b179ce5d1aa5db370b4",
         "start_line": 109,
         "end_line": 137
       },
@@ -181,17 +188,17 @@
     ]
   },
   "operation": {
-    "id": "MASTER-RECOVERY-20261127",
+    "id": "C5-WINDOWS-A-FUNCTIONAL-PATH-20261127",
     "state": "RECONCILED",
-    "starting_sha": "1d033ce891f01728a2957d7959596252ac568a19",
-    "outcome": "Verified owner-held document package manifest and exact complete Git tree metadata; recorded original plus controlled amendment precedence, updated README/index recovery pointers. Current source bytes could not be transferred or sanitised; not a build proof. No product or restricted activity.",
+    "starting_sha": "9f9aabc742153684413e57feb3a95711f10cfffa",
+    "outcome": "Created detached standalone Stage A functional source path from exact reduced candidate, six additive paths only, local four pure checks pass with matched new file hashes and limited archived module equivalence; no native/functional execution or full-profile qualification. Recorded completed source recovery archive checksums.",
     "reconcile_before_retry": false,
     "receipt": {
-      "path": "docs/DOCUMENTATION_AUDIT_C5_D1_MIGRATION_2026-11-27.md",
-      "anchor": "7-master-document-package-and-source-recovery-checkpoint",
-      "blob_sha": "3502c3213cbea8f1f9644a48880e17c8d8623281",
-      "start_line": 61,
-      "end_line": 69
+      "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+      "anchor": "27-november--disarmed-standalone-windows-stage-a-functional-path",
+      "blob_sha": "693ac76e07c254448e046b179ce5d1aa5db370b4",
+      "start_line": 139,
+      "end_line": 147
     }
   },
   "authority": {
@@ -348,6 +355,10 @@
       {
         "sha": "0c1590f57c4d62d58dca482c03ac9948009e90a4",
         "scope": "Exact reduced Stage A detached source candidate; 35 changes; manifest rebound, coordinator moves Pillow to B, existing test split updated. Historical workflow/inspection pins unchanged; no execution or migration."
+      },
+      {
+        "sha": "8ca9f6f9c96f2f9eb1473ae26ed8e1a7e7ac7010",
+        "scope": "Exact detached reduced Stage A successor, six additive QA paths (four existing standalone plan/lock/inspector blobs plus new standalone functional adapter and pure tests); disarmed; four local scoped checks pass, native/19 predicates not executed. No activation, acquisition, installer or phase change."
       }
     ]
   },
@@ -359,7 +370,8 @@
     "Standalone Windows A candidate 0c1590f57c4d62d58dca482c03ac9948009e90a4, exact Astral runtime and 8 application archives remain inactive; provenance, actual rights/security, Windows settlement and tool applicability pending. Production Pillow/Brotli concern remains unresolved.",
     "Approved applicability method and PRODUCT-FIRST-20261127 rationalisation do not clear CLI or dependencies. Actual supported tool suitability, cryptographic release/build provenance, pre-use rights/security, Windows owned settlement/staging and one-use activation remain blocked; exact archive limits unchanged.",
     "G2 equivalent design has documented FileObject/identity primitives but shared mapped/cache/background original-writer attribution and independent complete coverage, safe supported deployment remain unproven. No new live evidence method adopted.",
-    "PRODUCT-FIRST-20261127 rationalises only ordinary standard-verifier metadata traffic accounting in a later approved disposable C5 job; actual security/rights/provenance and Windows settlement remain unproven, exact archive bounds retained. G2 proof and all product gates unchanged."
+    "PRODUCT-FIRST-20261127 rationalises only ordinary standard-verifier metadata traffic accounting in a later approved disposable C5 job; actual security/rights/provenance and Windows settlement remain unproven, exact archive bounds retained. G2 proof and all product gates unchanged.",
+    "Detached 8ca9f6f9c96f2f9eb1473ae26ed8e1a7e7ac7010 implements standalone post-staging Stage A path but has no qualified runtime, actual pre-use disposition, Windows runner, acquisition/extraction or activation; no functional 19-test or native execution evidence. Exact original source and sanitised recovery copy now owner-held; not full Git backup."
   ],
   "context": {
     "protocol": {
