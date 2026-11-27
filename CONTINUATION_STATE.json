@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-CONSOLIDATED-REPORTLAB-APPLICABILITY-20261127",
-    "parent_sha": "d10ed6c79c1e1de0dd872b2f26d5e26d2b67bfbc",
-    "previous_snapshot_sha": "d10ed6c79c1e1de0dd872b2f26d5e26d2b67bfbc",
-    "scope": "ReportLab publisher security evidence and exact scoped renderer/fixture review; no lock/source or execution change.",
+    "operation_id": "C5-CONSOLIDATED-PARSER-UV-YAML-APPLICABILITY-20261127",
+    "parent_sha": "b344514a411ae3f2a42c6269bd08a28f474001d0",
+    "previous_snapshot_sha": "b344514a411ae3f2a42c6269bd08a28f474001d0",
+    "scope": "Scoped parser, libuv and libyaml source advisory review; no execution or code change.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--reportlab-security-applicability-and-bounded-remediation-choice",
-      "blob_sha": "a74328c80db6f30ee97b1aa4f043a3601acac880",
-      "start_line": 624,
-      "end_line": 632
+      "anchor": "27-november--scoped-http-parser-libuv-and-libyaml-advisory-reconciliation",
+      "blob_sha": "040665bdcebe791e45d9d7c0101bae93d8a2b7df",
+      "start_line": 634,
+      "end_line": 642
     }
   },
   "product": {
@@ -137,8 +137,8 @@
     "id": "C5-LINUX-FIRST-20261127",
     "status": "BLOCKED",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "Candidate ee5df25 disarmed; 23/23 release evidence, 0/23 final dispositions. ReportLab 4.5.1 held after confirmed later publisher security fixes; scoped renderer escapes input, but complete applicability remains unresolved. Proposed 5.1.2 review requires explicit changed dependency/lock authority before change. Other parser/native/BLAS/GCC/LZMA/Tauri and hosted regression/settlement gates remain. No execution authority.",
-    "next_action": "Continue concrete parser/libuv/libyaml and native BLAS/GCC/LZMA/Tauri security/component applicability without waiting for ReportLab choice. Reuse existing publisher/source/receipt facts. ReportLab remains held: obtain explicit owner approval for any changed lock scope, or independent exact generated-only non-applicability evidence. No silent upgrade or standalone acquisition. Bind reviewed expectations and finish exact hosted runner/settlement/regression receipts before one bounded execution approval.",
+    "blocker": "Candidate ee5df25 disarmed; 23/23 publisher evidence, 0/23 final dispositions. ReportLab hold retained; libuv/libyaml two exact source fix ancestries resolved conditionally, parser advisory applicability narrowed, actual staged composition and other component/security checks, BLAS/GCC/LZMA/Tauri, host and regression receipts remain. No execution authority.",
+    "next_action": "Review concrete BLAS/GCC runtime and LZMA/Tauri component/security issues, reuse scoped libuv/libyaml fixed ancestry and parser source applicability (do not repeat). Bind independently reviewed expectations to actual staged notice/component verification, keep ReportLab hold until explicit changed lock authority or sufficient non-applicability evidence. Finish exact hosted runner/settlement/regression receipts, source-only verify before one bounded approval; no standalone identity acquisition.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
@@ -146,6 +146,13 @@
       "D2, G2 and remaining physical E2/P4 acceptance; no phase advance without evidence and owner signoff."
     ],
     "read": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "27-november--scoped-http-parser-libuv-and-libyaml-advisory-reconciliation",
+        "blob_sha": "040665bdcebe791e45d9d7c0101bae93d8a2b7df",
+        "start_line": 634,
+        "end_line": 642
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--reportlab-security-applicability-and-bounded-remediation-choice",
@@ -513,17 +520,17 @@
     ]
   },
   "operation": {
-    "id": "C5-CONSOLIDATED-REPORTLAB-APPLICABILITY-20261127",
+    "id": "C5-CONSOLIDATED-PARSER-UV-YAML-APPLICABILITY-20261127",
     "state": "RECONCILED",
-    "starting_sha": "d10ed6c79c1e1de0dd872b2f26d5e26d2b67bfbc",
-    "outcome": "ReportLab 5.0/5.1 security changes confirmed; 15 fixture/worker files scoped source-signal reviewed plus renderer and Unicode/chart/font boundaries. Exposure controls evidenced, full applicability unresolved. Hold 4.5.1; 5.1.2 alternative requires explicit lock-change authority and exact input review. No final disposition or execution.",
+    "starting_sha": "b344514a411ae3f2a42c6269bd08a28f474001d0",
+    "outcome": "Three targeted rows advanced: exact libuv and libyaml fixed-source ancestry verified; legacy parser and Node TLS applicability narrowed by source/loopback scope. Actual staged build/rights/security not cleared; no execution.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--reportlab-security-applicability-and-bounded-remediation-choice",
-      "blob_sha": "a74328c80db6f30ee97b1aa4f043a3601acac880",
-      "start_line": 624,
-      "end_line": 632
+      "anchor": "27-november--scoped-http-parser-libuv-and-libyaml-advisory-reconciliation",
+      "blob_sha": "040665bdcebe791e45d9d7c0101bae93d8a2b7df",
+      "start_line": 634,
+      "end_line": 642
     }
   },
   "authority": {
@@ -863,7 +870,8 @@
     "Candidate 9402a08 pending exact pre-use/manifest/callback/settlement binding; @playwright/test size cap proposed, not measured; no full tests run. Pillow inventory correction unexecuted.",
     "ee5df25 disarmed consolidated fixture setup correction. Exact PDFium 8149 source build, linkage and Stage A prior evidence recovered; 37/37 notices mapped. Full pre-use disposition, targeted 23/Pillow/browser/pip/fonts, host and regression receipts still pending; no execution authority or acceptance credit.",
     "23/23 targeted release records reviewed (21 exact source commits, two metadata/source corroborations), 0/23 final dispositions. ReportLab later security fixes need scoped applicability; parser/native/runtime/LZMA and Tauri loader actual evidence outstanding; no acceptance increase.",
-    "ReportLab 4.5.1 HOLD: publisher 5.0/5.1 security changes verified, source exposure controls positive but incomplete reachability. 5.1.2 is proposed alternative only; explicit changed lock scope approval required, no new digest/use authority. Other targeted dispositions still open."
+    "ReportLab 4.5.1 HOLD: publisher 5.0/5.1 security changes verified, source exposure controls positive but incomplete reachability. 5.1.2 is proposed alternative only; explicit changed lock scope approval required, no new digest/use authority. Other targeted dispositions still open.",
+    "Parser/libuv/libyaml source advisory review advanced: two fixed-source ancestry checks, message vs URL and Node TLS scopes narrowed, staged composition and full pre-use decisions remain unresolved; no clearance or acceptance increase."
   ],
   "context": {
     "protocol": {
