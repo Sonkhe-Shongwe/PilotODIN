@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-DIRECT-RGB-ALTERNATIVE-20261127",
-    "parent_sha": "18a926e106a8a09db9fa64b61de82405b9c7d2d3",
-    "previous_snapshot_sha": "18a926e106a8a09db9fa64b61de82405b9c7d2d3",
-    "scope": "Reconcile direct RGB alternative and actual 64/64 ordinary synthetic regression; no product migration or restricted execution.",
+    "operation_id": "C5-REDUCED-STAGE-A-CANDIDATE-20261127",
+    "parent_sha": "3ab09899940c2aeccb06977e6cdb4c8fb98c235f",
+    "previous_snapshot_sha": "3ab09899940c2aeccb06977e6cdb4c8fb98c235f",
+    "scope": "Record exact reduced Stage A detached source candidate and specific proposed early evidence sequence; no execution or acceptance changes.",
     "state": "RECONCILED",
     "receipt": {
-      "path": "docs/C5_DIRECT_RGB_ALTERNATIVE_2026-11-27.md",
-      "anchor": "pilotodin--direct-rgb-conversion-concrete-dependency-reduction",
-      "blob_sha": "db5a3fe359fcfe845b351bac57f86724960ef364",
+      "path": "docs/C5_REDUCED_STAGE_A_CANDIDATE_2026-11-27.md",
+      "anchor": "pilotodin--reduced-stage-a-source-candidate",
+      "blob_sha": "1e32780b0ef1100c5ae772c013488bd5f22cec1c",
       "start_line": 1,
-      "end_line": 21
+      "end_line": 23
     }
   },
   "product": {
@@ -119,14 +119,21 @@
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
     "status": "BLOCKED",
     "scope": "C-D08 development reproducibility/build safety as revised by C-D09 limited managed-development evidence method; D native and P8 release boundaries unchanged.",
-    "blocker": "Pillow/Brotli candidate security and PDFium linkage/rights remain unresolved. Direct RGB alternative source tested in isolation; stage plan and manifest still unchanged, actual PDFium and controller source/cleanup remain pending. No active restricted grants.",
-    "next_action": "Prioritize concrete product dependency remediation: assess supported official corrected Pillow or genuinely equivalent product dependency/backend route, and whether direct RGB alternative safely removes Pillow from Stage A without changing acceptance; rebind exact candidate if justified. Complete finite controller source/cleanup and applicable pre-use rights before separately approved actual validation. No generic framework, repeated synthetic-only work, redundant publisher or runner checks, vulnerable tooling, migration or restricted execution. If no supported remediation available, state actual blocker and pursue independent authorized product work only.",
+    "blocker": "Reduced Stage A source candidate prepared; all full-profile pre-use disposition gates and Windows A+B-first requirement still apply. Pillow/Brotli and PDFium linkage/rights unresolved; exact controller binding/cleanup unresolved; no active grants.",
+    "next_action": "Owner decision requested: permit preparation of standalone Windows Stage A-only evidence transaction with eight exact inputs including pip, all 19 original predicates, no Pillow/B/Linux, exact pre-use rights/security and separately approved execution; retain full consolidated acceptance and all other gates. Without this sequencing decision or if concrete prerequisites cannot be satisfied, report blocker and pursue independent authorized product work only. No new generic framework, synthetic-only loops, provider polling, vulnerable tooling, acquisition/installation/migration or restricted execution.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "Complete targeted applicable pre-use evidence and exact approved staging/inspection for genuinely unresolved components; no blanket binutils requirement or rights waiver.",
       "Execute separately approved conditional validation with all retained Stage A/B, font, frontend, Rust and matched P1/P4 predicates; audit eight C5 rows; D/G2/E2/P5/installer boundaries unchanged."
     ],
     "read": [
+      {
+        "path": "docs/C5_REDUCED_STAGE_A_CANDIDATE_2026-11-27.md",
+        "anchor": "pilotodin--reduced-stage-a-source-candidate",
+        "blob_sha": "1e32780b0ef1100c5ae772c013488bd5f22cec1c",
+        "start_line": 1,
+        "end_line": 23
+      },
       {
         "path": "docs/C5_DIRECT_RGB_ALTERNATIVE_2026-11-27.md",
         "anchor": "pilotodin--direct-rgb-conversion-concrete-dependency-reduction",
@@ -365,17 +372,17 @@
     ]
   },
   "operation": {
-    "id": "C5-DIRECT-RGB-ALTERNATIVE-20261127",
+    "id": "C5-REDUCED-STAGE-A-CANDIDATE-20261127",
     "state": "RECONCILED",
-    "starting_sha": "486b5847e8de4492ba45df516c9f4fe658a1e7a4",
-    "outcome": "Implemented pure direct RGB copy and tested 6/6 new + 58/58 retained synthetic cases. Detached alternative 65f5ca6 removes Pillow conversion from render_rgb, not save_png or production graph; historical manifest unchanged, no candidate run. No actual use or migration.",
+    "starting_sha": "3ab09899940c2aeccb06977e6cdb4c8fb98c235f",
+    "outcome": "Detached candidate 0c1590f: direct RGB plus Pillow moved from A to B, same 19 tests and full dependency graph; 14,419,138 bytes deferred; no candidate run or live lock/workflow changes. Full-profile dispositions still gate execution.",
     "reconcile_before_retry": false,
     "receipt": {
-      "path": "docs/C5_DIRECT_RGB_ALTERNATIVE_2026-11-27.md",
-      "anchor": "pilotodin--direct-rgb-conversion-concrete-dependency-reduction",
-      "blob_sha": "db5a3fe359fcfe845b351bac57f86724960ef364",
+      "path": "docs/C5_REDUCED_STAGE_A_CANDIDATE_2026-11-27.md",
+      "anchor": "pilotodin--reduced-stage-a-source-candidate",
+      "blob_sha": "1e32780b0ef1100c5ae772c013488bd5f22cec1c",
       "start_line": 1,
-      "end_line": 21
+      "end_line": 23
     }
   },
   "authority": {
@@ -528,6 +535,10 @@
       {
         "sha": "65f5ca6acbdec0743c2c93360bc607cc7e9338a9",
         "scope": "Alternative detached 29-path PDFium overlay with direct RGB buffer copy, two pure helper/test paths and two inactive browser configs; original manifest deliberately retained pending review/rebinding; not execution-ready, no migration."
+      },
+      {
+        "sha": "0c1590f57c4d62d58dca482c03ac9948009e90a4",
+        "scope": "Exact reduced Stage A detached source candidate; 35 changes; manifest rebound, coordinator moves Pillow to B, existing test split updated. Historical workflow/inspection pins unchanged; no execution or migration."
       }
     ]
   },
