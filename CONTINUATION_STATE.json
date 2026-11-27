@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-CONSOLIDATED-PDFIUM-NOTICE-RECONCILIATION-20261127",
-    "parent_sha": "e453fa2b21770d373b019e48c246ec5b5f3f5166",
-    "previous_snapshot_sha": "e453fa2b21770d373b019e48c246ec5b5f3f5166",
-    "scope": "Exact PDFium notice-source identity reconciliation and disarmed bounded Playwright measured-size correction.",
+    "operation_id": "C5-CONSOLIDATED-PDFIUM-AND-FIXTURE-SCOPE-20261127",
+    "parent_sha": "9a487bcbbe5d1c39542b724027d6730526ea4465",
+    "previous_snapshot_sha": "9a487bcbbe5d1c39542b724027d6730526ea4465",
+    "scope": "Correct exact PDFium build applicability and bind two existing generated-report fixture prerequisites.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--exact-linux-pdfium-notice-mapping-and-bounded-measured-size-review",
-      "blob_sha": "738ee05e9e16e69ff65bdd321e9ff22078aa5a09",
-      "start_line": 569,
-      "end_line": 575
+      "anchor": "27-november--pdfium-actual-source-build-reconciliation-and-isolated-report-fixture-binding",
+      "blob_sha": "cd2f1e104b22cc1d7cbede2fbd50258e346095f2",
+      "start_line": 577,
+      "end_line": 581
     }
   },
   "product": {
@@ -137,8 +137,8 @@
     "id": "C5-LINUX-FIRST-20261127",
     "status": "BLOCKED",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "Detached 4e2cc44 removes exact hash-pinned Playwright unknown-size circularity only. Linux PDFium notice mapping now 37/37, but actual linkage/Brotli and general pre-use rights/security (23 targeted, Pillow, browser, ordinary applicable inputs) unresolved; host and exact regression/credits receipt binding outstanding. No execution authority.",
-    "next_action": "Use reconciled 37/37 PDFium notices to finish exact Linux PDFium component/Brotli/linkage applicability from publisher build evidence, then focus remaining 23 targeted and Pillow/browser/pip/font evidence. Bind independently reviewed expectations to 4e2cc44 (only exact hash-pinned Playwright size may be measured later); refuse unresolved rights. Complete hosted runner/settlement/failure accounting and exact remaining regression/credits receipts, source-only verify, then seek one bounded approval. No standalone acquisition probe.",
+    "blocker": "Detached ee5df25 corrects two Stage B fixture setup gaps, all gates false. Actual PDFium sourcebuild 8149 and specific Brotli source-fix/linkage evidence recovered, not general use clearance. Exact full-scope generated fixture applicability, 23 targeted and Pillow/browser/pip/font reviewed dispositions, hosted settlement and exact regression/credits receipts remain. No execution authority.",
+    "next_action": "Reuse established PDFium 8149 build/publication, 37/37 notices, direct ELF and Stage A receipt without repeating provenance research. Complete finite full generated-fixture applicability and exact publisher/component review of targeted 23 and Pillow/browser/pip/font, bind independently reviewed expectations to ee5df25. Resolve concrete unresolved security/rights facts only, then finish hosted runner/failure settlement and exact remaining regression/credits receipts; source-only verify and seek one consolidated bounded approval. No standalone acquisition probe.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
@@ -146,6 +146,13 @@
       "D2, G2 and remaining physical E2/P4 acceptance; no phase advance without evidence and owner signoff."
     ],
     "read": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "27-november--pdfium-actual-source-build-reconciliation-and-isolated-report-fixture-binding",
+        "blob_sha": "cd2f1e104b22cc1d7cbede2fbd50258e346095f2",
+        "start_line": 577,
+        "end_line": 581
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--exact-linux-pdfium-notice-mapping-and-bounded-measured-size-review",
@@ -478,17 +485,17 @@
     ]
   },
   "operation": {
-    "id": "C5-CONSOLIDATED-PDFIUM-NOTICE-RECONCILIATION-20261127",
+    "id": "C5-CONSOLIDATED-PDFIUM-AND-FIXTURE-SCOPE-20261127",
     "state": "RECONCILED",
-    "starting_sha": "e453fa2b21770d373b019e48c246ec5b5f3f5166",
-    "outcome": "37/37 Linux PDFium notices mapped (11 newly reconciled); 76/86 historical identity receipts matched; detached 4e2cc44 fixes conditional Playwright measured-size sequencing only. Eight static/readback checks pass; tests written not run. Actual pre-use rights/security and host/regression binding remain.",
+    "starting_sha": "9a487bcbbe5d1c39542b724027d6730526ea4465",
+    "outcome": "Recovered actual PDFium sourcebuild 8149, existing linkage and prior Stage A evidence; 37/37 notice mapping retained; detached ee5df25 binds export-route marker and report-display DevQA setup with isolated collection/execution homes. 11 static checks pass; test source only, no execution. Full reviewed use and host/regression binding remain.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--exact-linux-pdfium-notice-mapping-and-bounded-measured-size-review",
-      "blob_sha": "738ee05e9e16e69ff65bdd321e9ff22078aa5a09",
-      "start_line": 569,
-      "end_line": 575
+      "anchor": "27-november--pdfium-actual-source-build-reconciliation-and-isolated-report-fixture-binding",
+      "blob_sha": "cd2f1e104b22cc1d7cbede2fbd50258e346095f2",
+      "start_line": 577,
+      "end_line": 581
     }
   },
   "authority": {
@@ -798,6 +805,10 @@
       {
         "sha": "4e2cc44ec393dee1fa507b3bfcabc2c91e713aaa",
         "scope": "Detached successor of f4273df: conditional exact Playwright hash/cap permits measured length, retains all disposition and fact gates. Eight static readback checks pass; test source only. No execution."
+      },
+      {
+        "sha": "ee5df25b62fc68f579a92cb96994f46c4fdcd686",
+        "scope": "Detached successor of 4e2cc44: exact export marker and report display DevQA prerequisites for consolidated pytest, isolated mode-specific homes; 11 grouped static checks pass, test source only; no execution."
       }
     ]
   },
@@ -822,7 +833,7 @@
     "Pillow controlled storage 46059721700 refused combined redirect URL predicate, individual cause unknown. Exact storage bytes not obtained; no unsupported filename inference or repeated probe.",
     "Exact Pillow SHA256/size from public source verified 46062661845; combined ZIP entry-count/size assertion failed, prior regular-file count may differ from infolist including directories. No installation or current durable custody; full profile open.",
     "Candidate 9402a08 pending exact pre-use/manifest/callback/settlement binding; @playwright/test size cap proposed, not measured; no full tests run. Pillow inventory correction unexecuted.",
-    "4e2cc44 disarmed conditional measured-size correction only. PDFium 37/37 notice-source mapping reconciled; actual bundled Brotli/linkage/use and targeted 23, Pillow/browser/pip/font evidence pending. Exact hosted and regression receipt bindings remain. No execution authority or acceptance credit."
+    "ee5df25 disarmed consolidated fixture setup correction. Exact PDFium 8149 source build, linkage and Stage A prior evidence recovered; 37/37 notices mapped. Full pre-use disposition, targeted 23/Pillow/browser/pip/fonts, host and regression receipts still pending; no execution authority or acceptance credit."
   ],
   "context": {
     "protocol": {
