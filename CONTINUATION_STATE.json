@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-PROPORTIONATE-INSPECTION-DECISION-20261127",
-    "parent_sha": "acf231c80c7ed465e43e97a6543ee8ccf61237be",
-    "previous_snapshot_sha": "acf231c80c7ed465e43e97a6543ee8ccf61237be",
-    "scope": "Record owner-approved one-time C5 evidence method simplification and exact 42-row historical identity reconciliation.",
+    "operation_id": "C5-STAGE-A-PUBLISHER-REVIEW-20261127",
+    "parent_sha": "81b1e38981ea4bcac4777914cf2ab4e91dd37f49",
+    "previous_snapshot_sha": "81b1e38981ea4bcac4777914cf2ab4e91dd37f49",
+    "scope": "Stage A targeted publisher review; concrete Pillow/Brotli security concern in production graph; no execution.",
     "state": "RECONCILED",
     "receipt": {
-      "path": "docs/C5_PROPORTIONATE_INSPECTION_DECISION_2026-11-27.md",
-      "anchor": "pilotodin--one-time-c5-proportionate-inspection-method",
-      "blob_sha": "1fc6542e523f4a4393c01f419bb4db8f158ec5e2",
+      "path": "docs/C5_STAGE_A_PUBLISHER_REVIEW_2026-11-27.md",
+      "anchor": "pilotodin--stage-a-targeted-publisher-and-security-review",
+      "blob_sha": "796e6f56cb849c213089b0f523c9659a4be01e06",
       "start_line": 1,
-      "end_line": 75
+      "end_line": 32
     }
   },
   "product": {
@@ -119,14 +119,21 @@
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
     "status": "BLOCKED",
     "scope": "C-D08 development reproducibility/build safety as revised by C-D09 limited managed-development evidence method; D native and P8 release boundaries unchanged.",
-    "blocker": "C5 actual pre-use rights and compatible execution remain open. Owner approved targeted publisher-first review; blanket 42-row binary inspection no longer planned. Specific PDFium build/libgcc linkage and other concrete unresolved component facts must be settled before use. Controller binding/cleanup and final validation remain pending.",
-    "next_action": "Use one-time simplified method: prioritise exact Stage A smoke dependency rights (PDFium/Pillow/pip), reuse existing receipts and exact publisher build/component/notice evidence; close specific applicable facts, identify only necessary secure inspection, then Stage B. Prefer one separately approved hash-locked staging/validation transaction with pre-use notice checks, no identity-only acquisition; resolve controller source/cleanup defects before activation. No vulnerable parser, privileged assembly bypass, acquisition/install/native execution, generic framework, or repeated runner polling.",
+    "blocker": "Actual use held: Pillow 13.0.0 publisher Brotli 1.2.0 concern (CVE-2026-111497), official fix merged but no corrected release observed; exact target wheel applicability/SBOM and PDFium build/linkage/rights unresolved. No active restricted grants.",
+    "next_action": "Consolidate remaining Stage B publisher-evidence review of native and notice groups, prioritize production dependency security/actual use, use official SBOMs and notices where sufficient. Keep Pillow and PDFium consumption held; choose smallest supported remediation (official corrected Pillow release or genuinely equivalent reviewed product dependency/backend change), no untrusted replacement/downgrade or ad hoc rebuild. Complete exact controller source/cleanup and pre-use evidence before separately approved staging/validation. No blanket Binutils, identity-only acquisition, vulnerable tools, new generic framework, repeated tests, or runner polling.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "Complete targeted applicable pre-use evidence and exact approved staging/inspection for genuinely unresolved components; no blanket binutils requirement or rights waiver.",
       "Execute separately approved conditional validation with all retained Stage A/B, font, frontend, Rust and matched P1/P4 predicates; audit eight C5 rows; D/G2/E2/P5/installer boundaries unchanged."
     ],
     "read": [
+      {
+        "path": "docs/C5_STAGE_A_PUBLISHER_REVIEW_2026-11-27.md",
+        "anchor": "pilotodin--stage-a-targeted-publisher-and-security-review",
+        "blob_sha": "796e6f56cb849c213089b0f523c9659a4be01e06",
+        "start_line": 1,
+        "end_line": 32
+      },
       {
         "path": "docs/C5_PROPORTIONATE_INSPECTION_DECISION_2026-11-27.md",
         "anchor": "pilotodin--one-time-c5-proportionate-inspection-method",
@@ -351,17 +358,17 @@
     ]
   },
   "operation": {
-    "id": "C5-PROPORTIONATE-INSPECTION-DECISION-20261127",
+    "id": "C5-STAGE-A-PUBLISHER-REVIEW-20261127",
     "state": "RECONCILED",
-    "starting_sha": "acf231c80c7ed465e43e97a6543ee8ccf61237be",
-    "outcome": "42/42 exact historical identity matches; routed 9 notice/metadata, 31 publisher-first, 2 specific PDFium linkage. No rights waiver, acquisition, workflow/product change or execution.",
+    "starting_sha": "81b1e38981ea4bcac4777914cf2ab4e91dd37f49",
+    "outcome": "Six ordinary primary licence sources reviewed; pip and PDFium build evidence narrowed; exact Pillow 13.0.0 build pins Brotli 1.2.0 (CVE-2026-111497), upstream corrected but no stable release observed. Hold unresolved use; no product/workflow/lock or execution changes.",
     "reconcile_before_retry": false,
     "receipt": {
-      "path": "docs/C5_PROPORTIONATE_INSPECTION_DECISION_2026-11-27.md",
-      "anchor": "pilotodin--one-time-c5-proportionate-inspection-method",
-      "blob_sha": "1fc6542e523f4a4393c01f419bb4db8f158ec5e2",
+      "path": "docs/C5_STAGE_A_PUBLISHER_REVIEW_2026-11-27.md",
+      "anchor": "pilotodin--stage-a-targeted-publisher-and-security-review",
+      "blob_sha": "796e6f56cb849c213089b0f523c9659a4be01e06",
       "start_line": 1,
-      "end_line": 75
+      "end_line": 32
     }
   },
   "authority": {
