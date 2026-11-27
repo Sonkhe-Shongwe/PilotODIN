@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-OWNER-APPROVED-CGROUP-FEASIBILITY-PREPARATION-20261128",
-    "parent_sha": "5ac2897deb754c84ab31ea16b1b35789b2167e23",
-    "previous_snapshot_sha": "5ac2897deb754c84ab31ea16b1b35789b2167e23",
-    "scope": "Owner-approved bounded read-only cgroup feasibility probe and pure fixture verification, no dispatch.",
+    "operation_id": "C5-CGROUP-EXACT-INERT-ACTIVATION-PROJECTION-20261128",
+    "parent_sha": "7611806320f43c6b6f6f7482de45e9ce9680364f",
+    "previous_snapshot_sha": "7611806320f43c6b6f6f7482de45e9ce9680364f",
+    "scope": "Exact inert cgroup activation and terminal disarm projection; no publication of active workflow.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "28-november--owner-approved-read-only-cgroup-feasibility-preparation",
-      "blob_sha": "b7937c2691e13a44e90057c84acecd10c54c16f8",
-      "start_line": 743,
-      "end_line": 749
+      "anchor": "28-november--exact-inert-cgroup-activation-and-terminal-disarm-projection",
+      "blob_sha": "b03e3178ba21c5041e7c0fdee7f5c5705cc81506",
+      "start_line": 751,
+      "end_line": 757
     }
   },
   "product": {
@@ -137,8 +137,8 @@
     "id": "C5-LINUX-FIRST-20261127",
     "status": "BLOCKED",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "b577826 disarmed feasibility probe prepared; 14 static and five local excerpt fixture tests pass. Actual provider boundary, ownership, migration prevention, host identities, independent settlement and exact one-use activation not established; no execution approval. Reduced 596390f static inspection remains held.",
-    "next_action": "Prepare exact one-use no-package cgroup feasibility activation projection (source/tree, minimal reviewed workflow trigger/checkout, marker and recovery) for distinct explicit execution approval; preserve disarm until authorized. Five minutes, one attempt, zero explicit package GETs, no cgroup creation/migration/delegation, privileges, security changes, new service/container or global signals. If provider cannot establish independent boundary and migration prevention, present distinct isolated method decision; no repeated observations, full install, security weakening or acceptance credit.",
+    "blocker": "29d8b96 inert activation/disarm binding prepared. Exact workflow-trigger audit incomplete due connector call limit, new CLI gate and actual YAML/job unexecuted, provider independent boundary/ownership/migration prevention unproved; no execution approval. Reduced 596390f inspection remains held.",
+    "next_action": "Complete exact existing 122-workflow trigger audit for intended new cgroup workflow/state/marker activation and subsequent disarm paths in bounded small connector batches or verified equivalent, review generated-only gate refusals and exact YAML. If no conflicting triggers, present exact one-use five-minute no-package observation execution decision (source 1389a07, workflow 8123a65, marker 8dc0b72, disarm c3bd4b9); separate explicit approval and write-ahead before any activation. No replay, retries, privilege, cgroup mutation, security change, or full install; preserve all original acceptance and custody gates. If independent provider boundary not feasible, distinct isolated method decision.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
@@ -146,6 +146,13 @@
       "D2, G2 and remaining physical E2/P4 acceptance; no phase advance without evidence and owner signoff."
     ],
     "read": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "28-november--exact-inert-cgroup-activation-and-terminal-disarm-projection",
+        "blob_sha": "b03e3178ba21c5041e7c0fdee7f5c5705cc81506",
+        "start_line": 751,
+        "end_line": 757
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--owner-approved-read-only-cgroup-feasibility-preparation",
@@ -604,17 +611,17 @@
     ]
   },
   "operation": {
-    "id": "C5-OWNER-APPROVED-CGROUP-FEASIBILITY-PREPARATION-20261128",
+    "id": "C5-CGROUP-EXACT-INERT-ACTIVATION-PROJECTION-20261128",
     "state": "RECONCILED",
-    "starting_sha": "5ac2897deb754c84ab31ea16b1b35789b2167e23",
-    "outcome": "Detached b577826 disarmed; 14/14 static and 5/5 local excerpt synthetic checks pass. No host observation, dispatch or package transfer. Provider ownership/migration prevention unproved, exact one-use activation binding and explicit execution authority outstanding.",
+    "starting_sha": "7611806320f43c6b6f6f7482de45e9ce9680364f",
+    "outcome": "Detached 29d8b96 exact inert source/workflow/marker/disarm binding; 14 grouped static checks and final disarm readback pass. Trigger audit exceeded connector limit; no new Python/YAML execution or hosted observation, no execution authority.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "28-november--owner-approved-read-only-cgroup-feasibility-preparation",
-      "blob_sha": "b7937c2691e13a44e90057c84acecd10c54c16f8",
-      "start_line": 743,
-      "end_line": 749
+      "anchor": "28-november--exact-inert-cgroup-activation-and-terminal-disarm-projection",
+      "blob_sha": "b03e3178ba21c5041e7c0fdee7f5c5705cc81506",
+      "start_line": 751,
+      "end_line": 757
     }
   },
   "authority": {
@@ -968,6 +975,10 @@
       {
         "sha": "b57782643d634449ad7922db3b42e59d7ecb13ce",
         "scope": "Disarmed three-path read-only cgroup v2 feasibility observation successor of 596390f; 14 static/5 local excerpt fixture checks pass. No actual host observation, qualification or execution authority; exact one-use workflow binding and independent boundary evidence pending."
+      },
+      {
+        "sha": "29d8b962c3f26279307c9e66dc9ca6c0bec477f2",
+        "scope": "Inert exact gated source/one-use workflow, marker and terminal disarm projection from b577826 via 1389a07 and c544eae; 14 static/readback checks plus final disarm pin pass. Trigger audit incomplete, no live execution or authority."
       }
     ]
   },
@@ -1007,7 +1018,8 @@
     "8d0b3e3 reduced inspection scope not execution-ready; existing static parser lacks specific metadata/component facts; retained host observation qualification=false. No new grant or final clearance.",
     "596390f reduced inspection binding preparation: exact host identities and positive owned-command settlement unproved, Python tests not run, strict ZIP and actual metadata/component coverage unverified; no full execution/rights clearance.",
     "Local fixture witness only for 596390f; actual full source/module tests, archive/metadata and independent hosted containment unresolved. Existing cgroup observation method proposed, not adopted or authorised.",
-    "b577826 feasibility probe cannot establish pre-child empty baseline, provider ownership, universal migration prevention or full privileged/detached host settlement; no actual host observation or execution approval."
+    "b577826 feasibility probe cannot establish pre-child empty baseline, provider ownership, universal migration prevention or full privileged/detached host settlement; no actual host observation or execution approval.",
+    "29d8b96 activation binding: connector limit blocked full trigger audit; new gated CLI/YAML/runtime not tested, independent provider settlement unproved. No active marker/workflow."
   ],
   "context": {
     "protocol": {
