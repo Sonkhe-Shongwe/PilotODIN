@@ -131,7 +131,17 @@
           "sha256": "42d87f68957d745ce9377dfb1d8d63691e19082a7ec29ff421d22779d3142b29"
         }
       ],
-      "use_status": "EXACT_WINDOWS_BUILD_LINKAGE_RIGHTS_SECURITY_PENDING"
+      "use_status": "EXACT_WINDOWS_BUILD_LINKAGE_RIGHTS_SECURITY_PENDING",
+      "publisher_evidence": {
+        "release": "5.15.2",
+        "release_source": "a618c900bc03ab071e5ee8aea3c196a935cfa8a7",
+        "immutable": true,
+        "github_asset_id": 727985923,
+        "github_sha256": "74d1bace34fb01c660d0b64344d5a4b7d276942b7c6623c88ab59ea21c5acfbd",
+        "github_bytes": 4187589,
+        "build_strategy": "SBLD",
+        "status": "EXACT_RELEASE_STRATEGY_AND_ASSET_IDENTITY_METADATA_MATCH; ACTUAL_LINKAGE_RIGHTS_SECURITY_PENDING"
+      }
     },
     {
       "name": "pytest",
@@ -151,7 +161,9 @@
   "limits": {
     "unique_archives": 8,
     "archive_body_bytes": 8000481,
-    "approved_application_archive_requests": 0
+    "approved_application_archive_requests": 0,
+    "proposed_runtime_archive_body_bytes": 49096635,
+    "proposed_combined_archive_body_bytes": 57097116
   },
   "test_file": "tests/test_c5_pdfium_inspection_equivalence.py",
   "expected_node_ids": [
@@ -193,5 +205,26 @@
     "installer",
     "redistribution"
   ],
-  "final_acceptance": "UNCHANGED; standalone Stage A only, no full-profile or C5 acceptance inferred"
+  "final_acceptance": "UNCHANGED; standalone Stage A only, no full-profile or C5 acceptance inferred",
+  "runtime_candidate": {
+    "status": "OWNER_APPROVED_PREPARATION_ONLY_NOT_QUALIFIED",
+    "provider": "astral-sh/python-build-standalone",
+    "version": "3.11.18",
+    "target": "x86_64-pc-windows-msvc",
+    "release": "20261124",
+    "release_source": "48d61fcd7d85d7013b95576f62f779008c316a63",
+    "release_immutable": true,
+    "asset_id": 788324736,
+    "filename": "cpython-3.11.18+20261124-x86_64-pc-windows-msvc-install_only.tar.gz",
+    "bytes": 49096635,
+    "sha256": "3e4a35e3c238e5090d36bf95c041d9052bc82d6e298cb912ba7f70f6c66cf81a",
+    "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20261124/cpython-3.11.18%2B20261124-x86_64-pc-windows-msvc-install_only.tar.gz",
+    "provenance": {
+      "publisher_release_workflow_blob": "a6f3e0d15d8ed7c814049b3e814ad7d63af59442",
+      "publisher_windows_workflow_blob": "b749e047712be15b0052354ebb39c92c89e54c03",
+      "attestation_action_commit": "4d101475d8b20a2381f78447822ac1eab6504dd8",
+      "asset_attestation_verified": false
+    },
+    "approved_runtime_archive_requests": 0
+  }
 }
