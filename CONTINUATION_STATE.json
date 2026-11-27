@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-5-EXACT-SETUP-BROWSER-20261127",
-    "parent_sha": "d513e3ee88e914458ae102c81aed5758f0633a03",
-    "previous_snapshot_sha": "d513e3ee88e914458ae102c81aed5758f0633a03",
-    "scope": "Exact Stage A setup and conditional patched managed Chrome draft prepared; no execution.",
+    "operation_id": "C5-LINUX-STAGE-A-ACTIVATION-PREPARATION-20261127",
+    "parent_sha": "3db4013d04900d37f87c0953aaadf8df142e99a9",
+    "previous_snapshot_sha": "3db4013d04900d37f87c0953aaadf8df142e99a9",
+    "scope": "Exact bounded Stage A disposition proposal and rolling managed-host activation draft; no execution.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--c55-exact-setup-drafts-and-managed-chrome-candidate",
-      "blob_sha": "3c220969dd9384f7d34fe5d49b6b37cbb5216436",
-      "start_line": 297,
-      "end_line": 301
+      "anchor": "27-november--exact-stage-a-disposition-proposal-and-managed-rolling-image-activation-draft",
+      "blob_sha": "fad9bc0cacf9323a781351174a48bbcd68ac4df3",
+      "start_line": 303,
+      "end_line": 309
     }
   },
   "product": {
@@ -119,9 +119,9 @@
     "id": "C5-LINUX-FIRST-20261127",
     "status": "BLOCKED",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "Conditional narrow PDFium generated-fixture recommendation supported by fixed input scope and publisher evidence; exact compiled Brotli revision not independently established, final disposition and owner review pending. Detached 783027c targeted host preflight prepared; actual future image/package/ABI/security facts not observed. Exact activation and one-use execution authority absent. Full-profile Pillow held.",
-    "next_action": "Finish exact reviewed Stage A activation from 496a185: reconcile brittle host guard with approved C-D09 rolling-image observation without waiving concrete security holds, bind narrow generated-fixture PDFium disposition and exact one-use approval, seven fixed GETs/7,808,390 bytes/zero redirects/retries, isolated offline locked install, 19 exact tests and owned settlement. No standalone C5.5 qualification or repeated generic verifier. Full Linux profile requires corrected official Pillow and actual compatible patched managed Chrome (selected 158.0.8127.88; existing published image .36, no automatic acquisition/upgrade), final exact frontend/browser and source regressions. No restricted execution until exact approval. Windows mandatory before D1.",
-    "next_action_kind": "MISSING_EVIDENCE",
+    "blocker": "Owner decision required on specific residual PDFium compiled Brotli checkout uncertainty for exact generated-fixture use and one bounded Stage A execution. Actual host package/ABI facts will be observed at approved use. Exact one-use activation SHA and grant not yet minted. Full-profile Pillow and patched managed Chrome remain held.",
+    "next_action": "Obtain explicit owner decision on exact proposal adfc019: conditional generated-fixture PDFium use and one bounded Stage A transaction. If approved, bind review and disposition digests, final exact isolated source/workflow/run/one-use grant and required gates; verify expected HEAD/diff/triggers/write-ahead before dispatch. Seven fixed GETs/7,808,390 expected bytes/zero redirects/retries; managed setup distinct; CP311.18/pip 26.3; isolated hash-locked install, original 19 predicates and owned settlement. Refuse any material mismatch or unresolved applicable risk. No separate qualification cycle. Full Linux requires corrected Pillow, actual patched managed Chrome and final relevant regressions. Windows mandatory before D1.",
+    "next_action_kind": "OWNER_DECISION",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
       "Windows-specific verified input and compatibility prerequisites before actual production-equivalent D1, separately authorised; no installer.",
@@ -130,71 +130,78 @@
     "read": [
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "27-november--exact-stage-a-disposition-proposal-and-managed-rolling-image-activation-draft",
+        "blob_sha": "fad9bc0cacf9323a781351174a48bbcd68ac4df3",
+        "start_line": 303,
+        "end_line": 309
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--c55-exact-setup-drafts-and-managed-chrome-candidate",
-        "blob_sha": "3c220969dd9384f7d34fe5d49b6b37cbb5216436",
+        "blob_sha": "fad9bc0cacf9323a781351174a48bbcd68ac4df3",
         "start_line": 297,
         "end_line": 301
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--c55-proportionate-baseline-consolidation",
-        "blob_sha": "3c220969dd9384f7d34fe5d49b6b37cbb5216436",
+        "blob_sha": "fad9bc0cacf9323a781351174a48bbcd68ac4df3",
         "start_line": 289,
         "end_line": 295
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--c551-isolated-managed-operating-system-review",
-        "blob_sha": "3c220969dd9384f7d34fe5d49b6b37cbb5216436",
+        "blob_sha": "fad9bc0cacf9323a781351174a48bbcd68ac4df3",
         "start_line": 285,
         "end_line": 287
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--stage-a-generated-fixture-applicability-and-targeted-host-preflight",
-        "blob_sha": "3c220969dd9384f7d34fe5d49b6b37cbb5216436",
+        "blob_sha": "fad9bc0cacf9323a781351174a48bbcd68ac4df3",
         "start_line": 275,
         "end_line": 283
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--exact-pdfium-publisher-build-chain-and-managed-linux-bootstrap",
-        "blob_sha": "3c220969dd9384f7d34fe5d49b6b37cbb5216436",
+        "blob_sha": "fad9bc0cacf9323a781351174a48bbcd68ac4df3",
         "start_line": 265,
         "end_line": 273
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--disarmed-standalone-linux-stage-a-source-candidate",
-        "blob_sha": "3c220969dd9384f7d34fe5d49b6b37cbb5216436",
+        "blob_sha": "fad9bc0cacf9323a781351174a48bbcd68ac4df3",
         "start_line": 255,
         "end_line": 263
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--six-uploaded-linux-stage-a-wheels-verified",
-        "blob_sha": "3c220969dd9384f7d34fe5d49b6b37cbb5216436",
+        "blob_sha": "fad9bc0cacf9323a781351174a48bbcd68ac4df3",
         "start_line": 245,
         "end_line": 253
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--pdfium-brotli-source-fix-traced-and-official-pillow-nightly-option",
-        "blob_sha": "3c220969dd9384f7d34fe5d49b6b37cbb5216436",
+        "blob_sha": "fad9bc0cacf9323a781351174a48bbcd68ac4df3",
         "start_line": 237,
         "end_line": 243
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--actual-uploaded-linux-pillow-and-pdfium-inspection",
-        "blob_sha": "3c220969dd9384f7d34fe5d49b6b37cbb5216436",
+        "blob_sha": "fad9bc0cacf9323a781351174a48bbcd68ac4df3",
         "start_line": 227,
         "end_line": 235
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--owner-approved-linux-first-c5-allocation-and-exact-reduced-input-plan",
-        "blob_sha": "3c220969dd9384f7d34fe5d49b6b37cbb5216436",
+        "blob_sha": "fad9bc0cacf9323a781351174a48bbcd68ac4df3",
         "start_line": 211,
         "end_line": 219
       },
@@ -233,17 +240,17 @@
     ]
   },
   "operation": {
-    "id": "C5-5-EXACT-SETUP-BROWSER-20261127",
+    "id": "C5-LINUX-STAGE-A-ACTIVATION-PREPARATION-20261127",
     "state": "RECONCILED",
-    "starting_sha": "d513e3ee88e914458ae102c81aed5758f0633a03",
-    "outcome": "Detached 496a185 exact Stage A setup and managed Chrome selection; two draft paths, eight static checks/readbacks pass. Patched Chrome not evidenced on runner; actual activation, host/disposition and functional execution remain pending.",
+    "starting_sha": "3db4013d04900d37f87c0953aaadf8df142e99a9",
+    "outcome": "Detached adfc019 five changed paths, 12 static checks and exact readbacks; actual invocation drafted, proposed narrow PDFium disposition, rolling image and specific patched package minimums. All gates disarmed; explicit approval and actual one-use activation binding pending.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--c55-exact-setup-drafts-and-managed-chrome-candidate",
-      "blob_sha": "3c220969dd9384f7d34fe5d49b6b37cbb5216436",
-      "start_line": 297,
-      "end_line": 301
+      "anchor": "27-november--exact-stage-a-disposition-proposal-and-managed-rolling-image-activation-draft",
+      "blob_sha": "fad9bc0cacf9323a781351174a48bbcd68ac4df3",
+      "start_line": 303,
+      "end_line": 309
     }
   },
   "authority": {
@@ -452,6 +459,10 @@
       {
         "sha": "496a18584e13701ccd73552e32a0660b28d27956",
         "scope": "Two disarmed workflow drafts outside .github/workflows; exact CP311.18 Stage A setup, conditional managed Chrome 158.0.8127.88, eight static checks and exact readbacks; no actual setup, use clearance, browser availability or tests."
+      },
+      {
+        "sha": "adfc019d8706c665099621884e74f8509fa3b866",
+        "scope": "Five Stage A preparation paths; exact bounded proposal, rolling host observations with concrete security minimums and disarmed invocation. Twelve static checks/exact readbacks; no actual setup, host check, installation or test. Approval pending."
       }
     ]
   },
