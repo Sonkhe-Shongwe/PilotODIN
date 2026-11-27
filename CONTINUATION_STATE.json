@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-PILLOW-PUBLISHER-STORAGE-20261127",
-    "parent_sha": "27c18a5780eddfc2f687a72fbb9f2177f8fc5024",
-    "previous_snapshot_sha": "27c18a5780eddfc2f687a72fbb9f2177f8fc5024",
-    "scope": "Reconcile actual controlled Pillow storage URL hold; disarm consumed scope.",
-    "state": "RECONCILED",
+    "operation_id": "C5-PILLOW-STANDARD-PACKAGE-20261127",
+    "parent_sha": "f748ab79ad2766336cd76bb8408ef3c479b2f096",
+    "previous_snapshot_sha": "f748ab79ad2766336cd76bb8408ef3c479b2f096",
+    "scope": "Owner-approved standard Pillow acquisition and conditional offline hash-locked generated fixture write-ahead.",
+    "state": "PREPARED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--pillow-controlled-storage-route-refused-combined-url-predicate",
-      "blob_sha": "9ebaa6ca8df4b1f880604c3f13c2c111ace6d3c4",
-      "start_line": 527,
-      "end_line": 531
+      "anchor": "27-november--standard-pillow-package-verification-write-ahead",
+      "blob_sha": "feb60a707b485b013a163e590b93e01b4768831a",
+      "start_line": 533,
+      "end_line": 535
     }
   },
   "product": {
@@ -135,17 +135,24 @@
   },
   "task": {
     "id": "C5-LINUX-FIRST-20261127",
-    "status": "BLOCKED",
+    "status": "PREPARED",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "Controlled Pillow publisher storage route refused combined URL/filename predicate; exact failed subcondition unobserved. No wheel acquired; repeated isolated probes parked.",
-    "next_action": "Establish supported publisher storage URL semantics or durable exact wheel custody without another speculative acquisition. If viable, use one consolidated conventional exact-hash acquisition scope, including approved redirect and technical corrections, before full-profile integration. Preserve all acceptance requirements.",
-    "next_action_kind": "MISSING_EVIDENCE",
+    "blocker": "Approved conventional exact Pillow verification awaits execution.",
+    "next_action": "Publish exact activation and reconcile standard package verification.",
+    "next_action_kind": "RECONCILE",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
       "Windows-specific verified input and compatibility prerequisites before actual production-equivalent D1, separately authorised; no installer.",
       "D2, G2 and remaining physical E2/P4 acceptance; no phase advance without evidence and owner signoff."
     ],
     "read": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "27-november--standard-pillow-package-verification-write-ahead",
+        "blob_sha": "feb60a707b485b013a163e590b93e01b4768831a",
+        "start_line": 533,
+        "end_line": 535
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--pillow-controlled-storage-route-refused-combined-url-predicate",
@@ -422,25 +429,49 @@
     ]
   },
   "operation": {
-    "id": "C5-PILLOW-PUBLISHER-STORAGE-20261127",
-    "state": "RECONCILED",
-    "starting_sha": "43a97c0d034a2ac92fb9e4de0984eaf95054118e",
-    "outcome": "Run 46059721700 job 140710761719 attempt 1 failed on combined storage URL/filename predicate; exact cause not logged. One publisher GET, no storage GET, zero accepted bytes; no wheel acquisition or use. Consumed/disarmed.",
-    "reconcile_before_retry": false,
-    "receipt": {
+    "id": "C5-PILLOW-STANDARD-PACKAGE-20261127",
+    "state": "PREPARED",
+    "starting_sha": "f748ab79ad2766336cd76bb8408ef3c479b2f096",
+    "scope": "One disposable nonroot Ubuntu 24.04 x64 job, five minutes, two fixed HTTPS GETs maximum (exact previously established publisher wheel URL then one 302 HTTPS redirect to exact binstar-cio-packages-prod.s3.amazonaws.com host, default port), standard curl with no proxy/config/automatic redirects/retries, 65536-byte maximum discarded publisher response and 7577621-byte wheel cap; exact length and prior independent SHA256 before ZIP parsing, storage opaque object path allowed without unsupported basename assumption, no signed-query logging or credentials. Exact prior static metadata/RECORD/LICENSE/Brotli member checks. If exact match and already-present reviewed CPython 3.11.18/pip 26.3, offline no-index/no-deps/binary-only require-hashes pip install to isolated scratch and synthetic 3x2 RGB PNG roundtrip, no product use or other acquisition; if managed pip unavailable stop after static verification. No redistribution, alternative wheel, product lock, native product, owner data, model, installer or security changes. No second transaction within exhausted scope.",
+    "source_sha": "b1836a87f3a79d06bae47c8c7ab51ee327d8af71",
+    "source_tree": "f5751a6e3d1239eb272a1b034d7fbd34ba476c6f",
+    "intended_paths": [
+      ".github/workflows/c5-browser-smoke-once.yml",
+      "qa/c5_managed_dev/APPROVAL_BROWSER_SMOKE_ONCE_20261127.json",
+      "CONTINUATION_STATE.json"
+    ],
+    "authority_ref": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--pillow-controlled-storage-route-refused-combined-url-predicate",
-      "blob_sha": "9ebaa6ca8df4b1f880604c3f13c2c111ace6d3c4",
-      "start_line": 527,
-      "end_line": 531
+      "anchor": "27-november--standard-pillow-package-verification-write-ahead",
+      "blob_sha": "feb60a707b485b013a163e590b93e01b4768831a",
+      "start_line": 533,
+      "end_line": 535
     },
-    "cumulative_input_gets": 1,
+    "expected_evidence": "Exact run: standard transport, independent size/hash and prior member checks, eligible offline pip install and PNG fixture or terminal refusal; reconcile.",
+    "recovery": "Inspect exact activation/run/job/logs; disarm and reconcile. No replay/substitution or new GETs beyond exact batch.",
+    "reconcile_before_retry": false,
+    "cumulative_input_gets": 0,
     "cumulative_accepted_bytes": 0
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next. Owner-approved GitHub-only development installation and bounded technical autonomy amendment applies within exact approved batches; no broader authority.",
     "preparation_only": "Owner approved consolidated shared-bundle disarmed acquisition-before-signature source and exact limited existing host bootstrap; owner approved proposed limited local Docker control-plane and host-derived rootfs trust/no-pull isolation method for preparation only. Authentication before extraction/use; no Docker invocation, acquisition, verification execution, installation or live cutover authorised. Owner approved bounded first-collision encoded public member-path diagnostic preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-bounded-first-collision-diagnostic-preparation-only. No restricted execution authority. Owner approved finite exact Linux data-only terminfo inventory policy and bounded receipt projection as proposed in 8cc1a696, preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-finite-exact-linux-terminfo-inventory-policy-and-bounded-receipt-preparation-only. Strict Windows/gh and other safeguards unchanged; no acquisition, extraction or restricted execution. Owner explicitly approved preparation and static/synthetic verification only of Approach C observation-only candidate (11 fixed roles, five minutes); no restricted execution, acquisition, Docker invocation or active policy change. Exact reference in C5 spec owner-approved-bounded-approach-c-observation-candidate-preparation-only. Owner approved Approach C metadata-only preparation/static/synthetic verification under 13 GET/10-minute proposed limits; no actual acquisition, package downloads, installation, Docker invocation, restricted execution or active trust policy change. Exact spec anchor owner-approved-bounded-approach-c-metadata-only-preparation-and-synthetic-core. Owner approved narrow metadata bootstrap preparation on existing two reviewed images including GnuPG/necessary existing dependencies, no acquisition/restricted execution/integrated verification/active policy change, original 13 GET/10 min bounds. Exact spec anchor owner-approved-narrow-metadata-bootstrap-preparation-and-finite-key-evidence-contract. Owner approved two-stage key/metadata sequence preparation including bounded public signing-key private repository retention proposal, combined 13 GET/600s/256 MiB; no actual acquisition, restricted execution or active policy change. Exact spec anchor owner-approved-two-stage-preparation-and-consolidated-custody-core. Owner approved exact C-D09 managed-development CI evidence rationalisation at proposal 2cbed51, recorded in C5 implementation spec; limited bootstrap trust and residual risk accepted, prepare concrete bounded validation candidate only, no acquisition, installation, restricted execution, migration, new expenditure or phase advancement. Owner approved one-time C5 proportionate publisher-first inspection method (okay lets try that), recorded at docs/C5_PROPORTIONATE_INSPECTION_DECISION_2026-11-27.md; no new restricted authority or acceptance waiver. Owner explicitly approved standalone Windows Stage A preparation preserving all security and acceptance requirements; see docs/C5_STANDALONE_WINDOWS_A_PREPARATION_2026-11-27.md. No restricted execution grant. Owner explicitly approved exact Astral CPython 3.11.18 Windows x64 candidate for standalone Stage A preparation only; docs/C5_WINDOWS_A_ASTRAL_PREPARATION_2026-11-27.md. No new restricted grant. Owner explicitly approved simplified C5 applicability-based development policy and preparation of consolidated Stage A transaction; see ENGINEERING_DECISIONS_CURRENT.md section 27-november--owner-approved-c5-applicability-policy-and-consolidated-stage-a-transaction. No restricted authority or acceptance waiver. Owner explicitly approved bounded G2 equivalent evidence feasibility assessment and design only; see ENGINEERING_DECISIONS_CURRENT.md section 27-november--g2-equivalent-evidence-feasibility-and-design-disposition. Assessment complete, no implementation, live method adoption or restricted execution authority. Owner adopted aggressive product-first framework (okay lets follow you new frame work); PRODUCT-FIRST-20261127 in phase policy. Independent concrete scoped P4 source work and narrowly rationalised standard C5 control metadata preparation, no new restricted execution grant. Owner approved preparation of bounded browser-only GitHub verification (okay do ti); detached 26ab490, no activation/acquisition/execution grant; exact receipt in engineering decisions. Owner approved proceeding with corrected Chrome .88 and Playwright 1.65.1 alternative (do it), exact candidate 920df39 prepared; no exact bounded activation grant yet; preserve original locks.",
-    "restricted_active": [],
+    "restricted_active": [
+      {
+        "id": "C5-PILLOW-STANDARD-PACKAGE-20261127",
+        "state": "APPROVED",
+        "source_sha": "b1836a87f3a79d06bae47c8c7ab51ee327d8af71",
+        "scope": "One disposable nonroot Ubuntu 24.04 x64 job, five minutes, two fixed HTTPS GETs maximum (exact previously established publisher wheel URL then one 302 HTTPS redirect to exact binstar-cio-packages-prod.s3.amazonaws.com host, default port), standard curl with no proxy/config/automatic redirects/retries, 65536-byte maximum discarded publisher response and 7577621-byte wheel cap; exact length and prior independent SHA256 before ZIP parsing, storage opaque object path allowed without unsupported basename assumption, no signed-query logging or credentials. Exact prior static metadata/RECORD/LICENSE/Brotli member checks. If exact match and already-present reviewed CPython 3.11.18/pip 26.3, offline no-index/no-deps/binary-only require-hashes pip install to isolated scratch and synthetic 3x2 RGB PNG roundtrip, no product use or other acquisition; if managed pip unavailable stop after static verification. No redistribution, alternative wheel, product lock, native product, owner data, model, installer or security changes. No second transaction within exhausted scope.",
+        "owner_authority_ref": {
+          "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+          "anchor": "27-november--standard-pillow-package-verification-write-ahead",
+          "blob_sha": "feb60a707b485b013a163e590b93e01b4768831a",
+          "start_line": 533,
+          "end_line": 535
+        },
+        "reconcile_before_retry": false
+      }
+    ],
     "consumed_disarmed_count": 55,
     "consumed_history": {
       "commit": "b9864b70fb9bb5a72d0f79c37f15b94100722192",
@@ -708,6 +739,10 @@
       {
         "sha": "65928fac7fa7392dd3d62a282633af25c4bc392c",
         "scope": "Exact controlled publisher storage Pillow quarantine static verification; no acquisition yet."
+      },
+      {
+        "sha": "b1836a87f3a79d06bae47c8c7ab51ee327d8af71",
+        "scope": "Standard bounded curl and offline hash-locked pip Pillow candidate; no execution yet."
       }
     ]
   },
