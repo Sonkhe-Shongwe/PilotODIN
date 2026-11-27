@@ -6,16 +6,16 @@
   },
   "checkpoint": {
     "operation_id": "C5-CD09-EXACT-MANIFEST-SOURCE-CI-20261127",
-    "parent_sha": "7e8d54e77b9f5610f47b632f1f8e75e230b413a5",
-    "previous_snapshot_sha": "7e8d54e77b9f5610f47b632f1f8e75e230b413a5",
-    "scope": "Write-ahead for one existing offline source-review CI job; exact manifest projection only, no restricted operation.",
-    "state": "PREPARED",
+    "parent_sha": "a29029fee6dc03dd8b24fe25a6cc917a566c7bc0",
+    "previous_snapshot_sha": "a29029fee6dc03dd8b24fe25a6cc917a566c7bc0",
+    "scope": "Actual exact manifest Python projection and negative pin checks completed in existing offline source CI; no restricted operation.",
+    "state": "RECONCILED",
     "receipt": {
-      "path": "docs/C5_CD09_VALIDATION_WITNESSES_2026-11-27.md",
-      "anchor": "pilotodin--c-d09-disarmed-validation-witness-integration",
-      "blob_sha": "898cc6034160d1a79e788a55d0523bb066f89030",
+      "path": "docs/C5_CD09_EXACT_MANIFEST_RECEIPT_2026-11-27.md",
+      "anchor": "pilotodin--c-d09-exact-manifest-offline-source-ci-receipt",
+      "blob_sha": "ebc499e920b232d0d047f403e1623458d2fd6d7d",
       "start_line": 1,
-      "end_line": 24
+      "end_line": 19
     }
   },
   "product": {
@@ -119,14 +119,21 @@
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
     "status": "BLOCKED",
     "scope": "C-D08 development reproducibility/build safety as revised by C-D09 limited managed-development evidence method; D native and P8 release boundaries unchanged.",
-    "blocker": "Disarmed validation witnesses and inspection driver prepared with 39 synthetic tests; USN-9214-1 patched provider-managed binutils image not selected. Exact real-manifest positive Python projection, exact one-use inspection/runner binding, actual applicable component rights/linkage and final staged validation controller/acceptance remain unproven.",
-    "next_action": "Reconcile prepared exact-manifest offline source CI operation; no restricted driver/validation/overlay activation. Patched managed binutils still required for actual dependency inspection.",
-    "next_action_kind": "RECONCILE",
+    "blocker": "Exact manifest Python projection verified in source-only CI; disarmed inspection driver and validation witnesses retain 39 synthetic tests. Actual inspection is blocked by USN-9214-1 patched provider-managed binutils image not selected (observed runner 20261122.23.1 lists .10, required .11), final exact one-use inspection/runner/security/rights binding and actual dependency use evidence.",
+    "next_action": "Recheck provider-managed ubuntu-24.04 image only when new material runner/security evidence is available; select and review exact patched tool/runner/security/rights and final bounded one-use inspection binding before fresh owner approval. Exact Python projection closed by run 45968896357; do not rerun or expand verification framework. If unchanged, stop BLOCKED and report actual dependency, no redundant checkpoint. Preserve disarmed driver/witness/overlay, 42 rows/214328914-byte cap, no acquisition, package update, alternate infrastructure, Certifi re-acquisition, install/import/load or old executor replay. Preserve all Stage A/B, browser/Rust/final compatibility and acceptance gates.",
+    "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "Complete applicable rights and static linkage, conditional exact PDFium source integration and final managed source-test candidate; explicit bounded execution permission, no owner/native/installer.",
       "Run authorised exact Stage A/B and consolidated Windows/Linux development regressions, standalone Rust and browser-dev, final checklist audit; C5 closure only on evidence. D/G2 and phase gates unchanged."
     ],
     "read": [
+      {
+        "path": "docs/C5_CD09_EXACT_MANIFEST_RECEIPT_2026-11-27.md",
+        "anchor": "pilotodin--c-d09-exact-manifest-offline-source-ci-receipt",
+        "blob_sha": "ebc499e920b232d0d047f403e1623458d2fd6d7d",
+        "start_line": 1,
+        "end_line": 19
+      },
       {
         "path": "docs/C5_CD09_VALIDATION_WITNESSES_2026-11-27.md",
         "anchor": "pilotodin--c-d09-disarmed-validation-witness-integration",
@@ -229,23 +236,17 @@
   },
   "operation": {
     "id": "C5-CD09-EXACT-MANIFEST-SOURCE-CI-20261127",
-    "state": "PREPARED",
+    "state": "RECONCILED",
     "starting_sha": "7e8d54e77b9f5610f47b632f1f8e75e230b413a5",
-    "scope": "Append one data-only CPython check to existing c5-input-proposal-review.yml; all old offline steps preserved; pinned checkout, no application acquisition, installs, native inspection, overlay or approval marker. Existing routine reviewed synthetic/source CI authority only.",
-    "intended_paths": [
-      ".github/workflows/c5-input-proposal-review.yml"
-    ],
-    "authority_ref": {
-      "path": "AGENTS.md",
-      "anchor": "4-generic-next",
-      "scope": "routine scoped source/docs and reviewed synthetic CI"
-    },
-    "expected_evidence": "Exactly one existing offline-proposals job at exact candidate SHA; C5_CD09_EXACT_MANIFEST PASS, exact manifest SHA, 42 rows/214328914 bytes, 172 uses/301884524 bytes, two mutated pin refusals, observed system Python path/version/image; no live requests/install/native tool. Existing historical offline tests may repeat as unavoidable reuse of job.",
-    "recovery": "Before any retry inspect live branch HEAD/diff and exact run; if workflow blob e3a628ba1f0eca011d16171432f3675d79581587 published, reconcile that exact run and do not replay. If unavailable leave operation UNKNOWN and preserve all restrictions.",
-    "reconcile_before_retry": true,
-    "expected_workflow_blob": "e3a628ba1f0eca011d16171432f3675d79581587",
-    "previous_workflow_blob": "2a1e9256cf884b8dfb407094b49332a8be9455d7",
-    "expected_workflow_runs": 1
+    "outcome": "Exact source a29029fee6dc03dd8b24fe25a6cc917a566c7bc0 run 45968896357 job 140404178281 SUCCESS attempt 1; actual 140229-byte manifest passes both pinned Python projections, 42 rows/214328914 bytes, 172 application uses/301884524 bytes, two tamper refusals. Observed old managed image 20261122.23.1. No actual archive acquisition/install/native inspection or score.",
+    "reconcile_before_retry": false,
+    "receipt": {
+      "path": "docs/C5_CD09_EXACT_MANIFEST_RECEIPT_2026-11-27.md",
+      "anchor": "pilotodin--c-d09-exact-manifest-offline-source-ci-receipt",
+      "blob_sha": "ebc499e920b232d0d047f403e1623458d2fd6d7d",
+      "start_line": 1,
+      "end_line": 19
+    }
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next.",
