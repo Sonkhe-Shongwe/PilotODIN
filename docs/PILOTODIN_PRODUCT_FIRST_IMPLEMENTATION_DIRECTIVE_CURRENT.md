@@ -2,6 +2,8 @@
 
 **CURRENT | Fixed execution and authority contract.** The [live operational state](../CONTINUATION_STATE.json) owns next action, source progress and recovery; the legacy [handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md) and [journal](./ACTIVE_WORK_JOURNAL.md) are compatibility routes, and the [official scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) owns earned acceptance. [Continuation protocol](./CONTINUATION_PROTOCOL_CURRENT.md) · [Current documentation audit](./DOCUMENTATION_AUDIT_C5_D1_MIGRATION_2026-11-27.md) · [Pre-audit directive](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/bd7c1639c3b98ae93e0d83b8170e189dc042b365/docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md). Historical evidence below is not a live work order.
 
+**27 November | Owner-approved aggressive product-first framework:** the [controlling revised development policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md#27-november-2026--owner-approved-aggressive-product-first-development-framework) supersedes the fixed sequencing below only where independent P4 source work can proceed safely, and rationalises standard C5 provenance control traffic within its exact development scope. All product requirements, acceptance, restricted execution and phase gates remain. Use live state for the next bounded deliverable. No new verifier/collector workstream.
+
 ## 1. Source-of-truth hierarchy
 
 1. Owner's Master Reconstruction Blueprint and explicit owner decisions; [phase focus and closure policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md) governs authorization and phase boundaries.
