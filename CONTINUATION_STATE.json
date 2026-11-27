@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-OWNER-APPROVED-REDUCED-STATIC-BINDING-20261128",
-    "parent_sha": "e45dcdf780b7b597095a975c24eefb512ad2a6cd",
-    "previous_snapshot_sha": "e45dcdf780b7b597095a975c24eefb512ad2a6cd",
-    "scope": "Owner-approved reduced static inspection receipt and exclusive staged-file preparation; no live binding or dispatch.",
+    "operation_id": "C5-REDUCED-STATIC-SYNTHETIC-WITNESS-AND-HOST-METHOD-DECISION-20261128",
+    "parent_sha": "a7cae7c9de4334e948eaeff3836d0fcd384b0b72",
+    "previous_snapshot_sha": "a7cae7c9de4334e948eaeff3836d0fcd384b0b72",
+    "scope": "Fingerprint-matched local synthetic witness for reduced inspection and concrete existing host boundary method decision.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "28-november--owner-approved-reduced-static-receipt-and-custody-binding-preparation",
-      "blob_sha": "282639f3b30e6de0bb96d09d420c32bd2306e458",
-      "start_line": 725,
-      "end_line": 733
+      "anchor": "28-november--reduced-static-synthetic-witness-and-host-method-decision",
+      "blob_sha": "4e7ec724cb3946ff0e96bc187aa67f1ea00b5c73",
+      "start_line": 735,
+      "end_line": 741
     }
   },
   "product": {
@@ -137,15 +137,22 @@
     "id": "C5-LINUX-FIRST-20261127",
     "status": "BLOCKED",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "596390f disarmed; exact reduced scope and metadata/staged-file receipt primitives prepared, 19 static checks pass. Python source tests unexecuted, exact current host/tool/positive settlement and final orchestration unbound; ReportLab actual metadata/security and component/rights unresolved. Zero acquisition authority.",
-    "next_action": "Verify exact new pure source test methods through approved non-acquisition route; resolve exact existing managed host/tool and positive owned-command settlement evidence, or present distinct owner method decision. Bind one-use static-only receipt/cleanup lifecycle without weakening gates; seek exact execution authority only once sufficient. No additional generic infrastructure, package acquisitions, full install, security self-certification or retries. Preserve 24 direct GET/104436509 accepted-body-byte/30 min/one-attempt ceiling and all acceptance criteria.",
-    "next_action_kind": "MISSING_EVIDENCE",
+    "blocker": "596390f disarmed; local fingerprint-matched synthetic checks passed, full real manifest/module/host and archive tests unexecuted. Existing provider boundary not established. Exact host identity/positive independent settlement and cleanup orchestration held; actual ReportLab metadata/security and final rights unresolved. Zero acquisition authority.",
+    "next_action": "Obtain explicit owner decision on preparation only of one bounded no-acquisition existing provider-managed cgroup v2 read-only membership/settlement feasibility observation (ubuntu-24.04, 5 min, one attempt, zero package GETs, inert fixture, no cgroup creation/migration/delegation, sudo, security changes, new service/container or host-global signals). No method adoption or dispatch until exact reviewed binding and authority. If infeasible present distinct isolated execution method decision. Preserve approved 24-row inspection scope, all acceptance/rights/security/host and custody gates; no full install or repeated generic research.",
+    "next_action_kind": "OWNER_DECISION",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
       "Windows-specific verified input and compatibility prerequisites before actual production-equivalent D1, separately authorised; no installer.",
       "D2, G2 and remaining physical E2/P4 acceptance; no phase advance without evidence and owner signoff."
     ],
     "read": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "28-november--reduced-static-synthetic-witness-and-host-method-decision",
+        "blob_sha": "4e7ec724cb3946ff0e96bc187aa67f1ea00b5c73",
+        "start_line": 735,
+        "end_line": 741
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--owner-approved-reduced-static-receipt-and-custody-binding-preparation",
@@ -590,17 +597,17 @@
     ]
   },
   "operation": {
-    "id": "C5-OWNER-APPROVED-REDUCED-STATIC-BINDING-20261128",
+    "id": "C5-REDUCED-STATIC-SYNTHETIC-WITNESS-AND-HOST-METHOD-DECISION-20261128",
     "state": "RECONCILED",
-    "starting_sha": "e45dcdf780b7b597095a975c24eefb512ad2a6cd",
-    "outcome": "Detached 596390f, 19 static/readback checks pass; exact 24-row caps, opt-in metadata, partial receipt and staged-file guards prepared. New source tests not executed; host/cleanup integration and independent security/rights remain held. No acquisition.",
+    "starting_sha": "a7cae7c9de4334e948eaeff3836d0fcd384b0b72",
+    "outcome": "10/10 local synthetic fixture methods and overlapping 4/4 exact test bodies PASS with fixture seams. Candidate 596390f unchanged; full repository/archive/host tests unexecuted. Existing host containment not established; distinct read-only method preparation approval required. No acquisition.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "28-november--owner-approved-reduced-static-receipt-and-custody-binding-preparation",
-      "blob_sha": "282639f3b30e6de0bb96d09d420c32bd2306e458",
-      "start_line": 725,
-      "end_line": 733
+      "anchor": "28-november--reduced-static-synthetic-witness-and-host-method-decision",
+      "blob_sha": "4e7ec724cb3946ff0e96bc187aa67f1ea00b5c73",
+      "start_line": 735,
+      "end_line": 741
     }
   },
   "authority": {
@@ -987,7 +994,8 @@
     "4dd5525 disarmed; ReportLab 5.1.2 published digest confirmed but exact URL/bytes/METADATA/notice inventory and actual offline graph/security/rights held. Existing 4.5.1 HOLD and whole-job/fixture cleanup requirements unchanged. No new restricted authority or acceptance credit.",
     "d9119bd: third-party ReportLab scan locator and unresolved builtins-write flag; exact archive facts unknown. Static-only proposed ceiling not executable and must reduce to independent missing facts; custody and whole-job host boundary unproved.",
     "8d0b3e3 reduced inspection scope not execution-ready; existing static parser lacks specific metadata/component facts; retained host observation qualification=false. No new grant or final clearance.",
-    "596390f reduced inspection binding preparation: exact host identities and positive owned-command settlement unproved, Python tests not run, strict ZIP and actual metadata/component coverage unverified; no full execution/rights clearance."
+    "596390f reduced inspection binding preparation: exact host identities and positive owned-command settlement unproved, Python tests not run, strict ZIP and actual metadata/component coverage unverified; no full execution/rights clearance.",
+    "Local fixture witness only for 596390f; actual full source/module tests, archive/metadata and independent hosted containment unresolved. Existing cgroup observation method proposed, not adopted or authorised."
   ],
   "context": {
     "protocol": {
