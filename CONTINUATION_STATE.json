@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-LINUX-PILLOW-HOSTED-ROUTE-PREPARATION-20261127",
-    "parent_sha": "a7d6e11b75ee774d66b171db5db8727b065779bc",
-    "previous_snapshot_sha": "a7d6e11b75ee774d66b171db5db8727b065779bc",
-    "scope": "Owner-approved Route B preparation only; exact publisher metadata and disarmed bounded artifact adapter.",
+    "operation_id": "C5-ROUTE-B-ACCESS-STOP-P4-ENGINE-ADMISSION-20261127",
+    "parent_sha": "0785ffdf30e2696817dd560a7fc2cce3a676bcda",
+    "previous_snapshot_sha": "0785ffdf30e2696817dd560a7fc2cce3a676bcda",
+    "scope": "Park unsupported hosted Pillow access; independent exact desktop backend stale connection source correction detached.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--owner-approved-hosted-pillow-route-preparation",
-      "blob_sha": "7d0805a05d67386887aad6c8a5801768f825a307",
-      "start_line": 369,
-      "end_line": 375
+      "anchor": "27-november--hosted-pillow-access-stop-and-independent-backend-admission-fix",
+      "blob_sha": "2bc9720015e03d4e79b8e46b9fc9088d399d7a42",
+      "start_line": 377,
+      "end_line": 385
     }
   },
   "product": {
@@ -119,8 +119,8 @@
     "id": "C5-LINUX-FIRST-20261127",
     "status": "BLOCKED",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "Route B disarmed preparation aae9b25 completed. Actual disposable token access to external publisher artifact and actual redirect host unknown; host/controller/manifest/receipt source and disposition integration, 23 targeted use rows, patched Chrome and final consolidated approval remain.",
-    "next_action": "Finish minimal exact Route B integration in existing host/controller and Stage B manifest/receipt, counting 87 GETs max and 215221703 accepted body bytes with one conditional redirect/no retries, bind exact checkout and one-use token isolation/settlement and pre-use holds. Do not perform standalone test retrieval or provision PAT. Review exact applicability of remaining 23 rows and full P2/P4/Rust/browser checks; seek one source-pinned consolidated execution approval with provider access/redirect refusal and no fallback. If access cannot be supported, park C5 route, pursue only concrete independent authorised product work.",
+    "blocker": "C5 full-profile execution parked: disposable workflow token target-repo Actions read not established, private handoff unsupported. 23 targeted use rows and host/Chrome/full-regression holds remain. Independent detached 9006133 fixes observed source ordering risk; actual source test and publication pending.",
+    "next_action": "Review and verify exact independent product correction 9006133 using existing permitted source/synthetic test route; inspect matching workflow triggers and actual job scope before any product publication. No native/installer/model acquisition or execution. C5 parked until supported private handoff/target-repo read credential is independently established or owner explicitly approves review of alternative exact patched dependency candidate. Do not create more generic C5 controller preparation dependent on unsupported access; preserve all prior scope and gates.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
@@ -130,57 +130,64 @@
     "read": [
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "27-november--hosted-pillow-access-stop-and-independent-backend-admission-fix",
+        "blob_sha": "2bc9720015e03d4e79b8e46b9fc9088d399d7a42",
+        "start_line": 377,
+        "end_line": 385
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--owner-approved-hosted-pillow-route-preparation",
-        "blob_sha": "7d0805a05d67386887aad6c8a5801768f825a307",
+        "blob_sha": "2bc9720015e03d4e79b8e46b9fc9088d399d7a42",
         "start_line": 369,
         "end_line": 375
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--linux-stage-b-adapter-reconciled-and-finite-pre-use-boundary",
-        "blob_sha": "7d0805a05d67386887aad6c8a5801768f825a307",
+        "blob_sha": "2bc9720015e03d4e79b8e46b9fc9088d399d7a42",
         "start_line": 359,
         "end_line": 367
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--isolated-linux-full-profile-source-overlay-and-guard-binding",
-        "blob_sha": "7d0805a05d67386887aad6c8a5801768f825a307",
+        "blob_sha": "2bc9720015e03d4e79b8e46b9fc9088d399d7a42",
         "start_line": 351,
         "end_line": 357
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--exact-linux-full-profile-pillow-pin-and-consolidated-verification-inventory",
-        "blob_sha": "7d0805a05d67386887aad6c8a5801768f825a307",
+        "blob_sha": "2bc9720015e03d4e79b8e46b9fc9088d399d7a42",
         "start_line": 341,
         "end_line": 349
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--corrected-linux-pillow-exact-final-wheel-inspected",
-        "blob_sha": "7d0805a05d67386887aad6c8a5801768f825a307",
+        "blob_sha": "2bc9720015e03d4e79b8e46b9fc9088d399d7a42",
         "start_line": 331,
         "end_line": 339
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--linux-stage-a-actual-19-test-pass-and-one-use-disarm",
-        "blob_sha": "7d0805a05d67386887aad6c8a5801768f825a307",
+        "blob_sha": "2bc9720015e03d4e79b8e46b9fc9088d399d7a42",
         "start_line": 317,
         "end_line": 323
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--c55-exact-setup-drafts-and-managed-chrome-candidate",
-        "blob_sha": "7d0805a05d67386887aad6c8a5801768f825a307",
+        "blob_sha": "2bc9720015e03d4e79b8e46b9fc9088d399d7a42",
         "start_line": 297,
         "end_line": 301
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--owner-approved-linux-first-c5-allocation-and-exact-reduced-input-plan",
-        "blob_sha": "7d0805a05d67386887aad6c8a5801768f825a307",
+        "blob_sha": "2bc9720015e03d4e79b8e46b9fc9088d399d7a42",
         "start_line": 211,
         "end_line": 219
       },
@@ -215,17 +222,17 @@
     ]
   },
   "operation": {
-    "id": "C5-LINUX-PILLOW-HOSTED-ROUTE-PREPARATION-20261127",
+    "id": "C5-ROUTE-B-ACCESS-STOP-P4-ENGINE-ADMISSION-20261127",
     "state": "RECONCILED",
-    "starting_sha": "a7d6e11b75ee774d66b171db5db8727b065779bc",
-    "outcome": "Exact artifact metadata matched; detached aae9b25 three QA additions, 12 static checks. Prepared one authenticated GET + one validated storage GET, no retries/fallback, exact selected member. No retrieval, tests, install, native or browser use. Provider token/redirect and actual host integration remain unverified.",
+    "starting_sha": "0785ffdf30e2696817dd560a7fc2cce3a676bcda",
+    "outcome": "Documented cross-repo Actions read prerequisite not established; park C5 routes without actual GET. Detached 9006133 two-path product source correction for recorded engine exit admission race, 14 static checks. No actual unittest/build/native, no product ref update or score change.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--owner-approved-hosted-pillow-route-preparation",
-      "blob_sha": "7d0805a05d67386887aad6c8a5801768f825a307",
-      "start_line": 369,
-      "end_line": 375
+      "anchor": "27-november--hosted-pillow-access-stop-and-independent-backend-admission-fix",
+      "blob_sha": "2bc9720015e03d4e79b8e46b9fc9088d399d7a42",
+      "start_line": 377,
+      "end_line": 385
     }
   },
   "authority": {
@@ -261,7 +268,7 @@
       "receipt": {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--corrected-linux-pillow-exact-final-wheel-inspected",
-        "blob_sha": "7d0805a05d67386887aad6c8a5801768f825a307",
+        "blob_sha": "2bc9720015e03d4e79b8e46b9fc9088d399d7a42",
         "start_line": 331,
         "end_line": 339
       }
@@ -459,16 +466,20 @@
       {
         "sha": "aae9b255a91d6ed116bbb96436e23c2fa6c854fd",
         "scope": "Disarmed Route B hosted Pillow exact artifact retrieval adapter + pure refusal tests + prospective route data, three QA additions, 12 static checks. No acquisition; token/redirect and hard host/source/receipt integration pending."
+      },
+      {
+        "sha": "9006133f95ad3519a9d1540ba171b858e26cc6cc",
+        "scope": "Independent P4 source-only stale backend connection admission fix, exact live parent 0785ffd, two paths, 14 static checks. Recorded exit and final generation fence, no replacement/ownership release. Actual source test/compile/native and publication pending."
       }
     ]
   },
   "remaining_risks": [
-    "All four C5 profiles remain BLOCKED; a282f3d source, 93fbdad Stage B callbacks, aae9b25 disarmed hosted Pillow route. Exact publisher metadata matches, actual external artifact token permission and redirect host unknown; 87 GET/215221703 accepted-byte proposal only. 23 targeted rows, host/source/receipt integration and settlement, patched Chrome and full offline resolver/functional regressions remain. No acquisition authority or replay.",
+    "All four C5 profiles remain BLOCKED; prior isolated source and Stage B/Route B drafts preserved. Park full-profile route because target repository Actions read authorization and private handoff unsupported in current approved scope; no retrieval. 23 targeted rows, host/source/receipt settlement, patched Chrome, offline resolver/full functional regressions remain. New alternate custody/input review requires owner decision; no replay.",
     "Stage A 19/19 passed only for exact generated fixtures at 304b24d; PDFium direct Brotli build checkout/attestation and general rights/security not established. Corrected Pillow Linux static Brotli 1.2.1 addresses targeted concern only; production/Windows Pillow and broader use remain held. Windows candidate Astral 3.11.18, source/rights/security, owned settlement, browser-dev and actual inputs/regression mandatory before D1; no Windows/production adoption.",
     "C-D09 and PRODUCT-FIRST-20261127 are narrow development trust/control-traffic decisions, not blanket security/provenance, CLI suitability, archive acquisition or execution authority. No new custom framework, no changed method or weakened acceptance.",
     "G2 original handle/physical destination/independent coverage unresolved; 44838416004 and 45342345634 native filesystem/network failures retained; G2 equivalent design original-writer mapped/cache/background and deployment unproven. G3/G4 pending, no method adoption or native closure.",
     "Physical 8 GB bundled Qwen/coexistence, DPAPI, desktop egress/durability, production IPC/physical destination and actual legacy whole-job settlement unverified. Product baseline c5f4bd8 scoped ordinary CI only, uncertain-spawn/other detached work preserved; no Windows desktop compile/runtime inference. D1/D2 and E2/Gate C remain mandatory; no phase or release credit.",
-    "R06 historical 74 original-data differences with unknown writer; prospective owner-device preservation pending. No original data loss or owner-local access; 47 detached records preserved. Codespace stop and consumed-variable cleanup unverified, no replay.",
+    "R06 historical 74 original-data differences with unknown writer; prospective owner-device preservation pending. No original data loss or owner-local access; 48 detached records preserved. Codespace stop and consumed-variable cleanup unverified, no replay.",
     "Owner-held recovery copy delivered for exact historical 1d033ce, not current HEAD/full Git history/detached backup or build proof. Root LICENSE/NOTICE/SECURITY.md absent, owner decision outstanding. Prior risk chronology and exact references preserved at dac2149 and historical ledger."
   ],
   "context": {
