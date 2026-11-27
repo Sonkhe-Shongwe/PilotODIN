@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-STAGE-A-PROVENANCE-STOP-20261127",
-    "parent_sha": "916665c10d1e3e4f2c87064d11a0afb0d98823ee",
-    "previous_snapshot_sha": "916665c10d1e3e4f2c87064d11a0afb0d98823ee",
-    "scope": "Targeted standard CLI route review and formal stop under existing limits; no execution, evidence-method, product or acceptance change.",
+    "operation_id": "G2-EQUIVALENT-FEASIBILITY-20261127",
+    "parent_sha": "ed01c355be93dd031734634f9336fe6501835523",
+    "previous_snapshot_sha": "ed01c355be93dd031734634f9336fe6501835523",
+    "scope": "Owner-approved bounded G2 equivalent evidence feasibility/design only; conditional architecture and no-go on unresolved full attribution; no method adoption, execution or acceptance change.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--c5-standard-provenance-route-stopping-decision",
-      "blob_sha": "5524848a80fa48ff8ce008427ae79814e0de3af2",
-      "start_line": 99,
-      "end_line": 107
+      "anchor": "27-november--g2-equivalent-evidence-feasibility-and-design-disposition",
+      "blob_sha": "622d52e24431dea51fe6464ca68df73bb301e243",
+      "start_line": 109,
+      "end_line": 137
     }
   },
   "product": {
@@ -119,8 +119,8 @@
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
     "status": "BLOCKED",
     "scope": "C-D08/C-D09 plus owner-approved finite applicability-based standard-tool qualification for disposable C5 development only. Existing D/P8 boundaries unchanged.",
-    "blocker": "C5 standalone A standard release verification route cannot enforce retained exact provenance control traffic bounds using demonstrated tools. No approved authenticated local release-evidence route; actual pre-use rights/security, Windows settlement and exact activation remain open. G2 separate method blocked.",
-    "next_action": "Seek explicit owner decision on bounded feasibility/design of the equivalent independent operation-level G2 physical-file-object witness in the existing G2 consolidated decision. No G2 method change, D implementation, native action or phase advance inferred. C5 remains blocked; reopen only for an identified supported release/build provenance route meeting retained constraints or a distinct explicitly approved method decision. No repeated C5 infrastructure, synthetic tests or provider polling.",
+    "blocker": "C5 standard release verification route lacks enforceable exact control traffic bounds. G2 equivalent operation-level design assessed: supported file-object APIs but shared mapped/cache/background original attribution, full coverage and safe deployment not demonstrated; no implementation or method adoption.",
+    "next_action": "Discuss a distinct narrowly scoped C5 managed-development provenance control-traffic risk boundary (standard cryptographic release/build verification retained; exact archive limits and product no-egress unchanged; no inferred execution). If approved, prepare only exact supported tool/commands and transaction; otherwise hold blocked. G2 equivalent design assessment complete, implementation no-go until concrete full-attribution/coverage/deployment feasibility evidence, not another collector or research loop. No phase advance.",
     "next_action_kind": "OWNER_DECISION",
     "after": [
       "Once supported C5 method and exact authority exist, resolve applicable pre-use security/licence/provenance and settlement facts, then run one separately approved finite standalone Windows Stage A transaction with all 19 predicates; no implied qualification.",
@@ -130,15 +130,22 @@
     "read": [
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "27-november--g2-equivalent-evidence-feasibility-and-design-disposition",
+        "blob_sha": "622d52e24431dea51fe6464ca68df73bb301e243",
+        "start_line": 109,
+        "end_line": 137
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--c5-standard-provenance-route-stopping-decision",
-        "blob_sha": "5524848a80fa48ff8ce008427ae79814e0de3af2",
+        "blob_sha": "622d52e24431dea51fe6464ca68df73bb301e243",
         "start_line": 99,
         "end_line": 107
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--owner-approved-c5-applicability-policy-and-consolidated-stage-a-transaction",
-        "blob_sha": "5524848a80fa48ff8ce008427ae79814e0de3af2",
+        "blob_sha": "622d52e24431dea51fe6464ca68df73bb301e243",
         "start_line": 72,
         "end_line": 97
       },
@@ -198,22 +205,22 @@
     ]
   },
   "operation": {
-    "id": "C5-STAGE-A-PROVENANCE-STOP-20261127",
+    "id": "G2-EQUIVALENT-FEASIBILITY-20261127",
     "state": "RECONCILED",
-    "starting_sha": "916665c10d1e3e4f2c87064d11a0afb0d98823ee",
-    "outcome": "Exact CLI source establishes live release-tag and attestation fetches, pagination/retries, external bundle retrieval and unbounded body read under existing route; no compliant standard enforcement route identified. Formal scoped C5 stop; G2 feasibility owner decision next. No product or execution changes.",
+    "starting_sha": "ed01c355be93dd031734634f9336fe6501835523",
+    "outcome": "Recorded explicit G2 feasibility/design-only approval; reviewed exact current contracts and Microsoft documented APIs, mapped all 11 blockers, identified shared memory/cache original attribution and complete coverage/safe deployment as unresolved. No G2 method adopted, implementation or native action. Recommend distinct C5 managed control-traffic decision next.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--c5-standard-provenance-route-stopping-decision",
-      "blob_sha": "5524848a80fa48ff8ce008427ae79814e0de3af2",
-      "start_line": 99,
-      "end_line": 107
+      "anchor": "27-november--g2-equivalent-evidence-feasibility-and-design-disposition",
+      "blob_sha": "622d52e24431dea51fe6464ca68df73bb301e243",
+      "start_line": 109,
+      "end_line": 137
     }
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next.",
-    "preparation_only": "Owner approved consolidated shared-bundle disarmed acquisition-before-signature source and exact limited existing host bootstrap; owner approved proposed limited local Docker control-plane and host-derived rootfs trust/no-pull isolation method for preparation only. Authentication before extraction/use; no Docker invocation, acquisition, verification execution, installation or live cutover authorised. Owner approved bounded first-collision encoded public member-path diagnostic preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-bounded-first-collision-diagnostic-preparation-only. No restricted execution authority. Owner approved finite exact Linux data-only terminfo inventory policy and bounded receipt projection as proposed in 8cc1a696, preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-finite-exact-linux-terminfo-inventory-policy-and-bounded-receipt-preparation-only. Strict Windows/gh and other safeguards unchanged; no acquisition, extraction or restricted execution. Owner explicitly approved preparation and static/synthetic verification only of Approach C observation-only candidate (11 fixed roles, five minutes); no restricted execution, acquisition, Docker invocation or active policy change. Exact reference in C5 spec owner-approved-bounded-approach-c-observation-candidate-preparation-only. Owner approved Approach C metadata-only preparation/static/synthetic verification under 13 GET/10-minute proposed limits; no actual acquisition, package downloads, installation, Docker invocation, restricted execution or active trust policy change. Exact spec anchor owner-approved-bounded-approach-c-metadata-only-preparation-and-synthetic-core. Owner approved narrow metadata bootstrap preparation on existing two reviewed images including GnuPG/necessary existing dependencies, no acquisition/restricted execution/integrated verification/active policy change, original 13 GET/10 min bounds. Exact spec anchor owner-approved-narrow-metadata-bootstrap-preparation-and-finite-key-evidence-contract. Owner approved two-stage key/metadata sequence preparation including bounded public signing-key private repository retention proposal, combined 13 GET/600s/256 MiB; no actual acquisition, restricted execution or active policy change. Exact spec anchor owner-approved-two-stage-preparation-and-consolidated-custody-core. Owner approved exact C-D09 managed-development CI evidence rationalisation at proposal 2cbed51, recorded in C5 implementation spec; limited bootstrap trust and residual risk accepted, prepare concrete bounded validation candidate only, no acquisition, installation, restricted execution, migration, new expenditure or phase advancement. Owner approved one-time C5 proportionate publisher-first inspection method (okay lets try that), recorded at docs/C5_PROPORTIONATE_INSPECTION_DECISION_2026-11-27.md; no new restricted authority or acceptance waiver. Owner explicitly approved standalone Windows Stage A preparation preserving all security and acceptance requirements; see docs/C5_STANDALONE_WINDOWS_A_PREPARATION_2026-11-27.md. No restricted execution grant. Owner explicitly approved exact Astral CPython 3.11.18 Windows x64 candidate for standalone Stage A preparation only; docs/C5_WINDOWS_A_ASTRAL_PREPARATION_2026-11-27.md. No new restricted grant. Owner explicitly approved simplified C5 applicability-based development policy and preparation of consolidated Stage A transaction; see ENGINEERING_DECISIONS_CURRENT.md section 27-november--owner-approved-c5-applicability-policy-and-consolidated-stage-a-transaction. No restricted authority or acceptance waiver.",
+    "preparation_only": "Owner approved consolidated shared-bundle disarmed acquisition-before-signature source and exact limited existing host bootstrap; owner approved proposed limited local Docker control-plane and host-derived rootfs trust/no-pull isolation method for preparation only. Authentication before extraction/use; no Docker invocation, acquisition, verification execution, installation or live cutover authorised. Owner approved bounded first-collision encoded public member-path diagnostic preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-bounded-first-collision-diagnostic-preparation-only. No restricted execution authority. Owner approved finite exact Linux data-only terminfo inventory policy and bounded receipt projection as proposed in 8cc1a696, preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-finite-exact-linux-terminfo-inventory-policy-and-bounded-receipt-preparation-only. Strict Windows/gh and other safeguards unchanged; no acquisition, extraction or restricted execution. Owner explicitly approved preparation and static/synthetic verification only of Approach C observation-only candidate (11 fixed roles, five minutes); no restricted execution, acquisition, Docker invocation or active policy change. Exact reference in C5 spec owner-approved-bounded-approach-c-observation-candidate-preparation-only. Owner approved Approach C metadata-only preparation/static/synthetic verification under 13 GET/10-minute proposed limits; no actual acquisition, package downloads, installation, Docker invocation, restricted execution or active trust policy change. Exact spec anchor owner-approved-bounded-approach-c-metadata-only-preparation-and-synthetic-core. Owner approved narrow metadata bootstrap preparation on existing two reviewed images including GnuPG/necessary existing dependencies, no acquisition/restricted execution/integrated verification/active policy change, original 13 GET/10 min bounds. Exact spec anchor owner-approved-narrow-metadata-bootstrap-preparation-and-finite-key-evidence-contract. Owner approved two-stage key/metadata sequence preparation including bounded public signing-key private repository retention proposal, combined 13 GET/600s/256 MiB; no actual acquisition, restricted execution or active policy change. Exact spec anchor owner-approved-two-stage-preparation-and-consolidated-custody-core. Owner approved exact C-D09 managed-development CI evidence rationalisation at proposal 2cbed51, recorded in C5 implementation spec; limited bootstrap trust and residual risk accepted, prepare concrete bounded validation candidate only, no acquisition, installation, restricted execution, migration, new expenditure or phase advancement. Owner approved one-time C5 proportionate publisher-first inspection method (okay lets try that), recorded at docs/C5_PROPORTIONATE_INSPECTION_DECISION_2026-11-27.md; no new restricted authority or acceptance waiver. Owner explicitly approved standalone Windows Stage A preparation preserving all security and acceptance requirements; see docs/C5_STANDALONE_WINDOWS_A_PREPARATION_2026-11-27.md. No restricted execution grant. Owner explicitly approved exact Astral CPython 3.11.18 Windows x64 candidate for standalone Stage A preparation only; docs/C5_WINDOWS_A_ASTRAL_PREPARATION_2026-11-27.md. No new restricted grant. Owner explicitly approved simplified C5 applicability-based development policy and preparation of consolidated Stage A transaction; see ENGINEERING_DECISIONS_CURRENT.md section 27-november--owner-approved-c5-applicability-policy-and-consolidated-stage-a-transaction. No restricted authority or acceptance waiver. Owner explicitly approved bounded G2 equivalent evidence feasibility assessment and design only; see ENGINEERING_DECISIONS_CURRENT.md section 27-november--g2-equivalent-evidence-feasibility-and-design-disposition. Assessment complete, no implementation, live method adoption or restricted execution authority.",
     "restricted_active": [],
     "consumed_disarmed_count": 45,
     "consumed_history": {
@@ -374,7 +381,8 @@
     "Physical 8 GB bundled inference/coexistence, DPAPI, actual desktop egress/durability and production IPC/physical destination unverified; D prerequisites retained.",
     "R06 original-data historical full-tree 74 differences, unknown writer; prospective preservation pending. No loss of original data permitted.",
     "Standalone Windows A candidate 0c1590f57c4d62d58dca482c03ac9948009e90a4, exact Astral runtime and 8 application archives remain inactive; provenance, actual rights/security, Windows settlement and tool applicability pending. Production Pillow/Brotli concern remains unresolved.",
-    "Approved applicability method does not clear CLI or dependencies; exact standard provenance control-plane limits and authenticated bundle/root route, Windows owned settlement/staging and one-use activation, actual pre-use rights/security remain blocked."
+    "Approved applicability method does not clear CLI or dependencies; exact standard provenance control-plane limits and authenticated bundle/root route, Windows owned settlement/staging and one-use activation, actual pre-use rights/security remain blocked.",
+    "G2 equivalent design has documented FileObject/identity primitives but shared mapped/cache/background original-writer attribution and independent complete coverage, safe supported deployment remain unproven. No new live evidence method adopted."
   ],
   "context": {
     "protocol": {
