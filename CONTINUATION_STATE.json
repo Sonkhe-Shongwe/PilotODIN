@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-CONSOLIDATED-FINITE-BINDING-20261127",
-    "parent_sha": "e3231a80a720f5e3aab2658614e6f7fe0512e5e7",
-    "previous_snapshot_sha": "e3231a80a720f5e3aab2658614e6f7fe0512e5e7",
-    "scope": "Disarmed consolidated C5 finite partition and regression command preparation; no execution.",
+    "operation_id": "C5-CONSOLIDATED-STAGING-LIFECYCLE-20261127",
+    "parent_sha": "86dd8d187ddb7ddbe9bcf43aac11c26891e997b7",
+    "previous_snapshot_sha": "86dd8d187ddb7ddbe9bcf43aac11c26891e997b7",
+    "scope": "Consolidated C5 disarmed measured staging, targeted facts and retained regression lifecycle preparation.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--consolidated-c5-finite-partition-and-report-regression-binding",
-      "blob_sha": "cdb00fa113f6c3016a1b75baf1f552143142db6a",
-      "start_line": 551,
-      "end_line": 555
+      "anchor": "27-november--consolidated-c5-measured-staging-and-retained-regression-lifecycle",
+      "blob_sha": "ddaf232dc6181bac2ef9ea163772d22a4def8187",
+      "start_line": 557,
+      "end_line": 561
     }
   },
   "product": {
@@ -137,8 +137,8 @@
     "id": "C5-LINUX-FIRST-20261127",
     "status": "BLOCKED",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "Detached 61c1007 adds finite manifest partition and report writer/direct Vite bindings; actual pre-use, public Pillow/revised graph staging/receipt callbacks, measured @playwright/test size, per-selector applicability and positive final settlement remain unresolved. No execution authority.",
-    "next_action": "Bind existing consolidated candidate 61c1007 to fresh public Pillow acquisition and reviewed actual pre-use dispositions, updated npm lock and measured-size receipts; retain owned scratch through full applicable regressions then positive settlement/final guard. Preserve 23 targeted rows, no standalone acquisition probe; source-only verification then one exact consolidated approval when ready.",
+    "blocker": "Detached 0204090 prepares measured staging/public Pillow, targeted fact inventory, revised npm lock and retained regression workspace. Actual pre-use use dispositions, installation/host transaction and exact full regression/Chrome/settlement receipts remain unbound; @playwright/test actual size unobserved. No execution authority.",
+    "next_action": "Complete one disarmed owned transaction around 0204090: bind staged pre-use facts to reviewed exact applicability and disposition (refuse unresolved), reuse hash-locked Python/npm install on staged workspace, exact Chrome setup/credits and measured request receipt, full per-selector regressions and final guard/positive settlement including failures. Preserve 23 targeted rows and prior Stage A; source-only verify, then seek one bounded consolidated execution approval. No standalone acquisition probe.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
@@ -146,6 +146,13 @@
       "D2, G2 and remaining physical E2/P4 acceptance; no phase advance without evidence and owner signoff."
     ],
     "read": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "27-november--consolidated-c5-measured-staging-and-retained-regression-lifecycle",
+        "blob_sha": "ddaf232dc6181bac2ef9ea163772d22a4def8187",
+        "start_line": 557,
+        "end_line": 561
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--consolidated-c5-finite-partition-and-report-regression-binding",
@@ -457,17 +464,17 @@
     ]
   },
   "operation": {
-    "id": "C5-CONSOLIDATED-FINITE-BINDING-20261127",
+    "id": "C5-CONSOLIDATED-STAGING-LIFECYCLE-20261127",
     "state": "RECONCILED",
-    "starting_sha": "e3231a80a720f5e3aab2658614e6f7fe0512e5e7",
-    "outcome": "Detached 61c1007 pure finite partition, synthetic test source, historical report-writer command and direct installed Vite command bound; nine static checks and manifest arithmetic pass. No execution; staging, actual pre-use and settlement callbacks remain.",
+    "starting_sha": "86dd8d187ddb7ddbe9bcf43aac11c26891e997b7",
+    "outcome": "Detached 0204090 (via 049ea0d) binds measured application transfers, exact public Pillow and bounded standard direct transport, revised npm witness, targeted fact collection and regression-before-cleanup lifecycle; 14 grouped static checks, 13 exact copied excerpt mock checks pass. No actual acquisition/use/CI; final review/install/host/receipt bindings remain.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--consolidated-c5-finite-partition-and-report-regression-binding",
-      "blob_sha": "cdb00fa113f6c3016a1b75baf1f552143142db6a",
-      "start_line": 551,
-      "end_line": 555
+      "anchor": "27-november--consolidated-c5-measured-staging-and-retained-regression-lifecycle",
+      "blob_sha": "ddaf232dc6181bac2ef9ea163772d22a4def8187",
+      "start_line": 557,
+      "end_line": 561
     }
   },
   "authority": {
@@ -765,6 +772,10 @@
       {
         "sha": "61c10076bf3450b154bfc5eb73f8bea83e3d0f75",
         "scope": "Detached five-path finite consolidated partition, report writer command and direct installed Vite config successor of 9402a08; nine static/readback checks and manifest arithmetic pass; synthetic tests written not run; disarmed, no acquisition/execution."
+      },
+      {
+        "sha": "0204090f1f14832cbc482d40bf10fd7683faeeed",
+        "scope": "Detached consolidated successor of 61c1007 through 049ea0d: measured receipt and bounded transport/targeted fact preparation, revised npm witness and regression-before-cleanup lifecycle; 14 grouped static checks and 13 fingerprint-matched copied excerpt synthetic checks pass. Full modules/actual acquisition/use/CI not run; disarmed."
       }
     ]
   },
@@ -789,7 +800,7 @@
     "Pillow controlled storage 46059721700 refused combined redirect URL predicate, individual cause unknown. Exact storage bytes not obtained; no unsupported filename inference or repeated probe.",
     "Exact Pillow SHA256/size from public source verified 46062661845; combined ZIP entry-count/size assertion failed, prior regular-file count may differ from infolist including directories. No installation or current durable custody; full profile open.",
     "Candidate 9402a08 pending exact pre-use/manifest/callback/settlement binding; @playwright/test size cap proposed, not measured; no full tests run. Pillow inventory correction unexecuted.",
-    "61c1007 partial finite binding only; old Stage B cleans scratch before full regression and assumes local Pillow custody/old lock/exact sizes. Actual pre-use disposition, measured @playwright/test size, callback/settlement and approval open; no score credit."
+    "0204090 partial consolidated preparation only. Actual use dispositions, staged bootstrap/install and full host/Chrome/regression/final settlement binding remain. @playwright/test size unobserved; all four profiles blocked, no execution authority or score credit."
   ],
   "context": {
     "protocol": {
