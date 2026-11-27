@@ -5,11 +5,11 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-LINUX-FIRST-20261127",
-    "parent_sha": "c208a5c7ce8dfdd76e9d9e8017babc1518e94ad2",
-    "previous_snapshot_sha": "c208a5c7ce8dfdd76e9d9e8017babc1518e94ad2",
-    "scope": "Adopt explicit owner Linux-first C5 allocation; exact reduced Linux inputs/locks prepared, no execution or acceptance change.",
-    "state": "RECONCILED",
+    "operation_id": "C5-LINUX-TWO-WHEEL-INSPECTION-20261127",
+    "parent_sha": "e88f8f77aa43ce4ec34c85672a232c112170d190",
+    "previous_snapshot_sha": "e88f8f77aa43ce4ec34c85672a232c112170d190",
+    "scope": "Owner explicitly authorises downloading two exact pinned Linux Pillow/PDFium wheels for read-only security/licensing inspection, no install or execution. Local disposable scratch only, no CI. Two HTTPS GET attempts maximum, no redirects/retries, body caps 7140667 and 4020833 bytes, total 11161500, 30s each. Standard host curl, no credentials, hash before parse. No imports of wheel code, no raw publication.",
+    "state": "PREPARED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
       "anchor": "27-november--owner-approved-linux-first-c5-allocation-and-exact-reduced-input-plan",
@@ -117,10 +117,10 @@
   },
   "task": {
     "id": "C5-LINUX-FIRST-20261127",
-    "status": "BLOCKED",
+    "status": "VERIFYING",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
     "blocker": "Linux reduced A data-only candidate exists. Exact Pillow embedded SBOM/security and PDFium actual linkage/security/rights remain unverified, plus pip and remaining applicable input clearance. No complete executable transaction or archive bytes available.",
-    "next_action": "Obtain exact public Pillow and PDFium Linux wheels (two bodies 11,161,500 bytes) by owner upload for read-only hash-first SBOM/notice/native inventory inspection, no installation/import or publication. If actual acquisition needed instead, separate exact bounded authority and supported transport. Use existing inspection mechanisms only. Resolve affected/unknown dependencies and review exact reduced Linux A and full profile functional transaction; no C5 credit until all eight rows earned. Windows before D1, no phase advance.",
+    "next_action": "Perform only exact owner-authorised two-wheel local download/inspection transaction, then reconcile outcome. No CI, install, import, runtime or score change.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
@@ -170,18 +170,19 @@
     ]
   },
   "operation": {
-    "id": "C5-LINUX-FIRST-20261127",
-    "state": "RECONCILED",
-    "starting_sha": "c208a5c7ce8dfdd76e9d9e8017babc1518e94ad2",
-    "outcome": "Owner-approved Linux-first sequencing adopted. Exact seven-wheel/19-predicate reduced plan detached, original locks and workflows unchanged. Actual Pillow and PDFium pre-use facts unavailable; request exact owner-supplied bytes for read-only inspection.",
-    "reconcile_before_retry": false,
-    "receipt": {
-      "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--owner-approved-linux-first-c5-allocation-and-exact-reduced-input-plan",
-      "blob_sha": "9729204e12b3e80b239f1a90355b7a3fc31f2a6d",
-      "start_line": 211,
-      "end_line": 219
-    }
+    "id": "C5-LINUX-TWO-WHEEL-INSPECTION-20261127",
+    "state": "PREPARED",
+    "starting_sha": "e88f8f77aa43ce4ec34c85672a232c112170d190",
+    "scope": "Owner explicitly authorises downloading two exact pinned Linux Pillow/PDFium wheels for read-only security/licensing inspection, no install or execution. Local disposable scratch only, no CI. Two HTTPS GET attempts maximum, no redirects/retries, body caps 7140667 and 4020833 bytes, total 11161500, 30s each. Standard host curl, no credentials, hash before parse. No imports of wheel code, no raw publication.",
+    "intended_paths": [
+      "CONTINUATION_STATE.json"
+    ],
+    "approval_text": "I authorise downloading the two exact pinned Linux Pillow and PDFium wheels for read-only security and licensing inspection. No installation or execution.",
+    "source_candidate": "4118d4708d33d616bd58f1835a6c78ea528af066",
+    "plan_blob": "e23e0806fb4332b3ad0ab09966da641862dd4ed5",
+    "expected_evidence": "Exact response status/size/SHA256, bounded static ZIP metadata/SBOM/notice and native inventory; if no accessible network or mismatch, stop and record actual outcome.",
+    "recovery": "No replay of attempted download or unknown result. Inspect own scratch and record each attempt, preserve prior evidence; no alternate acquisition or package execution.",
+    "reconcile_before_retry": true
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next.",
