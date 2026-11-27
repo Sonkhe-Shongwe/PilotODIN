@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-CD09-OWNER-DECISION-20261127",
-    "parent_sha": "2cbed51061b61bdeb764b5e179f873c62f06f73e",
-    "previous_snapshot_sha": "2cbed51061b61bdeb764b5e179f873c62f06f73e",
-    "scope": "Record explicit owner C-D09 limited managed development evidence-method adoption; preparation only.",
+    "operation_id": "C5-CD09-VALIDATION-PREP-20261127",
+    "parent_sha": "6007fc480d24aac763d15f4f6c1b348edc379475",
+    "previous_snapshot_sha": "6007fc480d24aac763d15f4f6c1b348edc379475",
+    "scope": "Disarmed C-D09 validation draft and exact conditional-retention application input manifest; no execution.",
     "state": "RECONCILED",
     "receipt": {
-      "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
-      "anchor": "27-november-2026--owner-approved-c-d09-proportionate-development-assurance",
-      "blob_sha": "460775ef4e6e233bb510142649160d49e6d55231",
-      "start_line": 3,
-      "end_line": 11
+      "path": "docs/C5_CD09_VALIDATION_CANDIDATE_2026-11-27.md",
+      "anchor": "pilotodin--c-d09-consolidated-validation-candidate",
+      "blob_sha": "d3342ec2496b104e22353f2ab295f269dffe9d6e",
+      "start_line": 1,
+      "end_line": 18
     }
   },
   "product": {
@@ -119,14 +119,21 @@
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
     "status": "BLOCKED",
     "scope": "C-D08 development reproducibility/build safety as revised by C-D09 limited managed-development evidence method; D native and P8 release boundaries unchanged.",
-    "blocker": "Managed-development bootstrap method approved, independent full installed bootstrap manifest no longer mandatory for this limited scope. Exact candidate and applicable input/component/use dispositions remain unresolved.",
-    "next_action": "Prepare disarmed consolidated managed development validation candidate using existing CI/tooling, exact compatible tool versions, independent application pins, scoped use/notice and PDF decision, finite endpoints/limits and existing test predicates. No execution or new acquisition; only request exact approval if ready.",
-    "next_action_kind": "PREPARE",
+    "blocker": "C-D09 managed bootstrap evidence method approved; exact conditional PyMuPDF use rights and relevant native/component terms, verified disposable inputs, browser selection and complete execution scope remain unresolved. Candidate disarmed, not execution-ready.",
+    "next_action": "Review concrete remaining C-D09 use-specific evidence, primarily test-only PyMuPDF or PDFium disposition and targeted native/composite/pip terms; exact approved input staging, browser selection and bounded managed setup/validation route. Use disarmed manifest/draft, no repeat interpreter/identity-only work. If actual missing evidence needs acquisition, propose one exact bounded inspection-only operation, no consumption; request execution approval only after complete reviewed candidate. No generic approval or unsupported use clearance.",
+    "next_action_kind": "MISSING_EVIDENCE",
     "after": [
-      "After concrete independent reference and pre-use evidence, obtain exact restricted scope where required; consolidate compatible actual-use source testing including PDFium Stage A/B, necessary Rust and Windows browser-dev, with no owner migration or native/installer.",
-      "If equivalent test-only PDF replacement proven and explicitly approved, integrate and final matched source regression; binary C5 closure only on all eight rows. Preserve D, G2 and phase gates."
+      "Complete exact application pre-use dispositions, candidate source/runner/action/transport/installed graph/child controls and managed browser compatibility; fresh bounded execution approval only when ready.",
+      "Complete qualified source tests, preserve all PDF predicates if dependency changed, final matched regression and eight-row closure audit. D/G2 and phase gates unchanged."
     ],
     "read": [
+      {
+        "path": "docs/C5_CD09_VALIDATION_CANDIDATE_2026-11-27.md",
+        "anchor": "pilotodin--c-d09-consolidated-validation-candidate",
+        "blob_sha": "d3342ec2496b104e22353f2ab295f269dffe9d6e",
+        "start_line": 1,
+        "end_line": 18
+      },
       {
         "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
         "anchor": "27-november-2026--owner-approved-c-d09-proportionate-development-assurance",
@@ -168,31 +175,21 @@
         "blob_sha": "9c4c131e776a14406e27b462a2f5b35e461adbd1",
         "start_line": 2834,
         "end_line": 2844
-      },
-      {
-        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
-        "anchor": "focused-c-d08-necessity-audit-interpreter-evidence-is-mandatory-approach-c-is-not",
-        "blob_sha": "460775ef4e6e233bb510142649160d49e6d55231"
-      },
-      {
-        "path": "docs/C5_PUBLIC_REPOSITORY_LICENCE_EVIDENCE_REVIEW_2026-11-26.md",
-        "blob_sha": "b0cb741a0ab4466478ae9f1546e03a125bf4367f",
-        "anchor": "1-exact-pinned-declaration-review"
       }
     ]
   },
   "operation": {
-    "id": "C5-CD09-OWNER-DECISION-20261127",
+    "id": "C5-CD09-VALIDATION-PREP-20261127",
     "state": "RECONCILED",
-    "starting_sha": "2cbed51061b61bdeb764b5e179f873c62f06f73e",
-    "outcome": "C-D09 owner-approved and recorded in phase policy, C5 resource and implementation specs. No execution authority; four profiles BLOCKED; no score change.",
+    "starting_sha": "6007fc480d24aac763d15f4f6c1b348edc379475",
+    "outcome": "Prepared two-platform draft and exact 98 wheel/60 npm/2 pip use manifest, static pin/gate checks. No live workflow, execution, use clearance or score. Remaining exact input staging, applicable licence/native terms, managed browser and execution scope blocked.",
     "reconcile_before_retry": false,
     "receipt": {
-      "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
-      "anchor": "27-november-2026--owner-approved-c-d09-proportionate-development-assurance",
-      "blob_sha": "460775ef4e6e233bb510142649160d49e6d55231",
-      "start_line": 3,
-      "end_line": 11
+      "path": "docs/C5_CD09_VALIDATION_CANDIDATE_2026-11-27.md",
+      "anchor": "pilotodin--c-d09-consolidated-validation-candidate",
+      "blob_sha": "d3342ec2496b104e22353f2ab295f269dffe9d6e",
+      "start_line": 1,
+      "end_line": 18
     }
   },
   "authority": {

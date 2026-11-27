@@ -1,0 +1,287 @@
+# DISARMED DRAFT outside .github/workflows. Never execute as written.
+# C-D09 preparation only; current PyMuPDF route conditional on applicable rights.
+# Input manifest 872bdfd04f320267e39a5aef29fe19b8929f7cbd.
+name: C5 managed development validation DRAFT
+on: workflow_dispatch
+permissions:
+  contents: read
+jobs:
+  managed-source:
+    if: ${{ false }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: true
+      max-parallel: 1
+      matrix:
+        include:
+          - runner: windows-2022
+            python: "3.11.9"
+            rust_host: x86_64-pc-windows-msvc
+            lock: backend/locks/windows-x64-cp311-source-test.txt
+          - runner: ubuntu-24.04
+            python: "3.11.18"
+            rust_host: x86_64-unknown-linux-gnu
+            lock: backend/locks/linux-x64-cp311-source-test.txt
+    env:
+      CI: "true"
+      PYTHONDONTWRITEBYTECODE: "1"
+      C5_PYTHON: ${{ matrix.python }}
+      C5_RUST_HOST: ${{ matrix.rust_host }}
+      C5_LOCK: ${{ matrix.lock }}
+    steps:
+      - name: Mandatory refusal until exact pre-use and activation review
+        shell: pwsh
+        run: throw 'C5_CD09_DRAFT_BLOCKED_PRE_USE'
+      - name: Checkout reviewed source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - name: Exact selected managed Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: ${{ matrix.python }}
+          architecture: x64
+      - name: Exact selected managed Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22.23.5"
+          architecture: x64
+      - name: Check managed bootstrap before proposed install
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -I -B -c "import sys,os,struct,platform; assert sys.implementation.name == 'cpython' and platform.python_version() == os.environ['C5_PYTHON'] and struct.calcsize('P') == 8 and platform.machine().lower() in ('amd64','x86_64')"
+          if ($LASTEXITCODE -ne 0) { throw 'C5_BOOTSTRAP_PYTHON' }
+          if ((node --version) -ne 'v22.23.5' -or (npm --version) -ne '10.9.9') { throw 'C5_BOOTSTRAP_NODE' }
+          $rust = rustc -Vv | Out-String
+          if ($LASTEXITCODE -ne 0 -or $rust -notmatch '(?m)^release: 1\.100\.0\s*$' -or $rust -notmatch "(?m)^host: $env:C5_RUST_HOST\s*$" -or (cargo --version) -notmatch '^cargo 1\.100\.0 ') { throw 'C5_BOOTSTRAP_RUST' }
+          Write-Output "C5_RUNNER_IMAGE=$env:ImageOS/$env:ImageVersion"
+          Get-Command python,node,npm,rustc,cargo | Select-Object Name,Source
+          python -B tools/build_input_preflight.py --audit-policy
+          if ($LASTEXITCODE -ne 0) { throw 'C5_POLICY' }
+          node frontend/scripts/verify-npm-lock.mjs
+          if ($LASTEXITCODE -ne 0) { throw 'C5_NPM_STRUCTURE' }
+      - name: Refuse unresolved staging and use disposition
+        shell: pwsh
+        run: throw 'C5_DISPOSABLE_INPUT_STAGING_AND_USE_DISPOSITION_UNRESOLVED'
+      - name: Proposed isolated hash-locked development installation
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:PIP_CONFIG_FILE = if ($IsWindows) { 'NUL' } else { '/dev/null' }
+          $env:PIP_DISABLE_PIP_VERSION_CHECK = '1'
+          $stage = Join-Path $env:RUNNER_TEMP 'pilotodin-c5-approved-inputs'
+          $wheelhouse = Join-Path $stage 'wheelhouse'
+          $npmcache = Join-Path $stage 'npm-cache'
+          if (!(Test-Path -LiteralPath $wheelhouse -PathType Container) -or !(Test-Path -LiteralPath $npmcache -PathType Container)) { throw 'C5_APPROVED_INPUTS_MISSING' }
+          $venv = Join-Path $env:RUNNER_TEMP "pilotodin-c5-venv-$env:GITHUB_RUN_ID"
+          if (Test-Path -LiteralPath $venv) { throw 'C5_VENV_ALREADY_EXISTS' }
+          python -m venv $venv
+          if ($LASTEXITCODE -ne 0) { throw 'C5_VENV_FAILED' }
+          $bin = Join-Path $venv $(if ($IsWindows) { 'Scripts' } else { 'bin' })
+          $python = Join-Path $bin $(if ($IsWindows) { 'python.exe' } else { 'python' })
+          $piplock = Join-Path $venv 'pip-bootstrap.txt'
+          'pip==26.3 --hash=sha256:f3b60b20ffaadd4415ed7957212a38ac63fa4c5fa375bd0f4a797777940fad13' | Set-Content -LiteralPath $piplock -Encoding ascii
+          & $python -I -B -m pip --isolated --disable-pip-version-check --no-input install --no-index --only-binary=:all: --require-hashes --find-links $wheelhouse -r $piplock
+          if ($LASTEXITCODE -ne 0) { throw 'C5_PIP_BOOTSTRAP_FAILED' }
+          & $python -I -B -c "import importlib.metadata as m; assert m.version('pip') == '26.3'"
+          if ($LASTEXITCODE -ne 0) { throw 'C5_PIP_IDENTITY' }
+          & $python -I -B -m pip --isolated --disable-pip-version-check --no-input install --no-index --only-binary=:all: --require-hashes --find-links $wheelhouse --report (Join-Path $venv 'install-report.json') -r $env:C5_LOCK
+          if ($LASTEXITCODE -ne 0) { throw 'C5_LOCK_INSTALL_FAILED' }
+          & $python -I -B -m pip --isolated --disable-pip-version-check check
+          if ($LASTEXITCODE -ne 0) { throw 'C5_PIP_CHECK_FAILED' }
+          npm ci --prefix frontend --offline --ignore-scripts --no-audit --no-fund --cache $npmcache
+          if ($LASTEXITCODE -ne 0) { throw 'C5_NPM_LOCK_INSTALL_FAILED' }
+          $bin | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+      - name: Refuse unresolved installed graph and component-use receipt
+        shell: pwsh
+        run: throw 'C5_INSTALLED_GRAPH_AND_COMPONENT_USE_RECEIPT_UNRESOLVED'
+      - name: Windows isolated browser-dev metadata and frontend build
+        if: ${{ matrix.runner == 'windows-2022' }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -B -c "import sys; from pathlib import Path; from tools import live_dev; live_dev.verify_python_environment(Path(sys.executable),Path(sys.prefix),Path('backend/requirements.txt'))"
+          if ($LASTEXITCODE -ne 0) { throw 'C5_WINDOWS_PYTHON_DEV' }
+          node frontend/scripts/verify-npm-lock.mjs --installed
+          if ($LASTEXITCODE -ne 0) { throw 'C5_WINDOWS_NPM_DEV' }
+          npm run build --prefix frontend
+          if ($LASTEXITCODE -ne 0) { throw 'C5_WINDOWS_DEV_BUILD' }
+      - name: Compile Windows storage-policy code and tests to object only
+        if: ${{ matrix.runner == 'windows-2022' }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $object = Join-Path $env:RUNNER_TEMP 'pilotodin-storage-policy.obj'
+          try {
+            rustc --edition=2021 --test --emit=obj frontend/src-tauri/src/storage_profile_tests.rs -o $object
+            if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $object)) { throw 'Rust object compilation failed' }
+          } finally {
+            if (Test-Path -LiteralPath $object) { Remove-Item -LiteralPath $object -Force }
+          }
+      - name: Record exact existing Windows development toolchain and Python compatibility
+        if: ${{ matrix.runner == 'windows-2022' }}
+        run: |
+          python -I -B -c "import sys,struct,platform,importlib.metadata as m; assert sys.implementation.name == 'cpython' and sys.version_info[:2] == (3,11) and struct.calcsize('P') == 8; print('C5_TOOLCHAIN Python',platform.python_version(),platform.system(),platform.machine(),'pip',m.version('pip'))"
+          python -I -B -m pip --isolated --disable-pip-version-check --version
+          python -B -c "import sys; from pathlib import Path; from tools import live_dev; live_dev.verify_python_environment(Path(sys.executable),Path(sys.prefix),Path('backend/requirements.txt')); print('C5_HOSTED_PYTHON_DEV_COMPATIBILITY_PASS')"
+          node --version
+          npm --version
+          node frontend/scripts/verify-npm-lock.mjs
+          rustc -Vv
+          cargo --version
+      - name: Parse C5 guarded Windows source entrypoints without running them
+        if: ${{ matrix.runner == 'windows-2022' }}
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          foreach ($file in @('desktop/Build_Windows_Installer.ps1','desktop/Verify_Frontend_Windows.ps1', 'tools/Verify_A4_Native_Windows.ps1', 'tools/Verify_P2_Native_Export_Local.ps1', 'desktop/Verify_Installed_PilotODIN.ps1','desktop/Build_Python_Sidecar.ps1','desktop/Stage_Pinned_Offline_AI.ps1','desktop/Stage_Bundled_Inference.ps1')) {
+            $tokens = $null
+            $parseErrors = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $file).Path, [ref]$tokens, [ref]$parseErrors)
+            if ($parseErrors.Count) { throw 'C5 entrypoint parser failed' }
+          }
+      - name: Exercise C5 synthetic source guard fixtures
+        if: ${{ matrix.runner == 'windows-2022' }}
+        run: python -B -m pytest -q tests/test_c5_build_input_preflight.py
+      - name: Exercise historical bundle preflight refusal cases only
+        if: ${{ matrix.runner == 'windows-2022' }}
+        run: python -B -m pytest -q tests/test_build_e_offline_inference.py -k bundle_preflight
+      - name: Measure exact local answers at simulated laptop headroom
+        if: ${{ matrix.runner == 'windows-2022' }}
+        run: python -B qa/p4_research/measure_local_answers.py
+      - name: Verify engine shutdown with and without a desktop owner
+        if: ${{ matrix.runner == 'windows-2022' }}
+        run: python -m pytest -q tests/test_packaged_engine_smoke.py tests/test_desktop_runner_process_smoke.py tests/test_workspace_boundary.py tests/test_owned_server.py
+      - name: Review pinned Python release graphs offline (candidate only)
+        if: ${{ matrix.runner == 'ubuntu-24.04' }}
+        run: python -B -m qa.c5_metadata.graph_review
+      - name: Review non-executable candidate input inventory offline
+        if: ${{ matrix.runner == 'ubuntu-24.04' }}
+        run: python -B -m qa.c5_metadata.input_inventory --summary
+      - name: Exercise standalone Rust storage policy on disposable Linux paths
+        if: ${{ matrix.runner == 'ubuntu-24.04' }}
+        run: |
+          rustc --edition=2021 --test frontend/src-tauri/src/storage_profile_tests.rs -o "$RUNNER_TEMP/pilotodin-storage-policy-tests"
+          "$RUNNER_TEMP/pilotodin-storage-policy-tests"
+          rm -f "$RUNNER_TEMP/pilotodin-storage-policy-tests"
+      - name: Record exact existing Linux development toolchain
+        if: ${{ matrix.runner == 'ubuntu-24.04' }}
+        run: |
+          python -I -B -c "import sys,struct,platform,importlib.metadata as m; assert sys.implementation.name == 'cpython' and sys.version_info[:2] == (3,11) and struct.calcsize('P') == 8; print('C5_TOOLCHAIN Python',platform.python_version(),platform.system(),platform.machine(),'pip',m.version('pip'))"
+          python -I -B -m pip --isolated --disable-pip-version-check --version
+          python -I -B -m pip --isolated --disable-pip-version-check --no-input check
+          node --version
+          npm --version
+          rustc -Vv
+          cargo --version
+      - name: Verify Python-only workspace writer lease
+        if: ${{ matrix.runner == 'ubuntu-24.04' }}
+        run: python -B -m unittest -v tests.test_workspace_boundary tests.test_owned_server
+      - name: Compile changed backend code
+        if: ${{ matrix.runner == 'ubuntu-24.04' }}
+        run: python -m py_compile backend/target_opportunities.py backend/target_timing_review.py
+      - name: Run focused existing and new P4 backend suites on synthetic data
+        if: ${{ matrix.runner == 'ubuntu-24.04' }}
+        env:
+          PILOTODIN_HOME: ${{ runner.temp }}/pilotodin-p4-review-${{ github.run_id }}
+        run: >-
+          python -m pytest -q
+          tests/test_p4_target_opportunities.py
+          tests/test_p4_bike_public_import.py
+          tests/test_p4_bike_time_readiness.py
+          tests/test_p4_bike_categorical_readiness.py
+          tests/test_p4_target_business_context.py
+          tests/test_p4_prediction_timing_review.py
+          tests/test_p4_two_axis_evidence.py
+          tests/test_p4_review_queue.py
+          tests/test_p4_manual_target_inspection.py
+          tests/test_p4_queue_resource_bounds.py
+          tests/test_p4_consolidated_acceptance.py
+          tests/test_p4_r03_worker_comparison.py
+          tests/test_p4_r03_verified_answers.py
+          tests/test_build_e_autonomous_investigations.py
+          tests/test_p1_resource_admission.py
+          tests/test_p4_phase_exit_matrix.py
+          tests/test_p4_native_acceptance_kit.py
+          tests/test_p4_n12_trace.py
+          tests/test_p4_n12_same_capture_restore.py
+          tests/test_p4_n12_webview_replay.py
+          tests/test_p4_r06_prospective_fingerprint.py
+          tests/test_p4_n12_worker_scratch_source.py
+          tests/test_p4_n12_app_build.py
+          tests/test_p4_n12_mutation_triage.py
+          tests/test_p4_n12_ambient_local_candidate.py
+          tests/test_p4_n12_app_journey.py
+          tests/test_p4_n12_app_lifetime.py
+          tests/test_p4_n12_no_cdp_fileio_review.py
+          tests/test_p4_n12_lifetime_control.py
+          tests/test_p4_n12_lifetime_etw.py
+          tests/test_p4_n12_exit_corroboration.py
+          tests/test_p4_n12_egress.py
+          tests/test_p4_n12_journey_diagnostics.py
+          tests/test_p4_n12_webview_storage.py
+          tests/test_p4_n12_no_cdp_native_path.py
+          tests/test_p4_n12_no_cdp_lifecycle.py
+          tests/test_p4_n12_no_cdp_main_window.py
+          tests/test_p4_n12_no_cdp_browser_identity.py
+          tests/test_p4_n12_no_cdp_child_handles.py
+          tests/test_p4_n12_private_child_pipe.py
+          tests/test_p4_n12_source_evidence_map.py
+          tests/test_p4_n12_no_cdp_log_witness.py
+          tests/test_p4_n12_calibration_socket_pair.py
+          tests/test_p4_n12_protected_fixture_contract.py
+          tests/test_p4_n12_product_tree_isolation_review.py
+          tests/test_p4_n12_webview_storage_mechanism_map.py
+          tests/test_p4_n12_fileio_identity_join.py
+          tests/test_p4_n12_token_capability_preflight.py
+          tests/test_p4_n12_tmp_debugger_fixture.py
+          tests/test_p4_n12_procmon_environment_control.py
+          tests/test_p4_installer_provenance.py
+          tests/test_c5_build_input_preflight.py
+      - name: Exercise historical bundle preflight refusal cases only
+        if: ${{ matrix.runner == 'ubuntu-24.04' }}
+        run: python -B -m pytest -q tests/test_build_e_offline_inference.py -k bundle_preflight
+      - name: Verify P4 source contracts and manual target choice
+        if: ${{ matrix.runner == 'ubuntu-24.04' }}
+        run: >-
+          node --test
+          frontend/tests/p4-target-opportunities-contracts.test.cjs
+          frontend/tests/p4-business-context-contracts.test.cjs
+          frontend/tests/p4-prediction-timing-contracts.test.cjs
+          frontend/tests/p4-two-axis-contracts.test.cjs
+          frontend/tests/p4-review-queue-contracts.test.cjs
+          frontend/tests/ml-a3-feature-preparation.test.cjs
+          frontend/tests/p4-75-selected-feature-budget.test.cjs
+          frontend/tests/p1-primary-button-edit-markers.test.cjs
+          frontend/tests/p4-native-dev-isolation.test.cjs
+          frontend/tests/c5-npm-lock.test.cjs
+          frontend/tests/a4-native-smoke-runner.test.cjs
+          frontend/tests/desktop-ai-boundaries.test.cjs
+          frontend/tests/p1-resource-settings.test.cjs
+          frontend/e2e/p4-72-cdp-target-classifier.test.mjs
+          frontend/e2e/p4-73-cdp-target-discovery.test.mjs
+          frontend/e2e/p4-n12-native-close-readiness.test.mjs
+          frontend/e2e/p4-n12-app-lifetime-ready.test.mjs
+          frontend/e2e/p4-n12-native-cases.test.mjs
+      - name: Build actual TypeScript and Vite bundle
+        if: ${{ matrix.runner == 'ubuntu-24.04' }}
+        run: npm run build --prefix frontend
+      - name: Configure Linux real HTTP fixture
+        if: ${{ matrix.runner == 'ubuntu-24.04' }}
+        shell: bash
+        run: |
+          echo "PILOTODIN_HOME=$RUNNER_TEMP/pilotodin-p1-real-http-$GITHUB_RUN_ID" >> "$GITHUB_ENV"
+          echo "P1_REAL_HTTP_E2E=1" >> "$GITHUB_ENV"
+      - name: Refuse unresolved browser input
+        if: ${{ matrix.runner == 'ubuntu-24.04' }}
+        shell: pwsh
+        run: throw 'C5_EXACT_BROWSER_ASSET_OR_MANAGED_BROWSER_SELECTION_UNRESOLVED'
+      - name: Test actual P4 review queue against disposable real HTTP backend
+        if: ${{ matrix.runner == 'ubuntu-24.04' }}
+        working-directory: frontend
+        run: >-
+          npx --no-install playwright test --config=playwright.p4-real-http.config.ts
+          --grep-invert 'BE-024 real HTTP: reopen a fitted synthetic experiment'
