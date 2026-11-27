@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-CONSOLIDATED-REPLACEMENT-FENCE-AND-EXACT-BROWSER-RECEIPTS-20261128",
-    "parent_sha": "f2b02a9efa4bb93b6b7a7be169a544c2367d9c99",
-    "previous_snapshot_sha": "f2b02a9efa4bb93b6b7a7be169a544c2367d9c99",
-    "scope": "Disarmed transfer reservation/replacement fence, exact browser/credits receipt preparation and specific host/dependency holds.",
+    "operation_id": "C5-REPORTLAB-5-1-2-OWNER-APPROVED-ISOLATED-PREPARATION-20261128",
+    "parent_sha": "2b84c36b5242700897f2f172be85b4fa0d149309",
+    "previous_snapshot_sha": "2b84c36b5242700897f2f172be85b4fa0d149309",
+    "scope": "Owner-approved isolated ReportLab 5.1.2 preparation, five inert dependency projections and exact remaining metadata holds.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "28-november--transfer-replacement-fence-exact-browser-receipts-and-concrete-host-holds",
-      "blob_sha": "6fe763feb0905089ce52c6a075f23110b701800b",
-      "start_line": 687,
-      "end_line": 695
+      "anchor": "28-november--owner-approved-isolated-reportlab-512-projections-and-metadata-holds",
+      "blob_sha": "0963a8e2645234df473e202b5599efd240e05c2c",
+      "start_line": 697,
+      "end_line": 705
     }
   },
   "product": {
@@ -137,15 +137,22 @@
     "id": "C5-LINUX-FIRST-20261127",
     "status": "BLOCKED",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "Candidate 9970039 disarmed. Exact transfer reservation/replacement fence and browser receipt validators prepared; host whole-job containment and separate fixture-root custody/cleanup unverified, callbacks not bound. ReportLab 4.5.1 HOLD; 5.1.2 outside current <5 requirement, explicit coordinated changed-scope approval required. 0/23 final dispositions. Zero execution authority.",
-    "next_action": "Obtain explicit owner decision on bounded ReportLab 5.1.2 isolated evaluation and coordinated requirement/lock projections, no acquisition or live adoption. Obtain finite independent staged component/notice evidence and exact existing hosted whole-job containment/dual-root custody feasibility before binding remaining regression commands. Do not add generic host abstractions, bypass existing fixture guards, infer positive settlement, or seek full installation while known holds remain. Independent scoped source work only where useful.",
-    "next_action_kind": "OWNER_DECISION",
+    "blocker": "Candidate 4dd5525 disarmed; approved ReportLab 5.1.2 preparation complete at inert projection scope, exact publisher wheel hash obtained; URL/size/METADATA/notice/security and actual resolver still held. Current 4.5.1 HOLD remains. Independent host whole-job/dual-root custody and exact regression callbacks remain unverified; 0/23 final dispositions, zero execution authority.",
+    "next_action": "Obtain exact public non-body ReportLab metadata if available and scope finite independent staged facts decision for the replacement and other outstanding targeted inputs; rebind exact verified dependency graph, budgets, guard/manifest and successor regression projections only after sufficient facts. Establish existing hosted whole-job containment and dual-root custody feasibility before binding remaining regression commands. Do not repeat broad publisher research, acquire packages, self-certify facts, weaken tests or seek full install while security/rights/host holds persist.",
+    "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
       "Windows-specific verified input and compatibility prerequisites before actual production-equivalent D1, separately authorised; no installer.",
       "D2, G2 and remaining physical E2/P4 acceptance; no phase advance without evidence and owner signoff."
     ],
     "read": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "28-november--owner-approved-isolated-reportlab-512-projections-and-metadata-holds",
+        "blob_sha": "0963a8e2645234df473e202b5599efd240e05c2c",
+        "start_line": 697,
+        "end_line": 705
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--transfer-replacement-fence-exact-browser-receipts-and-concrete-host-holds",
@@ -562,22 +569,22 @@
     ]
   },
   "operation": {
-    "id": "C5-CONSOLIDATED-REPLACEMENT-FENCE-AND-EXACT-BROWSER-RECEIPTS-20261128",
+    "id": "C5-REPORTLAB-5-1-2-OWNER-APPROVED-ISOLATED-PREPARATION-20261128",
     "state": "RECONCILED",
-    "starting_sha": "f2b02a9efa4bb93b6b7a7be169a544c2367d9c99",
-    "outcome": "Detached 9970039: 12 static/readback checks and 27 fingerprint-matched synthetic assertions pass; exact browser title projection and no-replacement fence prepared. Actual host/whole-job/fixture cleanup, report format, regression callbacks and ReportLab/rights remain unresolved. No restricted execution.",
+    "starting_sha": "2b84c36b5242700897f2f172be85b4fa0d149309",
+    "outcome": "Detached 4dd5525: exact published wheel digest obtained; five inert dependency projections, coordinated pin rebindings, 15 static/readback checks and six pure version comparisons passed. Actual wheel identity/metadata, graph, use, host and regression execution unverified. No restricted execution.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "28-november--transfer-replacement-fence-exact-browser-receipts-and-concrete-host-holds",
-      "blob_sha": "6fe763feb0905089ce52c6a075f23110b701800b",
-      "start_line": 687,
-      "end_line": 695
+      "anchor": "28-november--owner-approved-isolated-reportlab-512-projections-and-metadata-holds",
+      "blob_sha": "0963a8e2645234df473e202b5599efd240e05c2c",
+      "start_line": 697,
+      "end_line": 705
     }
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next. Owner-approved GitHub-only development installation and bounded technical autonomy amendment applies within exact approved batches; no broader authority.",
-    "preparation_only": "Owner approved consolidated shared-bundle disarmed acquisition-before-signature source and exact limited existing host bootstrap; owner approved proposed limited local Docker control-plane and host-derived rootfs trust/no-pull isolation method for preparation only. Authentication before extraction/use; no Docker invocation, acquisition, verification execution, installation or live cutover authorised. Owner approved bounded first-collision encoded public member-path diagnostic preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-bounded-first-collision-diagnostic-preparation-only. No restricted execution authority. Owner approved finite exact Linux data-only terminfo inventory policy and bounded receipt projection as proposed in 8cc1a696, preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-finite-exact-linux-terminfo-inventory-policy-and-bounded-receipt-preparation-only. Strict Windows/gh and other safeguards unchanged; no acquisition, extraction or restricted execution. Owner explicitly approved preparation and static/synthetic verification only of Approach C observation-only candidate (11 fixed roles, five minutes); no restricted execution, acquisition, Docker invocation or active policy change. Exact reference in C5 spec owner-approved-bounded-approach-c-observation-candidate-preparation-only. Owner approved Approach C metadata-only preparation/static/synthetic verification under 13 GET/10-minute proposed limits; no actual acquisition, package downloads, installation, Docker invocation, restricted execution or active trust policy change. Exact spec anchor owner-approved-bounded-approach-c-metadata-only-preparation-and-synthetic-core. Owner approved narrow metadata bootstrap preparation on existing two reviewed images including GnuPG/necessary existing dependencies, no acquisition/restricted execution/integrated verification/active policy change, original 13 GET/10 min bounds. Exact spec anchor owner-approved-narrow-metadata-bootstrap-preparation-and-finite-key-evidence-contract. Owner approved two-stage key/metadata sequence preparation including bounded public signing-key private repository retention proposal, combined 13 GET/600s/256 MiB; no actual acquisition, restricted execution or active policy change. Exact spec anchor owner-approved-two-stage-preparation-and-consolidated-custody-core. Owner approved exact C-D09 managed-development CI evidence rationalisation at proposal 2cbed51, recorded in C5 implementation spec; limited bootstrap trust and residual risk accepted, prepare concrete bounded validation candidate only, no acquisition, installation, restricted execution, migration, new expenditure or phase advancement. Owner approved one-time C5 proportionate publisher-first inspection method (okay lets try that), recorded at docs/C5_PROPORTIONATE_INSPECTION_DECISION_2026-11-27.md; no new restricted authority or acceptance waiver. Owner explicitly approved standalone Windows Stage A preparation preserving all security and acceptance requirements; see docs/C5_STANDALONE_WINDOWS_A_PREPARATION_2026-11-27.md. No restricted execution grant. Owner explicitly approved exact Astral CPython 3.11.18 Windows x64 candidate for standalone Stage A preparation only; docs/C5_WINDOWS_A_ASTRAL_PREPARATION_2026-11-27.md. No new restricted grant. Owner explicitly approved simplified C5 applicability-based development policy and preparation of consolidated Stage A transaction; see ENGINEERING_DECISIONS_CURRENT.md section 27-november--owner-approved-c5-applicability-policy-and-consolidated-stage-a-transaction. No restricted authority or acceptance waiver. Owner explicitly approved bounded G2 equivalent evidence feasibility assessment and design only; see ENGINEERING_DECISIONS_CURRENT.md section 27-november--g2-equivalent-evidence-feasibility-and-design-disposition. Assessment complete, no implementation, live method adoption or restricted execution authority. Owner adopted aggressive product-first framework (okay lets follow you new frame work); PRODUCT-FIRST-20261127 in phase policy. Independent concrete scoped P4 source work and narrowly rationalised standard C5 control metadata preparation, no new restricted execution grant. Owner approved preparation of bounded browser-only GitHub verification (okay do ti); detached 26ab490, no activation/acquisition/execution grant; exact receipt in engineering decisions. Owner approved proceeding with corrected Chrome .88 and Playwright 1.65.1 alternative (do it), exact candidate 920df39 prepared; no exact bounded activation grant yet; preserve original locks.",
+    "preparation_only": "Owner approved consolidated shared-bundle disarmed acquisition-before-signature source and exact limited existing host bootstrap; owner approved proposed limited local Docker control-plane and host-derived rootfs trust/no-pull isolation method for preparation only. Authentication before extraction/use; no Docker invocation, acquisition, verification execution, installation or live cutover authorised. Owner approved bounded first-collision encoded public member-path diagnostic preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-bounded-first-collision-diagnostic-preparation-only. No restricted execution authority. Owner approved finite exact Linux data-only terminfo inventory policy and bounded receipt projection as proposed in 8cc1a696, preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-finite-exact-linux-terminfo-inventory-policy-and-bounded-receipt-preparation-only. Strict Windows/gh and other safeguards unchanged; no acquisition, extraction or restricted execution. Owner explicitly approved preparation and static/synthetic verification only of Approach C observation-only candidate (11 fixed roles, five minutes); no restricted execution, acquisition, Docker invocation or active policy change. Exact reference in C5 spec owner-approved-bounded-approach-c-observation-candidate-preparation-only. Owner approved Approach C metadata-only preparation/static/synthetic verification under 13 GET/10-minute proposed limits; no actual acquisition, package downloads, installation, Docker invocation, restricted execution or active trust policy change. Exact spec anchor owner-approved-bounded-approach-c-metadata-only-preparation-and-synthetic-core. Owner approved narrow metadata bootstrap preparation on existing two reviewed images including GnuPG/necessary existing dependencies, no acquisition/restricted execution/integrated verification/active policy change, original 13 GET/10 min bounds. Exact spec anchor owner-approved-narrow-metadata-bootstrap-preparation-and-finite-key-evidence-contract. Owner approved two-stage key/metadata sequence preparation including bounded public signing-key private repository retention proposal, combined 13 GET/600s/256 MiB; no actual acquisition, restricted execution or active policy change. Exact spec anchor owner-approved-two-stage-preparation-and-consolidated-custody-core. Owner approved exact C-D09 managed-development CI evidence rationalisation at proposal 2cbed51, recorded in C5 implementation spec; limited bootstrap trust and residual risk accepted, prepare concrete bounded validation candidate only, no acquisition, installation, restricted execution, migration, new expenditure or phase advancement. Owner approved one-time C5 proportionate publisher-first inspection method (okay lets try that), recorded at docs/C5_PROPORTIONATE_INSPECTION_DECISION_2026-11-27.md; no new restricted authority or acceptance waiver. Owner explicitly approved standalone Windows Stage A preparation preserving all security and acceptance requirements; see docs/C5_STANDALONE_WINDOWS_A_PREPARATION_2026-11-27.md. No restricted execution grant. Owner explicitly approved exact Astral CPython 3.11.18 Windows x64 candidate for standalone Stage A preparation only; docs/C5_WINDOWS_A_ASTRAL_PREPARATION_2026-11-27.md. No new restricted grant. Owner explicitly approved simplified C5 applicability-based development policy and preparation of consolidated Stage A transaction; see ENGINEERING_DECISIONS_CURRENT.md section 27-november--owner-approved-c5-applicability-policy-and-consolidated-stage-a-transaction. No restricted authority or acceptance waiver. Owner explicitly approved bounded G2 equivalent evidence feasibility assessment and design only; see ENGINEERING_DECISIONS_CURRENT.md section 27-november--g2-equivalent-evidence-feasibility-and-design-disposition. Assessment complete, no implementation, live method adoption or restricted execution authority. Owner adopted aggressive product-first framework (okay lets follow you new frame work); PRODUCT-FIRST-20261127 in phase policy. Independent concrete scoped P4 source work and narrowly rationalised standard C5 control metadata preparation, no new restricted execution grant. Owner approved preparation of bounded browser-only GitHub verification (okay do ti); detached 26ab490, no activation/acquisition/execution grant; exact receipt in engineering decisions. Owner approved proceeding with corrected Chrome .88 and Playwright 1.65.1 alternative (do it), exact candidate 920df39 prepared; no exact bounded activation grant yet; preserve original locks. Owner explicitly approved isolated ReportLab 5.1.2 evaluation and coordinated dependency-range and lock preparation, preserving all security, acceptance and execution boundaries; exact owner decision in ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-isolated-reportlab-512-projections-and-metadata-holds. Detached 4dd5525 data-only proposal; no acquisition, installation, execution or live adoption authority.",
     "restricted_active": [],
     "consumed_disarmed_count": 56,
     "consumed_history": {
@@ -906,6 +913,10 @@
       {
         "sha": "9970039f764112a40fce3880822a7cc1d0db6560",
         "scope": "Disarmed successor of e441431 through 9b23a98; five QA paths, transfer caps and no-replacement on incomplete accounting, exact 6 P1/13 P4 receipt and credits validators. 12 static/readback and 27 fingerprint-matched synthetic assertions PASS; actual reporter/host/acquisition/full module tests not run."
+      },
+      {
+        "sha": "4dd55250bf7cb43d47338493d656afb9eaf5b6c9",
+        "scope": "Disarmed one-file ReportLab 5.1.2 inert proposal successor of 9970039. Exact published hash, five full dependency projections and coordinated pin rebindings, 15 static/readback and six pure packaging comparisons PASS. Actual metadata/rights/security/graph/host/regression unresolved; no acquisition or active lock change."
       }
     ]
   },
@@ -939,7 +950,8 @@
     "615c73b disarmed notice/report-measurement sequencing and pre-transfer review. Exact native/loader facts, independent pre-use reviews and ReportLab hold remain; hosted runner and receipt bindings open. No use authority or credit.",
     "2235d38 disarmed common command runner; command-group evidence does not contain detached/root children, Chrome urllib deadline and partial transfer accounting and actual whole-job boundary pending. No use authority or credit.",
     "e441431 disarmed: failed transfer receipts record reserved slots and observed file size, never assert actual requests/wire bytes; independently bound whole-job containment and real host preflight/cleanup, regression/credits and ReportLab/rights decisions pending. No new authority or credit.",
-    "9970039 disarmed; host fixture requires independent separate RUNNER_TEMP root and sibling backend source layout, no existing positive whole-job boundary proved. ReportLab 5.1.2 requires coordinated <5 range/lock scope review. No new authority or credit."
+    "9970039 disarmed; host fixture requires independent separate RUNNER_TEMP root and sibling backend source layout, no existing positive whole-job boundary proved. ReportLab 5.1.2 requires coordinated <5 range/lock scope review. No new authority or credit.",
+    "4dd5525 disarmed; ReportLab 5.1.2 published digest confirmed but exact URL/bytes/METADATA/notice inventory and actual offline graph/security/rights held. Existing 4.5.1 HOLD and whole-job/fixture cleanup requirements unchanged. No new restricted authority or acceptance credit."
   ],
   "context": {
     "protocol": {
