@@ -6,10 +6,10 @@
   },
   "checkpoint": {
     "operation_id": "P4-TEMPORARY-SOURCE-CI-INTEGRATION-20261127",
-    "parent_sha": "ade13c88507256acc4b5237f0f3589e35c063022",
-    "previous_snapshot_sha": "ade13c88507256acc4b5237f0f3589e35c063022",
+    "parent_sha": "544a22be60333ca91b09a28f350d8f626cd64dc8",
+    "previous_snapshot_sha": "544a22be60333ca91b09a28f350d8f626cd64dc8",
     "scope": "Owner-approved temporary dependency-free CI routing; integrate exact 9006133 two-path product correction. Two source-only jobs; original jobs retained held, C5 candidate 982435f remains detached.",
-    "state": "PREPARED",
+    "state": "ISSUED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
       "anchor": "27-november--engine-admission-full-source-contract-replay-and-legacy-ci-hold",
@@ -117,10 +117,10 @@
   },
   "task": {
     "id": "C5-LINUX-FIRST-20261127",
-    "status": "PREPARED",
+    "status": "VERIFYING",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
     "blocker": "C5 full-profile parked on environment/private custody, actual pre-use/security and regressions. Independent 9006133 full-source static replay 12/12; active branch publication would trigger two legacy workflows with unresolved unqualified dependency/lifecycle/browser acquisition. Need owner decision on narrowly dependency-free CI routing, or full C5 first.",
-    "next_action": "Publish exact prepared four source/workflow blobs with non-force expected HEAD, then reconcile the two actual source-only CI runs. No dependency-consuming job activation.",
+    "next_action": "Reconcile exact issued product/source-only workflow publication and actual P2/P4 run IDs; do not replay.",
     "next_action_kind": "SOURCE_INTEGRATION",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
@@ -258,7 +258,7 @@
   },
   "operation": {
     "id": "P4-TEMPORARY-SOURCE-CI-INTEGRATION-20261127",
-    "state": "PREPARED",
+    "state": "ISSUED",
     "starting_sha": "ade13c88507256acc4b5237f0f3589e35c063022",
     "scope": "Owner-approved temporary dependency-free CI routing; integrate exact 9006133 two-path product correction. Two source-only jobs; original jobs retained held, C5 candidate 982435f remains detached.",
     "intended_paths": [

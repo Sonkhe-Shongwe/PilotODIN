@@ -201,6 +201,29 @@ class BundledWorkerProductFilesystemContract(unittest.TestCase):
         self.assertLess(inference.index("*active = None"), inference.index("state.shutdown_interrupted.swap(false"))
 
 
+    def test_backend_connection_refuses_recorded_exit_without_replacement(self):
+        src = RUST.read_text(encoding="utf-8")
+        launch = slice_between(src, "async fn launch_backend(", "struct VerifiedModel")
+        cached = slice_between(launch, "if let Some(existing) = guard.as_ref() {", "let port = free_loopback_port()?")
+        self.assertLess(cached.index("ensure_desktop_admission(&app, &state)?"),
+                        cached.index("existing.exit.load(Ordering::Acquire) != 0"))
+        self.assertLess(cached.index("existing.exit.load(Ordering::Acquire) != 0"),
+                        cached.index("return Ok(existing.connection.clone())"))
+        self.assertIn('return Err("Analytical engine exit detected".into())', cached)
+        self.assertNotIn("stopping.store(", cached)
+        self.assertNotIn("guard.take()", cached)
+        self.assertNotIn("command.spawn()", cached)
+        # The event publishes exit before trying to acquire the same mutex.
+        event = slice_between(launch, "CommandEvent::Terminated(payload) => {",
+                              'CommandEvent::Error(message)')
+        self.assertLess(event.index("exit.store("), event.index("state.backend.lock()"))
+        self.assertLess(event.index("state.backend.lock()"), event.index("state.stopping.store(true"))
+        final = launch.split("owner.wait_ready())", 1)[1]
+        self.assertLess(final.index("state.backend.lock()"), final.index("ensure_desktop_admission(&app, &state)?"))
+        self.assertLess(final.index("current.connection.token != connection.token"), final.index("Ok(connection)"))
+        self.assertLess(final.index("current.exit.load(Ordering::Acquire) != 0"), final.index("Ok(connection)"))
+        self.assertNotIn("*backend = None", final)
+
     def test_uncertain_worker_spawn_keeps_original_protections_and_blocks_close(self):
         src = RUST.read_text(encoding="utf-8")
         launch = slice_between(src, "async fn launch_backend(", "fn verify_bundled_model(")

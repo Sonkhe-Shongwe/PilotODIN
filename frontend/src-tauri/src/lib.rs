@@ -626,6 +626,13 @@ async fn launch_backend(window: tauri::WebviewWindow, app: AppHandle, state: Sta
     ensure_desktop_admission(&app, &state)?;
     let mut guard = state.backend.lock().map_err(|_| "Engine state unavailable".to_string())?;
     if let Some(existing) = guard.as_ref() {
+        // The exit event publishes the leader witness before acquiring this
+        // mutex to mark the session stopping. Do not return a connection
+        // during that interval or remove the retained worker.
+        ensure_desktop_admission(&app, &state)?;
+        if existing.exit.load(Ordering::Acquire) != 0 {
+            return Err("Analytical engine exit detected".into());
+        }
         return Ok(existing.connection.clone());
     }
     let port = free_loopback_port()?;
@@ -774,7 +781,16 @@ async fn launch_backend(window: tauri::WebviewWindow, app: AppHandle, state: Sta
         };
         tauri::async_runtime::spawn_blocking(move || owner.wait_ready())
             .await.map_err(|_| "Owned analytical readiness unavailable".to_owned())??;
-        ensure_desktop_admission(&app, &state)?;
+    }
+    // Both launch paths must still refer to the admitted generation.
+    // This is an observation of recorded state, not a health probe or proof
+    // that the process cannot exit immediately after the response.
+    let backend = state.backend.lock().map_err(|_| "Engine state unavailable")?;
+    ensure_desktop_admission(&app, &state)?;
+    let current = backend.as_ref().ok_or("Owned analytical session unavailable")?;
+    if current.connection.token != connection.token
+        || current.exit.load(Ordering::Acquire) != 0 {
+        return Err("Analytical engine changed or exited during launch".into());
     }
     Ok(connection)
 }
