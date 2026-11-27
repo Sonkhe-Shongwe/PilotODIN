@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-C-D08-NECESSITY-AUDIT-20261127",
-    "parent_sha": "95754d4a3ca486be1848fc8496f0049c2aba9072",
-    "previous_snapshot_sha": "95754d4a3ca486be1848fc8496f0049c2aba9072",
-    "scope": "Read-only C-D08 necessity audit and public custody correction; preserve all candidates, park further bespoke infrastructure, retain mandatory evidence.",
+    "operation_id": "C5-SOURCE-TEST-LICENCE-USE-RECONCILE-20261127",
+    "parent_sha": "3e8b5e86e2b6dba82cd4490fb2622bc56b14794b",
+    "previous_snapshot_sha": "3e8b5e86e2b6dba82cd4490fb2622bc56b14794b",
+    "scope": "Read-only exact source-test wheel licence-use evidence reconciliation; identify concrete remaining use facts and interpreter decision without acquisition or clearance.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "27-november--c5-focused-c-d08-necessity-audit-and-custody-correction",
-      "blob_sha": "9fe99d46959358e29ff790b77af50552ddddd1b8",
-      "start_line": 2830,
-      "end_line": 2832
+      "anchor": "27-november--c5-exact-source-test-actual-use-licence-gap-reconciliation",
+      "blob_sha": "2b391cac2772d789f8e74aeb3d847a06760b80bd",
+      "start_line": 2834,
+      "end_line": 2844
     }
   },
   "product": {
@@ -117,22 +117,22 @@
   },
   "task": {
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
-    "status": "READY",
+    "status": "BLOCKED",
     "scope": "C-D08 revised C5-A/B development reproducibility and build safety only; D retains native prerequisites, P8 release-only",
-    "blocker": "Mandatory interpreter provenance and actual-use/compatibility/licence/font/browser/Rust/final regression gaps remain. Approach C optional and parked; current public repository unsuitable for proposed private custody. No interpreter route yet proven.",
-    "next_action": "Focused read-only reconciliation of applicable actual-use licence evidence for exact 62 original source-test wheel identities (24 originally lack expression), using existing retained receipts and declaration triage; distinguish live PyMuPDF from detached PDFium conditional evidence and identify only concrete unresolved source/notice/use facts. No new acquisition, legal clearance from labels, migration, execution or policy change. No more bespoke Approach C work; preserve candidates.",
-    "next_action_kind": "READ_ONLY",
+    "blocker": "No independently supported full installed CP311 interpreter provenance/use route under current authority; licence actual-use conditions still open (three exact tagged primary-source gaps, live PyMuPDF vs detached PDFium, applicable native component notices/linkage), 12 staged font/notice uses, pip/Node/npm/browser/Rust actual use and final matched regression. Approach C parked; public repository cannot meet prior private custody proposal.",
+    "next_action": "Obtain independently supplied expected complete installed interpreter file/link/notice manifests for compatible exact CP311 distributions, or an explicit owner decision on a concrete independently controlled standard verification route that meets unchanged pre-use conditions. No route proven yet; do not build more bespoke infrastructure, reacquire, replay or consume inputs. If no concrete feasible route is offered, remain BLOCKED.",
+    "next_action_kind": "OWNER_DECISION",
     "after": [
-      "Resolve specific mandatory interpreter provenance method via concrete owner decision if no independently supported existing route; standard-tool verification retained, no blind retries or new custody assumption.",
-      "Resolve remaining actual required input/font/toolchain/browser/Rust and PDF test-use conditions, then separately approved exact use/regression as justified; no C5 credit until all eight rows met. Preserve phase gates."
+      "Resolve the specific applicable licence/use gaps recorded in the current receipt, live PDF test choice and exact font/toolchain/browser/Rust conditions; any changed method or actual acquisition/use requires distinct bounded authority.",
+      "When prerequisites are evidenced, propose exact scoped use/regression and final C5 closure audit; no C5 credit until all eight rows met. Preserve D and phase gates."
     ],
     "read": [
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "27-november--c5-focused-c-d08-necessity-audit-and-custody-correction",
-        "blob_sha": "9fe99d46959358e29ff790b77af50552ddddd1b8",
-        "start_line": 2830,
-        "end_line": 2832
+        "anchor": "27-november--c5-exact-source-test-actual-use-licence-gap-reconciliation",
+        "blob_sha": "2b391cac2772d789f8e74aeb3d847a06760b80bd",
+        "start_line": 2834,
+        "end_line": 2844
       },
       {
         "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
@@ -148,17 +148,24 @@
       },
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "27-november--c5-approach-c-two-stage-preparation-and-synthetic-key-custody-consolidated",
-        "blob_sha": "c728f30096c506501223c4431b9795e6ef708c60",
-        "start_line": 2826,
-        "end_line": 2828
+        "anchor": "26-november--c5-development-licence-and-browser-toolchain-evidence-reconciliation",
+        "blob_sha": "2b391cac2772d789f8e74aeb3d847a06760b80bd",
+        "start_line": 2017,
+        "end_line": 2053
       },
       {
-        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
-        "anchor": "owner-approved-two-stage-preparation-and-consolidated-custody-core",
-        "blob_sha": "dfea20323b944edd5c9c4817a76db10c6d652e77",
-        "start_line": 855,
-        "end_line": 861
+        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
+        "anchor": "26-november--c5-pdf-test-dependency-licence-decision-boundary",
+        "blob_sha": "2b391cac2772d789f8e74aeb3d847a06760b80bd",
+        "start_line": 2134,
+        "end_line": 2145
+      },
+      {
+        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
+        "anchor": "26-november--c5-pdfium-notice-hashes-and-conditional-development-use-disposition",
+        "blob_sha": "2b391cac2772d789f8e74aeb3d847a06760b80bd",
+        "start_line": 2369,
+        "end_line": 2382
       },
       {
         "path": "docs/PILOTODIN_PACKAGE_C_RESOURCE_TRUST_SPEC_2026-11-24.md",
@@ -170,457 +177,24 @@
       {
         "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
         "anchor": "owner-approved-c5-delivery-checklist-26-november-2026",
-        "blob_sha": "dfea20323b944edd5c9c4817a76db10c6d652e77",
+        "blob_sha": "a764346faed8ed7d0526ab41eac2f13a5b22823d",
         "start_line": 273,
         "end_line": 294
-      },
-      {
-        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "27-november--c5-approach-c-narrow-metadata-bootstrap-preparation-and-key-evidence-contract",
-        "blob_sha": "ede2d7dcb1c55bfbd653985b96337fe0393116a1",
-        "start_line": 2822,
-        "end_line": 2824
-      },
-      {
-        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
-        "anchor": "owner-approved-narrow-metadata-bootstrap-preparation-and-finite-key-evidence-contract",
-        "blob_sha": "7e50396c6fee4c7a87b6ed046a328f03a366ffc7",
-        "start_line": 843,
-        "end_line": 853
-      },
-      {
-        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "27-november--c5-approach-c-signing-anchor-and-verifier-bootstrap-review",
-        "blob_sha": "becffa6f573782b50121abe6ddc19b23df84ded7",
-        "start_line": 2818,
-        "end_line": 2820
-      },
-      {
-        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
-        "anchor": "approach-c-signing-anchors-and-verifier-bootstrap-review-read-only",
-        "blob_sha": "661ec72e0ab01bb52fd2ca6253f40ceb21bd0a4c",
-        "start_line": 833,
-        "end_line": 841
-      },
-      {
-        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "27-november--c5-approach-c-metadata-only-synthetic-core-prepared",
-        "blob_sha": "d4676f72129c31436d92d09cafb4c503d7e97eb6",
-        "start_line": 2814,
-        "end_line": 2816
-      },
-      {
-        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
-        "anchor": "owner-approved-bounded-approach-c-metadata-only-preparation-and-synthetic-core",
-        "blob_sha": "d9c9861e8e270502a93183a60583a8c043919a85",
-        "start_line": 827,
-        "end_line": 831
-      },
-      {
-        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "27-november--c5-approach-c-independent-publisher-provenance-feasibility-reviewed",
-        "blob_sha": "cbcff38f5b5be03b5b063bac05da7df202d2b79b",
-        "start_line": 2810,
-        "end_line": 2812
-      },
-      {
-        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
-        "anchor": "approach-c-independent-publisher-provenance-feasibility-read-only",
-        "blob_sha": "0ec7512ad7a0177503dc09e9f1c922f9b6aa250b",
-        "start_line": 821,
-        "end_line": 825
-      },
-      {
-        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "27-november--c5-approach-c-bounded-host-observation-succeeded-on-approved-image",
-        "blob_sha": "1d5b281266346e39bfaf30adbcf1f27265c5aa42",
-        "start_line": 2806,
-        "end_line": 2808
-      },
-      {
-        "path": "docs/C5_HOST_OBSERVATION_RECEIPT_45909617464.json",
-        "blob_sha": "3df80cbaaca4206eb5e1869c39ebbfa0a9e45fae",
-        "start_line": 1,
-        "end_line": 1
-      },
-      {
-        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
-        "anchor": "owner-approved-exact-approach-c-one-use-observation-execution",
-        "blob_sha": "ed17a80312ad6a3f230a56fe34ad4901f38fd6cf",
-        "start_line": 817,
-        "end_line": 819
-      },
-      {
-        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "27-november--c5-inert-approach-c-observation-candidate-prepared-and-synthetically-verified",
-        "blob_sha": "7dcd1ff956ae00f8fb8158b6eb3180530ba63313",
-        "start_line": 2802,
-        "end_line": 2804
-      },
-      {
-        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
-        "anchor": "owner-approved-bounded-approach-c-observation-candidate-preparation-only",
-        "blob_sha": "ee1181c795e7610f0300eee54cae63f3f8a2fb72",
-        "start_line": 813,
-        "end_line": 815
-      },
-      {
-        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
-        "anchor": "proposed-capability-based-host-qualification-approach-c-preparation-only",
-        "blob_sha": "84a1973acaac3c4df661015464d27a861fbdd400",
-        "start_line": 794,
-        "end_line": 812
-      },
-      {
-        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "27-november--c5-approach-c-capability-based-host-qualification-read-only-design",
-        "blob_sha": "a555507ae6120322510953bcd91b7445ae07f5f8",
-        "start_line": 2798,
-        "end_line": 2800
-      },
-      {
-        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "27-november--c5-distinct-terminfo-attempt-again-refused-unreviewed-runner-before-staging",
-        "blob_sha": "0d7d2645b825eefa2513fa1e1d1f7f004770fde9",
-        "start_line": 2794,
-        "end_line": 2796
-      },
-      {
-        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
-        "anchor": "owner-approved-distinct-exact-finite-linux-terminfo-one-use-integrated-docker-execution",
-        "blob_sha": "d0fd85c982eb31168e1d8ee7e61984c68bda51d0",
-        "start_line": 790,
-        "end_line": 792
-      },
-      {
-        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "27-november--c5-distinct-inert-terminfo-one-use-candidate-under-unchanged-two-image-policy",
-        "blob_sha": "7cadd5cfaa421e0ad0a05d9c44265763542b9d62",
-        "start_line": 2790,
-        "end_line": 2792
-      },
-      {
-        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "27-november--c5-refused-runner-202611161331-read-only-review-insufficient-for-finite-policy-amendment",
-        "blob_sha": "cf173c03100cb86109f13a0373f3b744b6265279",
-        "start_line": 2786,
-        "end_line": 2788
-      },
-      {
-        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "27-november--c5-finite-linux-terminfo-attempt-refused-unreviewed-runner-before-staging",
-        "blob_sha": "9c79c80d97a50bd5cd841c66bb67dc1f74f9227e",
-        "start_line": 2782,
-        "end_line": 2784
-      },
-      {
-        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
-        "anchor": "owner-approved-exact-finite-linux-terminfo-policy-one-use-integrated-docker-execution",
-        "blob_sha": "7ceb6f7c56c00ed03b2861ba42d55f5c34b67a16",
-        "start_line": 786,
-        "end_line": 788
-      },
-      {
-        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "26-november--c5-owner-approved-finite-linux-terminfo-policy-integrated-and-pinned-inert-candidate",
-        "blob_sha": "c10e8b3e8f17db8215248ad1855bf5777ad1d275",
-        "start_line": 2778,
-        "end_line": 2780
-      },
-      {
-        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
-        "anchor": "owner-approved-finite-exact-linux-terminfo-inventory-policy-and-bounded-receipt-preparation-only",
-        "blob_sha": "207c012f03b1f0edd7c7d3376ba540cdff737b25",
-        "start_line": 782,
-        "end_line": 784
-      },
-      {
-        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "26-november--c5-pinned-ncurses-terminfo-case-sensitive-data-only-inventory-proposal",
-        "blob_sha": "7f49013bff41ae3a84fce4d9e5c77c7d63891c75",
-        "start_line": 2774,
-        "end_line": 2776
-      },
-      {
-        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "26-november--c5-authenticated-linux-terminfo-case-collision-identified-diagnostic-attempt-refused-and-disarmed",
-        "blob_sha": "b864a1ca6426f28a4ad93f45e405dc513b205129",
-        "start_line": 2770,
-        "end_line": 2772
-      },
-      {
-        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
-        "anchor": "owner-approved-exact-bounded-case-collision-diagnostic-one-use-integrated-docker-execution",
-        "blob_sha": "242c1a50b3b699e859d1a717c7677be39d0cbda4",
-        "start_line": 778,
-        "end_line": 780
-      },
-      {
-        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "26-november--c5-bounded-case-collision-diagnostic-integrated-and-pinned-inert-candidate",
-        "blob_sha": "58d924311326801bf23666f261689d7743811a11",
-        "start_line": 2766,
-        "end_line": 2768
-      },
-      {
-        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
-        "anchor": "owner-approved-bounded-first-collision-diagnostic-preparation-only",
-        "blob_sha": "53c55bfc1e469cde113435d915fe05eebaec4dba",
-        "start_line": 774,
-        "end_line": 776
-      },
-      {
-        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "26-november--c5-archive-case-collision-source-review-and-inert-diagnostic",
-        "blob_sha": "9b609f5c6ad1b9babd25d94143240febcbcede58",
-        "start_line": 2762,
-        "end_line": 2764
-      },
-      {
-        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "26-november--c5-llvm-correction-passed-preflights-and-both-verifications-member-case-collision-refused",
-        "blob_sha": "2e2ac5fa4d76a5358d79095b9bc147b9549f849b",
-        "start_line": 2758,
-        "end_line": 2760
-      },
-      {
-        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
-        "anchor": "owner-approved-exact-llvm-reader-correction-one-use-integrated-docker-execution",
-        "blob_sha": "86e5586c515069eb457d0ae248dd26e82b656e7e",
-        "start_line": 770,
-        "end_line": 772
-      },
-      {
-        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "26-november--c5-exact-llvm-18-native-reader-option-correction-prepared",
-        "blob_sha": "d596013898c341f4e00d637f0a1c0d5abe5f7e3b",
-        "start_line": 2754,
-        "end_line": 2756
-      },
-      {
-        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "26-november--c5-finite-image-attempt-passed-rootfs-and-isolation-reader-api-refused",
-        "blob_sha": "13ca5150ecdd48d7db20949fb91c09dcbcd45d3f",
-        "start_line": 2750,
-        "end_line": 2752
-      },
-      {
-        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
-        "anchor": "owner-approved-finite-reviewed-runner-image-policy-and-one-use-integrated-docker-execution",
-        "blob_sha": "bffa5a5ca96a90a9a9af99cf67a1404997ee73f3",
-        "start_line": 766,
-        "end_line": 768
-      },
-      {
-        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "26-november--c5-finite-documented-runner-image-compatibility-proposal",
-        "blob_sha": "799f75d4dcc0c10cbb4aa7ba9f0ff777ff1789c4",
-        "start_line": 2746,
-        "end_line": 2748
-      },
-      {
-        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "26-november--c5-stdlib-alias-attempt-refused-unreviewed-runner-image",
-        "blob_sha": "d76603c74ac1d69477e889198bcbce5889dc3a6c",
-        "start_line": 2742,
-        "end_line": 2744
-      },
-      {
-        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
-        "anchor": "owner-approved-exact-stdlib-alias-one-use-integrated-docker-execution",
-        "blob_sha": "b5bea17951e823241c813f06b2ec7f015120f761",
-        "start_line": 762,
-        "end_line": 764
-      },
-      {
-        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "26-november--c5-exact-stdlib-linker-alias-omission-candidate",
-        "blob_sha": "22c006a257005b4a66b976cd29cb1a83898d9104",
-        "start_line": 2738,
-        "end_line": 2740
-      },
-      {
-        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "26-november--c5-corrected-docker-attempt-refused-at-stdlib-path-guard",
-        "blob_sha": "95e16909dcb047046af4bbc76076b791c7a513ca",
-        "start_line": 2734,
-        "end_line": 2736
-      },
-      {
-        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
-        "anchor": "owner-approved-corrected-one-use-integrated-docker-execution",
-        "blob_sha": "3ed64eb4c3d84478ebe5c15f442e302a808d5632",
-        "start_line": 758,
-        "end_line": 760
-      },
-      {
-        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "26-november--c5-corrected-exact-inert-docker-candidate-prepared",
-        "blob_sha": "f82d5c3109c713395039dec9489fc504ca0635aa",
-        "start_line": 2730,
-        "end_line": 2732
-      },
-      {
-        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "26-november--c5-rootfs-identity-correction-prepared-pure-snippet-checks",
-        "blob_sha": "1ab4d29c30116d879ac686c77e911014579725b3",
-        "start_line": 2726,
-        "end_line": 2728
-      },
-      {
-        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "26-november--c5-integrated-docker-rootfs-file-bound-refusal",
-        "blob_sha": "c8e78c9b4dd78fdeb5b5913e04cf9955407288cf",
-        "start_line": 2722,
-        "end_line": 2724
-      },
-      {
-        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
-        "anchor": "owner-approved-one-use-integrated-docker-execution",
-        "blob_sha": "50d6e57f6a4caec735a7f39b32f35b926a8f5262",
-        "start_line": 754,
-        "end_line": 756
-      },
-      {
-        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
-        "anchor": "owner-approved-docker-boundary-integrated-inert-candidate",
-        "blob_sha": "50d6e57f6a4caec735a7f39b32f35b926a8f5262",
-        "start_line": 742,
-        "end_line": 752
-      },
-      {
-        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "26-november--c5-docker-integrated-source-preparation",
-        "blob_sha": "c8e78c9b4dd78fdeb5b5913e04cf9955407288cf",
-        "start_line": 2718,
-        "end_line": 2720
-      },
-      {
-        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
-        "anchor": "proposed-docker-local-rootfs-offline-boundary",
-        "blob_sha": "50d6e57f6a4caec735a7f39b32f35b926a8f5262",
-        "start_line": 724,
-        "end_line": 740
-      },
-      {
-        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "26-november--c5-docker-isolation-alternative-review",
-        "blob_sha": "c8e78c9b4dd78fdeb5b5913e04cf9955407288cf",
-        "start_line": 2714,
-        "end_line": 2716
-      },
-      {
-        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "26-november--c5-preflight-diagnostic-namespace-permission-refusal",
-        "blob_sha": "c8e78c9b4dd78fdeb5b5913e04cf9955407288cf",
-        "start_line": 2710,
-        "end_line": 2712
-      },
-      {
-        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
-        "anchor": "owner-approved-one-use-preflight-diagnostic",
-        "blob_sha": "50d6e57f6a4caec735a7f39b32f35b926a8f5262",
-        "start_line": 720,
-        "end_line": 722
-      },
-      {
-        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
-        "anchor": "bounded-preflight-only-diagnostic-proposal",
-        "blob_sha": "50d6e57f6a4caec735a7f39b32f35b926a8f5262",
-        "start_line": 712,
-        "end_line": 718
-      },
-      {
-        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "26-november--c5-preflight-only-diagnostic-preparation",
-        "blob_sha": "c8e78c9b4dd78fdeb5b5913e04cf9955407288cf",
-        "start_line": 2706,
-        "end_line": 2708
-      },
-      {
-        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "26-november--c5-revised-image-subprocess-refusal",
-        "blob_sha": "c8e78c9b4dd78fdeb5b5913e04cf9955407288cf",
-        "start_line": 2702,
-        "end_line": 2704
-      },
-      {
-        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
-        "anchor": "owner-approved-revised-image-one-use-execution",
-        "blob_sha": "50d6e57f6a4caec735a7f39b32f35b926a8f5262",
-        "start_line": 708,
-        "end_line": 710
-      },
-      {
-        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
-        "anchor": "exact-observed-ubuntu-image-revision-proposal",
-        "blob_sha": "50d6e57f6a4caec735a7f39b32f35b926a8f5262",
-        "start_line": 702,
-        "end_line": 706
-      },
-      {
-        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "26-november--c5-runner-image-revision-read-only-review",
-        "blob_sha": "c8e78c9b4dd78fdeb5b5913e04cf9955407288cf",
-        "start_line": 2698,
-        "end_line": 2700
-      },
-      {
-        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
-        "anchor": "owner-approved-one-use-portable-provenance-execution",
-        "blob_sha": "50d6e57f6a4caec735a7f39b32f35b926a8f5262",
-        "start_line": 698,
-        "end_line": 700
-      },
-      {
-        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
-        "anchor": "exact-inert-portable-provenance-activation-proposal",
-        "blob_sha": "50d6e57f6a4caec735a7f39b32f35b926a8f5262",
-        "start_line": 690,
-        "end_line": 696
-      },
-      {
-        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
-        "anchor": "owner-approved-limited-host-bootstrap-boundary",
-        "blob_sha": "50d6e57f6a4caec735a7f39b32f35b926a8f5262",
-        "start_line": 682,
-        "end_line": 688
-      },
-      {
-        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
-        "anchor": "owner-approved-c5-delivery-checklist-26-november-2026",
-        "blob_sha": "50d6e57f6a4caec735a7f39b32f35b926a8f5262",
-        "start_line": 273,
-        "end_line": 298
-      },
-      {
-        "path": "docs/PILOTODIN_PACKAGE_C_RESOURCE_TRUST_SPEC_2026-11-24.md",
-        "anchor": "c-d08-rationalised-scope-owner-decision-26-november-2026",
-        "blob_sha": "e0c428ab105c409660c4530dc3e82e39d75b6fa9",
-        "start_line": 84,
-        "end_line": 96
-      },
-      {
-        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "26-november--c5-one-use-portable-provenance-image-refusal",
-        "blob_sha": "c8e78c9b4dd78fdeb5b5913e04cf9955407288cf",
-        "start_line": 2694,
-        "end_line": 2696
       }
     ]
   },
   "operation": {
-    "id": "C5-C-D08-NECESSITY-AUDIT-20261127",
+    "id": "C5-SOURCE-TEST-LICENCE-USE-RECONCILE-20261127",
     "state": "RECONCILED",
-    "starting_sha": "95754d4a3ca486be1848fc8496f0049c2aba9072",
-    "outcome": "Approach C optional method; actual independently reviewed interpreter and use evidence mandatory, no proven full standard-only route. Public repository cannot satisfy proposed private key custody. Park bespoke infrastructure; reconcile live source-test licence-use gaps next.",
+    "starting_sha": "3e8b5e86e2b6dba82cd4490fb2622bc56b14794b",
+    "outcome": "98/98 live source lock/candidate/receipt joins; 62 unique, 38 declarations and 24 absent; four historical inspections, 44 fingerprint-only (98 notices), one refused and 13 unattempted in notice discovery. Concrete remaining use and PDF conditions recorded; no clearance or score. Next independent interpreter provenance method decision.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "27-november--c5-focused-c-d08-necessity-audit-and-custody-correction",
-      "blob_sha": "9fe99d46959358e29ff790b77af50552ddddd1b8",
-      "start_line": 2830,
-      "end_line": 2832
+      "anchor": "27-november--c5-exact-source-test-actual-use-licence-gap-reconciliation",
+      "blob_sha": "2b391cac2772d789f8e74aeb3d847a06760b80bd",
+      "start_line": 2834,
+      "end_line": 2844
     }
   },
   "authority": {
