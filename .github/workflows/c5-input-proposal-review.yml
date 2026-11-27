@@ -24,3 +24,52 @@ jobs:
           code=$?
           set -e
           test "$code" != 0
+      - name: Exact C-D09 manifest projection (data only)
+        shell: bash
+        run: |
+          /usr/bin/python3 -I -B - <<'PY'
+          import hashlib, json, os, platform, sys
+          from pathlib import Path
+          assert sys.version_info[:3] == (3, 12, 3) and sys.implementation.name == "cpython"
+          assert Path(sys.executable).resolve() == Path("/usr/bin/python3.12")
+          assert platform.machine() == "x86_64"
+          root = Path("qa/c5_managed_dev").resolve()
+          def pinned(name, expected):
+              path = root / name
+              assert path.is_file() and not path.is_symlink() and path.stat().st_size <= 2 * 1024**2
+              raw = path.read_bytes()
+              assert hashlib.sha1(b"blob " + str(len(raw)).encode() + b"\0" + raw).hexdigest() == expected
+              return raw
+          raw = pinned("pdfium_use_candidate_20261127.json", "7d89ba820429b2005f7a70cc1b5ed1415f7b1161")
+          pinned("inspection_core.py", "bb8a2d5b61d98bbff4bd4599e0a3762f2b01ecdf")
+          pinned("validation_witnesses.py", "23aa61aee49cecf154e41f859d81e290e15a0dfd")
+          sys.path.insert(0, str(root))
+          import inspection_core as core
+          import validation_witnesses as witnesses
+          assert witnesses.LIVE_ENABLED is False
+          rows = core.projection(raw)
+          plan = witnesses.read_plan(raw)
+          assert len(rows) == 42 and sum(r["bytes"] for r in rows) == 214328914
+          assert all(r["filename"] != "certifi-2026.11.20-py3-none-any.whl" for r in rows)
+          assert len(plan["source_overlay"]["paths"]) == 29
+          assert len(plan["stage_a"]["expected_node_ids"]) == 19
+          assert [p["application_bounds"]["archive_uses"] for p in plan["profiles"]] == [86, 86]
+          assert sum(p["application_bounds"]["body_bytes"] for p in plan["profiles"]) == 301884524
+          for check in (core.projection, witnesses.read_plan):
+              try:
+                  check(raw + b"\n")
+              except ValueError:
+                  pass
+              else:
+                  raise AssertionError("Modified manifest accepted")
+          print("C5_CD09_EXACT_MANIFEST " + json.dumps({
+              "status": "PASS", "manifest_blob": core.PIN, "manifest_bytes": len(raw),
+              "rows": len(rows), "body_bytes": sum(r["bytes"] for r in rows),
+              "projection_sha256": hashlib.sha256(json.dumps(rows, sort_keys=True, separators=(",", ":")).encode()).hexdigest(),
+              "profiles": len(plan["profiles"]), "application_uses": 172,
+              "application_body_bytes": 301884524, "tampered_pin_refusals": 2,
+              "python": platform.python_version(), "python_path": str(Path(sys.executable).resolve()),
+              "runner_image": os.environ.get("ImageVersion"), "source": os.environ.get("GITHUB_SHA"),
+              "live_requests": 0, "native_tool_invocations": 0, "dependency_installations": 0
+          }, sort_keys=True), flush=True)
+          PY
