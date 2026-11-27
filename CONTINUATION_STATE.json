@@ -5,11 +5,11 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-CD10-SECURITY-TRANSACTION-REVIEW-20261127",
-    "parent_sha": "b62b097c0ce9990130e682c8cbbb9bd0bd0b04b1",
-    "previous_snapshot_sha": "b62b097c0ce9990130e682c8cbbb9bd0bd0b04b1",
-    "scope": "C-D10 preparation: eight candidate package identities and actual authenticated metadata blocker; no execution.",
-    "state": "RECONCILED",
+    "operation_id": "C5-CD10-UBUNTU-METADATA-ONCE-20261127",
+    "parent_sha": "bba5104d4014428b10fb66f959692058a5100dca",
+    "previous_snapshot_sha": "bba5104d4014428b10fb66f959692058a5100dca",
+    "scope": "Write-ahead approved exact metadata-only operation; no execution yet.",
+    "state": "PREPARED",
     "receipt": {
       "path": "docs/C5_CD10_SECURITY_TRANSACTION_REVIEW_2026-11-27.md",
       "anchor": "pilotodin--c-d10-security-transaction-preparation-and-concrete-blocker",
@@ -117,11 +117,11 @@
   },
   "task": {
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
-    "status": "BLOCKED",
+    "status": "PREPARED",
     "scope": "C-D08 development reproducibility/build safety as revised by C-D09 limited managed-development evidence method; D native and P8 release boundaries unchanged.",
     "blocker": "Current authenticated noble-security amd64 package index and actual exact solver transaction unavailable from cached public evidence; provider patched image not listed. C-D10 preparation accepted, no execution or trust change. Existing inspection driver has specific process cleanup gap before activation.",
-    "next_action": "If owner explicitly approves narrow metadata-only operation, review exact source/commands and issue once within 2 HTTPS GETs, 16.5 MiB, 5 minutes on disposable Ubuntu24.04 (no .deb retrieval/install/application inspection), or use newly available reviewed patched provider image. If unchanged/no authority stop BLOCKED, no redundant checkpoint. Resolve only concrete driver process settlement issue before exact inspection approval. No changes to C5/P4 or original acceptance requirements.",
-    "next_action_kind": "OWNER_DECISION",
+    "next_action": "Issue approved exact metadata-only candidate once after verifying expected parent and workflow; reconcile outcome and disarm; no subsequent update or inspection.",
+    "next_action_kind": "RECONCILE",
     "after": [
       "Complete applicable rights and static linkage, conditional exact PDFium source integration and final managed source-test candidate; explicit bounded execution permission, no owner/native/installer.",
       "Run authorised exact Stage A/B and consolidated Windows/Linux development regressions, standalone Rust and browser-dev, final checklist audit; C5 closure only on evidence. D/G2 and phase gates unchanged."
@@ -249,23 +249,59 @@
     ]
   },
   "operation": {
-    "id": "C5-CD10-SECURITY-TRANSACTION-REVIEW-20261127",
-    "state": "RECONCILED",
-    "starting_sha": "b62b097c0ce9990130e682c8cbbb9bd0bd0b04b1",
-    "outcome": "Eight candidate exact-version binutils packages identified from official prior dependency metadata; updated signed index and actual APT transaction not established. Proposed bounded metadata-only route; no installation, acquisition, policy, CI or score.",
-    "reconcile_before_retry": false,
-    "receipt": {
+    "id": "C5-CD10-UBUNTU-METADATA-ONCE-20261127",
+    "state": "PREPARED",
+    "starting_sha": "bba5104d4014428b10fb66f959692058a5100dca",
+    "scope": "Exactly one disposable GitHub ubuntu-24.04 x64 job, attempt 1, two HTTPS GETs maximum to security.ubuntu.com/ubuntu/dists/noble-security/ (InRelease <=512 KiB, signed Packages.xz <=16 MiB), combined 16.5 MiB; five-minute job. Standard installed archive keyring/gpgv, signed SHA256 and size, freshness, eight exact .11 records; isolated local APT cache and non-mutating simulation only, no update/install/.deb/app archive, no checkout, no secrets, no system config changes, no retry or fallback.",
+    "intended_paths": [
+      ".github/workflows/c5-cd10-ubuntu-security-metadata-once.yml",
+      "qa/c5_managed_dev/APPROVAL_CD10_UBUNTU_SECURITY_METADATA_ONCE_20261127.txt"
+    ],
+    "authority_ref": {
       "path": "docs/C5_CD10_SECURITY_TRANSACTION_REVIEW_2026-11-27.md",
       "anchor": "pilotodin--c-d10-security-transaction-preparation-and-concrete-blocker",
       "blob_sha": "356cbaf3ab95845a3ae2b01d587fa0087774ea7f",
-      "start_line": 1,
-      "end_line": 11
-    }
+      "start_line": 5,
+      "end_line": 7,
+      "owner_quote": "i aprove",
+      "confirmation": "Direct response to explicit approval request: I approve the one-time Ubuntu metadata retrieval and transaction review, limited to two HTTPS requests, 16.5 MiB and five minutes on a disposable GitHub runner, without package installation.",
+      "date": "2026-11-27"
+    },
+    "expected_evidence": "One attempt-1 metadata-once job, exact C5_CD10_METADATA receipt including verified signature/index, package version/size/hash and isolated simulation outcome or bounded refusal. No package installs or .deb retrieval. Exact workflow 87510bfe190a3415863274c047d9ed4676d55d7b marker 5a4c69e665a72815761ded82fad9b293870b359b.",
+    "recovery": "Reconcile exact activation diff, marker, run and logs before any retry; one-use approval not replayable. Disarm exact owned workflow and remove marker after terminal outcome; if uncertain preserve state UNKNOWN and do not reactivate.",
+    "reconcile_before_retry": true,
+    "expected_workflow_blob": "87510bfe190a3415863274c047d9ed4676d55d7b",
+    "expected_marker_blob": "5a4c69e665a72815761ded82fad9b293870b359b",
+    "expected_commit_message": "C5: issue approved CD10 Ubuntu security metadata once 20261127",
+    "expected_workflow_runs": 1
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next.",
     "preparation_only": "Owner approved consolidated shared-bundle disarmed acquisition-before-signature source and exact limited existing host bootstrap; owner approved proposed limited local Docker control-plane and host-derived rootfs trust/no-pull isolation method for preparation only. Authentication before extraction/use; no Docker invocation, acquisition, verification execution, installation or live cutover authorised. Owner approved bounded first-collision encoded public member-path diagnostic preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-bounded-first-collision-diagnostic-preparation-only. No restricted execution authority. Owner approved finite exact Linux data-only terminfo inventory policy and bounded receipt projection as proposed in 8cc1a696, preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-finite-exact-linux-terminfo-inventory-policy-and-bounded-receipt-preparation-only. Strict Windows/gh and other safeguards unchanged; no acquisition, extraction or restricted execution. Owner explicitly approved preparation and static/synthetic verification only of Approach C observation-only candidate (11 fixed roles, five minutes); no restricted execution, acquisition, Docker invocation or active policy change. Exact reference in C5 spec owner-approved-bounded-approach-c-observation-candidate-preparation-only. Owner approved Approach C metadata-only preparation/static/synthetic verification under 13 GET/10-minute proposed limits; no actual acquisition, package downloads, installation, Docker invocation, restricted execution or active trust policy change. Exact spec anchor owner-approved-bounded-approach-c-metadata-only-preparation-and-synthetic-core. Owner approved narrow metadata bootstrap preparation on existing two reviewed images including GnuPG/necessary existing dependencies, no acquisition/restricted execution/integrated verification/active policy change, original 13 GET/10 min bounds. Exact spec anchor owner-approved-narrow-metadata-bootstrap-preparation-and-finite-key-evidence-contract. Owner approved two-stage key/metadata sequence preparation including bounded public signing-key private repository retention proposal, combined 13 GET/600s/256 MiB; no actual acquisition, restricted execution or active policy change. Exact spec anchor owner-approved-two-stage-preparation-and-consolidated-custody-core. Owner approved exact C-D09 managed-development CI evidence rationalisation at proposal 2cbed51, recorded in C5 implementation spec; limited bootstrap trust and residual risk accepted, prepare concrete bounded validation candidate only, no acquisition, installation, restricted execution, migration, new expenditure or phase advancement.",
-    "restricted_active": [],
+    "restricted_active": [
+      {
+        "id": "C5-CD10-UBUNTU-METADATA-ONCE-20261127",
+        "state": "APPROVED",
+        "source_sha": "bba5104d4014428b10fb66f959692058a5100dca",
+        "scope": "Exactly one disposable GitHub ubuntu-24.04 x64 job, attempt 1, two HTTPS GETs maximum to security.ubuntu.com/ubuntu/dists/noble-security/ (InRelease <=512 KiB, signed Packages.xz <=16 MiB), combined 16.5 MiB; five-minute job. Standard installed archive keyring/gpgv, signed SHA256 and size, freshness, eight exact .11 records; isolated local APT cache and non-mutating simulation only, no update/install/.deb/app archive, no checkout, no secrets, no system config changes, no retry or fallback.",
+        "owner_authority_ref": {
+          "path": "docs/C5_CD10_SECURITY_TRANSACTION_REVIEW_2026-11-27.md",
+          "anchor": "pilotodin--c-d10-security-transaction-preparation-and-concrete-blocker",
+          "blob_sha": "356cbaf3ab95845a3ae2b01d587fa0087774ea7f",
+          "start_line": 5,
+          "end_line": 7,
+          "owner_quote": "i aprove",
+          "confirmation": "Direct response to explicit approval request: I approve the one-time Ubuntu metadata retrieval and transaction review, limited to two HTTPS requests, 16.5 MiB and five minutes on a disposable GitHub runner, without package installation.",
+          "date": "2026-11-27"
+        },
+        "reconcile_before_retry": true,
+        "workflow": ".github/workflows/c5-cd10-ubuntu-security-metadata-once.yml",
+        "workflow_blob": "87510bfe190a3415863274c047d9ed4676d55d7b",
+        "marker": "qa/c5_managed_dev/APPROVAL_CD10_UBUNTU_SECURITY_METADATA_ONCE_20261127.txt",
+        "marker_blob": "5a4c69e665a72815761ded82fad9b293870b359b",
+        "run_attempt": 1
+      }
+    ],
     "consumed_disarmed_count": 41,
     "consumed_history": {
       "commit": "b9864b70fb9bb5a72d0f79c37f15b94100722192",
