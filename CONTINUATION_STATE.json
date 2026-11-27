@@ -5,18 +5,11 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-CD10-CORRECTED-SIMULATION-PREPARED-20261127",
-    "parent_sha": "3734612e9ff4d606471f880d1714019d767afbab",
-    "previous_snapshot_sha": "3734612e9ff4d606471f880d1714019d767afbab",
-    "scope": "Prepare exact detached corrected stock APT simulation; no activation, request fresh authority.",
-    "state": "RECONCILED",
-    "receipt": {
-      "path": "docs/C5_CD10_CORRECTED_SIMULATION_CANDIDATE_2026-11-27.md",
-      "anchor": "pilotodin--c-d10-corrected-simulation-candidate",
-      "blob_sha": "a08097b49f2ceee2fa98b6be89fff4b1c4b37ed0",
-      "start_line": 1,
-      "end_line": 13
-    }
+    "operation_id": "C5-CD10-CORRECTED-SIMULATION-ONCE-20261127",
+    "parent_sha": "d2df9d7e5c661fa4c11132d19076eb59a4f953ce",
+    "previous_snapshot_sha": "d2df9d7e5c661fa4c11132d19076eb59a4f953ce",
+    "scope": "One disposable ubuntu-24.04 x64 job attempt 1; no checkout/secrets, permissions empty; two HTTPS GETs to exact Ubuntu noble-security metadata, 16.5 MiB total, five minutes; apt-get -s only, eight exact authenticated pins, no .deb acquisition/install/application inspection.",
+    "state": "PREPARED"
   },
   "product": {
     "sha": "8da7f33cb418e453a7b5c250b960fb6370e9e9d0",
@@ -117,10 +110,10 @@
   },
   "task": {
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
-    "status": "BLOCKED",
+    "status": "PREPARED",
     "scope": "C-D08 development reproducibility/build safety as revised by C-D09 limited managed-development evidence method; D native and P8 release boundaries unchanged.",
-    "blocker": "Corrected simulation candidate prepared; fresh explicit approval required because prior normal-context job started and failed. No reviewed patched provider image established; exact Noble transaction not yet validated.",
-    "next_action": "If reviewed patched provider image becomes available prefer it; otherwise obtain explicit owner approval for exact corrected simulation-only detached candidate 3239d8c65ec8e94219242b4b87654ac8cb132e2f (workflow 053f957e3050f26fe615750b555e804a782bcc88). One job, two HTTPS GETs/16.5 MiB/five minutes, zero .deb transfer/install. Before activation verify fresh HEAD/approval and complete static validation, bind unique marker and write-ahead, then reconcile and disarm. No replay. If successful prepare exact bounded security update/inspection only after material driver settlement correction and rights/security review and separate explicit approval.",
+    "blocker": "",
+    "next_action": "Activate exact approved workflow and marker once, with exact commit message; inspect run and actual receipt, reconcile and disarm; no retry or follow-on execution.",
     "next_action_kind": "OWNER_DECISION",
     "after": [
       "Complete applicable rights and static linkage, conditional exact PDFium source integration and final managed source-test candidate; explicit bounded execution permission, no owner/native/installer.",
@@ -302,23 +295,58 @@
     ]
   },
   "operation": {
-    "id": "C5-CD10-CORRECTED-SIMULATION-PREPARED-20261127",
-    "state": "RECONCILED",
-    "starting_sha": "3734612e9ff4d606471f880d1714019d767afbab",
-    "outcome": "Detached exact candidate 3239d8c65ec8e94219242b4b87654ac8cb132e2f workflow 053f957e3050f26fe615750b555e804a782bcc88; inverse transformation, read-back and single-path diff verified. No run or marker. Live previous workflow disarmed. Prior actual failure and 44 consumed grants preserved.",
-    "reconcile_before_retry": false,
-    "receipt": {
-      "path": "docs/C5_CD10_CORRECTED_SIMULATION_CANDIDATE_2026-11-27.md",
-      "anchor": "pilotodin--c-d10-corrected-simulation-candidate",
-      "blob_sha": "a08097b49f2ceee2fa98b6be89fff4b1c4b37ed0",
-      "start_line": 1,
-      "end_line": 13
-    }
+    "id": "C5-CD10-CORRECTED-SIMULATION-ONCE-20261127",
+    "state": "PREPARED",
+    "starting_sha": "d2df9d7e5c661fa4c11132d19076eb59a4f953ce",
+    "scope": "One disposable ubuntu-24.04 x64 job attempt 1; no checkout/secrets, permissions empty; two HTTPS GETs to exact Ubuntu noble-security metadata, 16.5 MiB total, five minutes; apt-get -s only, eight exact authenticated pins, no .deb acquisition/install/application inspection.",
+    "intended_paths": [
+      ".github/workflows/c5-cd10-ubuntu-security-metadata-once.yml",
+      "qa/c5_managed_dev/APPROVAL_CD10_CORRECTED_SIMULATION_ONCE_20261127.txt"
+    ],
+    "authority_ref": {
+      "owner_quote": "I approve the exact C-D10 corrected simulation-only candidate 3239d8c65ec8e94219242b4b87654ac8cb132e2f within the documented execution limits. Proceed, verify, reconcile and disarm.",
+      "candidate_sha": "3239d8c65ec8e94219242b4b87654ac8cb132e2f",
+      "workflow_blob": "053f957e3050f26fe615750b555e804a782bcc88",
+      "scope_ref": {
+        "path": "docs/C5_CD10_CORRECTED_SIMULATION_CANDIDATE_2026-11-27.md",
+        "anchor": "pilotodin--c-d10-corrected-simulation-candidate",
+        "blob_sha": "a08097b49f2ceee2fa98b6be89fff4b1c4b37ed0",
+        "start_line": 1,
+        "end_line": 13
+      }
+    },
+    "expected_evidence": "Exact push-triggered attempt 1 at activation SHA, one job, authenticated eight pins, simulation rc/actions and unchanged dpkg status endpoint; actual run receipt and disarm.",
+    "recovery": "Inspect branch history and exact matching runs before any retry; preserve one-use grant, no replay, disarm exact owned activation after reconciliation or safe refusal.",
+    "reconcile_before_retry": true,
+    "marker_blob": "164cf4ae0f80400dc49c23fe7e35568b221d38b9",
+    "workflow_blob": "053f957e3050f26fe615750b555e804a782bcc88",
+    "activation_message": "C5 CD10 corrected security index simulation once",
+    "static_validation": "15983 exact bytes Git blob matched; PyYAML BaseLoader, Bash -n, embedded Python compile PASS locally (no execution)."
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next.",
     "preparation_only": "Owner approved consolidated shared-bundle disarmed acquisition-before-signature source and exact limited existing host bootstrap; owner approved proposed limited local Docker control-plane and host-derived rootfs trust/no-pull isolation method for preparation only. Authentication before extraction/use; no Docker invocation, acquisition, verification execution, installation or live cutover authorised. Owner approved bounded first-collision encoded public member-path diagnostic preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-bounded-first-collision-diagnostic-preparation-only. No restricted execution authority. Owner approved finite exact Linux data-only terminfo inventory policy and bounded receipt projection as proposed in 8cc1a696, preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-finite-exact-linux-terminfo-inventory-policy-and-bounded-receipt-preparation-only. Strict Windows/gh and other safeguards unchanged; no acquisition, extraction or restricted execution. Owner explicitly approved preparation and static/synthetic verification only of Approach C observation-only candidate (11 fixed roles, five minutes); no restricted execution, acquisition, Docker invocation or active policy change. Exact reference in C5 spec owner-approved-bounded-approach-c-observation-candidate-preparation-only. Owner approved Approach C metadata-only preparation/static/synthetic verification under 13 GET/10-minute proposed limits; no actual acquisition, package downloads, installation, Docker invocation, restricted execution or active trust policy change. Exact spec anchor owner-approved-bounded-approach-c-metadata-only-preparation-and-synthetic-core. Owner approved narrow metadata bootstrap preparation on existing two reviewed images including GnuPG/necessary existing dependencies, no acquisition/restricted execution/integrated verification/active policy change, original 13 GET/10 min bounds. Exact spec anchor owner-approved-narrow-metadata-bootstrap-preparation-and-finite-key-evidence-contract. Owner approved two-stage key/metadata sequence preparation including bounded public signing-key private repository retention proposal, combined 13 GET/600s/256 MiB; no actual acquisition, restricted execution or active policy change. Exact spec anchor owner-approved-two-stage-preparation-and-consolidated-custody-core. Owner approved exact C-D09 managed-development CI evidence rationalisation at proposal 2cbed51, recorded in C5 implementation spec; limited bootstrap trust and residual risk accepted, prepare concrete bounded validation candidate only, no acquisition, installation, restricted execution, migration, new expenditure or phase advancement.",
-    "restricted_active": [],
+    "restricted_active": [
+      {
+        "id": "C5-CD10-CORRECTED-SIMULATION-ONCE-20261127",
+        "state": "APPROVED",
+        "source_sha": "3239d8c65ec8e94219242b4b87654ac8cb132e2f",
+        "scope": "One disposable ubuntu-24.04 x64 job attempt 1; no checkout/secrets, permissions empty; two HTTPS GETs to exact Ubuntu noble-security metadata, 16.5 MiB total, five minutes; apt-get -s only, eight exact authenticated pins, no .deb acquisition/install/application inspection.",
+        "owner_authority_ref": {
+          "owner_quote": "I approve the exact C-D10 corrected simulation-only candidate 3239d8c65ec8e94219242b4b87654ac8cb132e2f within the documented execution limits. Proceed, verify, reconcile and disarm.",
+          "candidate_sha": "3239d8c65ec8e94219242b4b87654ac8cb132e2f",
+          "workflow_blob": "053f957e3050f26fe615750b555e804a782bcc88",
+          "scope_ref": {
+            "path": "docs/C5_CD10_CORRECTED_SIMULATION_CANDIDATE_2026-11-27.md",
+            "anchor": "pilotodin--c-d10-corrected-simulation-candidate",
+            "blob_sha": "a08097b49f2ceee2fa98b6be89fff4b1c4b37ed0",
+            "start_line": 1,
+            "end_line": 13
+          }
+        },
+        "reconcile_before_retry": true
+      }
+    ],
     "consumed_disarmed_count": 44,
     "consumed_history": {
       "commit": "b9864b70fb9bb5a72d0f79c37f15b94100722192",
