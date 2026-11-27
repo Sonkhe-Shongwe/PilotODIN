@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "PRODUCT-FIRST-20261127",
-    "parent_sha": "5be8c47affbb31c295e7f2071a80da26e64ab723",
-    "previous_snapshot_sha": "5be8c47affbb31c295e7f2071a80da26e64ab723",
-    "scope": "Owner-approved aggressive product-first development sequencing and narrow standard provenance control-traffic rationalisation; preparation only, no restricted execution or acceptance change.",
+    "operation_id": "DOC-AUDIT-PRODUCT-FIRST-20261127",
+    "parent_sha": "4a314409968e21fa77c42636c8c6bfa80beba374",
+    "previous_snapshot_sha": "4a314409968e21fa77c42636c8c6bfa80beba374",
+    "scope": "Document-only reconciliation of product-first framework, canonical routing, exact state references and verified acceptance/CI baseline; no new policy, execution, or evidence credit.",
     "state": "RECONCILED",
     "receipt": {
-      "path": "docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md",
-      "anchor": "27-november-2026--owner-approved-aggressive-product-first-development-framework",
-      "blob_sha": "537643c14c06fb13356ef10fbadef7112b14a30b",
-      "start_line": 283,
-      "end_line": 297
+      "path": "docs/DOCUMENTATION_AUDIT_C5_D1_MIGRATION_2026-11-27.md",
+      "anchor": "6-post-framework-document-audit-27-november-2026",
+      "blob_sha": "a201314f2fedc12c1185354d5b3e44563ee318b8",
+      "start_line": 49,
+      "end_line": 59
     }
   },
   "product": {
@@ -87,7 +87,7 @@
       "owner": {
         "path": "docs/PROJECT_STATUS_CURRENT.md",
         "anchor": "p4-engineering-scorecard",
-        "blob_sha": "16e153a761527f4f87898179abfe95882d77dd87",
+        "blob_sha": "90cbcba05e7ed2e33edcee991cd6f7beee02b099",
         "start_line": 31,
         "end_line": 60
       }
@@ -120,7 +120,7 @@
     "status": "BLOCKED",
     "scope": "C5 development assurance under C-D08/C-D09 and PRODUCT-FIRST-20261127; independent concrete P4 source remediation may proceed without gate credit. D/P8 acceptance and execution boundaries unchanged.",
     "blocker": "C5 exact internal metadata traffic objection rationalised for fixed standard verifier commands; remaining actual tool security/rights, signed provenance and wheel pre-use facts, Windows staging/settlement and exact one-use activation source not demonstrated. G2 full attribution/coverage remains blocked.",
-    "next_action": "Prepare smallest disarmed execution-ready standalone Windows Stage A source using existing plan, exact fixed standard verifier commands, owned scratch/Windows process settlement and pre-use holds; no repeated policy, broad research or generic framework. Reuse exact locks and 19 predicates; seek fresh consolidated execution approval only when exact candidate ready. Independent verified P4 product defects may be remediated under existing routine source authority, no D closure/native/phase advancement.",
+    "next_action": "Prepare the smallest disarmed standalone Windows Stage A functional transaction from the existing plan, exact fixed standard verifier commands within PRODUCT-FIRST-20261127, owned scratch/Windows process settlement and actual pre-use holds. Preserve exact locks, archive limits and all 19 predicates; no repeat policy, generic framework or unsupported tool use. Seek fresh consolidated exact execution approval only when ready. Independently address concrete P4 product-source defects or minimum D1 source preparation within existing authority; no native activity, D closure, E2 acceptance or phase advance.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "One fresh exact-source scoped Stage A execution approval, real 19-predicate functional outcome and settlement; rejoin full C5 Stage A/B and other profiles before C5 closure.",
@@ -131,51 +131,20 @@
       {
         "path": "docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md",
         "anchor": "27-november-2026--owner-approved-aggressive-product-first-development-framework",
-        "blob_sha": "537643c14c06fb13356ef10fbadef7112b14a30b",
+        "blob_sha": "ad8d559bc9cd3d8da66779e18332fc6db8ae7c56",
         "start_line": 283,
         "end_line": 297
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "27-november--g2-equivalent-evidence-feasibility-and-design-disposition",
-        "blob_sha": "622d52e24431dea51fe6464ca68df73bb301e243",
-        "start_line": 109,
-        "end_line": 137
-      },
-      {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "27-november--c5-standard-provenance-route-stopping-decision",
-        "blob_sha": "622d52e24431dea51fe6464ca68df73bb301e243",
-        "start_line": 99,
-        "end_line": 107
-      },
-      {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--owner-approved-c5-applicability-policy-and-consolidated-stage-a-transaction",
-        "blob_sha": "622d52e24431dea51fe6464ca68df73bb301e243",
+        "blob_sha": "85a0a56753c98ff635d5a05cf3bdcca1def4b410",
         "start_line": 72,
         "end_line": 97
       },
       {
-        "path": "docs/DOCUMENTATION_AUDIT_C5_D1_MIGRATION_2026-11-27.md",
-        "anchor": "pilotodin--c5d1-documentation-and-migration-audit",
-        "blob_sha": "8a25be369d7b40589fb9fbbf576a6cc78a736169",
-        "start_line": 1,
-        "end_line": 47
-      },
-      {
-        "path": "docs/P4_D1_PRODUCTION_JOURNEY_REQUIREMENTS_2026-11-27.md",
-        "anchor": "pilotodin--d1-production-equivalent-disposable-journey-requirements",
-        "blob_sha": "ce8cbe509a91823cbb37bbb62f30dc953d3ad664",
-        "start_line": 1,
-        "end_line": 33
-      },
-      {
-        "path": "docs/C5_STANDARD_TOOL_STOP_AND_D1_REQUIREMENTS_2026-11-27.md",
-        "anchor": "pilotodin--c5-standard-tool-stopping-decision-and-d1-requirements",
-        "blob_sha": "c54955d0d960d0f6a919ebf8283b78e7f86a41da",
-        "start_line": 1,
-        "end_line": 12
+        "path": "qa/c5_managed_dev/windows_stage_a_preparation_20261127.json",
+        "blob_sha": "bd7bf96a067af2277728818b6aa4f759f6babac9"
       },
       {
         "path": "docs/C5_WINDOWS_A_PREUSE_SCOPE_2026-11-27.md",
@@ -185,13 +154,6 @@
         "end_line": 19
       },
       {
-        "path": "docs/C5_WINDOWS_A_ASTRAL_PREPARATION_2026-11-27.md",
-        "anchor": "pilotodin--approved-astral-windows-stage-a-preparation",
-        "blob_sha": "94003207cf659d93b6ad9c74e7ad4fe5bdb3406c",
-        "start_line": 1,
-        "end_line": 15
-      },
-      {
         "path": "docs/C5_PROPORTIONATE_INSPECTION_DECISION_2026-11-27.md",
         "anchor": "pilotodin--one-time-c5-proportionate-inspection-method",
         "blob_sha": "1fc6542e523f4a4393c01f419bb4db8f158ec5e2",
@@ -199,11 +161,18 @@
         "end_line": 75
       },
       {
-        "path": "docs/C5_RUNNER_BLOCKER_SEQUENCING_DECISION_2026-11-27.md",
-        "anchor": "pilotodin--owner-decision-narrow-runner-blocker-sequencing-exception",
-        "blob_sha": "082b7431644723ed009a290bb6949771f868b15d",
+        "path": "docs/P4_D1_PRODUCTION_JOURNEY_REQUIREMENTS_2026-11-27.md",
+        "anchor": "pilotodin--d1-production-equivalent-disposable-journey-requirements",
+        "blob_sha": "ce8cbe509a91823cbb37bbb62f30dc953d3ad664",
         "start_line": 1,
-        "end_line": 12
+        "end_line": 33
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "27-november--g2-equivalent-evidence-feasibility-and-design-disposition",
+        "blob_sha": "85a0a56753c98ff635d5a05cf3bdcca1def4b410",
+        "start_line": 109,
+        "end_line": 137
       },
       {
         "path": "docs/P4_R02_5_G2_CONSOLIDATED_CLOSURE_DECISION_2026-11-24.md",
@@ -212,17 +181,17 @@
     ]
   },
   "operation": {
-    "id": "PRODUCT-FIRST-20261127",
+    "id": "DOC-AUDIT-PRODUCT-FIRST-20261127",
     "state": "RECONCILED",
-    "starting_sha": "5be8c47affbb31c295e7f2071a80da26e64ab723",
-    "outcome": "Recorded owner-approved product-first framework in controlling phase policy and directive; narrowed C5 internal standard-verifier control traffic exception, exact Astral asset and signer workflow reconciled, retained all pre-use/settlement/actual approval gates. No source product, dependency, test, native or workflow change.",
+    "starting_sha": "4a314409968e21fa77c42636c8c6bfa80beba374",
+    "outcome": "Audited canonical docs, original Blueprint constraints, 30 structured refs, 120 unchanged workflow blobs, exact historical runs and 20 score rows; corrected superseded navigation and retained all gates/authorities/history. No product/test/lock/workflow change or restricted activity.",
     "reconcile_before_retry": false,
     "receipt": {
-      "path": "docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md",
-      "anchor": "27-november-2026--owner-approved-aggressive-product-first-development-framework",
-      "blob_sha": "537643c14c06fb13356ef10fbadef7112b14a30b",
-      "start_line": 283,
-      "end_line": 297
+      "path": "docs/DOCUMENTATION_AUDIT_C5_D1_MIGRATION_2026-11-27.md",
+      "anchor": "6-post-framework-document-audit-27-november-2026",
+      "blob_sha": "a201314f2fedc12c1185354d5b3e44563ee318b8",
+      "start_line": 49,
+      "end_line": 59
     }
   },
   "authority": {
@@ -388,7 +357,7 @@
     "Physical 8 GB bundled inference/coexistence, DPAPI, actual desktop egress/durability and production IPC/physical destination unverified; D prerequisites retained.",
     "R06 original-data historical full-tree 74 differences, unknown writer; prospective preservation pending. No loss of original data permitted.",
     "Standalone Windows A candidate 0c1590f57c4d62d58dca482c03ac9948009e90a4, exact Astral runtime and 8 application archives remain inactive; provenance, actual rights/security, Windows settlement and tool applicability pending. Production Pillow/Brotli concern remains unresolved.",
-    "Approved applicability method does not clear CLI or dependencies; exact standard provenance control-plane limits and authenticated bundle/root route, Windows owned settlement/staging and one-use activation, actual pre-use rights/security remain blocked.",
+    "Approved applicability method and PRODUCT-FIRST-20261127 rationalisation do not clear CLI or dependencies. Actual supported tool suitability, cryptographic release/build provenance, pre-use rights/security, Windows owned settlement/staging and one-use activation remain blocked; exact archive limits unchanged.",
     "G2 equivalent design has documented FileObject/identity primitives but shared mapped/cache/background original-writer attribution and independent complete coverage, safe supported deployment remain unproven. No new live evidence method adopted.",
     "PRODUCT-FIRST-20261127 rationalises only ordinary standard-verifier metadata traffic accounting in a later approved disposable C5 job; actual security/rights/provenance and Windows settlement remain unproven, exact archive bounds retained. G2 proof and all product gates unchanged."
   ],
@@ -398,23 +367,30 @@
     },
     "governance": [
       {
+        "path": "docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md",
+        "anchor": "27-november-2026--owner-approved-aggressive-product-first-development-framework",
+        "blob_sha": "ad8d559bc9cd3d8da66779e18332fc6db8ae7c56",
+        "start_line": 283,
+        "end_line": 297
+      },
+      {
         "path": "docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md",
         "anchor": "1-source-of-truth-hierarchy",
-        "blob_sha": "1a7d5e1ad0e498b2d2c202ba254d52343e7b6979",
+        "blob_sha": "a14ffefd951abf479762846e53b6c7b2e7199d9d",
         "start_line": 7,
         "end_line": 14
       },
       {
         "path": "docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md",
         "anchor": "5-authority-verification-and-stopping-rules",
-        "blob_sha": "1a7d5e1ad0e498b2d2c202ba254d52343e7b6979",
+        "blob_sha": "a14ffefd951abf479762846e53b6c7b2e7199d9d",
         "start_line": 36,
         "end_line": 64
       },
       {
         "path": "docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md",
         "anchor": "26-november-2026--owner-decision-on-c5-scope-rationalisation",
-        "blob_sha": "537643c14c06fb13356ef10fbadef7112b14a30b",
+        "blob_sha": "ad8d559bc9cd3d8da66779e18332fc6db8ae7c56",
         "start_line": 23,
         "end_line": 25
       },
@@ -440,7 +416,7 @@
       {
         "path": "docs/PROJECT_STATUS_CURRENT.md",
         "anchor": "p4-engineering-scorecard",
-        "blob_sha": "16e153a761527f4f87898179abfe95882d77dd87",
+        "blob_sha": "90cbcba05e7ed2e33edcee991cd6f7beee02b099",
         "start_line": 31,
         "end_line": 60
       },

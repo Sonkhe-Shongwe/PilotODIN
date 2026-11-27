@@ -1,6 +1,6 @@
 # PilotODIN 1.0 | Current project status
 
-**CURRENT | Official acceptance scorecard.** The [P4 engineering scorecard](#p4-engineering-scorecard) is the authoritative earned acceptance record. The [live operational state](../CONTINUATION_STATE.json) owns source progress and next action; the [legacy handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md) is a compatibility route. [Current documentation audit](./DOCUMENTATION_AUDIT_C5_D1_MIGRATION_2026-11-27.md) · [Pre-audit scorecard and chronology](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/bd7c1639c3b98ae93e0d83b8170e189dc042b365/docs/PROJECT_STATUS_CURRENT.md). Historical material is not current instruction.
+**CURRENT | Official acceptance scorecard.** The [P4 engineering scorecard](#p4-engineering-scorecard) is the authoritative earned acceptance record. The [live operational state](../CONTINUATION_STATE.json) owns source progress and next action; the [legacy handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md) is a compatibility route. [Current documentation audit](./DOCUMENTATION_AUDIT_C5_D1_MIGRATION_2026-11-27.md#6-post-framework-document-audit-27-november-2026) · [Pre-audit scorecard and chronology](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/bd7c1639c3b98ae93e0d83b8170e189dc042b365/docs/PROJECT_STATUS_CURRENT.md). Historical material is not current instruction.
 
 ## Phase ledger
 
@@ -10,7 +10,7 @@
 | P1 · Data, projects and workspace reliability | Bounded development closed. [Closure register](./P1_CLOSURE_REGISTER_2026-10-28.md) |
 | P2 · Deliver and reporting | Bounded development closed. End-user Unicode PDF and associated font-distribution approval remain deferred. [Closure record](./P2_DEVELOPMENT_CLOSURE_2026-11-06.md) |
 | P3 · Deterministic semantic context | Bounded development closed. [Closure record](./P3_DEVELOPMENT_CLOSURE_2026-11-09.md) |
-| P4 · Target Intelligence | Active. Packages A and B source closed; Package C active; current source status is in the migration handoff. Remaining technical gates and owner signoff are tracked below. |
+| P4 · Target Intelligence | Active. Packages A and B source closed; Package C active; current source status is in [live state](../CONTINUATION_STATE.json); independent scoped P4 source remediation may proceed under the revised product-first policy. Remaining technical gates and owner signoff are tracked below. |
 | P5 · Durable execution and resource coordination | Later phase, unauthorised. Earlier implementation slices are recorded in history. |
 | P6 · Master Analyst and Master Scientist | Later phase. [Roadmap](./PILOTODIN_CONSOLIDATED_ROADMAP_COMPLEXITY_LAST.md) |
 | P7 · Autonomous ODIN and orchestration | Later phase. [Roadmap](./PILOTODIN_CONSOLIDATED_ROADMAP_COMPLEXITY_LAST.md) |
