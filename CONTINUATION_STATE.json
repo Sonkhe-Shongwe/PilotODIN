@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-LINUX-STANDALONE-A-SOURCE-20261127",
-    "parent_sha": "31fc7e18b32f67d6998a171a45ee72c7dff7d365",
-    "previous_snapshot_sha": "31fc7e18b32f67d6998a171a45ee72c7dff7d365",
-    "scope": "Detached three-path Linux Stage A candidate and static/mock verification; no activation, installation or acceptance change.",
+    "operation_id": "C5-LINUX-PUBLISHER-BUILD-AND-MANAGED-BOOTSTRAP-20261127",
+    "parent_sha": "e7f338442fc56bdc309586d7016261e2a6cb8fb9",
+    "previous_snapshot_sha": "e7f338442fc56bdc309586d7016261e2a6cb8fb9",
+    "scope": "Exact publisher build/publication log evidence, existing managed host observation and detached C-D09 alignment; no restricted execution or score change.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--disarmed-standalone-linux-stage-a-source-candidate",
-      "blob_sha": "383b1f1c6a2054f83aa9e8d40a9f1447a2ba47db",
-      "start_line": 255,
-      "end_line": 263
+      "anchor": "27-november--exact-pdfium-publisher-build-chain-and-managed-linux-bootstrap",
+      "blob_sha": "aa61462977944856f20eeadd675375d771372fa8",
+      "start_line": 265,
+      "end_line": 273
     }
   },
   "product": {
@@ -119,8 +119,8 @@
     "id": "C5-LINUX-FIRST-20261127",
     "status": "BLOCKED",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "Standalone Linux Stage A source candidate ef448858bc753a7219e2b9720645911e0cca1a8c prepared, disarmed. Seven exact archive identities evidenced; specific PDFium source fix supported but final actual applicable use/host disposition unresolved. Exact source/host reviewed activation, one-use authority and actual settlement/functional verification absent. Full Linux Pillow stable pin affected; nightly unpinned.",
-    "next_action": "Resolve finite concrete applicable PDFium and managed Linux host pre-use disposition using existing evidence and exact actual tool/runner identity; candidate ef448858bc753a7219e2b9720645911e0cca1a8c is disarmed and awaits exact final reviewed activation and one-use owner authority for seven fixed GETs, isolated hash-locked installation and all 19 unchanged predicates. Verify full pure module in authorised ordinary/synthetic scope if supported without restricted action; do not launch on unresolved inputs or repeat generic research. Independently pin corrected official Pillow for full Linux profile, with separate reviewed replacement. All Windows verification mandatory before D1.",
+    "blocker": "Exact PDFium build-to-publication chain corroborated; exact Brotli checkout not available, specific generated-fixture use/security disposition pending. Detached 70ee69c aligns managed bootstrap to approved C-D09. Actual host applicable package/ABI/security/rights and exact one-use activation/authority absent. Full-profile Pillow still held.",
+    "next_action": "Use the material publisher chain and actual prior notices to resolve one finite scope-specific PDFium generated-fixture disposition, explicitly documenting residual checkout uncertainty; if inadequate park route and present concrete owner decision/alternative, no repeated broad research. Complete actual applicable managed host facts under C-D09 (no independent Python hash qualification loop), exact activation and one-use approval for seven fixed GETs, isolated hash-locked installation and 19 unchanged tests; no execution with unresolved inputs. Independently pin corrected official Pillow for full Linux profile only with separate review. All Windows pre-use requirements before D1.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
@@ -130,36 +130,43 @@
     "read": [
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "27-november--exact-pdfium-publisher-build-chain-and-managed-linux-bootstrap",
+        "blob_sha": "aa61462977944856f20eeadd675375d771372fa8",
+        "start_line": 265,
+        "end_line": 273
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--disarmed-standalone-linux-stage-a-source-candidate",
-        "blob_sha": "383b1f1c6a2054f83aa9e8d40a9f1447a2ba47db",
+        "blob_sha": "aa61462977944856f20eeadd675375d771372fa8",
         "start_line": 255,
         "end_line": 263
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--six-uploaded-linux-stage-a-wheels-verified",
-        "blob_sha": "383b1f1c6a2054f83aa9e8d40a9f1447a2ba47db",
+        "blob_sha": "aa61462977944856f20eeadd675375d771372fa8",
         "start_line": 245,
         "end_line": 253
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--pdfium-brotli-source-fix-traced-and-official-pillow-nightly-option",
-        "blob_sha": "383b1f1c6a2054f83aa9e8d40a9f1447a2ba47db",
+        "blob_sha": "aa61462977944856f20eeadd675375d771372fa8",
         "start_line": 237,
         "end_line": 243
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--actual-uploaded-linux-pillow-and-pdfium-inspection",
-        "blob_sha": "383b1f1c6a2054f83aa9e8d40a9f1447a2ba47db",
+        "blob_sha": "aa61462977944856f20eeadd675375d771372fa8",
         "start_line": 227,
         "end_line": 235
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--owner-approved-linux-first-c5-allocation-and-exact-reduced-input-plan",
-        "blob_sha": "383b1f1c6a2054f83aa9e8d40a9f1447a2ba47db",
+        "blob_sha": "aa61462977944856f20eeadd675375d771372fa8",
         "start_line": 211,
         "end_line": 219
       },
@@ -198,17 +205,17 @@
     ]
   },
   "operation": {
-    "id": "C5-LINUX-STANDALONE-A-SOURCE-20261127",
+    "id": "C5-LINUX-PUBLISHER-BUILD-AND-MANAGED-BOOTSTRAP-20261127",
     "state": "RECONCILED",
-    "starting_sha": "31fc7e18b32f67d6998a171a45ee72c7dff7d365",
-    "outcome": "Detached ef44885 standalone Linux Stage A source, existing bounded POSIX capture adapted opt-in; seven input/lock and 19 predicate scope retained. 10/10 source pins, 12 static checks and three copied pure mock checks pass; full module and 19 functional tests NOT RUN. Existing P4 host log corroborates CP311 path/image; remaining actual pre-use disposition, exact activation and approval absent.",
+    "starting_sha": "e7f338442fc56bdc309586d7016261e2a6cb8fb9",
+    "outcome": "Actual pypdfium2 source-build and publication jobs correlate exact wheel digest and Brotli compilation; exact Brotli checkout and final pre-use disposition conditional. Recovered same-image curl observation; detached 70ee69c aligns managed Python fingerprint to C-D09, 9 static and 6 copied synthetic fingerprint checks pass, no full module/managed/functional execution.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--disarmed-standalone-linux-stage-a-source-candidate",
-      "blob_sha": "383b1f1c6a2054f83aa9e8d40a9f1447a2ba47db",
-      "start_line": 255,
-      "end_line": 263
+      "anchor": "27-november--exact-pdfium-publisher-build-chain-and-managed-linux-bootstrap",
+      "blob_sha": "aa61462977944856f20eeadd675375d771372fa8",
+      "start_line": 265,
+      "end_line": 273
     }
   },
   "authority": {
@@ -405,6 +412,10 @@
       {
         "sha": "ef448858bc753a7219e2b9720645911e0cca1a8c",
         "scope": "Detached exact Linux standalone Stage A successor, 3 QA paths vs 4118d47, ten original pins and both locks unchanged, 19 predicates retained, 12 static checks and 3 copied mocked group checks pass; full module/actual transfer/install/native/functional/settlement not run. All gates disarmed; future pre-use disposition, exact activation and separate one-use approval required."
+      },
+      {
+        "sha": "70ee69cb4d860e6499da114cfec7cf7e85ca6510",
+        "scope": "One-path detached Linux Stage A successor aligning managed bootstrap to approved C-D09; same image historic curl drift pin, Python observed fingerprint/recheck, unchanged independent archive pins/locks and 19 tests; 9 static and 6 copied synthetic-file checks PASS. Full module, host/package/native/functional execution NOT RUN; no pre-use eligibility, activation or grant."
       }
     ]
   },
@@ -426,7 +437,8 @@
     "Actual uploaded Pillow Brotli 1.2.0 linked via FreeType; held for CVE-2026-111497. PDFium direct linkage/37 notices verified; static Brotli version/patch and applicable rights unresolved.",
     "PDFium expected source Brotli cfa184a contains upstream CVE fix; direct exact DEPS/build checkout unavailable and byte markers inconclusive. Official Pillow nightly channel exists, artifact/source/hash not qualified. Local CPython 3.13.5 is not approved CP311 target.",
     "All seven Stage A archive identities now evidenced (six uploaded static checks plus prior PDFium); pip primary/vendor notices present and PE Windows launchers excluded in Linux scope. Limited advisory review and static dependency compatibility are not actual pre-use runtime/security or functional acceptance. Exact Linux standalone runner/settlement, PDFium conditional disposition, 19 predicates and full-profile corrected Pillow remain.",
-    "Detached ef44885 standalone Linux Stage A source path uses existing bounded group capture and explicit absence probe; no real process, package, native, functional or full new module test. Historical Ubuntu image 20261122.23.1 and CP311.18 layout corroborated, actual exact host/rights/security disposition absent. No claim against escaped sessions or complete containment. Final reviewed source activation and one-use authority absent; no Stage B or phase advancement."
+    "Detached ef44885 standalone Linux Stage A source path uses existing bounded group capture and explicit absence probe; no real process, package, native, functional or full new module test. Historical Ubuntu image 20261122.23.1 and CP311.18 layout corroborated, actual exact host/rights/security disposition absent. No claim against escaped sessions or complete containment. Final reviewed source activation and one-use authority absent; no Stage B or phase advancement.",
+    "Exact publisher build/publication correlation now established for PDFium pinned wheel, source branch 8149 and Brotli decoder compiled; direct exact Brotli checkout and independent cryptographic attestation verification absent. Specific pre-use disposition and host actual applicability still required. Detached 70ee69c C-D09 observed Python fingerprint is not independent provenance; no full module or actual run."
   ],
   "context": {
     "protocol": {
