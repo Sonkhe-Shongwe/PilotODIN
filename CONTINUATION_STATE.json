@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-CD10-INTEGRATED-REGRESSION-20261127",
-    "parent_sha": "80fe142cd7e5ea4265efb4c197d82b9d9e6aab93",
-    "previous_snapshot_sha": "80fe142cd7e5ea4265efb4c197d82b9d9e6aab93",
-    "scope": "Reconcile successful exact retained synthetic CI; keep privileged candidate disarmed and unresolved.",
+    "operation_id": "C5-RUNNER-BLOCKER-SEQUENCING-20261127",
+    "parent_sha": "70aeb78ebe4489ed9a18bddb45f60aec271baf38",
+    "previous_snapshot_sha": "70aeb78ebe4489ed9a18bddb45f60aec271baf38",
+    "scope": "Record owner-approved sequencing exception limited to current C-D10 runner blocker; prioritize independent C5 preparation.",
     "state": "RECONCILED",
     "receipt": {
-      "path": "docs/C5_CD10_INTEGRATED_REGRESSION_2026-11-27.md",
-      "anchor": "pilotodin--c-d10-complete-retained-synthetic-regression",
-      "blob_sha": "e3a3712a238453e78c71f13a80d8473fac317c5a",
+      "path": "docs/C5_RUNNER_BLOCKER_SEQUENCING_DECISION_2026-11-27.md",
+      "anchor": "pilotodin--owner-decision-narrow-runner-blocker-sequencing-exception",
+      "blob_sha": "082b7431644723ed009a290bb6949771f868b15d",
       "start_line": 1,
-      "end_line": 18
+      "end_line": 12
     }
   },
   "product": {
@@ -119,14 +119,28 @@
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
     "status": "BLOCKED",
     "scope": "C-D08 development reproducibility/build safety as revised by C-D09 limited managed-development evidence method; D native and P8 release boundaries unchanged.",
-    "blocker": "Full exact retained and corrected synthetic suite now PASS (46/46). Integrated privileged update draft assembly blocked by safety check; reviewed supported root-side update/settlement and actual distro tool security/rights remain unresolved. No restricted grants.",
-    "next_action": "Prefer a reviewed provider-patched Ubuntu image; otherwise review a supported bounded standard security-update method, exact same-job transaction and root settlement, actual tool package versions and applicable rights, then prepare an exact disarmed inspection candidate. Do not bypass blocked assembly, run another standalone metadata simulation, repeat successful synthetic tests without source changes, or execute any restricted activity absent fresh explicit scope approval.",
+    "blocker": "C-D10 runner security/inspection remains blocked; owner approved independent C5 preparation to continue while this particular blocker is unresolved. 46/46 synthetic pass retained; no active restricted grants.",
+    "next_action": "Prioritize one consolidated independent C5 validation preparation batch: review/finish conditional PDFium overlay and exact Windows/Linux source-test orchestration using existing 29-path overlay, 172-use manifest, Stage A/B and mixed/font/frontend witnesses, standalone Rust/browser requirements. Produce meaningful disarmed candidate or concrete source defect correction; no migration, acquisition or restricted execution. Runner inspection remains pending and must rejoin before closure; no repeated standalone runner checks as primary work.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
-      "Complete applicable rights and static linkage, conditional exact PDFium source integration and final managed source-test candidate; explicit bounded execution permission, no owner/native/installer.",
-      "Run authorised exact Stage A/B and consolidated Windows/Linux development regressions, standalone Rust and browser-dev, final checklist audit; C5 closure only on evidence. D/G2 and phase gates unchanged."
+      "Resolve current runner blocker via reviewed patched provider image or separately approved supported alternative; exact tool rights/security, approved 42-row inspection and applicable use dispositions; no bypass of blocked assembly.",
+      "Execute exact approved conditional overlay and Windows/Linux consolidated validation, standalone Rust and browser-dev, then C5 eight-row audit. D/G2/E2/P5/installer gates unchanged."
     ],
     "read": [
+      {
+        "path": "docs/C5_CD09_VALIDATION_WITNESSES_2026-11-27.md",
+        "anchor": "pilotodin--c-d09-disarmed-validation-witness-integration",
+        "blob_sha": "898cc6034160d1a79e788a55d0523bb066f89030",
+        "start_line": 1,
+        "end_line": 24
+      },
+      {
+        "path": "docs/C5_RUNNER_BLOCKER_SEQUENCING_DECISION_2026-11-27.md",
+        "anchor": "pilotodin--owner-decision-narrow-runner-blocker-sequencing-exception",
+        "blob_sha": "082b7431644723ed009a290bb6949771f868b15d",
+        "start_line": 1,
+        "end_line": 12
+      },
       {
         "path": "docs/C5_CD10_INTEGRATED_REGRESSION_2026-11-27.md",
         "anchor": "pilotodin--c-d10-complete-retained-synthetic-regression",
@@ -223,13 +237,6 @@
         "end_line": 19
       },
       {
-        "path": "docs/C5_CD09_VALIDATION_WITNESSES_2026-11-27.md",
-        "anchor": "pilotodin--c-d09-disarmed-validation-witness-integration",
-        "blob_sha": "898cc6034160d1a79e788a55d0523bb066f89030",
-        "start_line": 1,
-        "end_line": 24
-      },
-      {
         "path": "docs/C5_CD09_PDFIUM_OVERLAY_REVIEW_2026-11-27.md",
         "anchor": "pilotodin--c-d09-conditional-pdfium-overlay-source-review",
         "blob_sha": "f6271252a8844d8be498c693d4aae1fa174e8fe7",
@@ -323,17 +330,17 @@
     ]
   },
   "operation": {
-    "id": "C5-CD10-INTEGRATED-REGRESSION-20261127",
+    "id": "C5-RUNNER-BLOCKER-SEQUENCING-20261127",
     "state": "RECONCILED",
-    "starting_sha": "581fa90dfe38ab38f797992220d5752542384b41",
-    "outcome": "Run 45980541604 job 140443009973 attempt 1 completed SUCCESS, 46/46 synthetic methods, 11 exact source/test pins, exact manifest projection 42 rows / 214328914 bytes. No restricted execution. Integrated privileged draft assembly blocked by safety check; not published/activated.",
+    "starting_sha": "70aeb78ebe4489ed9a18bddb45f60aec271baf38",
+    "outcome": "Owner-specific sequencing exception recorded; no execution, application, workflow or acceptance changes. Independent C5 preparation prioritized; verification blocker retained.",
     "reconcile_before_retry": false,
     "receipt": {
-      "path": "docs/C5_CD10_INTEGRATED_REGRESSION_2026-11-27.md",
-      "anchor": "pilotodin--c-d10-complete-retained-synthetic-regression",
-      "blob_sha": "e3a3712a238453e78c71f13a80d8473fac317c5a",
+      "path": "docs/C5_RUNNER_BLOCKER_SEQUENCING_DECISION_2026-11-27.md",
+      "anchor": "pilotodin--owner-decision-narrow-runner-blocker-sequencing-exception",
+      "blob_sha": "082b7431644723ed009a290bb6949771f868b15d",
       "start_line": 1,
-      "end_line": 18
+      "end_line": 12
     }
   },
   "authority": {
