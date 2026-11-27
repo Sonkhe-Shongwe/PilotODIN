@@ -1,10 +1,14 @@
 name: C5 CD10 Ubuntu security metadata once
 on:
-  workflow_dispatch:
+  push:
+    branches: [feature/live-dev-workspace-20261023]
+    paths:
+      - qa/c5_managed_dev/APPROVAL_CD10_UBUNTU_SECURITY_METADATA_ONCE_20261127.txt
 permissions: {}
 jobs:
   metadata-once:
-    if: ${{ false }}
+    if: >-
+      ${{ github.run_attempt == 1 && github.event_name == 'push' && github.repository == 'Sonkhe-Shongwe/PilotODIN' && github.ref == 'refs/heads/feature/live-dev-workspace-20261023' && github.event.head_commit.message == 'C5: issue approved CD10 Ubuntu security metadata once 20261127' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
