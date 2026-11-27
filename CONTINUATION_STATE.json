@@ -6,10 +6,17 @@
   },
   "checkpoint": {
     "operation_id": "C5-DIRECT-RGB-ALTERNATIVE-20261127",
-    "parent_sha": "486b5847e8de4492ba45df516c9f4fe658a1e7a4",
-    "previous_snapshot_sha": "486b5847e8de4492ba45df516c9f4fe658a1e7a4",
-    "scope": "Concrete direct RGB conversion improvement; focused synthetic CI only; alternative overlay not activated.",
-    "state": "PREPARED"
+    "parent_sha": "18a926e106a8a09db9fa64b61de82405b9c7d2d3",
+    "previous_snapshot_sha": "18a926e106a8a09db9fa64b61de82405b9c7d2d3",
+    "scope": "Reconcile direct RGB alternative and actual 64/64 ordinary synthetic regression; no product migration or restricted execution.",
+    "state": "RECONCILED",
+    "receipt": {
+      "path": "docs/C5_DIRECT_RGB_ALTERNATIVE_2026-11-27.md",
+      "anchor": "pilotodin--direct-rgb-conversion-concrete-dependency-reduction",
+      "blob_sha": "db5a3fe359fcfe845b351bac57f86724960ef364",
+      "start_line": 1,
+      "end_line": 21
+    }
   },
   "product": {
     "sha": "8da7f33cb418e453a7b5c250b960fb6370e9e9d0",
@@ -110,16 +117,23 @@
   },
   "task": {
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
-    "status": "PREPARED",
+    "status": "BLOCKED",
     "scope": "C-D08 development reproducibility/build safety as revised by C-D09 limited managed-development evidence method; D native and P8 release boundaries unchanged.",
-    "blocker": "Actual use held: Pillow 13.0.0 publisher Brotli 1.2.0 concern (CVE-2026-111497), official fix merged but no corrected release observed; exact target wheel applicability/SBOM and PDFium build/linkage/rights unresolved. No active restricted grants.",
-    "next_action": "Run ordinary exact direct RGB synthetic checks, reconcile. No restricted activity.",
+    "blocker": "Pillow/Brotli candidate security and PDFium linkage/rights remain unresolved. Direct RGB alternative source tested in isolation; stage plan and manifest still unchanged, actual PDFium and controller source/cleanup remain pending. No active restricted grants.",
+    "next_action": "Prioritize concrete product dependency remediation: assess supported official corrected Pillow or genuinely equivalent product dependency/backend route, and whether direct RGB alternative safely removes Pillow from Stage A without changing acceptance; rebind exact candidate if justified. Complete finite controller source/cleanup and applicable pre-use rights before separately approved actual validation. No generic framework, repeated synthetic-only work, redundant publisher or runner checks, vulnerable tooling, migration or restricted execution. If no supported remediation available, state actual blocker and pursue independent authorized product work only.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "Complete targeted applicable pre-use evidence and exact approved staging/inspection for genuinely unresolved components; no blanket binutils requirement or rights waiver.",
       "Execute separately approved conditional validation with all retained Stage A/B, font, frontend, Rust and matched P1/P4 predicates; audit eight C5 rows; D/G2/E2/P5/installer boundaries unchanged."
     ],
     "read": [
+      {
+        "path": "docs/C5_DIRECT_RGB_ALTERNATIVE_2026-11-27.md",
+        "anchor": "pilotodin--direct-rgb-conversion-concrete-dependency-reduction",
+        "blob_sha": "db5a3fe359fcfe845b351bac57f86724960ef364",
+        "start_line": 1,
+        "end_line": 21
+      },
       {
         "path": "docs/C5_STAGE_A_PUBLISHER_REVIEW_2026-11-27.md",
         "anchor": "pilotodin--stage-a-targeted-publisher-and-security-review",
@@ -352,18 +366,17 @@
   },
   "operation": {
     "id": "C5-DIRECT-RGB-ALTERNATIVE-20261127",
-    "state": "PREPARED",
+    "state": "RECONCILED",
     "starting_sha": "486b5847e8de4492ba45df516c9f4fe658a1e7a4",
-    "scope": "Pure RGB copy helper and six standard-library tests; detached alternative candidate 65f5ca6acbdec0743c2c93360bc607cc7e9338a9. No real PDFium/Pillow, dependency acquisition, product migration or restricted execution.",
-    "intended_paths": [
-      "qa/c5_managed_dev/raster_rgb.py",
-      "qa/c5_managed_dev/test_raster_rgb.py",
-      ".github/workflows/c5-input-proposal-review.yml"
-    ],
-    "expected_evidence": "Six direct RGB cases with exact byte preservation and invalid buffer refusals; no PDFium or Pillow import. Retain actual terminal CI.",
-    "recovery": "Reconcile exact source/run/job/log before retry; no restricted activation.",
-    "reconcile_before_retry": true,
-    "workflow_blob": "fdf23092130489170a00f99ea0738c960059ea1d"
+    "outcome": "Implemented pure direct RGB copy and tested 6/6 new + 58/58 retained synthetic cases. Detached alternative 65f5ca6 removes Pillow conversion from render_rgb, not save_png or production graph; historical manifest unchanged, no candidate run. No actual use or migration.",
+    "reconcile_before_retry": false,
+    "receipt": {
+      "path": "docs/C5_DIRECT_RGB_ALTERNATIVE_2026-11-27.md",
+      "anchor": "pilotodin--direct-rgb-conversion-concrete-dependency-reduction",
+      "blob_sha": "db5a3fe359fcfe845b351bac57f86724960ef364",
+      "start_line": 1,
+      "end_line": 21
+    }
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next.",
