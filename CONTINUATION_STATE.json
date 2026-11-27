@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-WINDOWS-A-STAGING-20261127",
-    "parent_sha": "989b1cb39f7f4fbb118931acf980c1d5039777ec",
-    "previous_snapshot_sha": "989b1cb39f7f4fbb118931acf980c1d5039777ec",
-    "scope": "Detached disarmed exact archive staging and fixed provenance argument construction; five local synthetic checks, no acquisition, native or restricted execution or acceptance change.",
+    "operation_id": "P4-LEGACY-JOB-SETTLEMENT-20261127",
+    "parent_sha": "ff11c57086e9dc450667fd525b0c3b819da075c7",
+    "previous_snapshot_sha": "ff11c57086e9dc450667fd525b0c3b819da075c7",
+    "scope": "C5 exact pre-use hold and independently established legacy desktop whole-job shutdown guard correction; detached product source only, no restricted execution or acceptance change.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--standalone-windows-a-archive-staging-preparation",
-      "blob_sha": "cbffa0a2dba3a3146492e0ff269a971fe64e5111",
-      "start_line": 159,
-      "end_line": 169
+      "anchor": "27-november--c5-pre-use-hold-and-independent-legacy-desktop-shutdown-correction",
+      "blob_sha": "03eb3a0c5af4d1fb61b577fe9a1a45dbed75a70c",
+      "start_line": 171,
+      "end_line": 181
     }
   },
   "product": {
@@ -116,31 +116,31 @@
     }
   },
   "task": {
-    "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
+    "id": "P4-LEGACY-JOB-SETTLEMENT-20261127",
     "status": "BLOCKED",
-    "scope": "C5 development assurance under C-D08/C-D09 and PRODUCT-FIRST-20261127; independent concrete P4 source remediation may proceed without gate credit. D/P8 acceptance and execution boundaries unchanged.",
-    "blocker": "Functional path, owned Windows runner source and post-review staging source prepared. Exact bounded archive transport, supported standard verifier execution/output and independent actual pre-use security/rights/provenance disposition, integrated Windows settlement and activation remain unproven. G2 original attribution/coverage remains blocked.",
-    "next_action": "From detached bb31566cda9cd35e4e8ce8a6a1c8470537c141e3 complete only the finite supported archive transfer, fixed verifier invocation/verified output review and coherent disarmed orchestration with pre-use hold/owned settlement, preserving exact 9 archive bodies/57,097,116 bytes, max 10 archive requests, 19 predicates, no Stage B. Determine whether actual independent disposition can be established in the same approved job. Do not create another general QA layer, mint clearance, run restricted operations or seek approval for incomplete scope. If concrete pre-use evidence is unavailable, park this route and pursue independently established P4 product defects/minimum D1 source preparation under PRODUCT-FIRST-20261127. No phase advance.",
+    "scope": "Independent concrete P4 product-source remediation under PRODUCT-FIRST-20261127; C5 parked at actual independent pre-use facts, existing detached preparation preserved. No D/native/E2/phase credit.",
+    "blocker": "Legacy desktop shutdown guard source correction detached; actual regression and safe publication scope not established. C5 consolidated route parked: independently reviewed actual provenance/security/rights/pip metadata disposition and supported execution/custody method unavailable; no activation-ready transaction. G2 attribution/coverage unchanged.",
+    "next_action": "Review exact detached product correction b8fa995ae1b86c044c77610abd1db1b7fa8cedd0 against existing relevant regression tests and exact matching workflow scopes; prepare minimum targeted regression evidence, merge only when safe and authorized. If restricted native verification is the remaining dependency, seek exact approval only for reviewable bounded transaction or pursue another independently demonstrated P4 product defect. C5 bb31566cda9cd35e4e8ce8a6a1c8470537c141e3 preserved; reopen only with concrete independent pre-use evidence and viable transaction, no new generic assurance layer. No phase advance.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
-      "One fresh exact-source scoped Stage A execution approval, real 19-predicate functional outcome and settlement; rejoin full C5 Stage A/B and other profiles before C5 closure.",
-      "Independent concrete P4 product fixes and production-equivalent D1 preparation may proceed in parallel within authority; native journey separate exact approval.",
+      "Targeted product regression and safe publication of legacy shutdown correction; no native D acceptance inferred.",
+      "C5 independent pre-use evidence and supported exact transaction, real 19-predicate Stage A outcome and remaining full profiles before C5 closure.",
       "G2 complete feasible evidence method separately adopted, actual D1/D2 and physical 8 GB/original-data evidence before P4 closure; no installer or P5 activation."
     ],
     "read": [
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "27-november--standalone-windows-a-archive-staging-preparation",
-        "blob_sha": "cbffa0a2dba3a3146492e0ff269a971fe64e5111",
-        "start_line": 159,
-        "end_line": 169
+        "anchor": "27-november--c5-pre-use-hold-and-independent-legacy-desktop-shutdown-correction",
+        "blob_sha": "03eb3a0c5af4d1fb61b577fe9a1a45dbed75a70c",
+        "start_line": 171,
+        "end_line": 181
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "27-november--owned-windows-command-runner-preparation",
-        "blob_sha": "cbffa0a2dba3a3146492e0ff269a971fe64e5111",
-        "start_line": 149,
-        "end_line": 157
+        "anchor": "27-november--standalone-windows-a-archive-staging-preparation",
+        "blob_sha": "03eb3a0c5af4d1fb61b577fe9a1a45dbed75a70c",
+        "start_line": 159,
+        "end_line": 169
       },
       {
         "path": "docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md",
@@ -150,43 +150,11 @@
         "end_line": 297
       },
       {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "27-november--owner-approved-c5-applicability-policy-and-consolidated-stage-a-transaction",
-        "blob_sha": "cbffa0a2dba3a3146492e0ff269a971fe64e5111",
-        "start_line": 72,
-        "end_line": 97
-      },
-      {
-        "path": "qa/c5_managed_dev/windows_stage_a_preparation_20261127.json",
-        "blob_sha": "bd7bf96a067af2277728818b6aa4f759f6babac9"
-      },
-      {
-        "path": "docs/C5_WINDOWS_A_PREUSE_SCOPE_2026-11-27.md",
-        "anchor": "pilotodin--standalone-windows-a-pre-use-inspection-scope",
-        "blob_sha": "676a7a7853a2da0506886f52ebf0241051372d61",
-        "start_line": 1,
-        "end_line": 19
-      },
-      {
-        "path": "docs/C5_PROPORTIONATE_INSPECTION_DECISION_2026-11-27.md",
-        "anchor": "pilotodin--one-time-c5-proportionate-inspection-method",
-        "blob_sha": "1fc6542e523f4a4393c01f419bb4db8f158ec5e2",
-        "start_line": 1,
-        "end_line": 75
-      },
-      {
         "path": "docs/P4_D1_PRODUCTION_JOURNEY_REQUIREMENTS_2026-11-27.md",
         "anchor": "pilotodin--d1-production-equivalent-disposable-journey-requirements",
         "blob_sha": "ce8cbe509a91823cbb37bbb62f30dc953d3ad664",
         "start_line": 1,
         "end_line": 33
-      },
-      {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "27-november--g2-equivalent-evidence-feasibility-and-design-disposition",
-        "blob_sha": "cbffa0a2dba3a3146492e0ff269a971fe64e5111",
-        "start_line": 109,
-        "end_line": 137
       },
       {
         "path": "docs/P4_R02_5_G2_CONSOLIDATED_CLOSURE_DECISION_2026-11-24.md",
@@ -195,17 +163,17 @@
     ]
   },
   "operation": {
-    "id": "C5-WINDOWS-A-STAGING-20261127",
+    "id": "P4-LEGACY-JOB-SETTLEMENT-20261127",
     "state": "RECONCILED",
-    "starting_sha": "989b1cb39f7f4fbb118931acf980c1d5039777ec",
-    "outcome": "Prepared three detached QA paths, reused existing strict archive readers and pinned pre-use hold, five byte-matched local source/synthetic checks passed. Standard verifier arguments only; actual archive transport, verification, pre-use disposition and Windows integration unproven. No product/workflow change.",
+    "starting_sha": "ff11c57086e9dc450667fd525b0c3b819da075c7",
+    "outcome": "Parked C5 consolidated route at missing independent pre-use facts; prepared actual one-file detached legacy desktop job-settlement correction and interruption persistence. Exact diff reviewed; not compiled, tested, merged or activated.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--standalone-windows-a-archive-staging-preparation",
-      "blob_sha": "cbffa0a2dba3a3146492e0ff269a971fe64e5111",
-      "start_line": 159,
-      "end_line": 169
+      "anchor": "27-november--c5-pre-use-hold-and-independent-legacy-desktop-shutdown-correction",
+      "blob_sha": "03eb3a0c5af4d1fb61b577fe9a1a45dbed75a70c",
+      "start_line": 171,
+      "end_line": 181
     }
   },
   "authority": {
@@ -378,6 +346,14 @@
       {
         "sha": "bb31566cda9cd35e4e8ce8a6a1c8470537c141e3",
         "scope": "Disarmed Stage A staging successor; two new QA paths and import-only change to existing inspection adapter. Five scoped local synthetic tests pass with exact new blobs; no actual archive, native, transport or provenance execution."
+      },
+      {
+        "sha": "7a502bb0380bd0db7f0040d6eca18f7f004bdf6f",
+        "scope": "Initial independent P4 legacy owned-job shutdown correction, superseded by successor retaining interruption across entire close retry; not activated."
+      },
+      {
+        "sha": "b8fa995ae1b86c044c77610abd1db1b7fa8cedd0",
+        "scope": "One-file detached active legacy desktop shutdown correction, original OwnedJob retained through leader and positive zero-job settlement, interruption across retries; exact source reviewed, no compilation/native/regression or merge."
       }
     ]
   },
@@ -392,7 +368,8 @@
     "PRODUCT-FIRST-20261127 rationalises only ordinary standard-verifier metadata traffic accounting in a later approved disposable C5 job; actual security/rights/provenance and Windows settlement remain unproven, exact archive bounds retained. G2 proof and all product gates unchanged.",
     "Detached 8ca9f6f9c96f2f9eb1473ae26ed8e1a7e7ac7010 implements standalone post-staging Stage A path but has no qualified runtime, actual pre-use disposition, Windows runner, acquisition/extraction or activation; no functional 19-test or native execution evidence. Exact original source and sanitised recovery copy now owner-held; not full Git backup.",
     "Detached fa610dcff5e73b89290cc5df3ec99e5b7d45a17f owned Windows runner is disarmed; eight byte-matched pure/mock tests only, no full module/native execution. Actual host nested-job/API/pipe behavior, pre-assignment controller failure, exact tool environment and integrated cleanup remain unverified; no sandbox or acceptance claim.",
-    "Detached bb31566cda9cd35e4e8ce8a6a1c8470537c141e3 post-review staging and fixed verifier argument source only; actual bounded transfer, credential/controller integration, signed provenance, pre-use disposition and real archive layout/native settlement unverified. Five pure/synthetic local checks are not functional acceptance."
+    "Detached bb31566cda9cd35e4e8ce8a6a1c8470537c141e3 post-review staging and fixed verifier argument source only; actual bounded transfer, credential/controller integration, signed provenance, pre-use disposition and real archive layout/native settlement unverified. Five pure/synthetic local checks are not functional acceptance.",
+    "C5 single-job route parked at independent actual pre-use review, not abandoned. Detached product b8fa995ae1b86c044c77610abd1db1b7fa8cedd0 improves legacy whole-job settlement and interruption retention but is uncompiled/untested/unmerged; emergency exit and actual G2/native evidence remain unresolved."
   ],
   "context": {
     "protocol": {
