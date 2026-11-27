@@ -1,0 +1,32 @@
+{
+  "id": "C5-GITHUB-STANDARD-BROWSER-20261127",
+  "owner_approved": true,
+  "prepared_parent": "c6a4a80dd1761fc1520edd48f7dec958a58a60bd",
+  "source_sha": "2809df9781e803af7c43bc882576b5dfeeb2bdee",
+  "source_tree": "5e4d2a96a530aa4698bc033281f1d7441456e511",
+  "workflow": ".github/workflows/c5-browser-smoke-once.yml",
+  "attempt": 1,
+  "runner": "ubuntu-24.04",
+  "minutes": 5,
+  "max_acquisition_gets": 6,
+  "max_accepted_body_bytes": 163620096,
+  "redirects": 0,
+  "retries": 0,
+  "technical_replacements_max": 2,
+  "technical_replacements_used": 0,
+  "chrome": "158.0.8127.88-1",
+  "playwright": "1.65.1",
+  "standard_authenticated_chrome_install_only": true,
+  "excludes": [
+    "OS security changes",
+    "sandbox weakening",
+    "backend",
+    "Pillow",
+    "owner data",
+    "model",
+    "PilotODIN installer",
+    "fallback",
+    "redistribution"
+  ],
+  "commit_message": "Execute approved standard Chrome browser smoke once 20261127"
+}

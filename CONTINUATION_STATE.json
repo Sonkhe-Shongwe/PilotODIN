@@ -6,10 +6,10 @@
   },
   "checkpoint": {
     "operation_id": "C5-GITHUB-STANDARD-BROWSER-20261127",
-    "parent_sha": "6443daf47c7e2601f1e2beac7b80a7da3e653c6e",
-    "previous_snapshot_sha": "6443daf47c7e2601f1e2beac7b80a7da3e653c6e",
-    "scope": "Owner-approved GitHub-only development installation amendment and exact standard Chrome write-ahead.",
-    "state": "PREPARED",
+    "parent_sha": "c6a4a80dd1761fc1520edd48f7dec958a58a60bd",
+    "previous_snapshot_sha": "c6a4a80dd1761fc1520edd48f7dec958a58a60bd",
+    "scope": "Exact standard Chrome single-use activation issued; reconcile before any replacement.",
+    "state": "ISSUED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
       "anchor": "27-november--github-only-development-authority-and-standard-chrome-installation-write-ahead",
@@ -135,10 +135,10 @@
   },
   "task": {
     "id": "C5-LINUX-FIRST-20261127",
-    "status": "PREPARED",
+    "status": "IN_PROGRESS",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "Standard authenticated Chrome route approved, exact execution and actual sandbox compatibility pending.",
-    "next_action": "Bind and publish exact one-use standard Chrome/Playwright activation, reconcile actual results under approved GitHub-only bounded autonomy.",
+    "blocker": "Standard Chrome activation issued; actual result pending.",
+    "next_action": "Inspect exact activation HEAD and actual run/job logs, reconcile and disarm. Apply new bounded technical replacement policy only on qualifying concrete failure.",
     "next_action_kind": "RECONCILE",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
@@ -346,7 +346,7 @@
   },
   "operation": {
     "id": "C5-GITHUB-STANDARD-BROWSER-20261127",
-    "state": "PREPARED",
+    "state": "ISSUED",
     "starting_sha": "6443daf47c7e2601f1e2beac7b80a7da3e653c6e",
     "scope": "Disposable GitHub-hosted Ubuntu 24.04 x64 job, nonroot browser and tests; five minutes per attempt, one initial plus at most two bounded technical corrections under this batch; cumulative maximum six fixed acquisition GETs and 163620096 accepted input body bytes, no transfer retry, redirects, proxy or fallback. Exact Chrome 158.0.8127.88-1 and Playwright/core 1.65.1; authenticated exact publisher deb standard dpkg installation only if managed Chrome mismatch, existing sudo network namespace for no external network during dpkg, no extra dependency resolver or downloads; preserve default AppArmor and browser sandbox, no OS security changes, no owner/native product/model/Pillow/installer/release. Standard CI checkout control plane distinct.",
     "source_sha": "2809df9781e803af7c43bc882576b5dfeeb2bdee",
@@ -365,11 +365,16 @@
     },
     "expected_evidence": "One exact attempt-1 job; source/syntax, versions, actual authenticated standard install or managed Chrome, package checks and browser fixture; terminal results and disarm; only bounded technical replacements.",
     "recovery": "Inspect exact activation, terminal run/jobs/logs before retry; disarm prior marker; fresh exact source/activation for at most two technical replacements, cumulative budgets; stop on security/host or unknown.",
-    "reconcile_before_retry": false,
+    "reconcile_before_retry": true,
     "technical_replacements_used": 0,
     "max_technical_replacements": 2,
     "cumulative_input_gets": 0,
-    "cumulative_accepted_bytes": 0
+    "cumulative_accepted_bytes": 0,
+    "activation_parent": "c6a4a80dd1761fc1520edd48f7dec958a58a60bd",
+    "workflow": ".github/workflows/c5-browser-smoke-once.yml",
+    "workflow_blob": "3af083ae78142e2b6edbc7607198aa46362447d0",
+    "marker": "qa/c5_managed_dev/APPROVAL_BROWSER_SMOKE_ONCE_20261127.json",
+    "marker_blob": "3c422de3b548d8aad67c148a0c6beaf927bc299e"
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next. Owner-approved GitHub-only development installation and bounded technical autonomy amendment applies within exact approved batches; no broader authority.",
@@ -377,7 +382,7 @@
     "restricted_active": [
       {
         "id": "C5-GITHUB-STANDARD-BROWSER-20261127",
-        "state": "APPROVED",
+        "state": "ISSUED",
         "source_sha": "2809df9781e803af7c43bc882576b5dfeeb2bdee",
         "scope": "Disposable GitHub-hosted Ubuntu 24.04 x64 job, nonroot browser and tests; five minutes per attempt, one initial plus at most two bounded technical corrections under this batch; cumulative maximum six fixed acquisition GETs and 163620096 accepted input body bytes, no transfer retry, redirects, proxy or fallback. Exact Chrome 158.0.8127.88-1 and Playwright/core 1.65.1; authenticated exact publisher deb standard dpkg installation only if managed Chrome mismatch, existing sudo network namespace for no external network during dpkg, no extra dependency resolver or downloads; preserve default AppArmor and browser sandbox, no OS security changes, no owner/native product/model/Pillow/installer/release. Standard CI checkout control plane distinct.",
         "owner_authority_ref": {
@@ -387,7 +392,7 @@
           "start_line": 475,
           "end_line": 477
         },
-        "reconcile_before_retry": false
+        "reconcile_before_retry": true
       }
     ],
     "consumed_disarmed_count": 50,
