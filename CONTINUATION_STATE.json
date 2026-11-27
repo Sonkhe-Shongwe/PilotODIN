@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-WINDOWS-OWNED-RUNNER-20261127",
-    "parent_sha": "4bf88950da4a0e5d570784132f896561d95a89be",
-    "previous_snapshot_sha": "4bf88950da4a0e5d570784132f896561d95a89be",
-    "scope": "Detached disarmed Windows owned command capture/settlement source preparation and exact pure-function mock tests; no native or restricted execution or acceptance change.",
+    "operation_id": "C5-WINDOWS-A-STAGING-20261127",
+    "parent_sha": "989b1cb39f7f4fbb118931acf980c1d5039777ec",
+    "previous_snapshot_sha": "989b1cb39f7f4fbb118931acf980c1d5039777ec",
+    "scope": "Detached disarmed exact archive staging and fixed provenance argument construction; five local synthetic checks, no acquisition, native or restricted execution or acceptance change.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--owned-windows-command-runner-preparation",
-      "blob_sha": "9d882edc2625f3222868d6f0ff68fcb336ba6899",
-      "start_line": 149,
-      "end_line": 157
+      "anchor": "27-november--standalone-windows-a-archive-staging-preparation",
+      "blob_sha": "cbffa0a2dba3a3146492e0ff269a971fe64e5111",
+      "start_line": 159,
+      "end_line": 169
     }
   },
   "product": {
@@ -119,8 +119,8 @@
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
     "status": "BLOCKED",
     "scope": "C5 development assurance under C-D08/C-D09 and PRODUCT-FIRST-20261127; independent concrete P4 source remediation may proceed without gate credit. D/P8 acceptance and execution boundaries unchanged.",
-    "blocker": "Standalone Stage A functional path and disarmed owned Windows runner source prepared. Actual Win32 compatibility/settlement, archive staging/extraction, fixed supported provenance tool commands and independently reviewed pre-use security/rights dispositions remain unverified; no activation-ready transaction. G2 original attribution/coverage still blocked.",
-    "next_action": "From detached fa610dcff5e73b89290cc5df3ec99e5b7d45a17f prepare the minimum exact archive staging/extraction and fixed standard-verifier pre-use gating with existing plan/inspector and runner. Verify source integration, do not infer actual rights/security/provenance or native settlement, preserve exact archive caps and 19 predicates, no Stage B. Seek one exact consolidated execution approval only when ready; if a concrete unresolved prerequisite persists, park that route and pursue independently established P4 product defects/minimum D1 preparation under existing authority. No new general framework, policy audit, native activity or phase advance.",
+    "blocker": "Functional path, owned Windows runner source and post-review staging source prepared. Exact bounded archive transport, supported standard verifier execution/output and independent actual pre-use security/rights/provenance disposition, integrated Windows settlement and activation remain unproven. G2 original attribution/coverage remains blocked.",
+    "next_action": "From detached bb31566cda9cd35e4e8ce8a6a1c8470537c141e3 complete only the finite supported archive transfer, fixed verifier invocation/verified output review and coherent disarmed orchestration with pre-use hold/owned settlement, preserving exact 9 archive bodies/57,097,116 bytes, max 10 archive requests, 19 predicates, no Stage B. Determine whether actual independent disposition can be established in the same approved job. Do not create another general QA layer, mint clearance, run restricted operations or seek approval for incomplete scope. If concrete pre-use evidence is unavailable, park this route and pursue independently established P4 product defects/minimum D1 source preparation under PRODUCT-FIRST-20261127. No phase advance.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "One fresh exact-source scoped Stage A execution approval, real 19-predicate functional outcome and settlement; rejoin full C5 Stage A/B and other profiles before C5 closure.",
@@ -130,17 +130,17 @@
     "read": [
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "27-november--owned-windows-command-runner-preparation",
-        "blob_sha": "9d882edc2625f3222868d6f0ff68fcb336ba6899",
-        "start_line": 149,
-        "end_line": 157
+        "anchor": "27-november--standalone-windows-a-archive-staging-preparation",
+        "blob_sha": "cbffa0a2dba3a3146492e0ff269a971fe64e5111",
+        "start_line": 159,
+        "end_line": 169
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "27-november--disarmed-standalone-windows-stage-a-functional-path",
-        "blob_sha": "9d882edc2625f3222868d6f0ff68fcb336ba6899",
-        "start_line": 139,
-        "end_line": 147
+        "anchor": "27-november--owned-windows-command-runner-preparation",
+        "blob_sha": "cbffa0a2dba3a3146492e0ff269a971fe64e5111",
+        "start_line": 149,
+        "end_line": 157
       },
       {
         "path": "docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md",
@@ -152,7 +152,7 @@
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--owner-approved-c5-applicability-policy-and-consolidated-stage-a-transaction",
-        "blob_sha": "9d882edc2625f3222868d6f0ff68fcb336ba6899",
+        "blob_sha": "cbffa0a2dba3a3146492e0ff269a971fe64e5111",
         "start_line": 72,
         "end_line": 97
       },
@@ -184,7 +184,7 @@
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--g2-equivalent-evidence-feasibility-and-design-disposition",
-        "blob_sha": "9d882edc2625f3222868d6f0ff68fcb336ba6899",
+        "blob_sha": "cbffa0a2dba3a3146492e0ff269a971fe64e5111",
         "start_line": 109,
         "end_line": 137
       },
@@ -195,17 +195,17 @@
     ]
   },
   "operation": {
-    "id": "C5-WINDOWS-OWNED-RUNNER-20261127",
+    "id": "C5-WINDOWS-A-STAGING-20261127",
     "state": "RECONCILED",
-    "starting_sha": "4bf88950da4a0e5d570784132f896561d95a89be",
-    "outcome": "Prepared two detached QA runner/test paths, corrected uncertain handle-closure return, eight scoped byte-matched pure tests passed; full source and Windows API unexecuted, ninth test unrun. No workflow or live product change.",
+    "starting_sha": "989b1cb39f7f4fbb118931acf980c1d5039777ec",
+    "outcome": "Prepared three detached QA paths, reused existing strict archive readers and pinned pre-use hold, five byte-matched local source/synthetic checks passed. Standard verifier arguments only; actual archive transport, verification, pre-use disposition and Windows integration unproven. No product/workflow change.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--owned-windows-command-runner-preparation",
-      "blob_sha": "9d882edc2625f3222868d6f0ff68fcb336ba6899",
-      "start_line": 149,
-      "end_line": 157
+      "anchor": "27-november--standalone-windows-a-archive-staging-preparation",
+      "blob_sha": "cbffa0a2dba3a3146492e0ff269a971fe64e5111",
+      "start_line": 159,
+      "end_line": 169
     }
   },
   "authority": {
@@ -374,6 +374,10 @@
       {
         "sha": "fa610dcff5e73b89290cc5df3ec99e5b7d45a17f",
         "scope": "Disarmed detached Windows command runner successor; two QA paths vs previous Stage A; exact pure prefix and test hashes matched, 8 selected mock tests PASS, full module/native not executed, no activation or restricted grant."
+      },
+      {
+        "sha": "bb31566cda9cd35e4e8ce8a6a1c8470537c141e3",
+        "scope": "Disarmed Stage A staging successor; two new QA paths and import-only change to existing inspection adapter. Five scoped local synthetic tests pass with exact new blobs; no actual archive, native, transport or provenance execution."
       }
     ]
   },
@@ -387,7 +391,8 @@
     "G2 equivalent design has documented FileObject/identity primitives but shared mapped/cache/background original-writer attribution and independent complete coverage, safe supported deployment remain unproven. No new live evidence method adopted.",
     "PRODUCT-FIRST-20261127 rationalises only ordinary standard-verifier metadata traffic accounting in a later approved disposable C5 job; actual security/rights/provenance and Windows settlement remain unproven, exact archive bounds retained. G2 proof and all product gates unchanged.",
     "Detached 8ca9f6f9c96f2f9eb1473ae26ed8e1a7e7ac7010 implements standalone post-staging Stage A path but has no qualified runtime, actual pre-use disposition, Windows runner, acquisition/extraction or activation; no functional 19-test or native execution evidence. Exact original source and sanitised recovery copy now owner-held; not full Git backup.",
-    "Detached fa610dcff5e73b89290cc5df3ec99e5b7d45a17f owned Windows runner is disarmed; eight byte-matched pure/mock tests only, no full module/native execution. Actual host nested-job/API/pipe behavior, pre-assignment controller failure, exact tool environment and integrated cleanup remain unverified; no sandbox or acceptance claim."
+    "Detached fa610dcff5e73b89290cc5df3ec99e5b7d45a17f owned Windows runner is disarmed; eight byte-matched pure/mock tests only, no full module/native execution. Actual host nested-job/API/pipe behavior, pre-assignment controller failure, exact tool environment and integrated cleanup remain unverified; no sandbox or acceptance claim.",
+    "Detached bb31566cda9cd35e4e8ce8a6a1c8470537c141e3 post-review staging and fixed verifier argument source only; actual bounded transfer, credential/controller integration, signed provenance, pre-use disposition and real archive layout/native settlement unverified. Five pure/synthetic local checks are not functional acceptance."
   ],
   "context": {
     "protocol": {
