@@ -6,10 +6,10 @@
   },
   "checkpoint": {
     "operation_id": "C5-CGROUP-FEASIBILITY-ONCE-20261128",
-    "parent_sha": "a221285d9d1e34fdcabea6cb1f9f39040334361f",
-    "previous_snapshot_sha": "a221285d9d1e34fdcabea6cb1f9f39040334361f",
+    "parent_sha": "64ef72b35c4b6c0a0a578f7da9787502f55bc2c1",
+    "previous_snapshot_sha": "64ef72b35c4b6c0a0a578f7da9787502f55bc2c1",
     "scope": "Exact one-use read-only cgroup feasibility observation; 5 minutes, 1 attempt, 0 package GETs, no retry, privilege, cgroup mutation or security change.",
-    "state": "PREPARED",
+    "state": "ISSUED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
       "anchor": "28-november--owner-authorised-one-use-hosted-cgroup-feasibility-observation",
@@ -135,10 +135,10 @@
   },
   "task": {
     "id": "C5-LINUX-FIRST-20261127",
-    "status": "PREPARED",
+    "status": "IN_PROGRESS",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
     "blocker": "29d8b96 exact inert activation/disarm reviewed, 122/122 existing triggers no matching proposed paths, 15 CLI synthetic cases and exact YAML/shell syntax checks pass. Owner execution approval required; actual host/provider containment/ownership/migration and inspection security/rights unresolved.",
-    "next_action": "Read back exact write-ahead, publish approved three-path activation once with expected HEAD, reconcile actual run then exact terminal disarm; never replay.",
+    "next_action": "Reconcile exact issued activation and attempt 1; never replay. After independently terminal result, remove exact owned marker and replace workflow with pinned disarm, then record outcome.",
     "next_action_kind": "OWNER_DECISION",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
@@ -626,7 +626,7 @@
   },
   "operation": {
     "id": "C5-CGROUP-FEASIBILITY-ONCE-20261128",
-    "state": "PREPARED",
+    "state": "ISSUED",
     "starting_sha": "a221285d9d1e34fdcabea6cb1f9f39040334361f",
     "scope": "Exact one-use read-only cgroup feasibility observation; 5 minutes, 1 attempt, 0 package GETs, no retry, privilege, cgroup mutation or security change.",
     "intended_paths": [
@@ -643,7 +643,8 @@
     },
     "expected_evidence": "Exact activation SHA, one observe-once job attempt 1, actual terminal status and bounded observation JSON or refusal, then remove marker and literal-false workflow.",
     "recovery": "Unknown or issued: inspect exact live SHA and run/attempt/job; never replay. Only disarm after terminal reconciliation. No replacement or package acquisition.",
-    "reconcile_before_retry": true
+    "reconcile_before_retry": true,
+    "activation_parent": "64ef72b35c4b6c0a0a578f7da9787502f55bc2c1"
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next. Owner-approved GitHub-only development installation and bounded technical autonomy amendment applies within exact approved batches; no broader authority.",
@@ -651,7 +652,7 @@
     "restricted_active": [
       {
         "id": "C5-CGROUP-FEASIBILITY-ONCE-20261128",
-        "state": "APPROVED",
+        "state": "ISSUED",
         "source_sha": "1389a07e5773442d603a5f771c401f8828f1daa5",
         "scope": "Exact one-use read-only cgroup feasibility observation; 5 minutes, 1 attempt, 0 package GETs, no retry, privilege, cgroup mutation or security change.",
         "owner_authority_ref": {
