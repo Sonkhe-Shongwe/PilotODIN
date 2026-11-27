@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-CONSOLIDATED-CHROME-DEADLINE-PARTIAL-RECEIPTS-20261128",
-    "parent_sha": "ea7e1954384a73adb27625e5e58b91398ed13e4c",
-    "previous_snapshot_sha": "ea7e1954384a73adb27625e5e58b91398ed13e4c",
-    "scope": "Detached bounded Chrome urllib transfer and conservative failed/partial acquisition receipt candidate.",
+    "operation_id": "C5-CONSOLIDATED-REPLACEMENT-FENCE-AND-EXACT-BROWSER-RECEIPTS-20261128",
+    "parent_sha": "f2b02a9efa4bb93b6b7a7be169a544c2367d9c99",
+    "previous_snapshot_sha": "f2b02a9efa4bb93b6b7a7be169a544c2367d9c99",
+    "scope": "Disarmed transfer reservation/replacement fence, exact browser/credits receipt preparation and specific host/dependency holds.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "28-november--bounded-chrome-transfer-worker-and-partial-acquisition-evidence",
-      "blob_sha": "152d98042b8d3f560db8289e8b00023a7006fb21",
-      "start_line": 679,
-      "end_line": 685
+      "anchor": "28-november--transfer-replacement-fence-exact-browser-receipts-and-concrete-host-holds",
+      "blob_sha": "6fe763feb0905089ce52c6a075f23110b701800b",
+      "start_line": 687,
+      "end_line": 695
     }
   },
   "product": {
@@ -137,15 +137,22 @@
     "id": "C5-LINUX-FIRST-20261127",
     "status": "BLOCKED",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "Candidate e441431 disarmed. 23/23 publisher evidence, 0/23 final dispositions; ReportLab hold and native/rights evidence open. Chrome shared deadline and redacted partial-file evidence prepared, actual request/body accounting on failure remains unknown; independent whole-job containment including privileged/detached children, host preflight/cleanup and exact regression/credits remain unbound. No execution authority.",
-    "next_action": "Resolve concrete host preflight and positive whole-job settlement boundary under approved method or identify exact host constraint; bind failed-transfer request/body uncertainty to stop/no-replacement and remaining regression/credits adapters/receipts, source-only verify. Present precise ReportLab 5.1.2 changed lock scope and irreducible staged evidence decisions; no full install/run approval until security/rights holds resolved. Do not repeat publisher research or self-certify observed facts.",
-    "next_action_kind": "MISSING_EVIDENCE",
+    "blocker": "Candidate 9970039 disarmed. Exact transfer reservation/replacement fence and browser receipt validators prepared; host whole-job containment and separate fixture-root custody/cleanup unverified, callbacks not bound. ReportLab 4.5.1 HOLD; 5.1.2 outside current <5 requirement, explicit coordinated changed-scope approval required. 0/23 final dispositions. Zero execution authority.",
+    "next_action": "Obtain explicit owner decision on bounded ReportLab 5.1.2 isolated evaluation and coordinated requirement/lock projections, no acquisition or live adoption. Obtain finite independent staged component/notice evidence and exact existing hosted whole-job containment/dual-root custody feasibility before binding remaining regression commands. Do not add generic host abstractions, bypass existing fixture guards, infer positive settlement, or seek full installation while known holds remain. Independent scoped source work only where useful.",
+    "next_action_kind": "OWNER_DECISION",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
       "Windows-specific verified input and compatibility prerequisites before actual production-equivalent D1, separately authorised; no installer.",
       "D2, G2 and remaining physical E2/P4 acceptance; no phase advance without evidence and owner signoff."
     ],
     "read": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "28-november--transfer-replacement-fence-exact-browser-receipts-and-concrete-host-holds",
+        "blob_sha": "6fe763feb0905089ce52c6a075f23110b701800b",
+        "start_line": 687,
+        "end_line": 695
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--bounded-chrome-transfer-worker-and-partial-acquisition-evidence",
@@ -555,17 +562,17 @@
     ]
   },
   "operation": {
-    "id": "C5-CONSOLIDATED-CHROME-DEADLINE-PARTIAL-RECEIPTS-20261128",
+    "id": "C5-CONSOLIDATED-REPLACEMENT-FENCE-AND-EXACT-BROWSER-RECEIPTS-20261128",
     "state": "RECONCILED",
-    "starting_sha": "ea7e1954384a73adb27625e5e58b91398ed13e4c",
-    "outcome": "Detached e441431 integrates fixed-route Chrome worker with shared command deadline, three transport paths with reserved GET/observed partial file receipts; 12 static and 18 exact copied mock assertions pass. No actual execution. Wire accounting/whole-job settlement/host preflight/regression/credits and independent use holds unresolved.",
+    "starting_sha": "f2b02a9efa4bb93b6b7a7be169a544c2367d9c99",
+    "outcome": "Detached 9970039: 12 static/readback checks and 27 fingerprint-matched synthetic assertions pass; exact browser title projection and no-replacement fence prepared. Actual host/whole-job/fixture cleanup, report format, regression callbacks and ReportLab/rights remain unresolved. No restricted execution.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "28-november--bounded-chrome-transfer-worker-and-partial-acquisition-evidence",
-      "blob_sha": "152d98042b8d3f560db8289e8b00023a7006fb21",
-      "start_line": 679,
-      "end_line": 685
+      "anchor": "28-november--transfer-replacement-fence-exact-browser-receipts-and-concrete-host-holds",
+      "blob_sha": "6fe763feb0905089ce52c6a075f23110b701800b",
+      "start_line": 687,
+      "end_line": 695
     }
   },
   "authority": {
@@ -895,6 +902,10 @@
       {
         "sha": "e44143160a18ed0f358a617c5ed6bf895831a4e3",
         "scope": "Detached successor of 2235d38; five QA paths, fixed-route Chrome worker under shared deadline and redacted reserved-GET/partial file receipts for all three transfer routes. 12 static/readback and 18 exact excerpt mocked assertions PASS; full tests and actual host/acquisition/settlement not run. All gates disarmed."
+      },
+      {
+        "sha": "9970039f764112a40fce3880822a7cc1d0db6560",
+        "scope": "Disarmed successor of e441431 through 9b23a98; five QA paths, transfer caps and no-replacement on incomplete accounting, exact 6 P1/13 P4 receipt and credits validators. 12 static/readback and 27 fingerprint-matched synthetic assertions PASS; actual reporter/host/acquisition/full module tests not run."
       }
     ]
   },
@@ -927,7 +938,8 @@
     "8d24d29 disarmed staging facts; LZMA source cross-build use and upstream 0.16.5 hardening known, actual resolved version/rights pending; Tauri source loader mismatch still not resolved in archive. Pre-use digest circularity and host/regression bindings open; no clearance.",
     "615c73b disarmed notice/report-measurement sequencing and pre-transfer review. Exact native/loader facts, independent pre-use reviews and ReportLab hold remain; hosted runner and receipt bindings open. No use authority or credit.",
     "2235d38 disarmed common command runner; command-group evidence does not contain detached/root children, Chrome urllib deadline and partial transfer accounting and actual whole-job boundary pending. No use authority or credit.",
-    "e441431 disarmed: failed transfer receipts record reserved slots and observed file size, never assert actual requests/wire bytes; independently bound whole-job containment and real host preflight/cleanup, regression/credits and ReportLab/rights decisions pending. No new authority or credit."
+    "e441431 disarmed: failed transfer receipts record reserved slots and observed file size, never assert actual requests/wire bytes; independently bound whole-job containment and real host preflight/cleanup, regression/credits and ReportLab/rights decisions pending. No new authority or credit.",
+    "9970039 disarmed; host fixture requires independent separate RUNNER_TEMP root and sibling backend source layout, no existing positive whole-job boundary proved. ReportLab 5.1.2 requires coordinated <5 range/lock scope review. No new authority or credit."
   ],
   "context": {
     "protocol": {
