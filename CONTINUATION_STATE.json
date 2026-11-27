@@ -5,11 +5,11 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "P4-ENGINE-ADMISSION-SOURCE-CONTRACT-CI-HOLD-20261127",
-    "parent_sha": "f5480f57f8f0b4ce67dd66ca5c9f3a2d5a01f4ee",
-    "previous_snapshot_sha": "f5480f57f8f0b4ce67dd66ca5c9f3a2d5a01f4ee",
-    "scope": "Exact full-source static assertion replay and legacy workflow use-scope review; no product publication.",
-    "state": "RECONCILED",
+    "operation_id": "P4-TEMPORARY-SOURCE-CI-INTEGRATION-20261127",
+    "parent_sha": "ade13c88507256acc4b5237f0f3589e35c063022",
+    "previous_snapshot_sha": "ade13c88507256acc4b5237f0f3589e35c063022",
+    "scope": "Owner-approved temporary dependency-free CI routing; integrate exact 9006133 two-path product correction. Two source-only jobs; original jobs retained held, C5 candidate 982435f remains detached.",
+    "state": "PREPARED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
       "anchor": "27-november--engine-admission-full-source-contract-replay-and-legacy-ci-hold",
@@ -117,11 +117,11 @@
   },
   "task": {
     "id": "C5-LINUX-FIRST-20261127",
-    "status": "BLOCKED",
+    "status": "PREPARED",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
     "blocker": "C5 full-profile parked on environment/private custody, actual pre-use/security and regressions. Independent 9006133 full-source static replay 12/12; active branch publication would trigger two legacy workflows with unresolved unqualified dependency/lifecycle/browser acquisition. Need owner decision on narrowly dependency-free CI routing, or full C5 first.",
-    "next_action": "Owner decision: either provide supported isolated environment/private Pillow custody for full C5; or approve review of temporary narrowly dependency-free source test routing for the two matching legacy CI workflows to integrate 9006133 without unsafe acquisition, retaining every deferred regression. No repeated source replay, token or environment loops absent new evidence, no workflow disable/skip or product ref update without reviewed authority.",
-    "next_action_kind": "OWNER_DECISION",
+    "next_action": "Publish exact prepared four source/workflow blobs with non-force expected HEAD, then reconcile the two actual source-only CI runs. No dependency-consuming job activation.",
+    "next_action_kind": "SOURCE_INTEGRATION",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
       "Windows-specific verified input and compatibility prerequisites before actual production-equivalent D1, separately authorised; no installer.",
@@ -257,18 +257,50 @@
     ]
   },
   "operation": {
-    "id": "P4-ENGINE-ADMISSION-SOURCE-CONTRACT-CI-HOLD-20261127",
-    "state": "RECONCILED",
-    "starting_sha": "f5480f57f8f0b4ce67dd66ca5c9f3a2d5a01f4ee",
-    "outcome": "12/12 translated static contract cases pass on exact full source; original negative rejected. Only two matching prior workflows, unqualified dependency/lifecycle/browser jobs remain; refuse triggering. No original unittest, compile, restricted execution or product integration.",
-    "reconcile_before_retry": false,
-    "receipt": {
-      "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--engine-admission-full-source-contract-replay-and-legacy-ci-hold",
-      "blob_sha": "500cb539ef85a680b13043113842b2af2634f554",
-      "start_line": 419,
-      "end_line": 425
-    }
+    "id": "P4-TEMPORARY-SOURCE-CI-INTEGRATION-20261127",
+    "state": "PREPARED",
+    "starting_sha": "ade13c88507256acc4b5237f0f3589e35c063022",
+    "scope": "Owner-approved temporary dependency-free CI routing; integrate exact 9006133 two-path product correction. Two source-only jobs; original jobs retained held, C5 candidate 982435f remains detached.",
+    "intended_paths": [
+      ".github/workflows/p2-report-export-draft-safety.yml",
+      ".github/workflows/p4-target-ranking.yml",
+      "frontend/src-tauri/src/lib.rs",
+      "tests/test_p4_n12_worker_scratch_source.py",
+      "CONTINUATION_STATE.json"
+    ],
+    "authority_ref": {
+      "owner_statement": "i approve next",
+      "context": "Approve temporary CI change in preceding assistant proposal; preserve all functional tests and C5 requirements; no restricted acquisition."
+    },
+    "expected_evidence": "Exact four intended workflow/product blobs, one source-only P2 job and one P4 job, three Node and twelve unittest cases expected, legacy jobs skipped, no package downloads, original baseline retained until reconciliation.",
+    "recovery": "Inspect exact HEAD, tree and matching runs before retry; no forced update or rearming. Keep temporary hold until C5 pre-use clearance; preserve any unknown owner work.",
+    "reconcile_before_retry": true,
+    "planned_entries": [
+      {
+        "path": ".github/workflows/p2-report-export-draft-safety.yml",
+        "mode": "100644",
+        "type": "blob",
+        "sha": "bfb419df89c015466c63af3f4db0204e06538679"
+      },
+      {
+        "path": ".github/workflows/p4-target-ranking.yml",
+        "mode": "100644",
+        "type": "blob",
+        "sha": "f85ed8f723d63100840bc2cc44f6855bea1b6363"
+      },
+      {
+        "path": "frontend/src-tauri/src/lib.rs",
+        "mode": "100644",
+        "type": "blob",
+        "sha": "fbb3763dbcb74b39e1f8a066d41df4c5f3650c5d"
+      },
+      {
+        "path": "tests/test_p4_n12_worker_scratch_source.py",
+        "mode": "100644",
+        "type": "blob",
+        "sha": "50181c8a12bce807ff69d0b3ae010f17455a4769"
+      }
+    ]
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next.",
