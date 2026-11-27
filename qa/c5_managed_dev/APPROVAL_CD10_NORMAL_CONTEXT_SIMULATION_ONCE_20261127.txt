@@ -1,0 +1,1 @@
+Owner explicitly approved corrected normal-context simulation. Operation C5-CD10-NORMAL-CONTEXT-SIMULATION-ONCE-20261127. Exact approved workflow afc7a13e00862a8228a8bb45491510acf50d9dd1. Two HTTPS metadata requests, 16.5 MiB, five-minute disposable runner, no package installation or application inspection. One use; no replay.
