@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-STANDALONE-WINDOWS-A-PREPARATION-20261127",
-    "parent_sha": "f35c51ec45a96b2a46685899793019065069845d",
-    "previous_snapshot_sha": "f35c51ec45a96b2a46685899793019065069845d",
-    "scope": "Record explicit standalone Windows Stage A preparation approval and exact standalone locks/plan; no execution or acceptance change.",
+    "operation_id": "C5-WINDOWS-A-CP311-RUNTIME-ALTERNATIVE-20261127",
+    "parent_sha": "f0a5e59b9f35f99dcb967c4a4e5ccef9b4730be0",
+    "previous_snapshot_sha": "f0a5e59b9f35f99dcb967c4a4e5ccef9b4730be0",
+    "scope": "Identify exact same-ABI Astral runtime alternative, no acquisition or new trust authority.",
     "state": "RECONCILED",
     "receipt": {
-      "path": "docs/C5_STANDALONE_WINDOWS_A_PREPARATION_2026-11-27.md",
-      "anchor": "pilotodin--standalone-windows-stage-a-preparation",
-      "blob_sha": "8afce88dd7298844fe6b862344db96491add6e8f",
+      "path": "docs/C5_WINDOWS_A_CP311_RUNTIME_ALTERNATIVE_2026-11-27.md",
+      "anchor": "pilotodin--exact-windows-stage-a-cp311-runtime-alternative",
+      "blob_sha": "db6dad98c2df36cc09d56db3521ea51ac0552fe7",
       "start_line": 1,
-      "end_line": 17
+      "end_line": 25
     }
   },
   "product": {
@@ -119,14 +119,21 @@
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
     "status": "BLOCKED",
     "scope": "C-D08 development reproducibility/build safety as revised by C-D09 limited managed-development evidence method; D native and P8 release boundaries unchanged.",
-    "blocker": "Standalone Windows Stage A sequencing approved and exact locks/plan prepared. Supported reviewed Windows CP311 runtime unavailable in checked official setup-python catalogue after 3.11.9; exact PDFium linkage/security/rights and pip actual notice/metadata prerequisites unresolved; controller source/settlement/cleanup still pending. No restricted grants.",
-    "next_action": "Resolve the exact standalone Windows A runtime and PDFium/pip pre-use prerequisites, reusing official evidence; no arbitrary runtime/ABI substitution, vulnerable tooling or new generic framework. If no supported CP311 route exists, report specific blocker and propose only a bounded provisional newer-CPython experiment requiring explicit evidence-method approval, no CP311 acceptance credit. Prepare finite exact execution candidate only after prerequisites; actual acquisition/install/native execution require fresh approval. No unchanged-source tests or repeated provider polling.",
+    "blocker": "A same-ABI Windows CP311.18 runtime candidate exists from Astral 20261124; candidate origin approval, exact provenance, runtime component security/rights/compatibility and PDFium/pip pre-use checks remain open. No active grants.",
+    "next_action": "Request narrow approval to use exact Astral 20261124 Windows x64 CPython 3.11.18 install-only release as a standalone Stage A preparation candidate, subject to existing independent identity, provenance, security/rights and compatibility checks; no acquisition/execution. After route approval resolve exact Windows PDFium and pip pre-use facts and finite controller source/settlement/cleanup, then exact separately approved transaction. No arbitrary runtime/ABI substitution, generic framework, unchanged synthetic tests, repeated runner polling or restricted activity.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "Complete targeted applicable pre-use evidence and exact approved staging/inspection for genuinely unresolved components; no blanket binutils requirement or rights waiver.",
       "Execute separately approved conditional validation with all retained Stage A/B, font, frontend, Rust and matched P1/P4 predicates; audit eight C5 rows; D/G2/E2/P5/installer boundaries unchanged."
     ],
     "read": [
+      {
+        "path": "docs/C5_WINDOWS_A_CP311_RUNTIME_ALTERNATIVE_2026-11-27.md",
+        "anchor": "pilotodin--exact-windows-stage-a-cp311-runtime-alternative",
+        "blob_sha": "db6dad98c2df36cc09d56db3521ea51ac0552fe7",
+        "start_line": 1,
+        "end_line": 25
+      },
       {
         "path": "docs/C5_STANDALONE_WINDOWS_A_PREPARATION_2026-11-27.md",
         "anchor": "pilotodin--standalone-windows-stage-a-preparation",
@@ -379,17 +386,17 @@
     ]
   },
   "operation": {
-    "id": "C5-STANDALONE-WINDOWS-A-PREPARATION-20261127",
+    "id": "C5-WINDOWS-A-CP311-RUNTIME-ALTERNATIVE-20261127",
     "state": "RECONCILED",
-    "starting_sha": "f35c51ec45a96b2a46685899793019065069845d",
-    "outcome": "Owner-approved standalone A preparation recorded; eight exact inputs, 8000481 bytes, ten source pins, 19 test IDs, two hash locks. Official Windows CP311 catalogue stops at 3.11.9; qualified patch unset, PDFium/pip pre-use prerequisites unresolved; no execution.",
+    "starting_sha": "f0a5e59b9f35f99dcb967c4a4e5ccef9b4730be0",
+    "outcome": "Astral immutable 20261124 release offers Windows x64 CPython 3.11.18; exact archive metadata/digest and publisher build inputs reviewed. Proposed route only, exact provenance/rights/security/compatibility unresolved, no execution.",
     "reconcile_before_retry": false,
     "receipt": {
-      "path": "docs/C5_STANDALONE_WINDOWS_A_PREPARATION_2026-11-27.md",
-      "anchor": "pilotodin--standalone-windows-stage-a-preparation",
-      "blob_sha": "8afce88dd7298844fe6b862344db96491add6e8f",
+      "path": "docs/C5_WINDOWS_A_CP311_RUNTIME_ALTERNATIVE_2026-11-27.md",
+      "anchor": "pilotodin--exact-windows-stage-a-cp311-runtime-alternative",
+      "blob_sha": "db6dad98c2df36cc09d56db3521ea51ac0552fe7",
       "start_line": 1,
-      "end_line": 17
+      "end_line": 25
     }
   },
   "authority": {
