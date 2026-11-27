@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-CONSOLIDATED-PRETRANSFER-REVIEW-EXPECTATIONS-20261127",
-    "parent_sha": "54e0c6fab10f2a3a5534e09c0172f30a719e9d81",
-    "previous_snapshot_sha": "54e0c6fab10f2a3a5534e09c0172f30a719e9d81",
-    "scope": "Disarmed pre-transfer review refusal and exact conditional notice expectations.",
+    "operation_id": "C5-CONSOLIDATED-COMMAND-DEADLINE-RECEIPTS-20261128",
+    "parent_sha": "4d8f120028cf58664a233876e0968ab908a1ba3c",
+    "previous_snapshot_sha": "4d8f120028cf58664a233876e0968ab908a1ba3c",
+    "scope": "Shared hosted command deadline, bounded redacted receipt and conservative settlement candidate.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--independently-pinned-notice-expectations-and-pre-transfer-hold-refusal",
-      "blob_sha": "5c254d67bf9c3221d2fb4109b6b385e64da37ea3",
-      "start_line": 665,
-      "end_line": 671
+      "anchor": "28-november--shared-command-deadline-redacted-outcomes-and-conservative-group-settlement",
+      "blob_sha": "4640c1ca4020b97d94544594d9949c9c330e95ed",
+      "start_line": 673,
+      "end_line": 677
     }
   },
   "product": {
@@ -137,8 +137,8 @@
     "id": "C5-LINUX-FIRST-20261127",
     "status": "BLOCKED",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "Candidate 615c73b disarmed. 23/23 publisher evidence, 0/23 final dispositions. Conditional notice/report sequencing and known-hold ordering corrected; actual native identity/loader and full pre-use review still absent, ReportLab hold retained. Exact hosted command/settlement/failure accounting and remaining regression receipts outstanding. No execution authority.",
-    "next_action": "Complete concrete hosted command runner/deadline/failure accounting/positive settlement and exact remaining regression/credits receipt binding to 615c73b without expanding framework. Determine irreducible staged facts from retained evidence; present precise outstanding approval decision (ReportLab changed lock scope or independently reviewed non-applicability, and any necessary bounded inspection) instead of repeating publisher research. Independently pin reviewed exact use expectations, refuse known holds before transfer and unresolved actual facts before installation; source-only verify before any consolidated execution approval.",
+    "blocker": "Candidate 2235d38 disarmed. 23/23 publisher evidence, 0/23 final dispositions; ReportLab hold and native/rights evidence open. Shared command runner bound, Chrome deadline/partial acquisition accounting and detached/root whole-job containment unresolved; exact regression/credits and hosted preflight/cleanup still pending. No execution authority.",
+    "next_action": "Complete measured Chrome transfer shared deadline and failed/partial request/body accounting using existing approved method; bind independent positive whole-job settlement (including GPG/root/escaped processes) and exact host preflight/cleanup, or identify specific host constraint. Then finish exact remaining regression/credits adapters/receipts, source-only verify; do not repeat publisher research or self-certify observed facts. Present precise ReportLab change-scope and irreducible staged evidence decisions; no full install/run approval until security/rights holds resolved.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
@@ -146,6 +146,13 @@
       "D2, G2 and remaining physical E2/P4 acceptance; no phase advance without evidence and owner signoff."
     ],
     "read": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "28-november--shared-command-deadline-redacted-outcomes-and-conservative-group-settlement",
+        "blob_sha": "4640c1ca4020b97d94544594d9949c9c330e95ed",
+        "start_line": 673,
+        "end_line": 677
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--independently-pinned-notice-expectations-and-pre-transfer-hold-refusal",
@@ -541,17 +548,17 @@
     ]
   },
   "operation": {
-    "id": "C5-CONSOLIDATED-PRETRANSFER-REVIEW-EXPECTATIONS-20261127",
+    "id": "C5-CONSOLIDATED-COMMAND-DEADLINE-RECEIPTS-20261128",
     "state": "RECONCILED",
-    "starting_sha": "54e0c6fab10f2a3a5534e09c0172f30a719e9d81",
-    "outcome": "Detached 615c73b prevalidates all 86 reviewed input records and independently pinned conditional notice/native/metadata expectations; known holds refuse before transfer. 10 static checks and 13 scoped synthetic helper cases pass; full tests not executed. No clearance or execution.",
+    "starting_sha": "4d8f120028cf58664a233876e0968ab908a1ba3c",
+    "outcome": "Detached 2235d38 binds direct/Pillow and generic regression command capture to shared deadline, redacted outcomes and positive group settlement, separately requires whole-job settlement. 13 static and 13 mocked helper assertions pass; no real execution. Chrome transfers/whole-job containment/partial transfer accounting and regressions still pending.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--independently-pinned-notice-expectations-and-pre-transfer-hold-refusal",
-      "blob_sha": "5c254d67bf9c3221d2fb4109b6b385e64da37ea3",
-      "start_line": 665,
-      "end_line": 671
+      "anchor": "28-november--shared-command-deadline-redacted-outcomes-and-conservative-group-settlement",
+      "blob_sha": "4640c1ca4020b97d94544594d9949c9c330e95ed",
+      "start_line": 673,
+      "end_line": 677
     }
   },
   "authority": {
@@ -873,6 +880,10 @@
       {
         "sha": "615c73bb719ac364b1f30cbe08fc4c60230dbcf5",
         "scope": "Successor of 8d24d29: independently pinned exact notice/native/metadata conditional comparison and pre-transfer hold review; 10 grouped static checks and 13 scoped helper cases pass, full tests unexecuted; all gates false."
+      },
+      {
+        "sha": "2235d385391087978f32d9184e823a280bfa5e96",
+        "scope": "Successor of 615c73b; shared deadline and redacted bounded command receipts, direct/Pillow and generic capture, group plus independent whole-job settlement gate; 13 static checks and 13 mocked helper assertions pass, full tests unexecuted, all gates false."
       }
     ]
   },
@@ -903,7 +914,8 @@
     "Parser/libuv/libyaml source advisory review advanced: two fixed-source ancestry checks, message vs URL and Node TLS scopes narrowed, staged composition and full pre-use decisions remain unresolved; no clearance or acceptance increase.",
     "Numerical runtimes: NumPy OpenBLAS64 0.3.31.188.0 and SciPy OpenBLAS32 0.3.30.0.8 exact source-side build pins and bundled licence families identified; actual wheel members/compiler runtime identity and advisory applicability still required. NumPy/SciPy logs unavailable, scikit-learn tag wheel job skipped. No clearance or credit.",
     "8d24d29 disarmed staging facts; LZMA source cross-build use and upstream 0.16.5 hardening known, actual resolved version/rights pending; Tauri source loader mismatch still not resolved in archive. Pre-use digest circularity and host/regression bindings open; no clearance.",
-    "615c73b disarmed notice/report-measurement sequencing and pre-transfer review. Exact native/loader facts, independent pre-use reviews and ReportLab hold remain; hosted runner and receipt bindings open. No use authority or credit."
+    "615c73b disarmed notice/report-measurement sequencing and pre-transfer review. Exact native/loader facts, independent pre-use reviews and ReportLab hold remain; hosted runner and receipt bindings open. No use authority or credit.",
+    "2235d38 disarmed common command runner; command-group evidence does not contain detached/root children, Chrome urllib deadline and partial transfer accounting and actual whole-job boundary pending. No use authority or credit."
   ],
   "context": {
     "protocol": {
