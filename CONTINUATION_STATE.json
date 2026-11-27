@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-WINDOWS-A-PREUSE-SCOPE-20261127",
-    "parent_sha": "bd65e872edaff52fc94d913b5a87ba9a09036bf2",
-    "previous_snapshot_sha": "bd65e872edaff52fc94d913b5a87ba9a09036bf2",
-    "scope": "Add inert exact nine-archive local inspection adapter and bounded standard Windows-tool scope, no execution.",
+    "operation_id": "C5-STANDARD-TOOL-STOP-D1-REJOIN-20261127",
+    "parent_sha": "5bcb18b07ed314f3498ecf4ebe78e292bcb2a005",
+    "previous_snapshot_sha": "5bcb18b07ed314f3498ecf4ebe78e292bcb2a005",
+    "scope": "Record actual gh security-release finding and exact D1 development/production evidence mismatch; independent requirements preparation only.",
     "state": "RECONCILED",
     "receipt": {
-      "path": "docs/C5_WINDOWS_A_PREUSE_SCOPE_2026-11-27.md",
-      "anchor": "pilotodin--standalone-windows-a-pre-use-inspection-scope",
-      "blob_sha": "676a7a7853a2da0506886f52ebf0241051372d61",
+      "path": "docs/C5_STANDARD_TOOL_STOP_AND_D1_REQUIREMENTS_2026-11-27.md",
+      "anchor": "pilotodin--c5-standard-tool-stopping-decision-and-d1-requirements",
+      "blob_sha": "c54955d0d960d0f6a919ebf8283b78e7f86a41da",
       "start_line": 1,
-      "end_line": 19
+      "end_line": 12
     }
   },
   "product": {
@@ -119,14 +119,21 @@
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
     "status": "BLOCKED",
     "scope": "C-D08 development reproducibility/build safety as revised by C-D09 limited managed-development evidence method; D native and P8 release boundaries unchanged.",
-    "blocker": "Standalone Windows A exact nine-archive scope and inert local inventory source prepared. Actual provenance control traffic, supported tool qualification, Windows bounded process settlement, actual applicable notices/rights/security remain unresolved; no execution-ready workflow or active grants.",
-    "next_action": "Finish only concrete standard-tool qualification, exact bounded provenance/transport and Windows process settlement for one standalone nine-archive pre-use inspection transaction, reusing pinned adapter and exact scope. No new framework, unchanged-source tests, repeated publisher/runner checks, vulnerable tools or blocked assembly bypass. If no supported bounded route, report actual blocker and pursue independent authorized product work. Separate acquisition/inspection approval and later functional execution approval required.",
+    "blocker": "C5 standalone A pre-use provenance/tool qualification, control traffic, settlement and applicable rights/security unresolved. gh 2.106.0 fixes postdate reviewed 2.105.0 inventory; command applicability not settled. D1 independent requirements preparation only permitted under narrow existing exception.",
+    "next_action": "Under existing narrow runner-blocker exception, prepare finite D1 production-equivalent disposable journey requirements from actual sidecar entrypoints and current diagnostic QA mismatch; no phase advance, installer, packaging, native/model/owner data or changed evidence method. No new C5 framework or repeated polling. Rejoin C5 when exact supported standard inspection route and separate approval available; G2 D2 proof-method hard blocker remains.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "Complete targeted applicable pre-use evidence and exact approved staging/inspection for genuinely unresolved components; no blanket binutils requirement or rights waiver.",
       "Execute separately approved conditional validation with all retained Stage A/B, font, frontend, Rust and matched P1/P4 predicates; audit eight C5 rows; D/G2/E2/P5/installer boundaries unchanged."
     ],
     "read": [
+      {
+        "path": "docs/C5_STANDARD_TOOL_STOP_AND_D1_REQUIREMENTS_2026-11-27.md",
+        "anchor": "pilotodin--c5-standard-tool-stopping-decision-and-d1-requirements",
+        "blob_sha": "c54955d0d960d0f6a919ebf8283b78e7f86a41da",
+        "start_line": 1,
+        "end_line": 12
+      },
       {
         "path": "docs/C5_WINDOWS_A_PREUSE_SCOPE_2026-11-27.md",
         "anchor": "pilotodin--standalone-windows-a-pre-use-inspection-scope",
@@ -400,17 +407,17 @@
     ]
   },
   "operation": {
-    "id": "C5-WINDOWS-A-PREUSE-SCOPE-20261127",
+    "id": "C5-STANDARD-TOOL-STOP-D1-REJOIN-20261127",
     "state": "RECONCILED",
-    "starting_sha": "bd65e872edaff52fc94d913b5a87ba9a09036bf2",
-    "outcome": "Exact local archive inspection adapter created, reuses existing core; Windows standard provenance/DUMPBIN route scoped; no runtime acquisition, tool invocation or tests. Control traffic and Windows tool/settlement prerequisites still open.",
+    "starting_sha": "5bcb18b07ed314f3498ecf4ebe78e292bcb2a005",
+    "outcome": "Confirmed gh 2.106.0 security corrections after reviewed runner inventory; actual command applicability/qualification unresolved. D1 exact source mismatch confirmed. Stop repetitive C5 toolchain scaffolding; no execution or acceptance change.",
     "reconcile_before_retry": false,
     "receipt": {
-      "path": "docs/C5_WINDOWS_A_PREUSE_SCOPE_2026-11-27.md",
-      "anchor": "pilotodin--standalone-windows-a-pre-use-inspection-scope",
-      "blob_sha": "676a7a7853a2da0506886f52ebf0241051372d61",
+      "path": "docs/C5_STANDARD_TOOL_STOP_AND_D1_REQUIREMENTS_2026-11-27.md",
+      "anchor": "pilotodin--c5-standard-tool-stopping-decision-and-d1-requirements",
+      "blob_sha": "c54955d0d960d0f6a919ebf8283b78e7f86a41da",
       "start_line": 1,
-      "end_line": 19
+      "end_line": 12
     }
   },
   "authority": {
