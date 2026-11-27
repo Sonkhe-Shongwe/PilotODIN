@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-PRODUCT-FIRST-MINIMUM-EVIDENCE-20261127",
-    "parent_sha": "23373823406342ea0eb49ca039139cc5094d5cf0",
-    "previous_snapshot_sha": "23373823406342ea0eb49ca039139cc5094d5cf0",
-    "scope": "Read-only exact-source reuse and minimum C5 evidence review; park interpreter method and route to independent licence facts.",
+    "operation_id": "C5-PRIMARY-NOTICE-RECONCILE-20261127",
+    "parent_sha": "5253a0a1145013612cfdcb78c1fdc45ddd8726cd",
+    "previous_snapshot_sha": "5253a0a1145013612cfdcb78c1fdc45ddd8726cd",
+    "scope": "Read-only exact retained primary notice digest reconciliation for et-xmlfile/openpyxl/ReportLab; PDF conditional use boundary retained.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "27-november--c5-product-first-minimum-evidence-review-after-codespace-refusal",
-      "blob_sha": "22320faa3d8435842a2e0e7b938c58c2abf2837f",
-      "start_line": 2919,
-      "end_line": 2927
+      "anchor": "27-november--c5-three-primary-notice-fingerprints-reconciled-and-residual-licence-use-facts",
+      "blob_sha": "9c4c131e776a14406e27b462a2f5b35e461adbd1",
+      "start_line": 2929,
+      "end_line": 2939
     }
   },
   "product": {
@@ -119,8 +119,8 @@
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
     "status": "BLOCKED",
     "scope": "C-D08 revised C5-A/B development reproducibility and build safety only; D retains native prerequisites, P8 release-only",
-    "blocker": "No qualified CP311 interpreter reference inventory or verifier. Actual-use licence/component/PDF, font/toolchain/browser/Rust and matched regression gaps remain; existing source CI retained at exact scope.",
-    "next_action": "Within active C5 only, progress specific independent read-only licence source-text gaps (et-xmlfile 2.0.0, openpyxl 3.1.5, ReportLab 4.5.1) and applicable conditional PDF test-use disposition using existing records; no repeat broad inventory, acquisition, cutover or clearance. Park interpreter route until concrete independent manifest or exact feasible method exists; if no new evidence, remain BLOCKED. No generic bootstrap approval, new infrastructure or repeated CI.",
+    "blocker": "No qualified CP311 interpreter/reference inventory. Three primary licence content hashes now matched; additional et-xmlfile PSF/attribution and applicable component/use/PDF, font/toolchain/browser/Rust, matched regression gaps remain.",
+    "next_action": "Within C5, review exact outstanding actual-use component/notice facts and 12 font/notice use rows (six unique files) against retained pins and existing evidence; no repeat broad inventory, inaccessible source searches or acquisition. Preserve conditional PDFium test-only preference and unchanged live PyMuPDF pending linkage, use and equivalence proof. Interpreter remains parked pending concrete independent inventory/method. If facts exhausted, remain BLOCKED; no speculative verifier work.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "If independent expected interpreter manifests or a concrete method become available, reconcile unchanged provenance/use criteria and seek fresh exact scope before execution.",
@@ -129,36 +129,43 @@
     "read": [
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
+        "anchor": "27-november--c5-three-primary-notice-fingerprints-reconciled-and-residual-licence-use-facts",
+        "blob_sha": "9c4c131e776a14406e27b462a2f5b35e461adbd1",
+        "start_line": 2929,
+        "end_line": 2939
+      },
+      {
+        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "27-november--c5-product-first-minimum-evidence-review-after-codespace-refusal",
-        "blob_sha": "22320faa3d8435842a2e0e7b938c58c2abf2837f",
+        "blob_sha": "9c4c131e776a14406e27b462a2f5b35e461adbd1",
         "start_line": 2919,
         "end_line": 2927
       },
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "27-november--codespace-one-use-preflight-refused-reconcile-and-park-route",
-        "blob_sha": "22320faa3d8435842a2e0e7b938c58c2abf2837f",
+        "blob_sha": "9c4c131e776a14406e27b462a2f5b35e461adbd1",
         "start_line": 2913,
         "end_line": 2917
       },
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "27-november--c5-blank-codespace-candidate-observation-and-standard-tool-limitation",
-        "blob_sha": "22320faa3d8435842a2e0e7b938c58c2abf2837f",
+        "blob_sha": "9c4c131e776a14406e27b462a2f5b35e461adbd1",
         "start_line": 2860,
         "end_line": 2868
       },
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "27-november--c5-independently-controlled-standard-tool-verifier-feasibility-assessment",
-        "blob_sha": "22320faa3d8435842a2e0e7b938c58c2abf2837f",
+        "blob_sha": "9c4c131e776a14406e27b462a2f5b35e461adbd1",
         "start_line": 2846,
         "end_line": 2858
       },
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "27-november--c5-exact-source-test-actual-use-licence-gap-reconciliation",
-        "blob_sha": "22320faa3d8435842a2e0e7b938c58c2abf2837f",
+        "blob_sha": "9c4c131e776a14406e27b462a2f5b35e461adbd1",
         "start_line": 2834,
         "end_line": 2844
       },
@@ -173,28 +180,21 @@
         "path": "docs/C5_PUBLIC_REPOSITORY_LICENCE_EVIDENCE_REVIEW_2026-11-26.md",
         "blob_sha": "b0cb741a0ab4466478ae9f1546e03a125bf4367f",
         "anchor": "1-exact-pinned-declaration-review"
-      },
-      {
-        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-        "anchor": "26-november--c5-development-licence-and-browser-toolchain-evidence-reconciliation",
-        "blob_sha": "22320faa3d8435842a2e0e7b938c58c2abf2837f",
-        "start_line": 2017,
-        "end_line": 2053
       }
     ]
   },
   "operation": {
-    "id": "C5-PRODUCT-FIRST-MINIMUM-EVIDENCE-20261127",
+    "id": "C5-PRIMARY-NOTICE-RECONCILE-20261127",
     "state": "RECONCILED",
-    "starting_sha": "23373823406342ea0eb49ca039139cc5094d5cf0",
-    "outcome": "Five exact live C5 lock/preflight blobs match successful 45813265824; baseline product tree changes restricted as recorded. No qualified interpreter or complete independent expected inventory; no executable alternative proven. Next scoped independent licence evidence.",
+    "starting_sha": "5253a0a1145013612cfdcb78c1fdc45ddd8726cd",
+    "outcome": "Five exact notice paths, three primary notice content hashes matched; two remaining et-xmlfile notice texts not matched, no exact upstream tag proof or package clearance. PDFium conditional preference unchanged.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "27-november--c5-product-first-minimum-evidence-review-after-codespace-refusal",
-      "blob_sha": "22320faa3d8435842a2e0e7b938c58c2abf2837f",
-      "start_line": 2919,
-      "end_line": 2927
+      "anchor": "27-november--c5-three-primary-notice-fingerprints-reconciled-and-residual-licence-use-facts",
+      "blob_sha": "9c4c131e776a14406e27b462a2f5b35e461adbd1",
+      "start_line": 2929,
+      "end_line": 2939
     }
   },
   "authority": {
