@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-CGROUP-EXACT-INERT-ACTIVATION-PROJECTION-20261128",
-    "parent_sha": "7611806320f43c6b6f6f7482de45e9ce9680364f",
-    "previous_snapshot_sha": "7611806320f43c6b6f6f7482de45e9ce9680364f",
-    "scope": "Exact inert cgroup activation and terminal disarm projection; no publication of active workflow.",
+    "operation_id": "C5-CGROUP-TRIGGER-AUDIT-AND-EXECUTION-DECISION-20261128",
+    "parent_sha": "4b517774fb88233cbcbba80c1e28e62d5b38a4b2",
+    "previous_snapshot_sha": "4b517774fb88233cbcbba80c1e28e62d5b38a4b2",
+    "scope": "Exact 122-workflow trigger audit and synthetic gate/YAML review; present one-use owner execution decision.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "28-november--exact-inert-cgroup-activation-and-terminal-disarm-projection",
-      "blob_sha": "b03e3178ba21c5041e7c0fdee7f5c5705cc81506",
-      "start_line": 751,
-      "end_line": 757
+      "anchor": "28-november--cgroup-trigger-audit-and-exact-execution-decision",
+      "blob_sha": "229a1e0732978c92908f03445e0fe261274201fb",
+      "start_line": 759,
+      "end_line": 765
     }
   },
   "product": {
@@ -137,15 +137,22 @@
     "id": "C5-LINUX-FIRST-20261127",
     "status": "BLOCKED",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "29d8b96 inert activation/disarm binding prepared. Exact workflow-trigger audit incomplete due connector call limit, new CLI gate and actual YAML/job unexecuted, provider independent boundary/ownership/migration prevention unproved; no execution approval. Reduced 596390f inspection remains held.",
-    "next_action": "Complete exact existing 122-workflow trigger audit for intended new cgroup workflow/state/marker activation and subsequent disarm paths in bounded small connector batches or verified equivalent, review generated-only gate refusals and exact YAML. If no conflicting triggers, present exact one-use five-minute no-package observation execution decision (source 1389a07, workflow 8123a65, marker 8dc0b72, disarm c3bd4b9); separate explicit approval and write-ahead before any activation. No replay, retries, privilege, cgroup mutation, security change, or full install; preserve all original acceptance and custody gates. If independent provider boundary not feasible, distinct isolated method decision.",
-    "next_action_kind": "MISSING_EVIDENCE",
+    "blocker": "29d8b96 exact inert activation/disarm reviewed, 122/122 existing triggers no matching proposed paths, 15 CLI synthetic cases and exact YAML/shell syntax checks pass. Owner execution approval required; actual host/provider containment/ownership/migration and inspection security/rights unresolved.",
+    "next_action": "Obtain explicit one-use execution approval for exact cgroup feasibility source 1389a07/tree fa5666f/probe 4fb60d8, workflow 8123a65, marker 8dc0b72, disarm c3bd4b9, maximum five minutes, one attempt, zero package GETs, no retries/replacements/privilege/cgroup mutation/security modifications. Reconcile live HEAD and 122 workflow identities, exact absent marker/workflow, then publish write-ahead PREPARED record and exact three-path activation only within authority; terminal reconcile and disarm. No further preparation approval, no generic-next activation, no full install or acceptance credit. If provider boundary infeasible, distinct isolated method decision.",
+    "next_action_kind": "OWNER_DECISION",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
       "Windows-specific verified input and compatibility prerequisites before actual production-equivalent D1, separately authorised; no installer.",
       "D2, G2 and remaining physical E2/P4 acceptance; no phase advance without evidence and owner signoff."
     ],
     "read": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "28-november--cgroup-trigger-audit-and-exact-execution-decision",
+        "blob_sha": "229a1e0732978c92908f03445e0fe261274201fb",
+        "start_line": 759,
+        "end_line": 765
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--exact-inert-cgroup-activation-and-terminal-disarm-projection",
@@ -611,17 +618,17 @@
     ]
   },
   "operation": {
-    "id": "C5-CGROUP-EXACT-INERT-ACTIVATION-PROJECTION-20261128",
+    "id": "C5-CGROUP-TRIGGER-AUDIT-AND-EXECUTION-DECISION-20261128",
     "state": "RECONCILED",
-    "starting_sha": "7611806320f43c6b6f6f7482de45e9ce9680364f",
-    "outcome": "Detached 29d8b96 exact inert source/workflow/marker/disarm binding; 14 grouped static checks and final disarm readback pass. Trigger audit exceeded connector limit; no new Python/YAML execution or hosted observation, no execution authority.",
+    "starting_sha": "4b517774fb88233cbcbba80c1e28e62d5b38a4b2",
+    "outcome": "122/122 exact live workflow triggers reviewed, zero conflicting paths; 15/15 generated CLI gate cases and exact two YAML parses/two shell syntax checks pass. Candidate unchanged and disarmed. No actual hosted probe or execution authority.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "28-november--exact-inert-cgroup-activation-and-terminal-disarm-projection",
-      "blob_sha": "b03e3178ba21c5041e7c0fdee7f5c5705cc81506",
-      "start_line": 751,
-      "end_line": 757
+      "anchor": "28-november--cgroup-trigger-audit-and-exact-execution-decision",
+      "blob_sha": "229a1e0732978c92908f03445e0fe261274201fb",
+      "start_line": 759,
+      "end_line": 765
     }
   },
   "authority": {
@@ -1019,7 +1026,8 @@
     "596390f reduced inspection binding preparation: exact host identities and positive owned-command settlement unproved, Python tests not run, strict ZIP and actual metadata/component coverage unverified; no full execution/rights clearance.",
     "Local fixture witness only for 596390f; actual full source/module tests, archive/metadata and independent hosted containment unresolved. Existing cgroup observation method proposed, not adopted or authorised.",
     "b577826 feasibility probe cannot establish pre-child empty baseline, provider ownership, universal migration prevention or full privileged/detached host settlement; no actual host observation or execution approval.",
-    "29d8b96 activation binding: connector limit blocked full trigger audit; new gated CLI/YAML/runtime not tested, independent provider settlement unproved. No active marker/workflow."
+    "29d8b96 activation binding: connector limit blocked full trigger audit; new gated CLI/YAML/runtime not tested, independent provider settlement unproved. No active marker/workflow.",
+    "Cgroup trigger audit and fixture gate/YAML checks pass; actual provider boundary, ownership, migration prevention, hosted execution and checkout not verified. Explicit one-use observation execution approval still required."
   ],
   "context": {
     "protocol": {
