@@ -5,18 +5,11 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-CD10-PARSER-SETTLEMENT-CORRECTION-20261127",
-    "parent_sha": "b5263d0e9b6af7541aeac7552ae9641ea4a3946a",
-    "previous_snapshot_sha": "b5263d0e9b6af7541aeac7552ae9641ea4a3946a",
-    "scope": "Apply focused pure APT parser and unprivileged process settlement corrections; preserve disarm and integrated execution boundary.",
-    "state": "RECONCILED",
-    "receipt": {
-      "path": "docs/C5_CD10_PARSER_SETTLEMENT_CORRECTION_2026-11-27.md",
-      "anchor": "pilotodin--c-d10-focused-transaction-and-settlement-corrections",
-      "blob_sha": "32726e118b7fc5cc78d018b4ca81b14d67a71019",
-      "start_line": 1,
-      "end_line": 19
-    }
+    "operation_id": "C5-CD10-INTEGRATED-REGRESSION-20261127",
+    "parent_sha": "581fa90dfe38ab38f797992220d5752542384b41",
+    "previous_snapshot_sha": "581fa90dfe38ab38f797992220d5752542384b41",
+    "scope": "Routine exact source/synthetic CI regression of existing C-D09/C-D10 modules, no restricted execution.",
+    "state": "PREPARED"
   },
   "product": {
     "sha": "8da7f33cb418e453a7b5c250b960fb6370e9e9d0",
@@ -117,10 +110,10 @@
   },
   "task": {
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
-    "status": "BLOCKED",
+    "status": "PREPARED",
     "scope": "C-D08 development reproducibility/build safety as revised by C-D09 limited managed-development evidence method; D native and P8 release boundaries unchanged.",
     "blocker": "Corrected pure APT parser and bounded_process source implemented; full integration/retained suite pending. Exact distro security/rights and local-cache root-side installation settlement/transaction binding still need review. No restricted grants.",
-    "next_action": "Finish ONE disarmed integrated same-job signed metadata/strict corrected simulation -> exact pinned .deb staging -> offline cache plan recheck and bounded root-side package transaction -> exact post-install graph/tool security/rights -> existing ordered 42-row inspection. Reuse previous exact workflow/source and new parser/adapter; no further standalone metadata. Run retained and new pure synthetic tests; fresh explicit exact combined operation approval only after complete executable review. Prefer reviewed patched provider image. No actual acquisition/installation/inspection yet.",
+    "next_action": "Run scoped source/synthetic regression once then reconcile; continue disarmed integrated security update candidate preparation; no restricted execution.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "Complete applicable rights and static linkage, conditional exact PDFium source integration and final managed source-test candidate; explicit bounded execution permission, no owner/native/installer.",
@@ -316,18 +309,27 @@
     ]
   },
   "operation": {
-    "id": "C5-CD10-PARSER-SETTLEMENT-CORRECTION-20261127",
-    "state": "RECONCILED",
-    "starting_sha": "b5263d0e9b6af7541aeac7552ae9641ea4a3946a",
-    "outcome": "Four inert QA files; exact parser and retained fixture blobs matched local tests; exact adapter function matched local isolated test; final 7/7 methods PASS, first fixture run retained in receipt. Full integrated suite not run. No activation/acquisition/install. Tool and combined execution review still required.",
-    "reconcile_before_retry": false,
-    "receipt": {
-      "path": "docs/C5_CD10_PARSER_SETTLEMENT_CORRECTION_2026-11-27.md",
-      "anchor": "pilotodin--c-d10-focused-transaction-and-settlement-corrections",
-      "blob_sha": "32726e118b7fc5cc78d018b4ca81b14d67a71019",
-      "start_line": 1,
-      "end_line": 19
-    }
+    "id": "C5-CD10-INTEGRATED-REGRESSION-20261127",
+    "state": "PREPARED",
+    "starting_sha": "581fa90dfe38ab38f797992220d5752542384b41",
+    "scope": "Existing offline proposal workflow, append only standard-library unittest of six exact pinned modules (46 methods); existing read-only checkout, no package install, archive acquisition, native product/model execution, or owner access.",
+    "intended_paths": [
+      ".github/workflows/c5-input-proposal-review.yml"
+    ],
+    "authority_ref": {
+      "scope": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next.",
+      "reference": {
+        "path": "docs/C5_CD10_PARSER_SETTLEMENT_CORRECTION_2026-11-27.md",
+        "anchor": "pilotodin--c-d10-focused-transaction-and-settlement-corrections",
+        "blob_sha": "32726e118b7fc5cc78d018b4ca81b14d67a71019",
+        "start_line": 1,
+        "end_line": 19
+      }
+    },
+    "expected_evidence": "Exact source run with 46 tests, zero failures/errors/skips, all live gates remain false, no restricted jobs.",
+    "recovery": "Inspect actual branch commit/run/jobs/logs before retry; retain failure and no automatic retry. No restricted approval.",
+    "reconcile_before_retry": true,
+    "workflow_blob": "b4f4d8067376fd2e4a92f9d44e74bd37e07289b6"
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next.",
