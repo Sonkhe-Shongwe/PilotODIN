@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-CD10-READONLY-APT-DIAGNOSIS-20261127",
-    "parent_sha": "9d67cab0eb5fbb7e914ffa0150cce1f54f7b8d90",
-    "previous_snapshot_sha": "9d67cab0eb5fbb7e914ffa0150cce1f54f7b8d90",
-    "scope": "Reconcile actual standard APT diagnostic and restore disarmed metadata workflow.",
+    "operation_id": "C5-CD10-NORMAL-CONTEXT-SIMULATION-PREPARED-20261127",
+    "parent_sha": "cdc2bef05f9485a711ea70be2c900e050ffee68f",
+    "previous_snapshot_sha": "cdc2bef05f9485a711ea70be2c900e050ffee68f",
+    "scope": "Exact detached normal-context security index simulation candidate, static validation only.",
     "state": "RECONCILED",
     "receipt": {
-      "path": "docs/C5_CD10_NORMAL_APT_DIAGNOSIS_2026-11-27.md",
-      "anchor": "pilotodin--c-d10-standard-read-only-apt-diagnosis",
-      "blob_sha": "4982da04099c899ca09454fa73f77ae1f9d5acf3",
+      "path": "docs/C5_CD10_NORMAL_CONTEXT_SIMULATION_CANDIDATE_2026-11-27.md",
+      "anchor": "pilotodin--c-d10-normal-context-simulation-candidate",
+      "blob_sha": "b8792ebaeeaf367261505a6ab40748bd7b0a2540",
       "start_line": 1,
-      "end_line": 24
+      "end_line": 15
     }
   },
   "product": {
@@ -119,14 +119,21 @@
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
     "status": "BLOCKED",
     "scope": "C-D08 development reproducibility/build safety as revised by C-D09 limited managed-development evidence method; D native and P8 release boundaries unchanged.",
-    "blocker": "Normal APT cache on observed image 20261116.133.1 lacks all eight .11 pins; solver returns version-not-found, no holds. Previous signed index confirms .11 expected pins, previous isolated solver cause remains unknown. Need current authenticated security index in normal dependency context and precise successful simulation, or reviewed patched provider image.",
-    "next_action": "Prepare one exact bounded standard authenticated Ubuntu security index refresh in normal dependency context for fresh explicit network approval; retain previous eight .11 hash/size pins, capture precise solver output, refuse any unexpected package change. No redundant stale-cache run, identity-only metadata retrieval, extra verifier, broad upgrade or actual installation without exact approval. If reviewed patched provider image appears first prefer it. Preserve disarmed inspection driver and original C5/P4/E2/G2/D/P8 gates.",
-    "next_action_kind": "MISSING_EVIDENCE",
+    "blocker": "Normal context simulation prepared and syntax validated; requires fresh explicit two-GET metadata-only approval. No current patched provider image; no actual transaction pass yet.",
+    "next_action": "If explicit owner approves, review exact detached 0a44b3fa1ab2bdeaff5c89c477964234a76042aa workflow blob afc7a13e00862a8228a8bb45491510acf50d9dd1, prepare write-ahead and one-use marker qa/c5_managed_dev/APPROVAL_CD10_NORMAL_CONTEXT_SIMULATION_ONCE_20261127.txt, issue exact commit message C5 CD10 security index normal context simulation once. Two HTTPS GETs to security.ubuntu.com only, 16.5 MiB metadata, five minutes, simulation only. Reconcile actual receipt and disarm; do not download/install .deb, inspect application dependencies, replay or expand scope. If reviewed patched managed image appears first prefer it. If no approval or new evidence stop; no redundant checkpoint.",
+    "next_action_kind": "OWNER_DECISION",
     "after": [
       "Complete applicable rights and static linkage, conditional exact PDFium source integration and final managed source-test candidate; explicit bounded execution permission, no owner/native/installer.",
       "Run authorised exact Stage A/B and consolidated Windows/Linux development regressions, standalone Rust and browser-dev, final checklist audit; C5 closure only on evidence. D/G2 and phase gates unchanged."
     ],
     "read": [
+      {
+        "path": "docs/C5_CD10_NORMAL_CONTEXT_SIMULATION_CANDIDATE_2026-11-27.md",
+        "anchor": "pilotodin--c-d10-normal-context-simulation-candidate",
+        "blob_sha": "b8792ebaeeaf367261505a6ab40748bd7b0a2540",
+        "start_line": 1,
+        "end_line": 15
+      },
       {
         "path": "docs/C5_CD10_NORMAL_APT_DIAGNOSIS_2026-11-27.md",
         "anchor": "pilotodin--c-d10-standard-read-only-apt-diagnosis",
@@ -281,17 +288,17 @@
     ]
   },
   "operation": {
-    "id": "C5-CD10-READONLY-APT-DIAGNOSIS-20261127",
+    "id": "C5-CD10-NORMAL-CONTEXT-SIMULATION-PREPARED-20261127",
     "state": "RECONCILED",
-    "starting_sha": "2c42aa47fada01dfe326c42207e9bc6b7a950907",
-    "outcome": "Run 45974012246 job 140421130470 SUCCESS diagnostics; original metadata skipped. Image 20261116.133.1, .10 installed/candidate, all eight .11 pins absent normal cached lists, zero holds, actual simulation rc100 exact version-not-found stderr, dpkg status unchanged. Prior isolated solver cause remains unknown. No installation/acquisition/score.",
+    "starting_sha": "cdc2bef05f9485a711ea70be2c900e050ffee68f",
+    "outcome": "Detached candidate 0a44b3fa1ab2bdeaff5c89c477964234a76042aa workflow afc7a13e00862a8228a8bb45491510acf50d9dd1 validated exact Git hash and YAML/Bash/Python syntax. No marker or live execution; no score. Await explicit one-use network approval.",
     "reconcile_before_retry": false,
     "receipt": {
-      "path": "docs/C5_CD10_NORMAL_APT_DIAGNOSIS_2026-11-27.md",
-      "anchor": "pilotodin--c-d10-standard-read-only-apt-diagnosis",
-      "blob_sha": "4982da04099c899ca09454fa73f77ae1f9d5acf3",
+      "path": "docs/C5_CD10_NORMAL_CONTEXT_SIMULATION_CANDIDATE_2026-11-27.md",
+      "anchor": "pilotodin--c-d10-normal-context-simulation-candidate",
+      "blob_sha": "b8792ebaeeaf367261505a6ab40748bd7b0a2540",
       "start_line": 1,
-      "end_line": 24
+      "end_line": 15
     }
   },
   "authority": {
