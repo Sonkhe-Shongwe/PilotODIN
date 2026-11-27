@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-LINUX-SIX-WHEEL-INSPECTION-20261127",
-    "parent_sha": "ee197d982c8ab25c131b0a2b94bb3d2566455f87",
-    "previous_snapshot_sha": "ee197d982c8ab25c131b0a2b94bb3d2566455f87",
-    "scope": "Actual owner-supplied six-wheel hash/metadata/notice inspection and finite Stage A preparation; no restricted execution or acceptance change.",
+    "operation_id": "C5-LINUX-STANDALONE-A-SOURCE-20261127",
+    "parent_sha": "31fc7e18b32f67d6998a171a45ee72c7dff7d365",
+    "previous_snapshot_sha": "31fc7e18b32f67d6998a171a45ee72c7dff7d365",
+    "scope": "Detached three-path Linux Stage A candidate and static/mock verification; no activation, installation or acceptance change.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--six-uploaded-linux-stage-a-wheels-verified",
-      "blob_sha": "eb3f824badab7a0f2dfcba1eaee42d9c8f6f3b2b",
-      "start_line": 245,
-      "end_line": 253
+      "anchor": "27-november--disarmed-standalone-linux-stage-a-source-candidate",
+      "blob_sha": "383b1f1c6a2054f83aa9e8d40a9f1447a2ba47db",
+      "start_line": 255,
+      "end_line": 263
     }
   },
   "product": {
@@ -119,8 +119,8 @@
     "id": "C5-LINUX-FIRST-20261127",
     "status": "BLOCKED",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "Seven exact Stage A archive identities now evidenced. PDFium expected source CVE fix strongly supported but exact build/usage and host pre-use disposition conditional; complete exact Linux execution candidate/settlement and separate approval absent. Full Linux Pillow stable pin affected; official nightly remains unpinned.",
-    "next_action": "Complete one bounded source-pinned standalone Linux Stage A execution candidate using existing bootstrap, native identity and exact pytest witnesses; resolve remaining applicable pre-use security/rights/host facts and owned process settlement, then obtain one exact restricted execution approval. Seven archive identities evidenced, no further owner uploads for A identity. Independently pin an official corrected Pillow release or exact publisher nightly for separate owner-reviewed full-profile development use. No generic verifier, Stage B, Windows or phase advance.",
+    "blocker": "Standalone Linux Stage A source candidate ef448858bc753a7219e2b9720645911e0cca1a8c prepared, disarmed. Seven exact archive identities evidenced; specific PDFium source fix supported but final actual applicable use/host disposition unresolved. Exact source/host reviewed activation, one-use authority and actual settlement/functional verification absent. Full Linux Pillow stable pin affected; nightly unpinned.",
+    "next_action": "Resolve finite concrete applicable PDFium and managed Linux host pre-use disposition using existing evidence and exact actual tool/runner identity; candidate ef448858bc753a7219e2b9720645911e0cca1a8c is disarmed and awaits exact final reviewed activation and one-use owner authority for seven fixed GETs, isolated hash-locked installation and all 19 unchanged predicates. Verify full pure module in authorised ordinary/synthetic scope if supported without restricted action; do not launch on unresolved inputs or repeat generic research. Independently pin corrected official Pillow for full Linux profile, with separate reviewed replacement. All Windows verification mandatory before D1.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
@@ -130,29 +130,36 @@
     "read": [
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "27-november--disarmed-standalone-linux-stage-a-source-candidate",
+        "blob_sha": "383b1f1c6a2054f83aa9e8d40a9f1447a2ba47db",
+        "start_line": 255,
+        "end_line": 263
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--six-uploaded-linux-stage-a-wheels-verified",
-        "blob_sha": "eb3f824badab7a0f2dfcba1eaee42d9c8f6f3b2b",
+        "blob_sha": "383b1f1c6a2054f83aa9e8d40a9f1447a2ba47db",
         "start_line": 245,
         "end_line": 253
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--pdfium-brotli-source-fix-traced-and-official-pillow-nightly-option",
-        "blob_sha": "eb3f824badab7a0f2dfcba1eaee42d9c8f6f3b2b",
+        "blob_sha": "383b1f1c6a2054f83aa9e8d40a9f1447a2ba47db",
         "start_line": 237,
         "end_line": 243
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--actual-uploaded-linux-pillow-and-pdfium-inspection",
-        "blob_sha": "eb3f824badab7a0f2dfcba1eaee42d9c8f6f3b2b",
+        "blob_sha": "383b1f1c6a2054f83aa9e8d40a9f1447a2ba47db",
         "start_line": 227,
         "end_line": 235
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--owner-approved-linux-first-c5-allocation-and-exact-reduced-input-plan",
-        "blob_sha": "eb3f824badab7a0f2dfcba1eaee42d9c8f6f3b2b",
+        "blob_sha": "383b1f1c6a2054f83aa9e8d40a9f1447a2ba47db",
         "start_line": 211,
         "end_line": 219
       },
@@ -191,17 +198,17 @@
     ]
   },
   "operation": {
-    "id": "C5-LINUX-SIX-WHEEL-INSPECTION-20261127",
+    "id": "C5-LINUX-STANDALONE-A-SOURCE-20261127",
     "state": "RECONCILED",
-    "starting_sha": "ee197d982c8ab25c131b0a2b94bb3d2566455f87",
-    "outcome": "All six supplied archives and five pinned metadata hashes match; ZIP CRC/RECORD and declared notices checked. Combined with prior PDFium, 7/7 archive identities evidenced. Pip vendored component and Windows-launcher scope reviewed; PDFium/host pre-use disposition, exact execution adapter and approval remain. No package installed/imported, no functional run.",
+    "starting_sha": "31fc7e18b32f67d6998a171a45ee72c7dff7d365",
+    "outcome": "Detached ef44885 standalone Linux Stage A source, existing bounded POSIX capture adapted opt-in; seven input/lock and 19 predicate scope retained. 10/10 source pins, 12 static checks and three copied pure mock checks pass; full module and 19 functional tests NOT RUN. Existing P4 host log corroborates CP311 path/image; remaining actual pre-use disposition, exact activation and approval absent.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--six-uploaded-linux-stage-a-wheels-verified",
-      "blob_sha": "eb3f824badab7a0f2dfcba1eaee42d9c8f6f3b2b",
-      "start_line": 245,
-      "end_line": 253
+      "anchor": "27-november--disarmed-standalone-linux-stage-a-source-candidate",
+      "blob_sha": "383b1f1c6a2054f83aa9e8d40a9f1447a2ba47db",
+      "start_line": 255,
+      "end_line": 263
     }
   },
   "authority": {
@@ -390,6 +397,14 @@
       {
         "sha": "4118d4708d33d616bd58f1835a6c78ea528af066",
         "scope": "Exact reduced Linux Stage A disarmed data plan/lock and reused pip lock, ten source pins and 19 predicates unchanged, seven archives 7,808,390 bytes. Not execution-ready or actual verification."
+      },
+      {
+        "sha": "10fefd5535776ab0183a0c7fd1a4ec22870ed688",
+        "scope": "Initial detached three-path Linux standalone Stage A source, superseded by ef44885 transport-env and receipt binding correction. No activation or functional run."
+      },
+      {
+        "sha": "ef448858bc753a7219e2b9720645911e0cca1a8c",
+        "scope": "Detached exact Linux standalone Stage A successor, 3 QA paths vs 4118d47, ten original pins and both locks unchanged, 19 predicates retained, 12 static checks and 3 copied mocked group checks pass; full module/actual transfer/install/native/functional/settlement not run. All gates disarmed; future pre-use disposition, exact activation and separate one-use approval required."
       }
     ]
   },
@@ -410,7 +425,8 @@
     "Uncertain-spawn correction candidate dae0cda99f11cb6adf609e29de7b55039f135bfa retains original storage/model witnesses and refuses Windows legacy graceful close after uncertain spawn; local static 11/11 only, no native compilation or actual runtime evidence. Conservative refusal also for early spawn failures; no recovery of missing child handle.",
     "Actual uploaded Pillow Brotli 1.2.0 linked via FreeType; held for CVE-2026-111497. PDFium direct linkage/37 notices verified; static Brotli version/patch and applicable rights unresolved.",
     "PDFium expected source Brotli cfa184a contains upstream CVE fix; direct exact DEPS/build checkout unavailable and byte markers inconclusive. Official Pillow nightly channel exists, artifact/source/hash not qualified. Local CPython 3.13.5 is not approved CP311 target.",
-    "All seven Stage A archive identities now evidenced (six uploaded static checks plus prior PDFium); pip primary/vendor notices present and PE Windows launchers excluded in Linux scope. Limited advisory review and static dependency compatibility are not actual pre-use runtime/security or functional acceptance. Exact Linux standalone runner/settlement, PDFium conditional disposition, 19 predicates and full-profile corrected Pillow remain."
+    "All seven Stage A archive identities now evidenced (six uploaded static checks plus prior PDFium); pip primary/vendor notices present and PE Windows launchers excluded in Linux scope. Limited advisory review and static dependency compatibility are not actual pre-use runtime/security or functional acceptance. Exact Linux standalone runner/settlement, PDFium conditional disposition, 19 predicates and full-profile corrected Pillow remain.",
+    "Detached ef44885 standalone Linux Stage A source path uses existing bounded group capture and explicit absence probe; no real process, package, native, functional or full new module test. Historical Ubuntu image 20261122.23.1 and CP311.18 layout corroborated, actual exact host/rights/security disposition absent. No claim against escaped sessions or complete containment. Final reviewed source activation and one-use authority absent; no Stage B or phase advancement."
   ],
   "context": {
     "protocol": {
