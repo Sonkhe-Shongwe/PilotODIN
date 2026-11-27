@@ -151,3 +151,24 @@ jobs:
           print("C5_PYTHON_STAGE_REGRESSION "+json.dumps({"source":os.environ["GITHUB_SHA"],"image":os.environ.get("ImageVersion"),"tests":result.testsRun,"failures":len(result.failures),"errors":len(result.errors),"skipped":len(result.skipped),"rust_command_projections":3,"browser_command_projections":5,"status":"PASS" if ok else "FAIL","pins":pins},sort_keys=True),flush=True)
           sys.exit(0 if ok else 1)
           PY
+      - name: Direct RGB conversion without Pillow or PDFium runtime
+        shell: bash
+        run: |
+          /usr/bin/python3 -I -B - <<'PY'
+          import hashlib, json, os, sys, unittest
+          from pathlib import Path
+          pins = {"qa/c5_managed_dev/raster_rgb.py":"990c452069a42f3805a7ab40962efe2581224709","qa/c5_managed_dev/test_raster_rgb.py":"a343276da2a645b23c0305b7910bd5c87d6a9b9b"}
+          for name, expected in pins.items():
+              p = Path(name)
+              assert p.is_file() and not p.is_symlink() and p.stat().st_size < 65536
+              raw = p.read_bytes()
+              assert hashlib.sha1(b"blob " + str(len(raw)).encode() + b"\0" + raw).hexdigest() == expected
+          sys.path.insert(0, str(Path.cwd()))
+          suite = unittest.defaultTestLoader.loadTestsFromName("qa.c5_managed_dev.test_raster_rgb")
+          assert suite.countTestCases() == 6
+          result = unittest.TextTestRunner(verbosity=2).run(suite)
+          assert not any(name.split(".")[0] in ("PIL","pypdfium2","pypdfium2_raw") for name in sys.modules)
+          ok = result.wasSuccessful() and result.testsRun == 6 and not result.skipped and not result.expectedFailures and not result.unexpectedSuccesses
+          print("C5_DIRECT_RGB_REGRESSION "+json.dumps({"source":os.environ["GITHUB_SHA"],"tests":result.testsRun,"failures":len(result.failures),"errors":len(result.errors),"skipped":len(result.skipped),"status":"PASS" if ok else "FAIL","pins":pins},sort_keys=True),flush=True)
+          sys.exit(0 if ok else 1)
+          PY
