@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-CD09-TARGETED-USE-QUALIFICATION-20261127",
-    "parent_sha": "6323e0ca39b9ad1dd5bdefadb21b20eb8a576109",
-    "previous_snapshot_sha": "6323e0ca39b9ad1dd5bdefadb21b20eb8a576109",
-    "scope": "Conditional PDFium preferred data-only candidate, exact source overlay, pip source review, targeted inspection and managed browser feasibility.",
+    "operation_id": "C5-CD09-INSPECTION-SCOPE-20261127",
+    "parent_sha": "f0e0bde702417aa226bb44c34fc8de9a892cd4c0",
+    "previous_snapshot_sha": "f0e0bde702417aa226bb44c34fc8de9a892cd4c0",
+    "scope": "Exact retained Certifi notice reconciliation, narrowed inspection-only acquisition projection and standard-tool transport contract.",
     "state": "RECONCILED",
     "receipt": {
-      "path": "docs/C5_CD09_TARGETED_USE_QUALIFICATION_2026-11-27.md",
-      "anchor": "pilotodin--c-d09-targeted-dependency-use-qualification",
-      "blob_sha": "3d1b8d3697e51d531e4fd8ca7c31bcaf69a2ef58",
+      "path": "docs/C5_CD09_INSPECTION_SCOPE_2026-11-27.md",
+      "anchor": "pilotodin--c-d09-inspection-only-scope-and-transport-preparation",
+      "blob_sha": "2a5c38752c3db77b45e59799198513916836b250",
       "start_line": 1,
-      "end_line": 29
+      "end_line": 23
     }
   },
   "product": {
@@ -119,14 +119,21 @@
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
     "status": "BLOCKED",
     "scope": "C-D08 development reproducibility/build safety as revised by C-D09 limited managed-development evidence method; D native and P8 release boundaries unchanged.",
-    "blocker": "C-D09 conditional PDFium route preferred but actual applicable native/component/notice terms, exact inspection/staging transport, final source/activation and managed browser compatibility remain unproven.",
-    "next_action": "Use exact targeted C-D09 PDFium data-only candidate; prepare minimum existing-standard-tool inspection-only route for genuinely missing actual component/use evidence within 43 unique archive upper bound, narrow from retained evidence, exact caps/rights/source review before fresh bounded approval. No repeated general licence or interpreter work. Preserve disarmed source overlay and all Stage A/B predicates; final execution only after verified staging/use and managed browser/runner scope.",
+    "blocker": "C-D09 PDFium actual applicable native/component terms and linkage remain open; inspection-only scope narrowed to 42 rows, exact disarmed transport/inspector implementation and source/runner review not yet complete.",
+    "next_action": "Prepare one minimal disarmed inspection-only adaptation of reviewed curl transport and bounded static ZIP/TAR/PE/ELF inspection, using exact 42-row projection in new receipt. Verify synthetic refusal cases and exact source/runner/tool rights and caps before fresh bounded approval. No Certifi inspection re-acquisition, no identity-only acquisition, no install/import/load, no legacy collector replay. Preserve original Stage A/B, disarmed PDFium overlay and final use/compatibility gates.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "Complete applicable rights and static linkage, conditional exact PDFium source integration and final managed source-test candidate; explicit bounded execution permission, no owner/native/installer.",
       "Run authorised exact Stage A/B and consolidated Windows/Linux development regressions, standalone Rust and browser-dev, final checklist audit; C5 closure only on evidence. D/G2 and phase gates unchanged."
     ],
     "read": [
+      {
+        "path": "docs/C5_CD09_INSPECTION_SCOPE_2026-11-27.md",
+        "anchor": "pilotodin--c-d09-inspection-only-scope-and-transport-preparation",
+        "blob_sha": "2a5c38752c3db77b45e59799198513916836b250",
+        "start_line": 1,
+        "end_line": 23
+      },
       {
         "path": "docs/C5_CD09_TARGETED_USE_QUALIFICATION_2026-11-27.md",
         "anchor": "pilotodin--c-d09-targeted-dependency-use-qualification",
@@ -186,17 +193,17 @@
     ]
   },
   "operation": {
-    "id": "C5-CD09-TARGETED-USE-QUALIFICATION-20261127",
+    "id": "C5-CD09-INSPECTION-SCOPE-20261127",
     "state": "RECONCILED",
-    "starting_sha": "6323e0ca39b9ad1dd5bdefadb21b20eb8a576109",
-    "outcome": "29-path conditional PDFium overlay identified, one-for-one lock/preflight edits checked; 43 unique targeted inspection upper-bound rows; pip exact source/vendor evidence; managed Chrome candidate. No migration, use clearance, execution or score.",
+    "starting_sha": "f0e0bde702417aa226bb44c34fc8de9a892cd4c0",
+    "outcome": "Certifi exact 989-byte notice/source SHA256 and Git blob match; inspection-only upper bound 42 unique GETs/214328914 bytes; standard-tool transport/inspection contract drafted. No execution, source integration or score.",
     "reconcile_before_retry": false,
     "receipt": {
-      "path": "docs/C5_CD09_TARGETED_USE_QUALIFICATION_2026-11-27.md",
-      "anchor": "pilotodin--c-d09-targeted-dependency-use-qualification",
-      "blob_sha": "3d1b8d3697e51d531e4fd8ca7c31bcaf69a2ef58",
+      "path": "docs/C5_CD09_INSPECTION_SCOPE_2026-11-27.md",
+      "anchor": "pilotodin--c-d09-inspection-only-scope-and-transport-preparation",
+      "blob_sha": "2a5c38752c3db77b45e59799198513916836b250",
       "start_line": 1,
-      "end_line": 29
+      "end_line": 23
     }
   },
   "authority": {
@@ -364,9 +371,9 @@
       {
         "path": "docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md",
         "anchor": "26-november-2026--owner-decision-on-c5-scope-rationalisation",
-        "blob_sha": "89233e2d314432fefc6635519d67aa2b65541c48",
-        "start_line": 7,
-        "end_line": 10
+        "blob_sha": "9295b9d6591e3c43a26a817bfe76fd08fb3542e9",
+        "start_line": 15,
+        "end_line": 17
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md"
