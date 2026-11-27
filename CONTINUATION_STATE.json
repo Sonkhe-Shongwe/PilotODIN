@@ -6,10 +6,10 @@
   },
   "checkpoint": {
     "operation_id": "C5-PILLOW-NIGHTLY-EXACT-20261127",
-    "parent_sha": "9cd025cbceb5bdd590a733907ab6db7607cb945a",
-    "previous_snapshot_sha": "9cd025cbceb5bdd590a733907ab6db7607cb945a",
-    "scope": "Exact owner-approved bounded public Pillow nightly verification write-ahead.",
-    "state": "PREPARED",
+    "parent_sha": "79561c9dcc9fc23098e49ae6c4ed69a95127ef73",
+    "previous_snapshot_sha": "79561c9dcc9fc23098e49ae6c4ed69a95127ef73",
+    "scope": "Exact public Pillow one-use activation issued.",
+    "state": "ISSUED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
       "anchor": "27-november--owner-approved-exact-public-pillow-nightly-verification-write-ahead",
@@ -135,10 +135,10 @@
   },
   "task": {
     "id": "C5-LINUX-FIRST-20261127",
-    "status": "PREPARED",
+    "status": "IN_PROGRESS",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "Approved exact public nightly verification awaits execution.",
-    "next_action": "Publish exact activation, inspect actual result and reconcile, no silent substitution.",
+    "blocker": "Actual exact public Pillow verification pending.",
+    "next_action": "Inspect terminal exact run/job/log evidence and disarm; no silent substitution.",
     "next_action_kind": "RECONCILE",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
@@ -388,7 +388,7 @@
   },
   "operation": {
     "id": "C5-PILLOW-NIGHTLY-EXACT-20261127",
-    "state": "PREPARED",
+    "state": "ISSUED",
     "starting_sha": "9cd025cbceb5bdd590a733907ab6db7607cb945a",
     "scope": "One disposable nonroot Ubuntu 24.04 x64 job, five minutes, at most two fixed HTTPS GETs and 8626197 accepted bytes aggregate (1048576-byte simple index and conditional exact 7577621-byte wheel), no redirect/proxy/retry/fallback, no credentials, only exact publisher index and same-host exact wheel URL. Require independent expected SHA256 in index before wheel retrieval and same SHA256/size before ZIP reads; compare prior exact metadata/RECORD/license/Brotli member hashes. No installation/import/native execution or product lock change. At most two technical replacements only if eligible under same cumulative cap and prior terminal evidence; no different wheel, no automatic retry on identity/rights/host or unreviewed redirect hold.",
     "source_sha": "4cbb1370227c180fda6a7b8e5c4e24297b2c672f",
@@ -407,11 +407,16 @@
     },
     "expected_evidence": "One exact attempt-1 job; current exact filename/index digest, conditional exact body/member digest verification or terminal refusal; no native use.",
     "recovery": "Inspect exact activation/run/jobs/logs; disarm prior, only eligible bounded corrections within unchanged aggregate scope, no silent substitution.",
-    "reconcile_before_retry": false,
+    "reconcile_before_retry": true,
     "technical_replacements_used": 0,
     "max_technical_replacements": 2,
     "cumulative_input_gets": 0,
-    "cumulative_accepted_bytes": 0
+    "cumulative_accepted_bytes": 0,
+    "activation_parent": "79561c9dcc9fc23098e49ae6c4ed69a95127ef73",
+    "workflow": ".github/workflows/c5-browser-smoke-once.yml",
+    "workflow_blob": "f26dd86a60270eb21d999d07ca57aae1a7fd85b4",
+    "marker": "qa/c5_managed_dev/APPROVAL_BROWSER_SMOKE_ONCE_20261127.json",
+    "marker_blob": "041f126e20ae99721980caa03cb242e51922795f"
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next. Owner-approved GitHub-only development installation and bounded technical autonomy amendment applies within exact approved batches; no broader authority.",
@@ -419,7 +424,7 @@
     "restricted_active": [
       {
         "id": "C5-PILLOW-NIGHTLY-EXACT-20261127",
-        "state": "APPROVED",
+        "state": "ISSUED",
         "source_sha": "4cbb1370227c180fda6a7b8e5c4e24297b2c672f",
         "scope": "One disposable nonroot Ubuntu 24.04 x64 job, five minutes, at most two fixed HTTPS GETs and 8626197 accepted bytes aggregate (1048576-byte simple index and conditional exact 7577621-byte wheel), no redirect/proxy/retry/fallback, no credentials, only exact publisher index and same-host exact wheel URL. Require independent expected SHA256 in index before wheel retrieval and same SHA256/size before ZIP reads; compare prior exact metadata/RECORD/license/Brotli member hashes. No installation/import/native execution or product lock change. At most two technical replacements only if eligible under same cumulative cap and prior terminal evidence; no different wheel, no automatic retry on identity/rights/host or unreviewed redirect hold.",
         "owner_authority_ref": {
@@ -429,7 +434,7 @@
           "start_line": 503,
           "end_line": 505
         },
-        "reconcile_before_retry": false
+        "reconcile_before_retry": true
       }
     ],
     "consumed_disarmed_count": 52,
