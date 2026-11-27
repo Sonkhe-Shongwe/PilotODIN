@@ -5,34 +5,34 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "P4-LEGACY-SPAWN-UNCERTAINTY-20261127",
-    "parent_sha": "c5f4bd8b9737e62de5010ee483f3405f2809cc4b",
-    "previous_snapshot_sha": "c5f4bd8b9737e62de5010ee483f3405f2809cc4b",
-    "scope": "Exact uncertain worker startup source publication reconciled; two ordinary CI runs pending. Prior source regression baseline verified; no native acceptance.",
+    "operation_id": "P4-MILESTONE-FOCUS-20261127",
+    "parent_sha": "befe2d62eb941b413ca161afb596be2ea45ff86e",
+    "previous_snapshot_sha": "befe2d62eb941b413ca161afb596be2ea45ff86e",
+    "scope": "Reconcile terminal source CI and route to C5 milestone closure rather than unrelated incremental remediation. Proposed phase allocation not adopted.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--shutdown-regression-reconciliation-and-uncertain-startup-correction",
-      "blob_sha": "8e93f16de1f26c85839344cdb64307b40b762829",
-      "start_line": 193,
-      "end_line": 201
+      "anchor": "27-november--milestone-first-stop-and-completed-startup-regression",
+      "blob_sha": "981663dcd1a819b9df7b51f21928ed41162e8a0c",
+      "start_line": 203,
+      "end_line": 209
     }
   },
   "product": {
-    "sha": "b574e0ab07da17fa322a9c5a464e0d0ce1d27b13",
-    "scope": "Latest verified P2/P4 source/synthetic baseline; not native desktop verification or latest candidate",
+    "sha": "c5f4bd8b9737e62de5010ee483f3405f2809cc4b",
+    "scope": "Latest verified P2/P4 ordinary source/synthetic baseline; not Windows desktop compilation or native acceptance",
     "verification": [
       {
-        "run_id": 46007678852,
-        "sha": "b574e0ab07da17fa322a9c5a464e0d0ce1d27b13",
+        "run_id": 46008752167,
+        "sha": "c5f4bd8b9737e62de5010ee483f3405f2809cc4b",
         "status": "SUCCESS",
-        "scope": "P2 report source safety, standalone report writer, production frontend build"
+        "scope": "P2 report safety, standalone writer, actual production frontend build"
       },
       {
-        "run_id": 46007678824,
-        "sha": "b574e0ab07da17fa322a9c5a464e0d0ce1d27b13",
+        "run_id": 46008752135,
+        "sha": "c5f4bd8b9737e62de5010ee483f3405f2809cc4b",
         "status": "SUCCESS",
-        "scope": "P4 source/synthetic, Windows storage object compilation, synthetic engine lifecycle, disposable browser; native collector skipped"
+        "scope": "P4 source/synthetic, Windows storage object compile and synthetic engine lifecycle, disposable browser; native preservation collector skipped"
       }
     ]
   },
@@ -116,45 +116,38 @@
     }
   },
   "task": {
-    "id": "P4-LEGACY-SPAWN-UNCERTAINTY-20261127",
-    "status": "VERIFYING",
-    "scope": "Independent bounded P4 product remediation; previous shutdown source regression passed; C5 parked, no native/D/E2/phase credit.",
-    "blocker": "Uncertain worker startup source correction integrated, 11/11 local static checks and negative control; P2 46008752167 and P4 46008752135 terminal results pending. Native Windows compile, actual startup/settlement unverified; C5 independent pre-use hold.",
-    "next_action": "Reconcile exact runs 46008752167 and 46008752135 at c5f4bd8b9737e62de5010ee483f3405f2809cc4b before further publication or retry. Preserve verified b574e0a baseline until new qualifying terminal results; correct actual failures only. Then prefer a concrete independent P4 product defect or exact bounded native verification dependency. C5 remains parked at independent pre-use evidence; no native/D/E2 acceptance or phase advance.",
+    "id": "C5-MILESTONE-CLOSURE-20261127",
+    "status": "BLOCKED",
+    "scope": "Close C5 as next source milestone, without changed acceptance, restricted execution or unapproved allocation.",
+    "blocker": "Current C5 requires actual Windows and Linux development readiness; managed Windows CP311 remains 3.11.9 and newer supported Windows 3.11.18 is absent from observed official setup manifest. Independent actual input security/rights/provenance evidence and exact lock consumption remain missing. Await explicit owner decision on Linux-first C5 allocation, or actual independent Windows pre-use evidence under retained route.",
+    "next_action": "Obtain explicit decision on narrow Linux-first C5 phase allocation preserving all three lock definitions and Windows pre-use requirements before D; if adopted, reuse ordinary pinned managed Ubuntu CP311 route and standard hash-locked dependency verification with actual use/rights and full relevant regression in a single exact reviewed transaction. No new generic verifier, unrelated defect search, or restricted action until exact approved scope. If rejected, retain Windows C5 route and resolve independent supported-runtime/pre-use facts with actual evidence. No change to E2/G2/R06, phase or installer.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
-      "Targeted product regression and safe publication of legacy shutdown correction; no native D acceptance inferred.",
-      "C5 independent pre-use evidence and supported exact transaction, real 19-predicate Stage A outcome and remaining full profiles before C5 closure.",
-      "G2 complete feasible evidence method separately adopted, actual D1/D2 and physical 8 GB/original-data evidence before P4 closure; no installer or P5 activation."
+      "Actual C5 use-specific evidence, relevant regressions and all eight checklist rows; award 15/17 only once earned.",
+      "Production-equivalent D1 with actual verified Windows inputs and separately approved native journey; no installer.",
+      "D2 and remaining P4 acceptance including G2 and physical E2; no phase advance until required evidence and owner signoff."
     ],
     "read": [
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "27-november--shutdown-regression-reconciliation-and-uncertain-startup-correction",
-        "blob_sha": "8e93f16de1f26c85839344cdb64307b40b762829",
-        "start_line": 193,
-        "end_line": 201
+        "anchor": "27-november--milestone-first-stop-and-completed-startup-regression",
+        "blob_sha": "981663dcd1a819b9df7b51f21928ed41162e8a0c",
+        "start_line": 203,
+        "end_line": 209
       },
       {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "27-november--legacy-desktop-shutdown-source-integration-and-regression",
-        "blob_sha": "8e93f16de1f26c85839344cdb64307b40b762829",
-        "start_line": 183,
-        "end_line": 191
+        "path": "docs/PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md",
+        "anchor": "owner-approved-c5-delivery-checklist-26-november-2026",
+        "blob_sha": "460775ef4e6e233bb510142649160d49e6d55231",
+        "start_line": 281,
+        "end_line": 298
       },
       {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "27-november--c5-pre-use-hold-and-independent-legacy-desktop-shutdown-correction",
-        "blob_sha": "8e93f16de1f26c85839344cdb64307b40b762829",
-        "start_line": 171,
-        "end_line": 181
-      },
-      {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "27-november--standalone-windows-a-archive-staging-preparation",
-        "blob_sha": "8e93f16de1f26c85839344cdb64307b40b762829",
-        "start_line": 159,
-        "end_line": 169
+        "path": "docs/PILOTODIN_PACKAGE_C_RESOURCE_TRUST_SPEC_2026-11-24.md",
+        "anchor": "c-d08-rationalised-scope-owner-decision-26-november-2026",
+        "blob_sha": "36f2969735c6b3e1ff5453837691e33f0044bed6",
+        "start_line": 84,
+        "end_line": 96
       },
       {
         "path": "docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md",
@@ -177,19 +170,18 @@
     ]
   },
   "operation": {
-    "id": "P4-LEGACY-SPAWN-UNCERTAINTY-20261127",
+    "id": "P4-MILESTONE-FOCUS-20261127",
     "state": "RECONCILED",
-    "starting_sha": "e1b8958a35c34a1971e339522d7e0e2ec3adfcb9",
-    "outcome": "Prior shutdown P2/P4 CI succeeded. Exact four-file startup correction publication verified at c5f4bd8b9737e62de5010ee483f3405f2809cc4b; local 11/11 static checks and negative control. Two matching attempt-1 push runs in progress, restricted collector skipped. No native desktop test.",
+    "starting_sha": "befe2d62eb941b413ca161afb596be2ea45ff86e",
+    "outcome": "Both exact prior source CI runs SUCCESS; baseline promoted; no closure credit. Actual supported Windows CP311 patch availability and independent pre-use evidence remain blockers; one narrow C5 allocation proposal awaiting owner decision.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--shutdown-regression-reconciliation-and-uncertain-startup-correction",
-      "blob_sha": "8e93f16de1f26c85839344cdb64307b40b762829",
-      "start_line": 193,
-      "end_line": 201
-    },
-    "source_sha": "c5f4bd8b9737e62de5010ee483f3405f2809cc4b"
+      "anchor": "27-november--milestone-first-stop-and-completed-startup-regression",
+      "blob_sha": "981663dcd1a819b9df7b51f21928ed41162e8a0c",
+      "start_line": 203,
+      "end_line": 209
+    }
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next.",
@@ -229,20 +221,7 @@
       }
     }
   },
-  "pending_runs": [
-    {
-      "run_id": 46008752167,
-      "sha": "c5f4bd8b9737e62de5010ee483f3405f2809cc4b",
-      "status": "IN_PROGRESS",
-      "scope": "Exact P2 report safety/frontend source push attempt 1"
-    },
-    {
-      "run_id": 46008752135,
-      "sha": "c5f4bd8b9737e62de5010ee483f3405f2809cc4b",
-      "status": "IN_PROGRESS",
-      "scope": "Exact P4 source/synthetic and browser push attempt 1; native collector skipped"
-    }
-  ],
+  "pending_runs": [],
   "pending_operations": [],
   "unpublished": {
     "owner_local": "UNINSPECTED_PRESERVE; never infer clean or publish",
