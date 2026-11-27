@@ -6,10 +6,10 @@
   },
   "checkpoint": {
     "operation_id": "C5-BROWSER-SMOKE-NPM-CORRECTION-ONCE-20261127",
-    "parent_sha": "5e1978ffee21e3b88fd7d6e57c3f59a2f0ec1e7c",
-    "previous_snapshot_sha": "5e1978ffee21e3b88fd7d6e57c3f59a2f0ec1e7c",
-    "scope": "Fresh exact one-use corrected browser smoke write-ahead; no execution yet.",
-    "state": "PREPARED",
+    "parent_sha": "0cd888d836e072aac3bda41c5c1aa1f36c49f737",
+    "previous_snapshot_sha": "0cd888d836e072aac3bda41c5c1aa1f36c49f737",
+    "scope": "Exact one-use npm correction activation issued, reconcile before any retry.",
+    "state": "ISSUED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
       "anchor": "27-november--exact-owner-approved-npm-correction-browser-smoke-write-ahead",
@@ -135,10 +135,10 @@
   },
   "task": {
     "id": "C5-LINUX-FIRST-20261127",
-    "status": "PREPARED",
+    "status": "IN_PROGRESS",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "Exact corrected execution approved; activation and actual outcome pending.",
-    "next_action": "Bind and publish the exact single-use activation; reconcile actual run and disarm.",
+    "blocker": "One-use corrected activation issued; actual run must be reconciled.",
+    "next_action": "Inspect exact activation HEAD and actual run/job logs, record terminal evidence, disarm marker/workflow. No replay.",
     "next_action_kind": "RECONCILE",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
@@ -325,7 +325,7 @@
   },
   "operation": {
     "id": "C5-BROWSER-SMOKE-NPM-CORRECTION-ONCE-20261127",
-    "state": "PREPARED",
+    "state": "ISSUED",
     "starting_sha": "5e1978ffee21e3b88fd7d6e57c3f59a2f0ec1e7c",
     "scope": "One nonroot Ubuntu 24.04 x64 disposable job, attempt 1, five minutes, exact detached c5a8faf, Chrome 158.0.8127.88-1 managed or authenticated Google scratch route, Playwright and core 1.65.1 exact hashes, maximum six fixed acquisition GETs and 163620096 accepted body bytes, no redirect/retry/proxy/fallback, no package system installation or host/security changes. Standard CI checkout control plane distinct from fixed input-body budget; no host egress isolation claim. No backend/Pillow/owner data/native product/model/installer.",
     "source_sha": "c5a8faf9ef9826f312807005eb60eab36ebbbc3d",
@@ -344,7 +344,12 @@
     },
     "expected_evidence": "Exact attempt-1 one-job run; source/tree/blob/syntax, npm identity, authenticated or managed Chrome, actual package and generated fixture results; record terminal failure if any.",
     "recovery": "Inspect exact HEAD, activation diff and run/job/logs. No replay; disarm owned workflow and remove marker after terminal reconciliation.",
-    "reconcile_before_retry": false
+    "reconcile_before_retry": true,
+    "activation_parent": "0cd888d836e072aac3bda41c5c1aa1f36c49f737",
+    "workflow": ".github/workflows/c5-browser-smoke-once.yml",
+    "workflow_blob": "fef655b2f9b3a9c697f2b488029ddbd3475757eb",
+    "marker": "qa/c5_managed_dev/APPROVAL_BROWSER_SMOKE_ONCE_20261127.json",
+    "marker_blob": "16becbb6076121179c5a67b9d1c2e9ee42bd71d6"
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next.",
@@ -352,7 +357,7 @@
     "restricted_active": [
       {
         "id": "C5-BROWSER-SMOKE-NPM-CORRECTION-ONCE-20261127",
-        "state": "APPROVED",
+        "state": "ISSUED",
         "source_sha": "c5a8faf9ef9826f312807005eb60eab36ebbbc3d",
         "scope": "One nonroot Ubuntu 24.04 x64 disposable job, attempt 1, five minutes, exact detached c5a8faf, Chrome 158.0.8127.88-1 managed or authenticated Google scratch route, Playwright and core 1.65.1 exact hashes, maximum six fixed acquisition GETs and 163620096 accepted body bytes, no redirect/retry/proxy/fallback, no package system installation or host/security changes. Standard CI checkout control plane distinct from fixed input-body budget; no host egress isolation claim. No backend/Pillow/owner data/native product/model/installer.",
         "owner_authority_ref": {
@@ -362,7 +367,7 @@
           "start_line": 463,
           "end_line": 465
         },
-        "reconcile_before_retry": false
+        "reconcile_before_retry": true
       }
     ],
     "consumed_disarmed_count": 49,
