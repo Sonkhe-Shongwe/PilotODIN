@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-PRODUCT-FIRST-REALIGNMENT-20261127",
-    "parent_sha": "e0a1e0d0414f574248bc449e89a23d1e537a5ae2",
-    "previous_snapshot_sha": "e0a1e0d0414f574248bc449e89a23d1e537a5ae2",
-    "scope": "Original blueprint and October roadmap alignment audit; finite product-first C5/D plan and narrow security-update proposal, not adopted.",
+    "operation_id": "C5-CD10-SECURITY-TRANSACTION-REVIEW-20261127",
+    "parent_sha": "b62b097c0ce9990130e682c8cbbb9bd0bd0b04b1",
+    "previous_snapshot_sha": "b62b097c0ce9990130e682c8cbbb9bd0bd0b04b1",
+    "scope": "C-D10 preparation: eight candidate package identities and actual authenticated metadata blocker; no execution.",
     "state": "RECONCILED",
     "receipt": {
-      "path": "docs/C5_PRODUCT_FIRST_REALIGNMENT_2026-11-27.md",
-      "anchor": "pilotodin--product-first-realignment-and-finite-c5-closure-proposal",
-      "blob_sha": "58a17facaaa338e41869254d64a0885a8e005ffe",
+      "path": "docs/C5_CD10_SECURITY_TRANSACTION_REVIEW_2026-11-27.md",
+      "anchor": "pilotodin--c-d10-security-transaction-preparation-and-concrete-blocker",
+      "blob_sha": "356cbaf3ab95845a3ae2b01d587fa0087774ea7f",
       "start_line": 1,
-      "end_line": 25
+      "end_line": 11
     }
   },
   "product": {
@@ -119,14 +119,21 @@
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
     "status": "BLOCKED",
     "scope": "C-D08 development reproducibility/build safety as revised by C-D09 limited managed-development evidence method; D native and P8 release boundaries unchanged.",
-    "blocker": "Actual inspection blocked by observed old managed binutils; exact manifest verified. Proposed narrowly scoped official signed Ubuntu security update alternative requires explicit direction decision and exact execution review/approval; physical E2 remains unresolved, no phase progression.",
-    "next_action": "Owner review of product-first realignment and proposed C-D10 limited managed-development security-update preparation (no execution grant). If accepted, prepare one exact bounded patched runner/bootstrap and inspection candidate for fresh approval, or stop with concrete blocker; no more generic strategy or verifier expansion. If declined retain C-D09 and await reviewed provider-managed patched image. Preserve exact 42-row/214328914-byte inspection bound, use rights and all original C5/Stage A/B/P4/E2/G2/D/P8 gates, no owner/native/installer work.",
+    "blocker": "Current authenticated noble-security amd64 package index and actual exact solver transaction unavailable from cached public evidence; provider patched image not listed. C-D10 preparation accepted, no execution or trust change. Existing inspection driver has specific process cleanup gap before activation.",
+    "next_action": "If owner explicitly approves narrow metadata-only operation, review exact source/commands and issue once within 2 HTTPS GETs, 16.5 MiB, 5 minutes on disposable Ubuntu24.04 (no .deb retrieval/install/application inspection), or use newly available reviewed patched provider image. If unchanged/no authority stop BLOCKED, no redundant checkpoint. Resolve only concrete driver process settlement issue before exact inspection approval. No changes to C5/P4 or original acceptance requirements.",
     "next_action_kind": "OWNER_DECISION",
     "after": [
       "Complete applicable rights and static linkage, conditional exact PDFium source integration and final managed source-test candidate; explicit bounded execution permission, no owner/native/installer.",
       "Run authorised exact Stage A/B and consolidated Windows/Linux development regressions, standalone Rust and browser-dev, final checklist audit; C5 closure only on evidence. D/G2 and phase gates unchanged."
     ],
     "read": [
+      {
+        "path": "docs/C5_CD10_SECURITY_TRANSACTION_REVIEW_2026-11-27.md",
+        "anchor": "pilotodin--c-d10-security-transaction-preparation-and-concrete-blocker",
+        "blob_sha": "356cbaf3ab95845a3ae2b01d587fa0087774ea7f",
+        "start_line": 1,
+        "end_line": 11
+      },
       {
         "path": "docs/C5_PRODUCT_FIRST_REALIGNMENT_2026-11-27.md",
         "anchor": "pilotodin--product-first-realignment-and-finite-c5-closure-proposal",
@@ -242,17 +249,17 @@
     ]
   },
   "operation": {
-    "id": "C5-PRODUCT-FIRST-REALIGNMENT-20261127",
+    "id": "C5-CD10-SECURITY-TRANSACTION-REVIEW-20261127",
     "state": "RECONCILED",
-    "starting_sha": "e0a1e0d0414f574248bc449e89a23d1e537a5ae2",
-    "outcome": "Original blueprint/roadmap reviewed; engineering process and unresolved early E2 sequencing identified. Proposed narrow C-D10 official Ubuntu security-update alternative for development-only preparation, pending owner decision. No active policy, scope, acquisition, execution, CI or score change.",
+    "starting_sha": "b62b097c0ce9990130e682c8cbbb9bd0bd0b04b1",
+    "outcome": "Eight candidate exact-version binutils packages identified from official prior dependency metadata; updated signed index and actual APT transaction not established. Proposed bounded metadata-only route; no installation, acquisition, policy, CI or score.",
     "reconcile_before_retry": false,
     "receipt": {
-      "path": "docs/C5_PRODUCT_FIRST_REALIGNMENT_2026-11-27.md",
-      "anchor": "pilotodin--product-first-realignment-and-finite-c5-closure-proposal",
-      "blob_sha": "58a17facaaa338e41869254d64a0885a8e005ffe",
+      "path": "docs/C5_CD10_SECURITY_TRANSACTION_REVIEW_2026-11-27.md",
+      "anchor": "pilotodin--c-d10-security-transaction-preparation-and-concrete-blocker",
+      "blob_sha": "356cbaf3ab95845a3ae2b01d587fa0087774ea7f",
       "start_line": 1,
-      "end_line": 25
+      "end_line": 11
     }
   },
   "authority": {
