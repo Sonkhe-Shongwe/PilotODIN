@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-CONTROLLED-VERIFIER-FEASIBILITY-20261127",
-    "parent_sha": "ec211b28dfb4a80b328cbda0c7a52cf3977b1ec0",
-    "previous_snapshot_sha": "ec211b28dfb4a80b328cbda0c7a52cf3977b1ec0",
-    "scope": "Owner-approved read-only feasibility assessment of independently controlled standard-tool interpreter verification; no method adoption or acquisition.",
+    "operation_id": "C5-CODESPACE-OBSERVATION-20261127",
+    "parent_sha": "e290aef208764829749cce636d28bbce64c66c3a",
+    "previous_snapshot_sha": "e290aef208764829749cce636d28bbce64c66c3a",
+    "scope": "Owner-supplied blank Codespace availability observations and read-only exact standard CLI route review; no new trust or execution authority.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "27-november--c5-independently-controlled-standard-tool-verifier-feasibility-assessment",
-      "blob_sha": "633192e4fdaac6f5e9dd67081040e57b22230099",
-      "start_line": 2846,
-      "end_line": 2858
+      "anchor": "27-november--c5-blank-codespace-candidate-observation-and-standard-tool-limitation",
+      "blob_sha": "7f070c63bef5eed3d23bb2c6780d75e63626ef4f",
+      "start_line": 2860,
+      "end_line": 2868
     }
   },
   "product": {
@@ -119,9 +119,9 @@
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
     "status": "BLOCKED",
     "scope": "C-D08 revised C5-A/B development reproducibility and build safety only; D retains native prerequisites, P8 release-only",
-    "blocker": "Controlled verifier feasibility assessment completed: no actual independent verifier/operator, reviewed host/tool trust, access or custody established, and no authenticated complete expected installed CP311 manifest supplied. Licence-use, font, pip/Node/npm/browser/Rust and regression gaps remain. No generic approval can resolve the missing environment.",
-    "next_action": "Identify an existing independently administered disposable verifier/operator or independently supplied complete authenticated expected runtime manifest. Alternatively owner explicitly selects a specific disposable cloud environment and establishes access, exact image/tool trust, cost and custody for review; no provisioning or execution implied. Without concrete evidence/access stay BLOCKED; no further generic feasibility loops, blind retries or Approach C work. Fresh exact method and bounded operation approval only after the required facts exist.",
-    "next_action_kind": "MISSING_ACCESS",
+    "blocker": "Blank Codespace exists (owner screenshots); exact trusted environment, isolation, gh 2.104.0 and bounded Snappy dependency route not established. Independent complete CP311 inventory and licence/use evidence remain open.",
+    "next_action": "Obtain explicit narrow Codespace bootstrap preparation-only trust decision (GitHub provider/OS/system tools declared trusted reference boundary, not independent host provenance; independent exact archive/actual-use proof unchanged). If approved, review minimal exact standard dependency/isolation/custody route without acquisition; one consolidated reviewed user-operated step only after fresh bounded execution authority. No direct agent terminal access, no more fragmented checks or infrastructure loops. Remain BLOCKED if route unproven.",
+    "next_action_kind": "OWNER_DECISION",
     "after": [
       "Once concrete verifier access/manifest exists, reconcile independent provenance and exact method under unchanged safeguards and seek fresh scoped authority before acquisition or use; no reuse of consumed approvals.",
       "Resolve applicable licence/use gaps, live PDF test choice, font/toolchain/browser/Rust conditions, then exact scoped regression and C5 closure audit. Preserve all D and phase gates."
@@ -129,15 +129,22 @@
     "read": [
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
+        "anchor": "27-november--c5-blank-codespace-candidate-observation-and-standard-tool-limitation",
+        "blob_sha": "7f070c63bef5eed3d23bb2c6780d75e63626ef4f",
+        "start_line": 2860,
+        "end_line": 2868
+      },
+      {
+        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "27-november--c5-independently-controlled-standard-tool-verifier-feasibility-assessment",
-        "blob_sha": "633192e4fdaac6f5e9dd67081040e57b22230099",
+        "blob_sha": "7f070c63bef5eed3d23bb2c6780d75e63626ef4f",
         "start_line": 2846,
         "end_line": 2858
       },
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "27-november--c5-exact-source-test-actual-use-licence-gap-reconciliation",
-        "blob_sha": "633192e4fdaac6f5e9dd67081040e57b22230099",
+        "blob_sha": "7f070c63bef5eed3d23bb2c6780d75e63626ef4f",
         "start_line": 2834,
         "end_line": 2844
       },
@@ -156,21 +163,21 @@
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "26-november--c5-development-licence-and-browser-toolchain-evidence-reconciliation",
-        "blob_sha": "633192e4fdaac6f5e9dd67081040e57b22230099",
+        "blob_sha": "7f070c63bef5eed3d23bb2c6780d75e63626ef4f",
         "start_line": 2017,
         "end_line": 2053
       },
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "26-november--c5-pdf-test-dependency-licence-decision-boundary",
-        "blob_sha": "633192e4fdaac6f5e9dd67081040e57b22230099",
+        "blob_sha": "7f070c63bef5eed3d23bb2c6780d75e63626ef4f",
         "start_line": 2134,
         "end_line": 2145
       },
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
         "anchor": "26-november--c5-pdfium-notice-hashes-and-conditional-development-use-disposition",
-        "blob_sha": "633192e4fdaac6f5e9dd67081040e57b22230099",
+        "blob_sha": "7f070c63bef5eed3d23bb2c6780d75e63626ef4f",
         "start_line": 2369,
         "end_line": 2382
       },
@@ -191,17 +198,17 @@
     ]
   },
   "operation": {
-    "id": "C5-CONTROLLED-VERIFIER-FEASIBILITY-20261127",
+    "id": "C5-CODESPACE-OBSERVATION-20261127",
     "state": "RECONCILED",
-    "starting_sha": "ec211b28dfb4a80b328cbda0c7a52cf3977b1ec0",
-    "outcome": "Conditional technical feasibility confirmed from standard offline verification documentation and existing pinned source/partial results; no concrete verifier environment or independently supplied complete runtime manifest available. No execution-ready route, method adoption or C5 credit.",
+    "starting_sha": "e290aef208764829749cce636d28bbce64c66c3a",
+    "outcome": "Candidate Codespace exists; observed Ubuntu x64 adequate resources, system Python 3.12.3, existing readers, gh version mismatch and libsnappy missing. Standard gh download fails existing finite transfer/no-retry safeguards. No independent verifier qualification.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md",
-      "anchor": "27-november--c5-independently-controlled-standard-tool-verifier-feasibility-assessment",
-      "blob_sha": "633192e4fdaac6f5e9dd67081040e57b22230099",
-      "start_line": 2846,
-      "end_line": 2858
+      "anchor": "27-november--c5-blank-codespace-candidate-observation-and-standard-tool-limitation",
+      "blob_sha": "7f070c63bef5eed3d23bb2c6780d75e63626ef4f",
+      "start_line": 2860,
+      "end_line": 2868
     }
   },
   "authority": {
