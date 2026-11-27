@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-WINDOWS-A-ASTRAL-PREPARATION-20261127",
-    "parent_sha": "5a947ceee952fb84b2bb381469836fa079b5308d",
-    "previous_snapshot_sha": "5a947ceee952fb84b2bb381469836fa079b5308d",
-    "scope": "Bind owner-approved exact Astral runtime candidate to standalone plan; narrow PDFium build evidence; no execution.",
+    "operation_id": "C5-WINDOWS-A-PREUSE-SCOPE-20261127",
+    "parent_sha": "bd65e872edaff52fc94d913b5a87ba9a09036bf2",
+    "previous_snapshot_sha": "bd65e872edaff52fc94d913b5a87ba9a09036bf2",
+    "scope": "Add inert exact nine-archive local inspection adapter and bounded standard Windows-tool scope, no execution.",
     "state": "RECONCILED",
     "receipt": {
-      "path": "docs/C5_WINDOWS_A_ASTRAL_PREPARATION_2026-11-27.md",
-      "anchor": "pilotodin--approved-astral-windows-stage-a-preparation",
-      "blob_sha": "94003207cf659d93b6ad9c74e7ad4fe5bdb3406c",
+      "path": "docs/C5_WINDOWS_A_PREUSE_SCOPE_2026-11-27.md",
+      "anchor": "pilotodin--standalone-windows-a-pre-use-inspection-scope",
+      "blob_sha": "676a7a7853a2da0506886f52ebf0241051372d61",
       "start_line": 1,
-      "end_line": 15
+      "end_line": 19
     }
   },
   "product": {
@@ -119,14 +119,21 @@
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
     "status": "BLOCKED",
     "scope": "C-D08 development reproducibility/build safety as revised by C-D09 limited managed-development evidence method; D native and P8 release boundaries unchanged.",
-    "blocker": "Astral CP311.18 candidate approved for preparation, integrated with exact Stage A plan. Actual provenance, component security/rights/compatibility and pip/PDFium targeted pre-use facts remain pending; no active grants.",
-    "next_action": "Prepare one finite exact read-only pre-use evidence transaction for selected Astral runtime and eight exact Stage A archives using reviewed standard provenance verification, actual applicable notices/component/security evidence and only necessary Windows linkage inspection. Separate explicit acquisition/inspection approval; no installation/import/use until dispositions established. No new framework, vulnerable tools, blocked assembly bypass, repeated publisher reviews, unchanged synthetic tests or automatic execution. Exact functional execution source/settlement/cleanup and separate approval still required.",
+    "blocker": "Standalone Windows A exact nine-archive scope and inert local inventory source prepared. Actual provenance control traffic, supported tool qualification, Windows bounded process settlement, actual applicable notices/rights/security remain unresolved; no execution-ready workflow or active grants.",
+    "next_action": "Finish only concrete standard-tool qualification, exact bounded provenance/transport and Windows process settlement for one standalone nine-archive pre-use inspection transaction, reusing pinned adapter and exact scope. No new framework, unchanged-source tests, repeated publisher/runner checks, vulnerable tools or blocked assembly bypass. If no supported bounded route, report actual blocker and pursue independent authorized product work. Separate acquisition/inspection approval and later functional execution approval required.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "Complete targeted applicable pre-use evidence and exact approved staging/inspection for genuinely unresolved components; no blanket binutils requirement or rights waiver.",
       "Execute separately approved conditional validation with all retained Stage A/B, font, frontend, Rust and matched P1/P4 predicates; audit eight C5 rows; D/G2/E2/P5/installer boundaries unchanged."
     ],
     "read": [
+      {
+        "path": "docs/C5_WINDOWS_A_PREUSE_SCOPE_2026-11-27.md",
+        "anchor": "pilotodin--standalone-windows-a-pre-use-inspection-scope",
+        "blob_sha": "676a7a7853a2da0506886f52ebf0241051372d61",
+        "start_line": 1,
+        "end_line": 19
+      },
       {
         "path": "docs/C5_WINDOWS_A_ASTRAL_PREPARATION_2026-11-27.md",
         "anchor": "pilotodin--approved-astral-windows-stage-a-preparation",
@@ -393,17 +400,17 @@
     ]
   },
   "operation": {
-    "id": "C5-WINDOWS-A-ASTRAL-PREPARATION-20261127",
+    "id": "C5-WINDOWS-A-PREUSE-SCOPE-20261127",
     "state": "RECONCILED",
-    "starting_sha": "5a947ceee952fb84b2bb381469836fa079b5308d",
-    "outcome": "Exact Astral runtime candidate integrated into standalone plan; publisher provenance workflow and exact Windows PDFium SBLD release asset identified. Qualification pending; zero acquisition/install/execution or acceptance change.",
+    "starting_sha": "bd65e872edaff52fc94d913b5a87ba9a09036bf2",
+    "outcome": "Exact local archive inspection adapter created, reuses existing core; Windows standard provenance/DUMPBIN route scoped; no runtime acquisition, tool invocation or tests. Control traffic and Windows tool/settlement prerequisites still open.",
     "reconcile_before_retry": false,
     "receipt": {
-      "path": "docs/C5_WINDOWS_A_ASTRAL_PREPARATION_2026-11-27.md",
-      "anchor": "pilotodin--approved-astral-windows-stage-a-preparation",
-      "blob_sha": "94003207cf659d93b6ad9c74e7ad4fe5bdb3406c",
+      "path": "docs/C5_WINDOWS_A_PREUSE_SCOPE_2026-11-27.md",
+      "anchor": "pilotodin--standalone-windows-a-pre-use-inspection-scope",
+      "blob_sha": "676a7a7853a2da0506886f52ebf0241051372d61",
       "start_line": 1,
-      "end_line": 15
+      "end_line": 19
     }
   },
   "authority": {
