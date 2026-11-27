@@ -120,3 +120,34 @@ jobs:
           print("C5_COORDINATOR_REGRESSION "+json.dumps({"source":os.environ["GITHUB_SHA"],"image":os.environ.get("ImageVersion"),"tests":result.testsRun,"failures":len(result.failures),"errors":len(result.errors),"skipped":len(result.skipped),"status":"PASS" if ok else "FAIL","pins":pins},sort_keys=True),flush=True)
           sys.exit(0 if ok else 1)
           PY
+      - name: Independent Python staging and final witness source contracts
+        shell: bash
+        run: |
+          /usr/bin/python3 -I -B - <<'PY'
+          import hashlib, json, os, sys, unittest
+          from pathlib import Path
+          pins = {"qa/c5_managed_dev/python_stage.py":"7c7b31dcedfb43892c6117bfbc7f497241fd91c9","qa/c5_managed_dev/profile_operations.py":"1501e6ccff918c7ad907c903d03554d5b2a69f61","qa/c5_managed_dev/test_python_stage.py":"8fbd96221305da12acf157a84a79f1bfdb380088","qa/c5_managed_dev/final_witnesses.py":"68d5a2c723af728bc8bb296e3f50572126786e49","qa/c5_managed_dev/validation_coordinator.py":"e847920061d8ce3d7b696dc5c837ab93fe8a1db8","qa/c5_managed_dev/validation_witnesses.py":"23aa61aee49cecf154e41f859d81e290e15a0dfd","qa/c5_managed_dev/pdfium_use_candidate_20261127.json":"7d89ba820429b2005f7a70cc1b5ed1415f7b1161","frontend/src-tauri/src/storage_profile_tests.rs":"1f79beebbc2979d0d0f04e5726661c8aefcb5c12"}
+          for name, expected in pins.items():
+              p = Path(name)
+              assert p.is_file() and not p.is_symlink() and p.stat().st_size < 2*1024**2
+              raw = p.read_bytes()
+              assert hashlib.sha1(b"blob " + str(len(raw)).encode() + b"\0" + raw).hexdigest() == expected
+          sys.path.insert(0, str(Path.cwd()))
+          from qa.c5_managed_dev import python_stage, profile_operations, final_witnesses
+          assert not any(m.LIVE_ENABLED for m in (python_stage, profile_operations, final_witnesses))
+          assert profile_operations.SOURCE_PIN is None and profile_operations.DISPOSITION_PIN is None
+          root = Path.cwd()
+          rust = root/"frontend/src-tauri/src/storage_profile_tests.rs"
+          windows, obj = final_witnesses.rust_commands(Path("/synthetic/rustc"),"windows-x64-cp311-source-test",rust,Path("/synthetic/scratch"))
+          linux, binary = final_witnesses.rust_commands(Path("/synthetic/rustc"),"linux-x64-cp311-source-test",rust,Path("/synthetic/scratch"))
+          assert len(windows)==1 and "--emit=obj" in windows[0] and len(linux)==2 and linux[1]==(str(binary),)
+          browser = final_witnesses.browser_commands(Path("/synthetic/node"),root/"frontend")
+          assert len(browser)==5 and all("install" not in cmd for cmd in browser)
+          assert [cmd[-1] for cmd in browser[:4]]==list(final_witnesses.P1_SELECTORS) and browser[-1][-1]==final_witnesses.P4_EXCLUDED
+          suite = unittest.defaultTestLoader.loadTestsFromName("qa.c5_managed_dev.test_python_stage")
+          assert suite.countTestCases() == 6
+          result = unittest.TextTestRunner(verbosity=2).run(suite)
+          ok = result.wasSuccessful() and result.testsRun == 6 and not result.skipped and not result.expectedFailures and not result.unexpectedSuccesses
+          print("C5_PYTHON_STAGE_REGRESSION "+json.dumps({"source":os.environ["GITHUB_SHA"],"image":os.environ.get("ImageVersion"),"tests":result.testsRun,"failures":len(result.failures),"errors":len(result.errors),"skipped":len(result.skipped),"rust_command_projections":3,"browser_command_projections":5,"status":"PASS" if ok else "FAIL","pins":pins},sort_keys=True),flush=True)
+          sys.exit(0 if ok else 1)
+          PY
