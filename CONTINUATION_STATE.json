@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-CONSOLIDATED-NUMERICAL-RUNTIME-APPLICABILITY-20261127",
-    "parent_sha": "a1572cb4599d59108237f2e7c15bdbd94d307ab4",
-    "previous_snapshot_sha": "a1572cb4599d59108237f2e7c15bdbd94d307ab4",
-    "scope": "Numerical runtime release build pins, licence families and specific outstanding security review.",
+    "operation_id": "C5-CONSOLIDATED-LZMA-TAURI-STAGED-FACTS-20261127",
+    "parent_sha": "cfa72402b5c23813973abf8a99eed641f16ca89f",
+    "previous_snapshot_sha": "cfa72402b5c23813973abf8a99eed641f16ca89f",
+    "scope": "LZMA/Tauri scoped evidence and disarmed staged notice/loader observation.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--numerical-runtime-publisher-build-binding-and-remaining-staged-checks",
-      "blob_sha": "2c14797624c91186e1fcc6ea4099d6a545fcb8ec",
-      "start_line": 644,
-      "end_line": 653
+      "anchor": "27-november--lzma-and-tauri-scope-evidence-and-bounded-staged-noticeloader-facts",
+      "blob_sha": "92affe1e768bf1cb587ae5483608e4c4a4c68491",
+      "start_line": 655,
+      "end_line": 663
     }
   },
   "product": {
@@ -137,8 +137,8 @@
     "id": "C5-LINUX-FIRST-20261127",
     "status": "BLOCKED",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "Candidate ee5df25 disarmed; 23/23 publisher evidence, 0/23 final dispositions. ReportLab hold retained; numerical OpenBLAS pins and licence families identified, actual bundled runtime versions/notice/rights/security pending. LZMA/Tauri, staged applicability expectations, host and regression receipt bindings remain. No execution authority.",
-    "next_action": "Resolve concrete LZMA and Tauri component/loader conditions, then consolidate finite staged applicability predicates based on existing publisher and historical evidence (do not repeat unavailable log/identity research). Keep ReportLab hold until explicit changed lock authority or sufficient non-applicability evidence; stop before install on unresolved rights/security. Finish exact hosted runner/settlement/regression receipts, source-only verify before one bounded approval; no standalone acquisition.",
+    "blocker": "Candidate 8d24d29 disarmed. 23/23 publisher evidence, 0/23 final dispositions. ReportLab hold retained; LZMA resolved build version and notice, Tauri actual loader, other actual component applicability and independent reviewed expectation/host/regression bindings pending. No execution authority.",
+    "next_action": "Stop broad publisher discovery. Resolve exact pre-use fact digest sequencing with independently reviewed finite applicability predicates, reusing staged notice Git hashes and bounded loader metadata in 8d24d29; no self-certification or unresolved rights/security override. Obtain explicit changed lock scope approval for ReportLab or exact non-applicability evidence. Finish exact hosted runner/failure/settlement and regression receipt binding, source-only verify before one bounded approval. No standalone identity acquisition.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
@@ -146,6 +146,13 @@
       "D2, G2 and remaining physical E2/P4 acceptance; no phase advance without evidence and owner signoff."
     ],
     "read": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "27-november--lzma-and-tauri-scope-evidence-and-bounded-staged-noticeloader-facts",
+        "blob_sha": "92affe1e768bf1cb587ae5483608e4c4a4c68491",
+        "start_line": 655,
+        "end_line": 663
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--numerical-runtime-publisher-build-binding-and-remaining-staged-checks",
@@ -527,17 +534,17 @@
     ]
   },
   "operation": {
-    "id": "C5-CONSOLIDATED-NUMERICAL-RUNTIME-APPLICABILITY-20261127",
+    "id": "C5-CONSOLIDATED-LZMA-TAURI-STAGED-FACTS-20261127",
     "state": "RECONCILED",
-    "starting_sha": "a1572cb4599d59108237f2e7c15bdbd94d307ab4",
-    "outcome": "Three numerical rows advanced: NumPy publication metadata and exact builder OpenBLAS64 pin, SciPy exact OpenBLAS32 source pin, runtime licence supplements. Old logs unavailable, actual compiler/native composition unresolved; no final dispositions or execution.",
+    "starting_sha": "cfa72402b5c23813973abf8a99eed641f16ca89f",
+    "outcome": "LZMA cross-build role and 0.16.5 hardening evidence; Tauri build regeneration scope; detached 8d24d29 adds bounded notice and loader facts. 9 static and 9 synthetic helper cases pass; full archive tests unexecuted. No use clearance or execution.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--numerical-runtime-publisher-build-binding-and-remaining-staged-checks",
-      "blob_sha": "2c14797624c91186e1fcc6ea4099d6a545fcb8ec",
-      "start_line": 644,
-      "end_line": 653
+      "anchor": "27-november--lzma-and-tauri-scope-evidence-and-bounded-staged-noticeloader-facts",
+      "blob_sha": "92affe1e768bf1cb587ae5483608e4c4a4c68491",
+      "start_line": 655,
+      "end_line": 663
     }
   },
   "authority": {
@@ -851,6 +858,10 @@
       {
         "sha": "ee5df25b62fc68f579a92cb96994f46c4fdcd686",
         "scope": "Detached successor of 4e2cc44: exact export marker and report display DevQA prerequisites for consolidated pytest, isolated mode-specific homes; 11 grouped static checks pass, test source only; no execution."
+      },
+      {
+        "sha": "8d24d2920b12f2cb234032e6ebabbd32a983c551",
+        "scope": "Successor of ee5df25 via 440cb74; consolidated-only notice Git blob hashes and Tauri loader/package facts, nine static and nine scoped local helper tests pass, full archive tests unexecuted; all gates false."
       }
     ]
   },
@@ -879,7 +890,8 @@
     "23/23 targeted release records reviewed (21 exact source commits, two metadata/source corroborations), 0/23 final dispositions. ReportLab later security fixes need scoped applicability; parser/native/runtime/LZMA and Tauri loader actual evidence outstanding; no acceptance increase.",
     "ReportLab 4.5.1 HOLD: publisher 5.0/5.1 security changes verified, source exposure controls positive but incomplete reachability. 5.1.2 is proposed alternative only; explicit changed lock scope approval required, no new digest/use authority. Other targeted dispositions still open.",
     "Parser/libuv/libyaml source advisory review advanced: two fixed-source ancestry checks, message vs URL and Node TLS scopes narrowed, staged composition and full pre-use decisions remain unresolved; no clearance or acceptance increase.",
-    "Numerical runtimes: NumPy OpenBLAS64 0.3.31.188.0 and SciPy OpenBLAS32 0.3.30.0.8 exact source-side build pins and bundled licence families identified; actual wheel members/compiler runtime identity and advisory applicability still required. NumPy/SciPy logs unavailable, scikit-learn tag wheel job skipped. No clearance or credit."
+    "Numerical runtimes: NumPy OpenBLAS64 0.3.31.188.0 and SciPy OpenBLAS32 0.3.30.0.8 exact source-side build pins and bundled licence families identified; actual wheel members/compiler runtime identity and advisory applicability still required. NumPy/SciPy logs unavailable, scikit-learn tag wheel job skipped. No clearance or credit.",
+    "8d24d29 disarmed staging facts; LZMA source cross-build use and upstream 0.16.5 hardening known, actual resolved version/rights pending; Tauri source loader mismatch still not resolved in archive. Pre-use digest circularity and host/regression bindings open; no clearance."
   ],
   "context": {
     "protocol": {
