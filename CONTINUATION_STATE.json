@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-BROWSER-SMOKE-PREPARATION-20261127",
-    "parent_sha": "b9763605ac799390b21c7abac160cbcf9d734f56",
-    "previous_snapshot_sha": "b9763605ac799390b21c7abac160cbcf9d734f56",
-    "scope": "Prepare and verify disarmed narrow C5.5 browser-only candidate, no execution.",
+    "operation_id": "C5-BROWSER-PREUSE-CONCRETE-STOP-20261127",
+    "parent_sha": "8fd4f154281d2d999fe4f8644a140d957a279ec8",
+    "previous_snapshot_sha": "8fd4f154281d2d999fe4f8644a140d957a279ec8",
+    "scope": "Resolve concrete browser-only pre-use blockers against primary sources without executing unqualified inputs.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--owner-approved-browser-only-smoke-preparation",
-      "blob_sha": "33b3781ad729c9bb6515050767ab9c2b074fcb39",
-      "start_line": 435,
-      "end_line": 439
+      "anchor": "27-november--browser-smoke-pre-use-concrete-stopping-decision",
+      "blob_sha": "843a675ec67ae172748cc746dca17deb4bf5339c",
+      "start_line": 441,
+      "end_line": 445
     }
   },
   "product": {
@@ -137,8 +137,8 @@
     "id": "C5-LINUX-FIRST-20261127",
     "status": "BLOCKED",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "C5.5 focused browser smoke prepared but actual managed patched Chrome, applicable input pre-use disposition and exact execution authority pending. Full C5 still blocked on isolated environment/private Pillow custody and functional regression.",
-    "next_action": "Finish finite exact browser-only pre-use/activation review for detached 26ab490 and seek explicit one-use execution approval; do not activate draft unchanged. No browser/toolchain downloads; no Pillow or backend in smoke. Then resume full C5 only with supported environment/custody and mandatory regressions.",
+    "blocker": "Browser smoke: current published managed Ubuntu image still Chrome 158.0.8127.36, patched .88 unavailable by established evidence; new Playwright 1.64.1 bundled brace-expansion 5.0.7 pre-use finding requires applicability or reviewed version disposition. Full C5 remains blocked on private Pillow custody and functional regression.",
+    "next_action": "Seek owner decision on finite review of exact Playwright 1.65.1 candidate and publisher-authenticated isolated Chrome .88 alternative (not acquisition/installation), or retain managed route until new availability evidence. Do not rerun/poll, activate old draft or change locks absent reviewed binding. Preserve C5 full-profile prerequisites.",
     "next_action_kind": "OWNER_DECISION",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
@@ -146,6 +146,13 @@
       "D2, G2 and remaining physical E2/P4 acceptance; no phase advance without evidence and owner signoff."
     ],
     "read": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "27-november--browser-smoke-pre-use-concrete-stopping-decision",
+        "blob_sha": "843a675ec67ae172748cc746dca17deb4bf5339c",
+        "start_line": 441,
+        "end_line": 445
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--owner-approved-browser-only-smoke-preparation",
@@ -289,17 +296,17 @@
     ]
   },
   "operation": {
-    "id": "C5-BROWSER-SMOKE-PREPARATION-20261127",
+    "id": "C5-BROWSER-PREUSE-CONCRETE-STOP-20261127",
     "state": "RECONCILED",
-    "starting_sha": "b9763605ac799390b21c7abac160cbcf9d734f56",
-    "outcome": "Detached two-file draft 26ab490 verified; 13 static checks and 2/2 archive pin matches, zero runs, 121 existing workflow blobs unchanged. No activation, acquisition, actual smoke or score credit.",
+    "starting_sha": "8fd4f154281d2d999fe4f8644a140d957a279ec8",
+    "outcome": "Published Ubuntu image remains Chrome .36; no .88 managed image established. Playwright 1.64.1 source lock corroborates reported bundled brace-expansion 5.0.7; 1.65.1 source lock 5.0.12 candidate only. No run or acquisition; existing draft stays disarmed.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "27-november--owner-approved-browser-only-smoke-preparation",
-      "blob_sha": "33b3781ad729c9bb6515050767ab9c2b074fcb39",
-      "start_line": 435,
-      "end_line": 439
+      "anchor": "27-november--browser-smoke-pre-use-concrete-stopping-decision",
+      "blob_sha": "843a675ec67ae172748cc746dca17deb4bf5339c",
+      "start_line": 441,
+      "end_line": 445
     }
   },
   "authority": {
@@ -556,7 +563,8 @@
     "Physical 8 GB bundled Qwen/coexistence, DPAPI, desktop egress/durability, production IPC/physical destination and actual legacy whole-job settlement unverified. Latest integrated source-only baseline afcb3d6 (15 source tests), prior broad CI baseline c5f4bd8; full dependency-consuming CI temporarily held, no Windows desktop compile/runtime inference. D1/D2 and E2/Gate C mandatory.",
     "R06 historical 74 original-data differences with unknown writer; prospective owner-device preservation pending. No original data loss or owner-local access; 49 detached records preserved. Codespace stop and consumed-variable cleanup unverified, no replay.",
     "Owner-held recovery copy delivered for exact historical 1d033ce, not current HEAD/full Git history/detached backup or build proof. Root LICENSE/NOTICE/SECURITY.md absent, owner decision outstanding. Prior risk chronology and exact references preserved at dac2149 and historical ledger.",
-    "C5.5 basic Chrome/Playwright smoke candidate 26ab490 disarmed; availability, actual security/rights, use and full browser regression not proved. No separate toolchain or browser acquisition authorised."
+    "C5.5 basic Chrome/Playwright smoke candidate 26ab490 disarmed; availability, actual security/rights, use and full browser regression not proved. No separate toolchain or browser acquisition authorised.",
+    "Playwright 1.64.1 bundled brace-expansion 5.0.7 DoS report corroborated by exact source lock; no exploit shown in Playwright, actual use applicability and bundle notice/security unresolved. 1.65.1 source selects 5.0.12, actual published candidate not yet reviewed. Published Ubuntu Chrome still .36; .88 actual runner availability unverified."
   ],
   "context": {
     "protocol": {
