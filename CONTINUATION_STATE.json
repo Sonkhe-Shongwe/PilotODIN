@@ -5,18 +5,11 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-STAGE-A-PUBLISHER-REVIEW-20261127",
-    "parent_sha": "81b1e38981ea4bcac4777914cf2ab4e91dd37f49",
-    "previous_snapshot_sha": "81b1e38981ea4bcac4777914cf2ab4e91dd37f49",
-    "scope": "Stage A targeted publisher review; concrete Pillow/Brotli security concern in production graph; no execution.",
-    "state": "RECONCILED",
-    "receipt": {
-      "path": "docs/C5_STAGE_A_PUBLISHER_REVIEW_2026-11-27.md",
-      "anchor": "pilotodin--stage-a-targeted-publisher-and-security-review",
-      "blob_sha": "796e6f56cb849c213089b0f523c9659a4be01e06",
-      "start_line": 1,
-      "end_line": 32
-    }
+    "operation_id": "C5-DIRECT-RGB-ALTERNATIVE-20261127",
+    "parent_sha": "486b5847e8de4492ba45df516c9f4fe658a1e7a4",
+    "previous_snapshot_sha": "486b5847e8de4492ba45df516c9f4fe658a1e7a4",
+    "scope": "Concrete direct RGB conversion improvement; focused synthetic CI only; alternative overlay not activated.",
+    "state": "PREPARED"
   },
   "product": {
     "sha": "8da7f33cb418e453a7b5c250b960fb6370e9e9d0",
@@ -117,10 +110,10 @@
   },
   "task": {
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
-    "status": "BLOCKED",
+    "status": "PREPARED",
     "scope": "C-D08 development reproducibility/build safety as revised by C-D09 limited managed-development evidence method; D native and P8 release boundaries unchanged.",
     "blocker": "Actual use held: Pillow 13.0.0 publisher Brotli 1.2.0 concern (CVE-2026-111497), official fix merged but no corrected release observed; exact target wheel applicability/SBOM and PDFium build/linkage/rights unresolved. No active restricted grants.",
-    "next_action": "Consolidate remaining Stage B publisher-evidence review of native and notice groups, prioritize production dependency security/actual use, use official SBOMs and notices where sufficient. Keep Pillow and PDFium consumption held; choose smallest supported remediation (official corrected Pillow release or genuinely equivalent reviewed product dependency/backend change), no untrusted replacement/downgrade or ad hoc rebuild. Complete exact controller source/cleanup and pre-use evidence before separately approved staging/validation. No blanket Binutils, identity-only acquisition, vulnerable tools, new generic framework, repeated tests, or runner polling.",
+    "next_action": "Run ordinary exact direct RGB synthetic checks, reconcile. No restricted activity.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "Complete targeted applicable pre-use evidence and exact approved staging/inspection for genuinely unresolved components; no blanket binutils requirement or rights waiver.",
@@ -358,18 +351,19 @@
     ]
   },
   "operation": {
-    "id": "C5-STAGE-A-PUBLISHER-REVIEW-20261127",
-    "state": "RECONCILED",
-    "starting_sha": "81b1e38981ea4bcac4777914cf2ab4e91dd37f49",
-    "outcome": "Six ordinary primary licence sources reviewed; pip and PDFium build evidence narrowed; exact Pillow 13.0.0 build pins Brotli 1.2.0 (CVE-2026-111497), upstream corrected but no stable release observed. Hold unresolved use; no product/workflow/lock or execution changes.",
-    "reconcile_before_retry": false,
-    "receipt": {
-      "path": "docs/C5_STAGE_A_PUBLISHER_REVIEW_2026-11-27.md",
-      "anchor": "pilotodin--stage-a-targeted-publisher-and-security-review",
-      "blob_sha": "796e6f56cb849c213089b0f523c9659a4be01e06",
-      "start_line": 1,
-      "end_line": 32
-    }
+    "id": "C5-DIRECT-RGB-ALTERNATIVE-20261127",
+    "state": "PREPARED",
+    "starting_sha": "486b5847e8de4492ba45df516c9f4fe658a1e7a4",
+    "scope": "Pure RGB copy helper and six standard-library tests; detached alternative candidate 65f5ca6acbdec0743c2c93360bc607cc7e9338a9. No real PDFium/Pillow, dependency acquisition, product migration or restricted execution.",
+    "intended_paths": [
+      "qa/c5_managed_dev/raster_rgb.py",
+      "qa/c5_managed_dev/test_raster_rgb.py",
+      ".github/workflows/c5-input-proposal-review.yml"
+    ],
+    "expected_evidence": "Six direct RGB cases with exact byte preservation and invalid buffer refusals; no PDFium or Pillow import. Retain actual terminal CI.",
+    "recovery": "Reconcile exact source/run/job/log before retry; no restricted activation.",
+    "reconcile_before_retry": true,
+    "workflow_blob": "fdf23092130489170a00f99ea0738c960059ea1d"
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next.",
@@ -517,6 +511,10 @@
       {
         "sha": "dad085669e3a130437e8a25751834784a5b611c5",
         "scope": "Exact current-base conditional 29-path overlay, four QA staging/final witness paths, two inactive managed-browser config additions; 120 workflows unchanged, zero candidate runs; no activation, no execution approval."
+      },
+      {
+        "sha": "65f5ca6acbdec0743c2c93360bc607cc7e9338a9",
+        "scope": "Alternative detached 29-path PDFium overlay with direct RGB buffer copy, two pure helper/test paths and two inactive browser configs; original manifest deliberately retained pending review/rebinding; not execution-ready, no migration."
       }
     ]
   },
