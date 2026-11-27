@@ -6,10 +6,17 @@
   },
   "checkpoint": {
     "operation_id": "C5-LINUX-PILLOW-ARTIFACT-INSPECTION-ONCE-20261127",
-    "parent_sha": "dce0f39a2395bed5717e1fc1354a073c75f4f4fc",
-    "previous_snapshot_sha": "dce0f39a2395bed5717e1fc1354a073c75f4f4fc",
-    "scope": "One exact connector read-only retrieval of python-pillow/Pillow Actions artifact 14985180992 (65,786,382 bytes, SHA256 c8785e8a17b11655203645a08e4a3fa3e79da30dcabcdf9df7d2af76cc8a2863); ordinary provider redirect only, no retry or alternate fetch. Verify outer size/hash before parsing; inspect only exact CP311 Linux x64 wheel ZIP paths/size/CRC/RECORD, metadata, embedded SBOM, notices and static linkage; no install/import/native execution, other wheel consumption, lock change or publication of archive.",
-    "state": "ISSUED"
+    "parent_sha": "38ca35b3cd694d3007aecc2acf1629e13dabad9a",
+    "previous_snapshot_sha": "38ca35b3cd694d3007aecc2acf1629e13dabad9a",
+    "scope": "One-use corrected Pillow publisher archive retrieval and static CP311 final wheel inspection completed; exact prerelease pin proposed, full profile still blocked.",
+    "state": "RECONCILED",
+    "receipt": {
+      "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+      "anchor": "27-november--corrected-linux-pillow-exact-final-wheel-inspected",
+      "blob_sha": "08b2310fc9bd753703fa0867895e5da61591f05d",
+      "start_line": 331,
+      "end_line": 339
+    }
   },
   "product": {
     "sha": "c5f4bd8b9737e62de5010ee483f3405f2809cc4b",
@@ -110,11 +117,11 @@
   },
   "task": {
     "id": "C5-LINUX-FIRST-20261127",
-    "status": "IN_PROGRESS",
+    "status": "BLOCKED",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "Official corrected Pillow publisher artifact selected; final CP311 member hash, metadata, actual SBOM/native/notices and resolver compatibility not yet observed. Read-only exact artifact retrieval requires explicit approval or owner upload. Actual patched managed browser and full Linux profile remaining.",
-    "next_action": "Execute only the issued one-use artifact retrieval and bounded inspection, then reconcile. Never replay if uncertain.",
-    "next_action_kind": "RECONCILE",
+    "blocker": "Corrected Pillow exact final wheel inspected; specific Brotli 1.2.0 concern resolved for candidate. Full Linux use remains held for applicable rights/security, exact remaining input and patched managed browser readiness, actual resolver and full regression.",
+    "next_action": "Prepare consolidated exact Linux-only full-profile pre-use and verification proposal using final Pillow pin 13.1.0.dev0 SHA256 1efce33464fee627feb788b97b6c709203b7eaa13a72c5226f3c2a51d08a714d; review applicable rights/security and patched managed Chrome/remaining input facts, bind exact source, 49-row hash-locked offline resolver and relevant regression scope. Obtain separate explicit approval before acquisition, installation, resolver execution or browser/full-profile run. No replay of Stage A or consumed Pillow retrieval; no Windows/production adoption.",
+    "next_action_kind": "OWNER_DECISION",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
       "Windows-specific verified input and compatibility prerequisites before actual production-equivalent D1, separately authorised; no installer.",
@@ -123,99 +130,106 @@
     "read": [
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "27-november--corrected-linux-pillow-exact-final-wheel-inspected",
+        "blob_sha": "08b2310fc9bd753703fa0867895e5da61591f05d",
+        "start_line": 331,
+        "end_line": 339
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--corrected-pillow-publisher-artifact-selected-for-bounded-inspection",
-        "blob_sha": "4393a164434602193297ba46307e5bda1592b242",
+        "blob_sha": "08b2310fc9bd753703fa0867895e5da61591f05d",
         "start_line": 325,
         "end_line": 329
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--linux-stage-a-actual-19-test-pass-and-one-use-disarm",
-        "blob_sha": "4393a164434602193297ba46307e5bda1592b242",
+        "blob_sha": "08b2310fc9bd753703fa0867895e5da61591f05d",
         "start_line": 317,
         "end_line": 323
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--owner-approved-one-use-linux-stage-a-execution",
-        "blob_sha": "4393a164434602193297ba46307e5bda1592b242",
+        "blob_sha": "08b2310fc9bd753703fa0867895e5da61591f05d",
         "start_line": 311,
         "end_line": 315
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--exact-stage-a-disposition-proposal-and-managed-rolling-image-activation-draft",
-        "blob_sha": "4393a164434602193297ba46307e5bda1592b242",
+        "blob_sha": "08b2310fc9bd753703fa0867895e5da61591f05d",
         "start_line": 303,
         "end_line": 309
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--c55-exact-setup-drafts-and-managed-chrome-candidate",
-        "blob_sha": "4393a164434602193297ba46307e5bda1592b242",
+        "blob_sha": "08b2310fc9bd753703fa0867895e5da61591f05d",
         "start_line": 297,
         "end_line": 301
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--c55-proportionate-baseline-consolidation",
-        "blob_sha": "4393a164434602193297ba46307e5bda1592b242",
+        "blob_sha": "08b2310fc9bd753703fa0867895e5da61591f05d",
         "start_line": 289,
         "end_line": 295
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--c551-isolated-managed-operating-system-review",
-        "blob_sha": "4393a164434602193297ba46307e5bda1592b242",
+        "blob_sha": "08b2310fc9bd753703fa0867895e5da61591f05d",
         "start_line": 285,
         "end_line": 287
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--stage-a-generated-fixture-applicability-and-targeted-host-preflight",
-        "blob_sha": "4393a164434602193297ba46307e5bda1592b242",
+        "blob_sha": "08b2310fc9bd753703fa0867895e5da61591f05d",
         "start_line": 275,
         "end_line": 283
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--exact-pdfium-publisher-build-chain-and-managed-linux-bootstrap",
-        "blob_sha": "4393a164434602193297ba46307e5bda1592b242",
+        "blob_sha": "08b2310fc9bd753703fa0867895e5da61591f05d",
         "start_line": 265,
         "end_line": 273
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--disarmed-standalone-linux-stage-a-source-candidate",
-        "blob_sha": "4393a164434602193297ba46307e5bda1592b242",
+        "blob_sha": "08b2310fc9bd753703fa0867895e5da61591f05d",
         "start_line": 255,
         "end_line": 263
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--six-uploaded-linux-stage-a-wheels-verified",
-        "blob_sha": "4393a164434602193297ba46307e5bda1592b242",
+        "blob_sha": "08b2310fc9bd753703fa0867895e5da61591f05d",
         "start_line": 245,
         "end_line": 253
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--pdfium-brotli-source-fix-traced-and-official-pillow-nightly-option",
-        "blob_sha": "4393a164434602193297ba46307e5bda1592b242",
+        "blob_sha": "08b2310fc9bd753703fa0867895e5da61591f05d",
         "start_line": 237,
         "end_line": 243
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--actual-uploaded-linux-pillow-and-pdfium-inspection",
-        "blob_sha": "4393a164434602193297ba46307e5bda1592b242",
+        "blob_sha": "08b2310fc9bd753703fa0867895e5da61591f05d",
         "start_line": 227,
         "end_line": 235
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--owner-approved-linux-first-c5-allocation-and-exact-reduced-input-plan",
-        "blob_sha": "4393a164434602193297ba46307e5bda1592b242",
+        "blob_sha": "08b2310fc9bd753703fa0867895e5da61591f05d",
         "start_line": 211,
         "end_line": 219
       },
@@ -255,52 +269,23 @@
   },
   "operation": {
     "id": "C5-LINUX-PILLOW-ARTIFACT-INSPECTION-ONCE-20261127",
-    "state": "ISSUED",
+    "state": "RECONCILED",
     "starting_sha": "dce0f39a2395bed5717e1fc1354a073c75f4f4fc",
-    "scope": "One exact connector read-only retrieval of python-pillow/Pillow Actions artifact 14985180992 (65,786,382 bytes, SHA256 c8785e8a17b11655203645a08e4a3fa3e79da30dcabcdf9df7d2af76cc8a2863); ordinary provider redirect only, no retry or alternate fetch. Verify outer size/hash before parsing; inspect only exact CP311 Linux x64 wheel ZIP paths/size/CRC/RECORD, metadata, embedded SBOM, notices and static linkage; no install/import/native execution, other wheel consumption, lock change or publication of archive.",
-    "intended_paths": [
-      "CONTINUATION_STATE.json",
-      "docs/ENGINEERING_DECISIONS_CURRENT.md"
-    ],
-    "authority_ref": {
-      "owner_statement": "I explicitly approve the one-use bounded read-only retrieval and inspection of Pillow artifact 14985180992 under all recorded restrictions. Proceed and reconcile the outcome.",
-      "date": "2026-11-27",
-      "proposal": {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "27-november--corrected-pillow-publisher-artifact-selected-for-bounded-inspection",
-        "blob_sha": "4393a164434602193297ba46307e5bda1592b242",
-        "start_line": 325,
-        "end_line": 329
-      }
-    },
-    "expected_evidence": "One connector outcome; if bytes accessible verify exact outer hash/size then target member and bounded static checks. Record exact observations or blocker, consume/disarm; no inferred score.",
-    "recovery": "If interrupted or outcome unknown, preserve this binding, inspect actual connector outcome; never retry or alternate fetch. If bytes unavailable stop and request owner upload exact ZIP.",
-    "reconcile_before_retry": true
+    "outcome": "One connector retrieval success; exact outer hash/size verified; final wheel 7,577,621 bytes SHA256 1efce33464fee627feb788b97b6c709203b7eaa13a72c5226f3c2a51d08a714d, 139 files/138 RECORD hashes match, actual Brotli 1.2.1 ELF linkage, SBOM and notices verified; declared graph compatible in principle, resolver not run. Grant consumed, no score or product change.",
+    "reconcile_before_retry": false,
+    "receipt": {
+      "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+      "anchor": "27-november--corrected-linux-pillow-exact-final-wheel-inspected",
+      "blob_sha": "08b2310fc9bd753703fa0867895e5da61591f05d",
+      "start_line": 331,
+      "end_line": 339
+    }
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next.",
     "preparation_only": "Owner approved consolidated shared-bundle disarmed acquisition-before-signature source and exact limited existing host bootstrap; owner approved proposed limited local Docker control-plane and host-derived rootfs trust/no-pull isolation method for preparation only. Authentication before extraction/use; no Docker invocation, acquisition, verification execution, installation or live cutover authorised. Owner approved bounded first-collision encoded public member-path diagnostic preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-bounded-first-collision-diagnostic-preparation-only. No restricted execution authority. Owner approved finite exact Linux data-only terminfo inventory policy and bounded receipt projection as proposed in 8cc1a696, preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-finite-exact-linux-terminfo-inventory-policy-and-bounded-receipt-preparation-only. Strict Windows/gh and other safeguards unchanged; no acquisition, extraction or restricted execution. Owner explicitly approved preparation and static/synthetic verification only of Approach C observation-only candidate (11 fixed roles, five minutes); no restricted execution, acquisition, Docker invocation or active policy change. Exact reference in C5 spec owner-approved-bounded-approach-c-observation-candidate-preparation-only. Owner approved Approach C metadata-only preparation/static/synthetic verification under 13 GET/10-minute proposed limits; no actual acquisition, package downloads, installation, Docker invocation, restricted execution or active trust policy change. Exact spec anchor owner-approved-bounded-approach-c-metadata-only-preparation-and-synthetic-core. Owner approved narrow metadata bootstrap preparation on existing two reviewed images including GnuPG/necessary existing dependencies, no acquisition/restricted execution/integrated verification/active policy change, original 13 GET/10 min bounds. Exact spec anchor owner-approved-narrow-metadata-bootstrap-preparation-and-finite-key-evidence-contract. Owner approved two-stage key/metadata sequence preparation including bounded public signing-key private repository retention proposal, combined 13 GET/600s/256 MiB; no actual acquisition, restricted execution or active policy change. Exact spec anchor owner-approved-two-stage-preparation-and-consolidated-custody-core. Owner approved exact C-D09 managed-development CI evidence rationalisation at proposal 2cbed51, recorded in C5 implementation spec; limited bootstrap trust and residual risk accepted, prepare concrete bounded validation candidate only, no acquisition, installation, restricted execution, migration, new expenditure or phase advancement. Owner approved one-time C5 proportionate publisher-first inspection method (okay lets try that), recorded at docs/C5_PROPORTIONATE_INSPECTION_DECISION_2026-11-27.md; no new restricted authority or acceptance waiver. Owner explicitly approved standalone Windows Stage A preparation preserving all security and acceptance requirements; see docs/C5_STANDALONE_WINDOWS_A_PREPARATION_2026-11-27.md. No restricted execution grant. Owner explicitly approved exact Astral CPython 3.11.18 Windows x64 candidate for standalone Stage A preparation only; docs/C5_WINDOWS_A_ASTRAL_PREPARATION_2026-11-27.md. No new restricted grant. Owner explicitly approved simplified C5 applicability-based development policy and preparation of consolidated Stage A transaction; see ENGINEERING_DECISIONS_CURRENT.md section 27-november--owner-approved-c5-applicability-policy-and-consolidated-stage-a-transaction. No restricted authority or acceptance waiver. Owner explicitly approved bounded G2 equivalent evidence feasibility assessment and design only; see ENGINEERING_DECISIONS_CURRENT.md section 27-november--g2-equivalent-evidence-feasibility-and-design-disposition. Assessment complete, no implementation, live method adoption or restricted execution authority. Owner adopted aggressive product-first framework (okay lets follow you new frame work); PRODUCT-FIRST-20261127 in phase policy. Independent concrete scoped P4 source work and narrowly rationalised standard C5 control metadata preparation, no new restricted execution grant.",
-    "restricted_active": [
-      {
-        "id": "C5-LINUX-PILLOW-ARTIFACT-INSPECTION-ONCE-20261127",
-        "state": "ISSUED",
-        "source_sha": "dce0f39a2395bed5717e1fc1354a073c75f4f4fc",
-        "scope": "One exact connector read-only retrieval of python-pillow/Pillow Actions artifact 14985180992 (65,786,382 bytes, SHA256 c8785e8a17b11655203645a08e4a3fa3e79da30dcabcdf9df7d2af76cc8a2863); ordinary provider redirect only, no retry or alternate fetch. Verify outer size/hash before parsing; inspect only exact CP311 Linux x64 wheel ZIP paths/size/CRC/RECORD, metadata, embedded SBOM, notices and static linkage; no install/import/native execution, other wheel consumption, lock change or publication of archive.",
-        "owner_authority_ref": {
-          "owner_statement": "I explicitly approve the one-use bounded read-only retrieval and inspection of Pillow artifact 14985180992 under all recorded restrictions. Proceed and reconcile the outcome.",
-          "date": "2026-11-27",
-          "proposal": {
-            "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-            "anchor": "27-november--corrected-pillow-publisher-artifact-selected-for-bounded-inspection",
-            "blob_sha": "4393a164434602193297ba46307e5bda1592b242",
-            "start_line": 325,
-            "end_line": 329
-          }
-        },
-        "reconcile_before_retry": true
-      }
-    ],
-    "consumed_disarmed_count": 47,
+    "restricted_active": [],
+    "consumed_disarmed_count": 48,
     "consumed_history": {
       "commit": "b9864b70fb9bb5a72d0f79c37f15b94100722192",
       "path": "docs/TAB_MIGRATION_HANDOFF_CURRENT.md",
@@ -319,7 +304,7 @@
       "release",
       "replay of consumed or uncertain approval"
     ],
-    "guards": "45 prior restricted grants consumed/closed or disarmed; no execution authority remains. Codespace preflight refused, no persistent activation; stop requested not confirmed. Existing exact false workflow restored; approved Actions images unchanged; no fallback/replay. Three C1/C2 workflows and OWNED_RESOURCE_ENABLED false; three consumed variables owner cleanup unverified. Owner-approved bounded technical retry rule permits one corrected replacement only after proven terminal zero-job pre-execution failure; prior activation remains closed; no automatic second replacement. Latest local two-wheel read-only grant consumed/closed after both DNS failures, total 46, no active grant or replay. Current exact one-use Stage A grant approved for source 304b24d only; all other restrictions and 46 consumed grants retained. Stage A 304b24d grant consumed after exact run 46031011314 success; workflow dispatch-only false and marker removed in reconciliation. Total 47, zero active; no replay or broader use.",
+    "guards": "45 prior restricted grants consumed/closed or disarmed; no execution authority remains. Codespace preflight refused, no persistent activation; stop requested not confirmed. Existing exact false workflow restored; approved Actions images unchanged; no fallback/replay. Three C1/C2 workflows and OWNED_RESOURCE_ENABLED false; three consumed variables owner cleanup unverified. Owner-approved bounded technical retry rule permits one corrected replacement only after proven terminal zero-job pre-execution failure; prior activation remains closed; no automatic second replacement. Latest local two-wheel read-only grant consumed/closed after both DNS failures, total 46, no active grant or replay. Current exact one-use Stage A grant approved for source 304b24d only; all other restrictions and 46 consumed grants retained. Stage A 304b24d grant consumed after exact run 46031011314 success; workflow dispatch-only false and marker removed in reconciliation. Total 47, zero active; no replay or broader use. Corrected Pillow exact artifact one-use retrieval succeeded and bounded static inspection complete; grant consumed/disarmed, total 48 zero active; no retry or broader use.",
     "last_consumed": {
       "id": "C5-LINUX-STAGE-A-ONCE-20261127",
       "source_sha": "304b24d71aef1c8e3e98211bb5e8ba2430932f4f",
@@ -536,7 +521,8 @@
     "Detached ef44885 standalone Linux Stage A source path uses existing bounded group capture and explicit absence probe; no real process, package, native, functional or full new module test. Historical Ubuntu image 20261122.23.1 and CP311.18 layout corroborated, actual exact host/rights/security disposition absent. No claim against escaped sessions or complete containment. Final reviewed source activation and one-use authority absent; no Stage B or phase advancement.",
     "Exact publisher build/publication correlation now established for PDFium pinned wheel, source branch 8149 and Brotli decoder compiled; direct exact Brotli checkout and independent cryptographic attestation verification absent. Specific pre-use disposition and host actual applicability still required. Detached 70ee69c C-D09 observed Python fingerprint is not independent provenance; no full module or actual run.",
     "Conditional PDFium generated-fixture recommendation is not general security clearance or exact compiled Brotli proof. Actual image and package observations required; 783027c refuses drift. No approved activation or execution and no Stage A or C5 credit.",
-    "Stage A 19/19 actual PASS at exact checkout 304b24d, one-use consumed. Full Linux profile and applicable browser/Rust/frontend final use not qualified; Pillow held and patched managed Chrome availability pending. No repeated Stage A use under consumed grant."
+    "Stage A 19/19 actual PASS at exact checkout 304b24d, one-use consumed. Full Linux profile and applicable browser/Rust/frontend final use not qualified; Pillow held and patched managed Chrome availability pending. No repeated Stage A use under consumed grant.",
+    "Corrected Pillow exact final CP311 wheel verified static and targeted Brotli version concern resolved; applicable pre-use rights/security and 49-row offline resolver/functional profile/browser checks remain. Wheel available only in current session; no durable custody assertion. No Windows or release adoption."
   ],
   "context": {
     "protocol": {
