@@ -1,10 +1,6 @@
 name: C5 CD10 Ubuntu security metadata once
 on:
   workflow_dispatch:
-  push:
-    branches: [feature/live-dev-workspace-20261023]
-    paths:
-      - .github/workflows/c5-cd10-ubuntu-security-metadata-once.yml
 permissions: {}
 jobs:
   metadata-once:
@@ -173,45 +169,3 @@ jobs:
           print("C5_CD10_METADATA " + json.dumps(receipt, sort_keys=True), flush=True)
           sys.exit(0 if receipt["status"] == "PASS" else 1)
           PY
-
-  readonly-apt-diagnosis:
-    if: >-
-      ${{ github.run_attempt == 1 && github.event_name == 'push' && github.ref == 'refs/heads/feature/live-dev-workspace-20261023' && github.event.head_commit.message == 'C5 read-only APT solver diagnosis once' }}
-    runs-on: ubuntu-24.04
-    timeout-minutes: 3
-    steps:
-      - name: Existing package cache and simulation only
-        shell: bash
-        run: |
-          set -euo pipefail
-          test "${ImageOS:-}" = ubuntu24
-          test "$(uname -m)" = x86_64
-          printf 'C5_APT_IMAGE=%s\n' "${ImageVersion:-unknown}"
-          names=(binutils binutils-common binutils-x86-64-linux-gnu libbinutils libctf0 libctf-nobfd0 libgprofng0 libsframe1)
-          pins=()
-          for name in "${names[@]}"; do pins+=("$name=2.42-4ubuntu2.11"); done
-          opts=(-o Dir::Cache::pkgcache= -o Dir::Cache::srcpkgcache= -o Debug::NoLocking=true)
-          scratch=$(mktemp -d "${RUNNER_TEMP}/pilotodin-apt-readonly.XXXXXX")
-          trap 'rm -rf -- "$scratch"' EXIT
-          before=$(sha256sum /var/lib/dpkg/status)
-          printf 'C5_APT_STATUS_BEFORE=%s\n' "$before"
-          /usr/bin/dpkg-query -W -f='${Package}\t${Architecture}\t${Version}\t${db:Status-Abbrev}\t${Depends}\t${Pre-Depends}\t${Breaks}\t${Conflicts}\n' > "$scratch/status.tsv"
-          awk -F '\t' '$1 ~ /^(binutils|libbinutils|libctf|libgprofng|libsframe)/ || ($4 ~ /^ii/ && ($5 $6 $7 $8) ~ /(binutils|libbinutils|libctf|libgprofng|libsframe)/)' "$scratch/status.tsv" | head -c 65536
-          printf '\nC5_APT_HOLDS\n'
-          /usr/bin/apt-mark showhold
-          printf 'C5_APT_POLICY\n'
-          /usr/bin/apt-cache "${opts[@]}" policy "${names[@]}"
-          printf 'C5_APT_SIMULATION_BEGIN\n'
-          set +e
-          /usr/bin/timeout 45s /usr/bin/apt-get "${opts[@]}" -s --no-download --no-install-recommends -o Debug::pkgProblemResolver=true install "${pins[@]}" > "$scratch/stdout" 2> "$scratch/stderr"
-          rc=$?
-          set -e
-          printf 'C5_APT_SIMULATION_RC=%s\n' "$rc"
-          printf 'C5_APT_STDOUT\n'
-          head -c 65536 "$scratch/stdout"
-          printf '\nC5_APT_STDERR\n'
-          head -c 65536 "$scratch/stderr"
-          printf '\nC5_APT_SIMULATION_END\n'
-          after=$(sha256sum /var/lib/dpkg/status)
-          test "$before" = "$after"
-          printf 'C5_APT_STATUS_UNCHANGED=1\nC5_APT_INSTALLATIONS=0\nC5_APT_EXPLICIT_NETWORK_REQUESTS=0\n'

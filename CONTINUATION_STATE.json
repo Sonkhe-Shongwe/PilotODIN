@@ -6,16 +6,16 @@
   },
   "checkpoint": {
     "operation_id": "C5-CD10-READONLY-APT-DIAGNOSIS-20261127",
-    "parent_sha": "2c42aa47fada01dfe326c42207e9bc6b7a950907",
-    "previous_snapshot_sha": "2c42aa47fada01dfe326c42207e9bc6b7a950907",
-    "scope": "Routine read-only source CI APT diagnosis; no new restricted grant.",
-    "state": "PREPARED",
+    "parent_sha": "9d67cab0eb5fbb7e914ffa0150cce1f54f7b8d90",
+    "previous_snapshot_sha": "9d67cab0eb5fbb7e914ffa0150cce1f54f7b8d90",
+    "scope": "Reconcile actual standard APT diagnostic and restore disarmed metadata workflow.",
+    "state": "RECONCILED",
     "receipt": {
-      "path": "docs/C5_CD10_AUTHENTICATED_METADATA_RECEIPT_2026-11-27.md",
-      "anchor": "pilotodin--c-d10-corrected-one-use-authenticated-ubuntu-metadata-receipt",
-      "blob_sha": "cee63c29e993eda889d45dd6e1fc254808d94d55",
+      "path": "docs/C5_CD10_NORMAL_APT_DIAGNOSIS_2026-11-27.md",
+      "anchor": "pilotodin--c-d10-standard-read-only-apt-diagnosis",
+      "blob_sha": "4982da04099c899ca09454fa73f77ae1f9d5acf3",
       "start_line": 1,
-      "end_line": 19
+      "end_line": 24
     }
   },
   "product": {
@@ -117,16 +117,23 @@
   },
   "task": {
     "id": "C5-REPRODUCIBLE-BUILD-INPUTS-20261125",
-    "status": "PREPARED",
+    "status": "BLOCKED",
     "scope": "C-D08 development reproducibility/build safety as revised by C-D09 limited managed-development evidence method; D native and P8 release boundaries unchanged.",
-    "blocker": "Actual signed metadata verified all eight .11 package records (4358516 bytes); APT cache pin bindings passed on observed .10 runner. Actual APT simulation refused and solver details not captured. No exact safe update transaction; corrected replacement exhausted. Existing inspection driver disarmed.",
-    "next_action": "Issue reviewed routine read-only APT diagnosis once; reconcile exact run and restore disarmed metadata workflow; no download or package change.",
-    "next_action_kind": "RECONCILE",
+    "blocker": "Normal APT cache on observed image 20261116.133.1 lacks all eight .11 pins; solver returns version-not-found, no holds. Previous signed index confirms .11 expected pins, previous isolated solver cause remains unknown. Need current authenticated security index in normal dependency context and precise successful simulation, or reviewed patched provider image.",
+    "next_action": "Prepare one exact bounded standard authenticated Ubuntu security index refresh in normal dependency context for fresh explicit network approval; retain previous eight .11 hash/size pins, capture precise solver output, refuse any unexpected package change. No redundant stale-cache run, identity-only metadata retrieval, extra verifier, broad upgrade or actual installation without exact approval. If reviewed patched provider image appears first prefer it. Preserve disarmed inspection driver and original C5/P4/E2/G2/D/P8 gates.",
+    "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "Complete applicable rights and static linkage, conditional exact PDFium source integration and final managed source-test candidate; explicit bounded execution permission, no owner/native/installer.",
       "Run authorised exact Stage A/B and consolidated Windows/Linux development regressions, standalone Rust and browser-dev, final checklist audit; C5 closure only on evidence. D/G2 and phase gates unchanged."
     ],
     "read": [
+      {
+        "path": "docs/C5_CD10_NORMAL_APT_DIAGNOSIS_2026-11-27.md",
+        "anchor": "pilotodin--c-d10-standard-read-only-apt-diagnosis",
+        "blob_sha": "4982da04099c899ca09454fa73f77ae1f9d5acf3",
+        "start_line": 1,
+        "end_line": 24
+      },
       {
         "path": "docs/C5_CD10_AUTHENTICATED_METADATA_RECEIPT_2026-11-27.md",
         "anchor": "pilotodin--c-d10-corrected-one-use-authenticated-ubuntu-metadata-receipt",
@@ -275,17 +282,17 @@
   },
   "operation": {
     "id": "C5-CD10-READONLY-APT-DIAGNOSIS-20261127",
-    "state": "PREPARED",
+    "state": "RECONCILED",
     "starting_sha": "2c42aa47fada01dfe326c42207e9bc6b7a950907",
-    "scope": "One disposable Ubuntu24.04 source CI job; existing installed dpkg records, holds, normal cached APT policy and standard -s --no-download simulation only. No checkout, secrets, network acquisition, sudo, update or install. Existing metadata job remains false. Bounded diagnostic stdout/stderr and compare dpkg status hashes.",
-    "intended_paths": [
-      ".github/workflows/c5-cd10-ubuntu-security-metadata-once.yml"
-    ],
-    "expected_workflow_blob": "f4119231795fabd3a6dfd271c8df09f050099108",
-    "expected_commit_message": "C5 read-only APT solver diagnosis once",
-    "expected_evidence": "C5_APT_IMAGE, actual installed reverse dependencies/holds/policy, simulation return and solver stderr, status unchanged; no restricted execution or acceptance.",
-    "reconcile_before_retry": true,
-    "recovery": "Inspect exact activation run/job/logs and restore original false/manual workflow after terminal result; no restricted operation reactivation."
+    "outcome": "Run 45974012246 job 140421130470 SUCCESS diagnostics; original metadata skipped. Image 20261116.133.1, .10 installed/candidate, all eight .11 pins absent normal cached lists, zero holds, actual simulation rc100 exact version-not-found stderr, dpkg status unchanged. Prior isolated solver cause remains unknown. No installation/acquisition/score.",
+    "reconcile_before_retry": false,
+    "receipt": {
+      "path": "docs/C5_CD10_NORMAL_APT_DIAGNOSIS_2026-11-27.md",
+      "anchor": "pilotodin--c-d10-standard-read-only-apt-diagnosis",
+      "blob_sha": "4982da04099c899ca09454fa73f77ae1f9d5acf3",
+      "start_line": 1,
+      "end_line": 24
+    }
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next.",
