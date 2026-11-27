@@ -6,10 +6,10 @@
   },
   "checkpoint": {
     "operation_id": "C5-BROWSER-SMOKE-ONCE-20261127",
-    "parent_sha": "f1d286097ec5b5d8cca5b2dd4ed5849242f6a86b",
-    "previous_snapshot_sha": "f1d286097ec5b5d8cca5b2dd4ed5849242f6a86b",
-    "scope": "Exact approved bounded corrected browser smoke write-ahead, no execution yet.",
-    "state": "PREPARED",
+    "parent_sha": "fd5de351ad1f0b9f7f9ff72411f37d4d540e90ce",
+    "previous_snapshot_sha": "fd5de351ad1f0b9f7f9ff72411f37d4d540e90ce",
+    "scope": "Exact one-use corrected browser smoke activation issued, reconcile before any retry.",
+    "state": "ISSUED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
       "anchor": "27-november--exact-owner-approved-corrected-browser-smoke-write-ahead",
@@ -135,10 +135,10 @@
   },
   "task": {
     "id": "C5-LINUX-FIRST-20261127",
-    "status": "PREPARED",
+    "status": "IN_PROGRESS",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "Exact one-use execution approved, awaiting activation and actual outcome.",
-    "next_action": "Bind exact one-use marker and reviewed workflow to prepared parent, publish once, reconcile actual job and disarm. No replay.",
+    "blocker": "One-use activation issued; actual run must be reconciled.",
+    "next_action": "Inspect exact activation HEAD and actual run/job logs, record terminal evidence, disarm marker/workflow. No replay.",
     "next_action_kind": "RECONCILE",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
@@ -311,7 +311,7 @@
   },
   "operation": {
     "id": "C5-BROWSER-SMOKE-ONCE-20261127",
-    "state": "PREPARED",
+    "state": "ISSUED",
     "starting_sha": "f1d286097ec5b5d8cca5b2dd4ed5849242f6a86b",
     "scope": "One nonroot Ubuntu 24.04 x64 disposable job, attempt 1, five minutes, exact detached 920df39, Chrome 158.0.8127.88-1 managed or authenticated Google scratch route, Playwright and core 1.65.1 exact hashes, maximum six fixed acquisition GETs and 163620096 accepted body bytes, no redirect/retry/proxy/fallback, no package system installation or host/security changes. Standard CI checkout control plane distinct from fixed input-body budget; no host egress isolation claim. No backend/Pillow/owner data/native product/model/installer.",
     "source_sha": "920df394447648564863665e01acc38f2b066251",
@@ -330,7 +330,12 @@
     },
     "expected_evidence": "Exact one-job attempt 1 run, source/tree/blob/syntax preflight, actual managed or authenticated Chrome and verified npm input checks, actual generated fixture PASS only if exit/group refusal passes; otherwise actual failure logs, no replay.",
     "recovery": "Inspect live HEAD, exact marker/workflow diff and run/job status. Never rerun started or uncertain activation. Disarm exact owned workflow and remove marker after terminal evidence; preserve historical logs.",
-    "reconcile_before_retry": false
+    "reconcile_before_retry": true,
+    "activation_parent": "fd5de351ad1f0b9f7f9ff72411f37d4d540e90ce",
+    "workflow": ".github/workflows/c5-browser-smoke-once.yml",
+    "workflow_blob": "18a2d86162f7710277aabad60eb4920300a5b2fd",
+    "marker": "qa/c5_managed_dev/APPROVAL_BROWSER_SMOKE_ONCE_20261127.json",
+    "marker_blob": "c2deffb4d56c77037b107424acc4516c6a9ee6a1"
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next.",
@@ -338,7 +343,7 @@
     "restricted_active": [
       {
         "id": "C5-BROWSER-SMOKE-ONCE-20261127",
-        "state": "APPROVED",
+        "state": "ISSUED",
         "source_sha": "920df394447648564863665e01acc38f2b066251",
         "scope": "One nonroot Ubuntu 24.04 x64 disposable job, attempt 1, five minutes, exact detached 920df39, Chrome 158.0.8127.88-1 managed or authenticated Google scratch route, Playwright and core 1.65.1 exact hashes, maximum six fixed acquisition GETs and 163620096 accepted body bytes, no redirect/retry/proxy/fallback, no package system installation or host/security changes. Standard CI checkout control plane distinct from fixed input-body budget; no host egress isolation claim. No backend/Pillow/owner data/native product/model/installer.",
         "owner_authority_ref": {
@@ -348,7 +353,7 @@
           "start_line": 453,
           "end_line": 455
         },
-        "reconcile_before_retry": false
+        "reconcile_before_retry": true
       }
     ],
     "consumed_disarmed_count": 48,
