@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 // Modified by PilotODIN (2026-11-24): retained own-job accounting query and
-// best-effort termination on a failed resume. Upstream licence retained.
+// best-effort termination on a failed resume. DLA 2026-11-28 adds opt-in
+// QA-only original-handle and listener witnesses. Upstream licence retained.
 
 //! Job object backing `process_group` on Windows, adapted from
 //! [process-wrap](https://github.com/watchexec/process-wrap) (Apache-2.0 OR MIT).
@@ -50,7 +51,10 @@ impl JobObject {
         if job.is_null() {
             return Err(io::Error::last_os_error());
         }
-        let job = Self(job, #[cfg(feature = "dla-qa-listener")] original);
+        #[cfg(feature = "dla-qa-listener")]
+        let job = Self(job, original);
+        #[cfg(not(feature = "dla-qa-listener"))]
+        let job = Self(job);
         if unsafe { AssignProcessToJobObject(job.0, child.as_raw_handle()) } == 0 {
             return Err(io::Error::last_os_error());
         }

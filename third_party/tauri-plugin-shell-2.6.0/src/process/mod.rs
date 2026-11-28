@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 // Modified by PilotODIN (2026-11-24): opaque retained Windows job witness.
-// No new webview commands or permissions. Upstream licence retained.
+// DLA 2026-11-28 adds opt-in QA-only listener witnesses. No new webview
+// commands or permissions. Upstream licence retained.
 
 use std::{
     ffi::OsStr,

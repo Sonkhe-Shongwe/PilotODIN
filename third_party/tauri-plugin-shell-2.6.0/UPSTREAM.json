@@ -52,6 +52,6 @@
     "src/scope.rs": "cbc096c439872c4fb4a26e77f89e2d14517d6e27",
     "src/scope_entry.rs": "61eff93cc5bd0ecd0df58507afcb3d237178bd76"
   },
-  "api": "OwnedJob (Windows Rust only): retain via CommandChild::owned_job, terminate, active_processes; no raw handle/PID/assignment API",
-  "verification": "Source review and Cargo metadata only; native compile/runtime not authorized or verified."
+  "api": "OwnedJob (Windows Rust only): retain via CommandChild::owned_job, terminate, active_processes; opt-in DLA QA feature adds original-handle-bound PID/creation-time and listener witnesses, no arbitrary PID lookup, raw handle export, assignment or IPC API",
+  "verification": "Original source review and Cargo metadata only; DLA QA feature prepared in detached source, no new Cargo resolution, compile or native runtime verification authorized or performed."
 }

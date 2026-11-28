@@ -3,6 +3,7 @@ import hashlib
 import io
 import json
 import sys
+import tempfile
 import unittest
 import zipfile
 from pathlib import Path
@@ -43,6 +44,27 @@ class Stage1(unittest.TestCase):
         raw = archive([("a.dll", b"x")])
         with self.assertRaises(Blocked):
             d._inspect_snapshot(raw, len(raw), "0" * 64)
+
+    def test_original_exact_inventory_route(self):
+        from tools import c5_archive_preflight as z
+        raw = archive([("a.dll", b"one"), ("b.dll", b"two")])
+        rows = {
+            "a.dll": {"bytes": 3, "sha256": hashlib.sha256(b"one").hexdigest()},
+            "b.dll": {"bytes": 3, "sha256": hashlib.sha256(b"two").hexdigest()}}
+        expected = {"bytes": len(raw), "sha256": hashlib.sha256(raw).hexdigest(),
+                    "members": rows}
+        with tempfile.TemporaryDirectory(prefix="dla-generated-") as directory:
+            path = Path(directory) / "generated.zip"
+            path.write_bytes(raw)
+            self.assertEqual(z.verified_candidate_snapshot(path, expected), raw)
+            wrong = {**expected, "members": {"a.dll": rows["a.dll"]}}
+            with self.assertRaises(Blocked):
+                z.verify_candidate_archive(path, wrong)
+            wrong = {**expected, "members": {**rows, "b.dll": {
+                "bytes": 3, "sha256": "0" * 64}}}
+            with self.assertRaises(Blocked):
+                z.verify_candidate_archive(path, wrong)
+            self.assertEqual(path.read_bytes(), raw)
 
     def test_granite_and_production_remain_disarmed(self):
         row = {"bytes": 1, "sha256": "a" * 64}
