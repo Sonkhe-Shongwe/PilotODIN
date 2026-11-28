@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-MHTA-RUN-NAMESPACE-B-TOPOLOGY-ONCE-20261128",
-    "parent_sha": "d3b72b0f309de04b9fdb6be1c15a7e7aaf1b5a89",
-    "previous_snapshot_sha": "d3b72b0f309de04b9fdb6be1c15a7e7aaf1b5a89",
-    "scope": "One disposable Ubuntu 24.04 job, five minutes, attempt 1, two pinned checkouts, 88 mandatory generated tests, at most one conditional privileged B fixture and one exact owned failed-service reset; zero package downloads, installations, retries or A repetitions. Verify all eight runtime safeguards, preserve original security and acceptance requirements, original 13 and four B facts, historical failures. No automatic qualification, archive custody operations, downstream execution, direct cgroup writes, root worker/parser, owner data, native work, installer or phase advance.",
+    "operation_id": "PRODUCT-FIRST-V2-20261128",
+    "parent_sha": "bcbceb51dca20baf5b99d4beff5a94037d1abb5b",
+    "previous_snapshot_sha": "bcbceb51dca20baf5b99d4beff5a94037d1abb5b",
+    "scope": "Owner-approved PRODUCT-FIRST V2 architecture direction and documentation/continuation consolidation only. Existing acceptance methods, trust boundaries, all original product requirements and execution restrictions unchanged.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "28-november--topology-b-startup-observed-shared-cgroup-refusal-and-one-use-disarm",
-      "blob_sha": "1dcdb1ec4862c07641ba39990b2e984743f3580d",
-      "start_line": 1093,
-      "end_line": 1109
+      "anchor": "28-november--owner-approved-product-first-v2-architecture-and-continuation-consolidation",
+      "blob_sha": "b760c69dae88166d96038a19eb2806c6352057ee",
+      "start_line": 1111,
+      "end_line": 1115
     }
   },
   "product": {
@@ -134,227 +134,45 @@
     }
   },
   "task": {
-    "id": "C5-LINUX-FIRST-20261127",
-    "status": "BLOCKED",
-    "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "Topology B startup observed but CG_SHARED worker evidence refusal; original 4/13, B 1/4, full runtime protection/settlement/cleanup and Dynamic UID custody unverified. Exact grant consumed/disarmed; route parked under finite PRODUCT-FIRST rule.",
-    "next_action": "Retain PRODUCT-FIRST parking of managed-host containment route. Owner review of independent concrete P4 source engineering within existing authority or a distinct supported alternative method preserving all original security/custody/settlement and acceptance requirements. No speculative variants, replay, new restricted execution, acquisition, custody or automatic downstream work. Reduced inspection held.",
-    "next_action_kind": "OWNER_DECISION",
+    "id": "P4-PRODUCT-FIRST-V2-DESIGN-20261128",
+    "status": "READY",
+    "scope": "Prepare finite simplified C5 development architecture and independent supported G2 evidence feasibility, plus requirement-oriented test coverage under PRODUCT-FIRST V2; no implementation or restricted execution.",
+    "blocker": "",
+    "next_action": "Produce one finite C5 design disposition: exact single-owner unprivileged staging and standard locked input pipeline against original containment, independently positive settlement, custody, security/rights, request/body limits and all eight rows. Specify supported alternative with exact requirement-to-control mapping or definitive no-go. In parallel compare supported Windows prevention/evidence options against all eleven G2 blockers and map existing tests to E-01–E-24/W01–W10 and six P4 checks. No new verifier, speculative diagnostics, implementation or execution; separately review any proposed replacement method before exact execution approval.",
+    "next_action_kind": "PREPARE",
     "after": [
-      "Topology B route parked after CG_SHARED refusal; full cgroup topology, runtime protection, settlement and cleanup unverified. Separate owner method decision mandatory, no replay or further speculative variants; archive custody held.",
-      "Resolve actual Linux pre-use rights/security and custody, reuse Stage A 19/19, complete applicable functional/profile/frontend/browser and exact original full regressions; close C5 only on all eight rows. Verify Windows-specific inputs/compatibility before separately authorised production-equivalent D1; no installer. Independently actionable P4 source work remains permitted only under existing policy.",
-      "Resolve D1/D2, G2 and original early E2 physical 8 GB offline bundled AI/coexistence, R06 and remaining P4 acceptance; Gate C before real prediction use. If feasibility fails, seek explicit owner product decision, not silent deferral. No phase advance without evidence and owner signoff."
+      "Owner reviews exact proposed C5/G2 method(s), residual risk and finite acceptance contract; no silent waiver or adoption. If unsupported, park method and return product decision. Preserve Linux-first allocation and Windows-specific evidence before D1.",
+      "Only after applicable exact method and execution approvals, fulfil C5 rows 5–8 via compatible verified inputs and full original regressions; then actual D1/D2 with production identity/bundled engine/positive settlement and independent security evidence. Independent concrete source work remains limited to existing authority; no new implementation under V2 direction alone.",
+      "Resolve R03.3/R03.4 early E2 physical 8 GB offline bundled AI/coexistence, R06.1 incident disposition/R06.2 prospective preservation, R02.5/R02.6 and Gate C before real prediction; no P4 closure or P5/installer before required evidence and owner signoff."
     ],
     "read": [
       {
+        "path": "docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md",
+        "anchor": "28-november-2026--owner-approved-product-first-v2-architecture-direction",
+        "blob_sha": "3082f8cafd0b50c8e6e050cdc8d8e87e7557b18b",
+        "start_line": 315,
+        "end_line": 321
+      },
+      {
+        "path": "docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md",
+        "anchor": "0-product-first-v2-finite-delivery-plan",
+        "blob_sha": "2a8166a4156b6393d76490400c231caabd4f79b8",
+        "start_line": 7,
+        "end_line": 23
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "28-november--owner-approved-product-first-v2-architecture-and-continuation-consolidation",
+        "blob_sha": "b760c69dae88166d96038a19eb2806c6352057ee",
+        "start_line": 1111,
+        "end_line": 1115
+      },
+      {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--topology-b-startup-observed-shared-cgroup-refusal-and-one-use-disarm",
-        "blob_sha": "1dcdb1ec4862c07641ba39990b2e984743f3580d",
+        "blob_sha": "b760c69dae88166d96038a19eb2806c6352057ee",
         "start_line": 1093,
         "end_line": 1109
-      },
-      {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "28-november--owner-authorised-exact-namespace-b-topology-once",
-        "blob_sha": "eb6b9a0b0a776c2e4aa0dc161414cc5a82ba8aaa",
-        "start_line": 1089,
-        "end_line": 1091
-      },
-      {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "28-november--owner-approved-b-topology-correction-and-combined-regression",
-        "blob_sha": "f40d362104ccdad9c7c41faa12e158ae8e3e0327",
-        "start_line": 1075,
-        "end_line": 1087
-      },
-      {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "28-november--namespace-b-startup-observed-cgroup-mount-count-refusal-and-one-use-disarm",
-        "blob_sha": "ddeba3537520131f8c9f3a1e48d91186ae6090b2",
-        "start_line": 1057,
-        "end_line": 1073
-      },
-      {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "28-november--owner-authorised-exact-namespace-b-private-runtime-once",
-        "blob_sha": "c511bb2bd1c4c1fe435fc31aa199a26e6e1afb95",
-        "start_line": 1053,
-        "end_line": 1055
-      },
-      {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "28-november--combined-b-generated-regression-pass-and-exact-inert-execution-binding",
-        "blob_sha": "e8f221eced6967856c06a20163aa3dbad15cd00f",
-        "start_line": 1043,
-        "end_line": 1051
-      },
-      {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "28-november--owner-approved-detached-b-private-runtime-preparation-and-targeted-regression",
-        "blob_sha": "da6fafb34aaaab1bc2e6edb160604e64e81a6e16",
-        "start_line": 1031,
-        "end_line": 1041
-      },
-      {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "28-november--read-only-namespace-b-equivalence-assessment-and-bounded-preparation-proposal",
-        "blob_sha": "e023b835f49fb9d4667b9b72434ff78f395cee99",
-        "start_line": 1017,
-        "end_line": 1029
-      },
-      {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "28-november--namespace-a-cleanup-terminal-226-with-complete-owned-failure-cleanup-and-one-use-disarm",
-        "blob_sha": "51fe5fe9eea41774f6ee1d88093c29674b086698",
-        "start_line": 999,
-        "end_line": 1015
-      },
-      {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "28-november--owner-authorised-exact-namespace-a-cleanup-once",
-        "blob_sha": "28d5866c51b6d2a4293650dc2da6157af5fb7df9",
-        "start_line": 995,
-        "end_line": 997
-      },
-      {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "28-november--owner-approved-a-cleanup-correction-and-inert-execution-binding",
-        "blob_sha": "d22f67117d5f5d70bd2bcb96c1237240d89ad522",
-        "start_line": 987,
-        "end_line": 993
-      },
-      {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "28-november--upstream-backed-failed-unit-cleanup-semantics-and-owner-decision",
-        "blob_sha": "d22f67117d5f5d70bd2bcb96c1237240d89ad522",
-        "start_line": 981,
-        "end_line": 985
-      },
-      {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "28-november--namespace-a-diagnostic-confirmed-226-cleanup-timeout-and-one-use-disarm",
-        "blob_sha": "d22f67117d5f5d70bd2bcb96c1237240d89ad522",
-        "start_line": 963,
-        "end_line": 979
-      },
-      {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "28-november--owner-authorised-original-namespace-a-diagnostic-once",
-        "blob_sha": "d22f67117d5f5d70bd2bcb96c1237240d89ad522",
-        "start_line": 959,
-        "end_line": 961
-      },
-      {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "28-november--integrated-a-only-namespace-diagnostic-and-fresh-inert-binding",
-        "blob_sha": "d22f67117d5f5d70bd2bcb96c1237240d89ad522",
-        "start_line": 951,
-        "end_line": 957
-      },
-      {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "28-november--disarmed-a-only-diagnostic-attempt-collector-and-cleanup-preparation",
-        "blob_sha": "d22f67117d5f5d70bd2bcb96c1237240d89ad522",
-        "start_line": 945,
-        "end_line": 949
-      },
-      {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "28-november--upstream-backed-namespace-ab-diagnostic-preparation",
-        "blob_sha": "d22f67117d5f5d70bd2bcb96c1237240d89ad522",
-        "start_line": 937,
-        "end_line": 943
-      },
-      {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "28-november--quiet-fixture-terminal-nonzero-manager-exit-and-one-use-disarm",
-        "blob_sha": "d22f67117d5f5d70bd2bcb96c1237240d89ad522",
-        "start_line": 919,
-        "end_line": 935
-      },
-      {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "28-november--owner-authorised-quiet-isolated-fixture-once",
-        "blob_sha": "d22f67117d5f5d70bd2bcb96c1237240d89ad522",
-        "start_line": 915,
-        "end_line": 917
-      },
-      {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "28-november--full-quiet-correction-regression-and-fresh-inert-execution-decision",
-        "blob_sha": "d22f67117d5f5d70bd2bcb96c1237240d89ad522",
-        "start_line": 909,
-        "end_line": 913
-      },
-      {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "28-november--manager-stderr-correction-preparation-and-scoped-generated-checks",
-        "blob_sha": "d22f67117d5f5d70bd2bcb96c1237240d89ad522",
-        "start_line": 901,
-        "end_line": 907
-      },
-      {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "28-november--pristine-fixture-terminal-manager-refusal-and-one-use-disarm",
-        "blob_sha": "d22f67117d5f5d70bd2bcb96c1237240d89ad522",
-        "start_line": 883,
-        "end_line": 899
-      },
-      {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "28-november--full-pristine-regression-and-fresh-inert-execution-decision",
-        "blob_sha": "d22f67117d5f5d70bd2bcb96c1237240d89ad522",
-        "start_line": 873,
-        "end_line": 877
-      },
-      {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "28-november--managed-hosted-assurance-terminal-refusal-and-one-use-disarm",
-        "blob_sha": "d22f67117d5f5d70bd2bcb96c1237240d89ad522",
-        "start_line": 845,
-        "end_line": 861
-      },
-      {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "28-november--upstream-backed-pristine-slice-admission-correction",
-        "blob_sha": "d22f67117d5f5d70bd2bcb96c1237240d89ad522",
-        "start_line": 863,
-        "end_line": 871
-      },
-      {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "28-november--owner-approved-managed-hosted-tool-assurance-and-disarmed-consolidated-candidate",
-        "blob_sha": "d22f67117d5f5d70bd2bcb96c1237240d89ad522",
-        "start_line": 809,
-        "end_line": 829
-      },
-      {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "28-november--owner-approved-reduced-static-receipt-and-custody-binding-preparation",
-        "blob_sha": "d22f67117d5f5d70bd2bcb96c1237240d89ad522",
-        "start_line": 725,
-        "end_line": 733
-      },
-      {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "28-november--retained-evidence-and-reduced-static-inspection-decision",
-        "blob_sha": "d22f67117d5f5d70bd2bcb96c1237240d89ad522",
-        "start_line": 717,
-        "end_line": 723
-      },
-      {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "27-november--owner-approved-linux-first-c5-allocation-and-exact-reduced-input-plan",
-        "blob_sha": "d22f67117d5f5d70bd2bcb96c1237240d89ad522",
-        "start_line": 211,
-        "end_line": 219
-      },
-      {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "27-november--linux-stage-a-actual-19-test-pass-and-one-use-disarm",
-        "blob_sha": "d22f67117d5f5d70bd2bcb96c1237240d89ad522",
-        "start_line": 317,
-        "end_line": 323
       },
       {
         "path": "docs/PILOTODIN_PACKAGE_C_RESOURCE_TRUST_SPEC_2026-11-24.md",
@@ -369,32 +187,46 @@
         "blob_sha": "a75a9bbe10f82e8b62a8331d6a59741135f03402",
         "start_line": 5,
         "end_line": 18
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "28-november--owner-approved-reduced-static-receipt-and-custody-binding-preparation",
+        "blob_sha": "b760c69dae88166d96038a19eb2806c6352057ee",
+        "start_line": 725,
+        "end_line": 733
+      },
+      {
+        "path": "docs/P4_R02_5_G2_CONSOLIDATED_CLOSURE_DECISION_2026-11-24.md"
+      },
+      {
+        "path": "docs/P4_D1_PRODUCTION_JOURNEY_REQUIREMENTS_2026-11-27.md"
+      },
+      {
+        "path": "docs/PROJECT_STATUS_CURRENT.md",
+        "anchor": "p4-engineering-scorecard",
+        "blob_sha": "90cbcba05e7ed2e33edcee991cd6f7beee02b099",
+        "start_line": 31,
+        "end_line": 60
       }
     ]
   },
   "operation": {
-    "id": "C5-MHTA-RUN-NAMESPACE-B-TOPOLOGY-ONCE-20261128",
+    "id": "PRODUCT-FIRST-V2-20261128",
     "state": "RECONCILED",
-    "starting_sha": "657c7fd75449bacd728018d26a27084e58b82cf3",
-    "outcome": "Actual topology B run 46139755871 attempt 1: 88/88 generated tests pass; startup observed and properties true; CG_SHARED refusal; original 4/13, B 1/4, cleanup unverified, qualification false; consumed/disarmed. Route parked, no replay or downstream execution.",
+    "starting_sha": "bcbceb51dca20baf5b99d4beff5a94037d1abb5b",
+    "outcome": "Architecture direction recorded; finite six-package preparation plan and documentation audit consolidated. No method adoption, execution, code, lock, workflow, acceptance or score change.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "28-november--topology-b-startup-observed-shared-cgroup-refusal-and-one-use-disarm",
-      "blob_sha": "1dcdb1ec4862c07641ba39990b2e984743f3580d",
-      "start_line": 1093,
-      "end_line": 1109
-    },
-    "source_sha": "35ae3127c3d10f8ea74d3f30df1df3571cc1a38c",
-    "candidate_sha": "a734fefb9f147d0095190d816e11df95eaecf604",
-    "write_ahead_sha": "6273302fb3b4122bfcae40bd3b38fba5ae0eb4ad",
-    "activation_sha": "d3b72b0f309de04b9fdb6be1c15a7e7aaf1b5a89",
-    "run_id": 46139755871,
-    "job_id": 140962845332
+      "anchor": "28-november--owner-approved-product-first-v2-architecture-and-continuation-consolidation",
+      "blob_sha": "b760c69dae88166d96038a19eb2806c6352057ee",
+      "start_line": 1111,
+      "end_line": 1115
+    }
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next. Owner-approved GitHub-only development installation and bounded technical autonomy amendment applies within exact approved batches; no broader authority.",
-    "preparation_only": "Owner approved consolidated shared-bundle disarmed acquisition-before-signature source and exact limited existing host bootstrap; owner approved proposed limited local Docker control-plane and host-derived rootfs trust/no-pull isolation method for preparation only. Authentication before extraction/use; no Docker invocation, acquisition, verification execution, installation or live cutover authorised. Owner approved bounded first-collision encoded public member-path diagnostic preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-bounded-first-collision-diagnostic-preparation-only. No restricted execution authority. Owner approved finite exact Linux data-only terminfo inventory policy and bounded receipt projection as proposed in 8cc1a696, preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-finite-exact-linux-terminfo-inventory-policy-and-bounded-receipt-preparation-only. Strict Windows/gh and other safeguards unchanged; no acquisition, extraction or restricted execution. Owner explicitly approved preparation and static/synthetic verification only of Approach C observation-only candidate (11 fixed roles, five minutes); no restricted execution, acquisition, Docker invocation or active policy change. Exact reference in C5 spec owner-approved-bounded-approach-c-observation-candidate-preparation-only. Owner approved Approach C metadata-only preparation/static/synthetic verification under 13 GET/10-minute proposed limits; no actual acquisition, package downloads, installation, Docker invocation, restricted execution or active trust policy change. Exact spec anchor owner-approved-bounded-approach-c-metadata-only-preparation-and-synthetic-core. Owner approved narrow metadata bootstrap preparation on existing two reviewed images including GnuPG/necessary existing dependencies, no acquisition/restricted execution/integrated verification/active policy change, original 13 GET/10 min bounds. Exact spec anchor owner-approved-narrow-metadata-bootstrap-preparation-and-finite-key-evidence-contract. Owner approved two-stage key/metadata sequence preparation including bounded public signing-key private repository retention proposal, combined 13 GET/600s/256 MiB; no actual acquisition, restricted execution or active policy change. Exact spec anchor owner-approved-two-stage-preparation-and-consolidated-custody-core. Owner approved exact C-D09 managed-development CI evidence rationalisation at proposal 2cbed51, recorded in C5 implementation spec; limited bootstrap trust and residual risk accepted, prepare concrete bounded validation candidate only, no acquisition, installation, restricted execution, migration, new expenditure or phase advancement. Owner approved one-time C5 proportionate publisher-first inspection method (okay lets try that), recorded at docs/C5_PROPORTIONATE_INSPECTION_DECISION_2026-11-27.md; no new restricted authority or acceptance waiver. Owner explicitly approved standalone Windows Stage A preparation preserving all security and acceptance requirements; see docs/C5_STANDALONE_WINDOWS_A_PREPARATION_2026-11-27.md. No restricted execution grant. Owner explicitly approved exact Astral CPython 3.11.18 Windows x64 candidate for standalone Stage A preparation only; docs/C5_WINDOWS_A_ASTRAL_PREPARATION_2026-11-27.md. No new restricted grant. Owner explicitly approved simplified C5 applicability-based development policy and preparation of consolidated Stage A transaction; see ENGINEERING_DECISIONS_CURRENT.md section 27-november--owner-approved-c5-applicability-policy-and-consolidated-stage-a-transaction. No restricted authority or acceptance waiver. Owner explicitly approved bounded G2 equivalent evidence feasibility assessment and design only; see ENGINEERING_DECISIONS_CURRENT.md section 27-november--g2-equivalent-evidence-feasibility-and-design-disposition. Assessment complete, no implementation, live method adoption or restricted execution authority. Owner adopted aggressive product-first framework (okay lets follow you new frame work); PRODUCT-FIRST-20261127 in phase policy. Independent concrete scoped P4 source work and narrowly rationalised standard C5 control metadata preparation, no new restricted execution grant. Owner approved preparation of bounded browser-only GitHub verification (okay do ti); detached 26ab490, no activation/acquisition/execution grant; exact receipt in engineering decisions. Owner approved proceeding with corrected Chrome .88 and Playwright 1.65.1 alternative (do it), exact candidate 920df39 prepared; no exact bounded activation grant yet; preserve original locks. Owner explicitly approved isolated ReportLab 5.1.2 evaluation and coordinated dependency-range and lock preparation, preserving all security, acceptance and execution boundaries; exact owner decision in ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-isolated-reportlab-512-projections-and-metadata-holds. Detached 4dd5525 data-only proposal; no acquisition, installation, execution or live adoption authority. Owner explicitly approved reduced 24-artifact static inspection scope and exact execution-binding preparation, 24 direct GETs/104436509 bytes/30 minutes/one attempt/no redirects or retries, preserving all boundaries; ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-reduced-static-receipt-and-custody-binding-preparation. Preparation only; no actual GET, dispatch or installation authority. Owner explicitly approved preparation of bounded read-only hosted cgroup v2 feasibility observation, five minutes, one attempt, zero package downloads, no privilege or security changes; ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-read-only-cgroup-feasibility-preparation. No actual observation/dispatch or acquisition authority. Owner approved isolated method evaluation/preparation, prioritising existing provider isolation or constrained cgroup subtree; no execution/privileged operations/security modification/package acquisition without distinct authority; ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-isolated-method-evaluation-and-system-manager-projection. Owner explicitly approved preparation of proportionate Managed Hosted Tool Assurance as narrow C-D09 extension: standard Ubuntu package checks, observed executable identities and same-job rechecks; no independent reconstructed managed executable manifests; preserve containment/settlement/trusted privileged startup/dependency integrity/rights/original data/acceptance. No privilege/acquisition/installation or active workflows until exact separate approval. See ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-managed-hosted-tool-assurance-and-disarmed-consolidated-candidate. Owner approved narrow systemd service quiet/diagnostic source correction and generated regression only (okay lets do that); exact detached 88cdf6d, no privileged run or evidence method change. Owner approved finite upstream-supported /run diagnostic/restructuring preparation (lets do it), detached 8bbfc5a; no exact restricted grant, no security weakening or live method adoption. Owner explicitly approved narrow exact named failed-unit reset correction preparation and generated regression only; fresh clean A may serve as prospective B gate, historical failure unchanged, separate exact execution/B authority mandatory; detached 9840f65/c6ed4df. Owner explicitly accepts limited host-runtime isolation objective rather than literal /run inaccessibility and approves narrow detached B observer/wrapper and targeted generated regression preparation only; a2fd5f54fea557c8f0794fecb63211e14e277160, receipt 28-november--owner-approved-detached-b-private-runtime-preparation-and-targeted-regression. No execution, activation, acquisition, installation or automatic B. Owner approved narrow strict cgroup topology verification correction and generated regression (okay lets do that); detached 35ae3127c3d10f8ea74d3f30df1df3571cc1a38c and inert binding a734fefb9f147d0095190d816e11df95eaecf604; no execution, activation, acquisition, installation, retries or automatic downstream work.",
+    "preparation_only": "Owner approved consolidated shared-bundle disarmed acquisition-before-signature source and exact limited existing host bootstrap; owner approved proposed limited local Docker control-plane and host-derived rootfs trust/no-pull isolation method for preparation only. Authentication before extraction/use; no Docker invocation, acquisition, verification execution, installation or live cutover authorised. Owner approved bounded first-collision encoded public member-path diagnostic preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-bounded-first-collision-diagnostic-preparation-only. No restricted execution authority. Owner approved finite exact Linux data-only terminfo inventory policy and bounded receipt projection as proposed in 8cc1a696, preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-finite-exact-linux-terminfo-inventory-policy-and-bounded-receipt-preparation-only. Strict Windows/gh and other safeguards unchanged; no acquisition, extraction or restricted execution. Owner explicitly approved preparation and static/synthetic verification only of Approach C observation-only candidate (11 fixed roles, five minutes); no restricted execution, acquisition, Docker invocation or active policy change. Exact reference in C5 spec owner-approved-bounded-approach-c-observation-candidate-preparation-only. Owner approved Approach C metadata-only preparation/static/synthetic verification under 13 GET/10-minute proposed limits; no actual acquisition, package downloads, installation, Docker invocation, restricted execution or active trust policy change. Exact spec anchor owner-approved-bounded-approach-c-metadata-only-preparation-and-synthetic-core. Owner approved narrow metadata bootstrap preparation on existing two reviewed images including GnuPG/necessary existing dependencies, no acquisition/restricted execution/integrated verification/active policy change, original 13 GET/10 min bounds. Exact spec anchor owner-approved-narrow-metadata-bootstrap-preparation-and-finite-key-evidence-contract. Owner approved two-stage key/metadata sequence preparation including bounded public signing-key private repository retention proposal, combined 13 GET/600s/256 MiB; no actual acquisition, restricted execution or active policy change. Exact spec anchor owner-approved-two-stage-preparation-and-consolidated-custody-core. Owner approved exact C-D09 managed-development CI evidence rationalisation at proposal 2cbed51, recorded in C5 implementation spec; limited bootstrap trust and residual risk accepted, prepare concrete bounded validation candidate only, no acquisition, installation, restricted execution, migration, new expenditure or phase advancement. Owner approved one-time C5 proportionate publisher-first inspection method (okay lets try that), recorded at docs/C5_PROPORTIONATE_INSPECTION_DECISION_2026-11-27.md; no new restricted authority or acceptance waiver. Owner explicitly approved standalone Windows Stage A preparation preserving all security and acceptance requirements; see docs/C5_STANDALONE_WINDOWS_A_PREPARATION_2026-11-27.md. No restricted execution grant. Owner explicitly approved exact Astral CPython 3.11.18 Windows x64 candidate for standalone Stage A preparation only; docs/C5_WINDOWS_A_ASTRAL_PREPARATION_2026-11-27.md. No new restricted grant. Owner explicitly approved simplified C5 applicability-based development policy and preparation of consolidated Stage A transaction; see ENGINEERING_DECISIONS_CURRENT.md section 27-november--owner-approved-c5-applicability-policy-and-consolidated-stage-a-transaction. No restricted authority or acceptance waiver. Owner explicitly approved bounded G2 equivalent evidence feasibility assessment and design only; see ENGINEERING_DECISIONS_CURRENT.md section 27-november--g2-equivalent-evidence-feasibility-and-design-disposition. Assessment complete, no implementation, live method adoption or restricted execution authority. Owner adopted aggressive product-first framework (okay lets follow you new frame work); PRODUCT-FIRST-20261127 in phase policy. Independent concrete scoped P4 source work and narrowly rationalised standard C5 control metadata preparation, no new restricted execution grant. Owner approved preparation of bounded browser-only GitHub verification (okay do ti); detached 26ab490, no activation/acquisition/execution grant; exact receipt in engineering decisions. Owner approved proceeding with corrected Chrome .88 and Playwright 1.65.1 alternative (do it), exact candidate 920df39 prepared; no exact bounded activation grant yet; preserve original locks. Owner explicitly approved isolated ReportLab 5.1.2 evaluation and coordinated dependency-range and lock preparation, preserving all security, acceptance and execution boundaries; exact owner decision in ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-isolated-reportlab-512-projections-and-metadata-holds. Detached 4dd5525 data-only proposal; no acquisition, installation, execution or live adoption authority. Owner explicitly approved reduced 24-artifact static inspection scope and exact execution-binding preparation, 24 direct GETs/104436509 bytes/30 minutes/one attempt/no redirects or retries, preserving all boundaries; ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-reduced-static-receipt-and-custody-binding-preparation. Preparation only; no actual GET, dispatch or installation authority. Owner explicitly approved preparation of bounded read-only hosted cgroup v2 feasibility observation, five minutes, one attempt, zero package downloads, no privilege or security changes; ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-read-only-cgroup-feasibility-preparation. No actual observation/dispatch or acquisition authority. Owner approved isolated method evaluation/preparation, prioritising existing provider isolation or constrained cgroup subtree; no execution/privileged operations/security modification/package acquisition without distinct authority; ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-isolated-method-evaluation-and-system-manager-projection. Owner explicitly approved preparation of proportionate Managed Hosted Tool Assurance as narrow C-D09 extension: standard Ubuntu package checks, observed executable identities and same-job rechecks; no independent reconstructed managed executable manifests; preserve containment/settlement/trusted privileged startup/dependency integrity/rights/original data/acceptance. No privilege/acquisition/installation or active workflows until exact separate approval. See ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-managed-hosted-tool-assurance-and-disarmed-consolidated-candidate. Owner approved narrow systemd service quiet/diagnostic source correction and generated regression only (okay lets do that); exact detached 88cdf6d, no privileged run or evidence method change. Owner approved finite upstream-supported /run diagnostic/restructuring preparation (lets do it), detached 8bbfc5a; no exact restricted grant, no security weakening or live method adoption. Owner explicitly approved narrow exact named failed-unit reset correction preparation and generated regression only; fresh clean A may serve as prospective B gate, historical failure unchanged, separate exact execution/B authority mandatory; detached 9840f65/c6ed4df. Owner explicitly accepts limited host-runtime isolation objective rather than literal /run inaccessibility and approves narrow detached B observer/wrapper and targeted generated regression preparation only; a2fd5f54fea557c8f0794fecb63211e14e277160, receipt 28-november--owner-approved-detached-b-private-runtime-preparation-and-targeted-regression. No execution, activation, acquisition, installation or automatic B. Owner approved narrow strict cgroup topology verification correction and generated regression (okay lets do that); detached 35ae3127c3d10f8ea74d3f30df1df3571cc1a38c and inert binding a734fefb9f147d0095190d816e11df95eaecf604; no execution, activation, acquisition, installation, retries or automatic downstream work. Owner approved PRODUCT-FIRST V2 architecture direction and documentation cleanup (i approve also do a document, audit , clean uppdate, optimize (without losing key information)); finite C5/G2 and test coverage assessment only, no implementation or changed method/authority. See policy 28-november-2026--owner-approved-product-first-v2-architecture-direction.",
     "restricted_active": [],
     "consumed_disarmed_count": 64,
     "consumed_history": {
@@ -415,7 +247,7 @@
       "release",
       "replay of consumed or uncertain approval"
     ],
-    "guards": "59 restricted grants consumed/disarmed; zero active/pending. Exact run 46127278663 terminal MANAGER_COMMAND refusal; 31/31 generated tests, 8/8 packages, 7/7 tools, same_job_match=true, 4/13 facts true, slice/service requested; cleanup and settlement unverified. Prior run 46120862249 terminal PREEXISTING retained/disarmed. No replay/retry, no inferred remaining budget. See prior immutable state and ledger for all batch caps and preparation conditions. C1/C2 and OWNED_RESOURCE_ENABLED remain false; no fallback. Full P2/P4 dependency-consuming regressions held, not waived. Reduced inspection and custody held; PRODUCT-FIRST finite-method stop applies. Codespace stop and three consumed-variable cleanup unverified. Owner-local work uninspected/preserved. Fresh exact quiet fixture grant PREPARED only, no replay, prior two grants consumed. Quiet one-use activation issued; reconcile before any action, no replay. 60 consumed/disarmed, zero active. Quiet grant consumed terminal MANAGER_EXIT_NONZERO; no replay, prior grants unchanged; current fixture route parked per PRODUCT-FIRST. No additional restricted work. Fresh exact A-only approval PREPARED; no B or replay. A-only activation issued; reconcile before any action, no B or replay. 61 consumed/disarmed; zero active. A terminal attributed namespace 226, cleanup timeout, no B, replay or qualification. All prior failures preserved. Fresh exact A cleanup grant PREPARED only; no B or replay. A cleanup one-use activation issued; reconcile before action, no replay or B. 62 consumed/disarmed, zero active. Fresh A terminal attributed 226 with bounded owned failure cleanup COMPLETE, no successful-worker acceptance. Prior failures unchanged; B separate equivalence review and exact owner approval, never automatic, no replay. B preparation completed, 8/8 exact targeted tests, combined 72 outstanding; 62 consumed/disarmed, zero active. No restricted execution or activation; A failures preserved. B combined 72/72 local generated regression passed, 24 source/plan pins verified, exact inert binding 6e9c933eae5b205e26ea9898604dfa71313440ba; 62 consumed/disarmed, zero active. Distinct exact owner approval required before B execution; no replay or automatic downstream activation. Fresh exact B-only approval PREPARED, no replay, 62 previous consumed/disarmed; no automatic downstream execution or qualification. B-only one-use activation issued; reconcile before any further action; no replay. B-only terminal refusal CGROUP_MOUNT_COUNT after startup; 63 consumed/disarmed, zero active; no replay, no new privileged work or automatic downstream execution; B route parked pending owner review. Topology-only preparation 88/88 generated tests and 28/28 pins verified; separate exact execution approval required, 63 consumed/disarmed, zero active. No replay or inferred runtime equivalence. Fresh exact topology B-only approval PREPARED, no replay, 63 previous consumed/disarmed; no custody or automatic downstream execution or qualification. Topology B-only one-use activation issued; reconcile before any further action; no replay. Topology B-only terminal CG_SHARED refusal after startup; 64 consumed/disarmed, zero active; no replay, no new privileged work, no custody or automatic downstream execution. Managed-host route parked under PRODUCT-FIRST.",
+    "guards": "64 consumed/disarmed, zero active/pending. Latest run 46139755871 terminal CG_SHARED after startup; 88/88 generated tests, original 4/13, B1/4, cleanup unverified, qualification=false. Previous B 46137431814 CGROUP_MOUNT_COUNT and A failures retained. No replay, security weakening, retry-budget expansion or speculative verifier/collector variants. C1/C2 and OWNED_RESOURCE_ENABLED remain false, no fallback. Reduced inspection/custody and original full regressions held, not waived. C-D09 and prior exact development/technical retry bounds remain binding; no change to independent settlement, rights or evidence method until separately approved. V2 preparation only, no implementation, restricted execution, acquisition/installation, workflow activation, native/model/owner-data or phase work. Codespace stop/consumed-variable cleanup unverified; owner-local uninspected/preserved. Prior chronological guard text preserved at immutable parent state bcbceb51dca20baf5b99d4beff5a94037d1abb5b and exact engineering receipts.",
     "last_consumed": {
       "id": "C5-MHTA-RUN-NAMESPACE-B-TOPOLOGY-ONCE-20261128",
       "source_sha": "35ae3127c3d10f8ea74d3f30df1df3571cc1a38c",
@@ -847,7 +679,7 @@
     "G2 original issuing handle, independent physical destination and complete attributable mutation coverage unresolved; native runs 44838416004/45342345634 filesystem/network failures retained. G2 alternative feasibility NO-GO, G3/G4 pending; no method adoption or weakened evidence. D1 production identifier/bundled engine and real disposable Windows profile, IPC, DPAPI, network/durability and positive descendant settlement required, not external Python/Vite diagnostic equivalence.",
     "Original early E2 physical 8 GB offline bundled Qwen startup and coexistence with analytics/UI remain blocking acceptance obligations; ordinary available headroom previously prevented startup. Gate C unverified before real prediction use; if target feasibility cannot be demonstrated, seek explicit owner product decision, not silent deferral. R03.3/R03.4 outstanding, no P5 before P4 closure/signoff.",
     "R06 historical 74 original app-data differences, unknown writer; incident disposition and prospective owner-device interval/endpoint preservation remain open. R02.5/R02.6 unresolved; no owner data access or preservation claim. Owner-local work untouched/uninspected; Codespace stop and consumed-variable cleanup unverified.",
-    "All prior 88 detached candidate records and exact authority history preserved; owner recovery archive delivered for 1d033ce only, not current HEAD/full Git history/detached backup or build proof. Root LICENSE, NOTICE and SECURITY.md absent; explicit owner decision required. Installer frozen, P5 unauthorized, release not certified."
+    "All prior 100 detached candidate records and exact authority history preserved; owner recovery archive delivered for 1d033ce only, not current HEAD/full Git history/detached backup or build proof. Root LICENSE, NOTICE and SECURITY.md absent; explicit owner decision required. Installer frozen, P5 unauthorized, release not certified."
   ],
   "context": {
     "protocol": {
@@ -856,38 +688,38 @@
     "governance": [
       {
         "path": "docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md",
+        "anchor": "28-november-2026--owner-approved-product-first-v2-architecture-direction",
+        "blob_sha": "3082f8cafd0b50c8e6e050cdc8d8e87e7557b18b",
+        "start_line": 315,
+        "end_line": 321
+      },
+      {
+        "path": "docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md",
+        "anchor": "0-product-first-v2-finite-delivery-plan",
+        "blob_sha": "2a8166a4156b6393d76490400c231caabd4f79b8",
+        "start_line": 7,
+        "end_line": 23
+      },
+      {
+        "path": "docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md",
         "anchor": "27-november-2026--owner-approved-aggressive-product-first-development-framework",
-        "blob_sha": "31668711986abf8b1a7fec28c1c74be661eff842",
+        "blob_sha": "3082f8cafd0b50c8e6e050cdc8d8e87e7557b18b",
         "start_line": 299,
         "end_line": 313
       },
       {
         "path": "docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md",
         "anchor": "27-november-2026--owner-approved-consolidated-c5-development-preparation-and-engineering-autonomy",
-        "blob_sha": "31668711986abf8b1a7fec28c1c74be661eff842",
+        "blob_sha": "3082f8cafd0b50c8e6e050cdc8d8e87e7557b18b",
         "start_line": 3,
         "end_line": 5
       },
       {
         "path": "docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md",
         "anchor": "26-november-2026--owner-decision-on-c5-scope-rationalisation",
-        "blob_sha": "31668711986abf8b1a7fec28c1c74be661eff842",
+        "blob_sha": "3082f8cafd0b50c8e6e050cdc8d8e87e7557b18b",
         "start_line": 39,
         "end_line": 41
-      },
-      {
-        "path": "docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md",
-        "anchor": "1-source-of-truth-hierarchy",
-        "blob_sha": "a14ffefd951abf479762846e53b6c7b2e7199d9d",
-        "start_line": 7,
-        "end_line": 13
-      },
-      {
-        "path": "docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md",
-        "anchor": "5-authority-verification-and-stopping-rules",
-        "blob_sha": "a14ffefd951abf479762846e53b6c7b2e7199d9d",
-        "start_line": 36,
-        "end_line": 63
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md"
@@ -905,10 +737,10 @@
       },
       {
         "path": "docs/DOCUMENTATION_AUDIT_C5_D1_MIGRATION_2026-11-27.md",
-        "anchor": "10-28-november-continuation-consolidation-and-product-first-audit",
-        "blob_sha": "bebff94f99d39796505236e2c5b60b1b0a2f23da",
-        "start_line": 85,
-        "end_line": 95
+        "anchor": "11-28-november-product-first-v2-documentation-and-continuity-audit",
+        "blob_sha": "d444bac0361b03211c76109381e0eca1b8f95e04",
+        "start_line": 97,
+        "end_line": 111
       }
     ],
     "evidence": [
