@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-DEV-VM-01-S2-FUNCTIONAL-DRIVER-20261128",
-    "parent_sha": "b8dcfec251e78509ad780ce1d247a2d717510d61",
-    "previous_snapshot_sha": "b8dcfec251e78509ad780ce1d247a2d717510d61",
-    "scope": "C5 disarmed managed functional driver, browser configurations and ordered validation workflow",
+    "operation_id": "C5-DEV-VM-01-S2-PDFIUM-NOTICE-RECONCILIATION-20261128",
+    "parent_sha": "51b059ccf9cd25b9f852293abe187dba6712c162",
+    "previous_snapshot_sha": "51b059ccf9cd25b9f852293abe187dba6712c162",
+    "scope": "C5 exact PDFium notice reconciliation and ReportLab actual security/rights hold narrowing",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "blob_sha": "cd33d37205c4d6d06a0ba98edee616dbacbdb508",
-      "anchor": "28-november--dev-vm-01-disarmed-functional-driver-and-windows-first-workflow",
-      "start_line": 1323,
-      "end_line": 1329
+      "blob_sha": "0468e4353c1a0779b7cda867e972919e8a51ee5d",
+      "anchor": "28-november--dev-vm-01-pdfium-notice-discrepancy-resolved-and-remaining-actual-use-holds",
+      "start_line": 1331,
+      "end_line": 1379
     }
   },
   "product": {
@@ -135,15 +135,22 @@
     "id": "C5-DEV-VM-01-S2-PREUSE-AND-OVERLAY-20261128",
     "status": "READY",
     "scope": "S2 review of actual S1 facts at exact receipt blob 02ce4c6d821bae913691d0a5501fe516df2fd908 and conditional dependency overlays targeting bb46e49; complete exact applicable pre-use and consolidated Windows/Linux regression preparation.",
-    "blocker": "Exact applicable dependency rights/security/native component and actual managed tool/browser qualification held. Consolidated source/driver/workflow prepared, uncompiled/unexecuted; exact reviewed disposition and activation binding absent. No package consumption or execution authority.",
+    "blocker": "PDFium notice discrepancies resolved (74/74) but native component/linkage/security and exact ReportLab flagged source/cache/font terms, other applicable per-profile use and managed tools remain held. Exact reviewed disposition and activation binding absent; consolidated candidate 2e7f10c unexecuted.",
     "next_action_kind": "PREPARATION",
-    "next_action": "Resume consolidated detached 2e7f10c including 69c23d3/4cf72b4/aee2862. Resolve finite actual applicable dependency rights/security/component/notice and managed tool/browser evidence holds, including ReportLab flagged source/cache and PDFium linkage. Review exact final candidate/driver semantics and activation patch, request exact bounded approval only when viable. Windows-first then Linux, no duplicate identity inspections or unrelated preparation.",
+    "next_action": "Reuse exact 74/74 PDFium notice reconciliation; finish finite applicable security/component/rights and managed tool/browser decisions with exact public source/provenance where possible. If actual missing facts cannot be resolved read-only, propose one bounded non-executing targeted inspection covering genuinely missing facts (ReportLab flagged source/cache/font terms; PDFium version/build/PE/ELF linkage; other necessary rows only), not repeated identity checks. Exact approval required before acquisition; then review final 2e7f10c candidate and activation patch, request exact bounded functional execution when viable. No unrelated preparation.",
     "after": [
       "Verify consolidated functional Windows/Linux synthetic stages only when applicable pre-use and exact authority satisfied; no auto-use or live merge.",
       "Close C5 and award only qualifying original evidence; all six P4 and native D/G2/E2/8GB/Gate C requirements preserved.",
       "DLA parked; P5/installer/release remain unauthorised."
     ],
     "read": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "0468e4353c1a0779b7cda867e972919e8a51ee5d",
+        "anchor": "28-november--dev-vm-01-pdfium-notice-discrepancy-resolved-and-remaining-actual-use-holds",
+        "start_line": 1331,
+        "end_line": 1379
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "blob_sha": "cd33d37205c4d6d06a0ba98edee616dbacbdb508",
@@ -223,17 +230,17 @@
     ]
   },
   "operation": {
-    "id": "C5-DEV-VM-01-S2-FUNCTIONAL-DRIVER-20261128",
+    "id": "C5-DEV-VM-01-S2-PDFIUM-NOTICE-RECONCILIATION-20261128",
     "state": "RECONCILED",
-    "starting_sha": "b8dcfec251e78509ad780ce1d247a2d717510d61",
-    "outcome": "Four detached source candidates assembled with exact Git diff/tree readback; concrete runner/workflow disarmed, no tests or acceptance evidence.",
+    "starting_sha": "51b059ccf9cd25b9f852293abe187dba6712c162",
+    "outcome": "74/74 historical PDFium notice Git identities reconciled against exact upstream LF/CRLF source, ReportLab exact flag narrowed. No new consumption, execution or acceptance credit.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "blob_sha": "cd33d37205c4d6d06a0ba98edee616dbacbdb508",
-      "anchor": "28-november--dev-vm-01-disarmed-functional-driver-and-windows-first-workflow",
-      "start_line": 1323,
-      "end_line": 1329
+      "blob_sha": "0468e4353c1a0779b7cda867e972919e8a51ee5d",
+      "anchor": "28-november--dev-vm-01-pdfium-notice-discrepancy-resolved-and-remaining-actual-use-holds",
+      "start_line": 1331,
+      "end_line": 1379
     }
   },
   "authority": {
@@ -814,7 +821,8 @@
     "Mounted version transition source 615c0f7 supersedes missing coverage risk of ae3e9d7, but five scenarios remain uncompiled/unexecuted; actual selector and renderer behaviour require authorised functional regression.",
     "cb83bec binds candidate font version only; full profile/preflight graph rebind and functional test required. Root pin 5.1.2 conflicts with historical production 4.5.1, production remains BLOCKED. Exact Inter/Manrope OFL notice matches not full package or release clearance.",
     "950678b candidate assembled but no compile, source regression or native/runtime verification; current production historical lock incompatible with proposed root. Exact functional runner/browser configs and pre-use security/rights/managed identity remain held.",
-    "2e7f10c disarmed driver/workflow uncompiled and unexecuted, exact managed tool/disposition/activation absent; browser reporter semantics, full source-copy runtime and process/transport behavior need authorised validation. No native or physical evidence."
+    "2e7f10c disarmed driver/workflow uncompiled and unexecuted, exact managed tool/disposition/activation absent; browser reporter semantics, full source-copy runtime and process/transport behavior need authorised validation. No native or physical evidence.",
+    "PDFium 74/74 notice identity discrepancy resolved by exact tagged source reconstruction; native build/component/licence/security applicability and ReportLab flagged exact source/cache/font terms still held. No new raw bytes or runtime evidence."
   ],
   "context": {
     "protocol": {
@@ -889,6 +897,13 @@
       }
     ],
     "evidence": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "0468e4353c1a0779b7cda867e972919e8a51ee5d",
+        "anchor": "28-november--dev-vm-01-pdfium-notice-discrepancy-resolved-and-remaining-actual-use-holds",
+        "start_line": 1331,
+        "end_line": 1379
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "blob_sha": "cd33d37205c4d6d06a0ba98edee616dbacbdb508",
