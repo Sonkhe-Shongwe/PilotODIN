@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-MHTA-PRISTINE-SLICE-CORRECTION-PREPARATION-20261128",
-    "parent_sha": "991fad661dbae51d127e19d55217565f867c512a",
-    "previous_snapshot_sha": "991fad661dbae51d127e19d55217565f867c512a",
-    "scope": "Upstream v255.4 source-backed pristine slice correction, detached source and four focused generated tests; no execution.",
+    "operation_id": "C5-MHTA-PRISTINE-EXACT-INERT-DECISION-20261128",
+    "parent_sha": "e2d08806e785ee08edec80e2b98e5ff3e28c88c4",
+    "previous_snapshot_sha": "e2d08806e785ee08edec80e2b98e5ff3e28c88c4",
+    "scope": "Exact revised 31/31 generated suite and fresh inert pristine fixture activation binding; no execution.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "28-november--upstream-backed-pristine-slice-admission-correction",
-      "blob_sha": "883a757886adf71464e0a18b4b59bf7c9a7cfeea",
-      "start_line": 863,
-      "end_line": 871
+      "anchor": "28-november--full-pristine-regression-and-fresh-inert-execution-decision",
+      "blob_sha": "1a2f42b1a41697be72726869c2938849aa8ecd1e",
+      "start_line": 873,
+      "end_line": 877
     }
   },
   "product": {
@@ -137,15 +137,22 @@
     "id": "C5-LINUX-FIRST-20261127",
     "status": "BLOCKED",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "Upstream source confirms fileless slice may report loaded rather than not-found; actual prior failing predicate unknown. 7a5bebd disarmed correction and 4/4 focused generated tests pass; full revised module/31-method suite and exact fresh activation preparation pending. Actual containment/settlement/custody unproved; grant consumed.",
-    "next_action": "Complete exact full revised generated suite (31 projected methods) for 7a5bebd, including lifecycle distinct refusal cases and updated startup/source pins; review actual .19 serialization limitations and preserve all ownership/settlement predicates. Prepare fresh inert one-use activation and marker only, no reuse of consumed 46120862249 grant. Seek separate exact owner approval after source and trigger binding. No generic identity investigation, hosted run, privilege, package GET/install, acceptance or phase change during preparation; Dynamic UID custody and reduced archive inspection held.",
-    "next_action_kind": "MISSING_EVIDENCE",
+    "blocker": "Corrected pristine source 7a5bebd full 31/31 generated tests pass, fresh exact inert candidate 02b694d ready for separate owner approval and live trigger audit. Actual .19 properties, isolation/settlement/custody unproved. Prior grant consumed.",
+    "next_action": "Seek exact owner approval of C5-MHTA-PRISTINE-ISOLATED-FIXTURE-ONCE-20261128, detached 02b694d/source 7a5bebd, one disposable Ubuntu 24.04 job/5min/1 attempt/zero package downloads, installations or retries/two pinned checkouts/31 generated tests/one conditional privileged fixture. After separate approval audit all live triggers, verify exact source/tree/marker/workflow, record write-ahead and publish exact three-path activation non-force expected-HEAD; reconcile terminal outcome and disarm immediately. No replay, root worker/parser, direct cgroup writes, security changes or owner data. No C5/phase credit from fixture alone; Dynamic UID custody and reduced archive inspection held.",
+    "next_action_kind": "OWNER_DECISION",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
       "Windows-specific verified input and compatibility prerequisites before actual production-equivalent D1, separately authorised; no installer.",
       "D2, G2 and remaining physical E2/P4 acceptance; no phase advance without evidence and owner signoff."
     ],
     "read": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "28-november--full-pristine-regression-and-fresh-inert-execution-decision",
+        "blob_sha": "1a2f42b1a41697be72726869c2938849aa8ecd1e",
+        "start_line": 873,
+        "end_line": 877
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--upstream-backed-pristine-slice-admission-correction",
@@ -688,17 +695,17 @@
     ]
   },
   "operation": {
-    "id": "C5-MHTA-PRISTINE-SLICE-CORRECTION-PREPARATION-20261128",
+    "id": "C5-MHTA-PRISTINE-EXACT-INERT-DECISION-20261128",
     "state": "RECONCILED",
-    "starting_sha": "991fad661dbae51d127e19d55217565f867c512a",
-    "outcome": "Concrete fileless slice load-state mismatch demonstrated; detached 7a5bebd strict predicate, distinct diagnostics and source pins. Four focused exact excerpt tests PASS. Full revised suite and fresh inert binding pending; no hosted/privilege/acquisition or acceptance.",
+    "starting_sha": "e2d08806e785ee08edec80e2b98e5ff3e28c88c4",
+    "outcome": "7a5bebd full exact local generated suite 31/31 PASS; 02b694d inert fresh activation and marker, YAML/shell/Python syntax pass. No hosted run/privilege/acquisition or active workflow; separate owner decision and trigger audit required.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "28-november--upstream-backed-pristine-slice-admission-correction",
-      "blob_sha": "883a757886adf71464e0a18b4b59bf7c9a7cfeea",
-      "start_line": 863,
-      "end_line": 871
+      "anchor": "28-november--full-pristine-regression-and-fresh-inert-execution-decision",
+      "blob_sha": "1a2f42b1a41697be72726869c2938849aa8ecd1e",
+      "start_line": 873,
+      "end_line": 877
     }
   },
   "authority": {
@@ -1092,6 +1099,10 @@
       {
         "sha": "7a5bebdca47f90f067ad6ed9591719cbbb8d5d11",
         "scope": "Upstream-backed disarmed pristine slice correction, six QA paths, 4/4 focused exact excerpt tests pass; full revised suite and fresh activation not prepared. No hosted execution."
+      },
+      {
+        "sha": "02b694ddea655dff7d3b822b1cb3ead1c4ce9a19",
+        "scope": "Fresh inert pristine-slice execution proposal/source 7a5bebd; exact local 31/31 tests PASS, syntax verified; no live workflow or execution. Separate exact grant required."
       }
     ]
   },
@@ -1141,7 +1152,8 @@
     "0d5afc9 managed hosted assurance preparation: no independently reconstructed managed executable manifests required; exact reviewed eligible versions and applicability/rights remain; systemd .19 retained/provider and proposed publisher record but official listing .18, actual publication/patch review incomplete. Same-job identity, trusted root startup and full real containment/custody unproved; no execution or acceptance credit.",
     "4cb3271: .19 conditional managed fixture eligibility based on source changelog, secondary updates and retained provider image; primary archive publication unavailable and actual hosted versions, root startup, containment, process settlement and dynamic UID custody unproved. Full trigger audit and separate exact bounded execution approval required. No C5 credit.",
     "Run 46120862249: actual hosted 27/27 generated tests, exact package/7-tool checks and same-job trusted startup passed; PREEXISTING combined absence/path predicate refused before unit requests, exact false subpredicate unknown. Actual isolation/settlement/custody unproved. Approval consumed/disarmed, no replay.",
-    "7a5bebd: exact upstream fileless loaded slice defect corrected and focused tests pass; prior actual refusal subpredicate unknown, full revised suite and fresh exact activation outstanding; added strict property/GC behavior may refuse, actual containment/custody unproved. No replay or credit."
+    "7a5bebd: exact upstream fileless loaded slice defect corrected and focused tests pass; prior actual refusal subpredicate unknown, full revised suite and fresh exact activation outstanding; added strict property/GC behavior may refuse, actual containment/custody unproved. No replay or credit.",
+    "02b694d: 31/31 full revised generated tests pass; actual Noble .19 property serialization and post-stop GC, isolation/settlement/custody unverified. Fresh owner approval + trigger audit required; prior run consumed."
   ],
   "context": {
     "protocol": {
