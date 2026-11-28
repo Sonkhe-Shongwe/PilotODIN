@@ -420,7 +420,7 @@ jobs:
 
   p4-dependency-free-source:
     name: DLA Stage 1 generated source contracts (DISARMED)
-    if: ${{ false }} # Preparation only; separate exact owner activation required.
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/feature/dla-stage1-source-20261128' && github.event.before == '388d5515e6845eb63f5211bc28fe693acb947af6' && github.run_attempt == 1 }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     env:
