@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-CGROUP-FEASIBILITY-ONCE-20261128",
-    "parent_sha": "878d4e85adaaa2cbf4686de6cc60611767506a64",
-    "previous_snapshot_sha": "878d4e85adaaa2cbf4686de6cc60611767506a64",
-    "scope": "Reconcile actual one-use cgroup feasibility observation and exact terminal disarm.",
+    "operation_id": "C5-OWNER-APPROVED-ISOLATED-METHOD-EVALUATION-PREPARATION-20261128",
+    "parent_sha": "5568b12c05bf0b45a8ff6f4cb1e55e260cd9df52",
+    "previous_snapshot_sha": "5568b12c05bf0b45a8ff6f4cb1e55e260cd9df52",
+    "scope": "Owner-approved isolated method evaluation and inert system-manager slice/service fixture projection, no execution.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "28-november--one-use-cgroup-observation-terminal-receipt-and-disarm",
-      "blob_sha": "40f116120b618b3d2d1b69032b889359510b70e5",
-      "start_line": 771,
-      "end_line": 777
+      "anchor": "28-november--owner-approved-isolated-method-evaluation-and-system-manager-projection",
+      "blob_sha": "80cb1b1322649bdae8c6de64b07d2baddec67a3c",
+      "start_line": 779,
+      "end_line": 787
     }
   },
   "product": {
@@ -137,15 +137,22 @@
     "id": "C5-LINUX-FIRST-20261127",
     "status": "BLOCKED",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "Actual one-use observation 46085466531 confirms same observer/child cgroup and populated=1 after child exit, qualification false; existing provider boundary not established, no independent containment/ownership/migration prevention. Reduced 596390f inspection held; final component/security/rights unresolved.",
-    "next_action": "Present distinct owner decision on isolated execution method to establish independent command boundary/ownership, migration prevention and positive settlement before any 24-artifact acquisition. Prefer existing provider-managed exclusive boundary with outside observer if demonstrably available; otherwise separately reviewed constrained cgroup subtree or other isolated execution method, not authorised yet. No repeated same-group probes, no full install, no security/acceptance weakening. Preserve exact 24 GET/104436509 bytes/30 min/one-attempt limits, zero execution authority.",
-    "next_action_kind": "OWNER_DECISION",
+    "blocker": "12d9b04 inert system-manager slice/service projection prepared; no actual launcher/observer, exact manager/tool identities, slice realization/retention or independent containment evidence. Dynamic service UID custody incompatibility with existing runner-owned parser remains. Zero execution authority; reduced 596390f held.",
+    "next_action": "Prepare one finite disarmed exact system-manager transient slice/service fixture launcher, outside observer and owned cleanup binding from 12d9b04, validate actual projected manager/property semantics and pure generated negative receipt cases; no host execution. Bind exact source/tool guards, deadlines and one-use activation only before distinct explicit privileged zero-package fixture execution approval. Preserve no root fixture/parser, no direct cgroup writes or delegation, no permanent config changes, no retries; if actual slice unavailable/refused, do not repeat. Independently review dynamic UID custody and later networked curl before any 24-artifact transfer; preserve all gates.",
+    "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
       "Windows-specific verified input and compatibility prerequisites before actual production-equivalent D1, separately authorised; no installer.",
       "D2, G2 and remaining physical E2/P4 acceptance; no phase advance without evidence and owner signoff."
     ],
     "read": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "28-november--owner-approved-isolated-method-evaluation-and-system-manager-projection",
+        "blob_sha": "80cb1b1322649bdae8c6de64b07d2baddec67a3c",
+        "start_line": 779,
+        "end_line": 787
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--one-use-cgroup-observation-terminal-receipt-and-disarm",
@@ -632,22 +639,22 @@
     ]
   },
   "operation": {
-    "id": "C5-CGROUP-FEASIBILITY-ONCE-20261128",
+    "id": "C5-OWNER-APPROVED-ISOLATED-METHOD-EVALUATION-PREPARATION-20261128",
     "state": "RECONCILED",
-    "starting_sha": "a221285d9d1e34fdcabea6cb1f9f39040334361f",
-    "outcome": "Run 46085466531/job 140793907956 attempt 1 terminal SUCCESS; actual NOT_FEASIBLE_OR_UNPROVED qualification false, same cgroup populated after fixture exit. Exact marker removal and disabled workflow; no retry/acquisition.",
+    "starting_sha": "5568b12c05bf0b45a8ff6f4cb1e55e260cd9df52",
+    "outcome": "Detached 12d9b04 exact two inert files, 15/15 grouped static/readback checks pass. Selected conditional manager-owned transient slice/service; no actual launcher, privileged execution, acquisition or host qualification.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "28-november--one-use-cgroup-observation-terminal-receipt-and-disarm",
-      "blob_sha": "40f116120b618b3d2d1b69032b889359510b70e5",
-      "start_line": 771,
-      "end_line": 777
+      "anchor": "28-november--owner-approved-isolated-method-evaluation-and-system-manager-projection",
+      "blob_sha": "80cb1b1322649bdae8c6de64b07d2baddec67a3c",
+      "start_line": 779,
+      "end_line": 787
     }
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next. Owner-approved GitHub-only development installation and bounded technical autonomy amendment applies within exact approved batches; no broader authority.",
-    "preparation_only": "Owner approved consolidated shared-bundle disarmed acquisition-before-signature source and exact limited existing host bootstrap; owner approved proposed limited local Docker control-plane and host-derived rootfs trust/no-pull isolation method for preparation only. Authentication before extraction/use; no Docker invocation, acquisition, verification execution, installation or live cutover authorised. Owner approved bounded first-collision encoded public member-path diagnostic preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-bounded-first-collision-diagnostic-preparation-only. No restricted execution authority. Owner approved finite exact Linux data-only terminfo inventory policy and bounded receipt projection as proposed in 8cc1a696, preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-finite-exact-linux-terminfo-inventory-policy-and-bounded-receipt-preparation-only. Strict Windows/gh and other safeguards unchanged; no acquisition, extraction or restricted execution. Owner explicitly approved preparation and static/synthetic verification only of Approach C observation-only candidate (11 fixed roles, five minutes); no restricted execution, acquisition, Docker invocation or active policy change. Exact reference in C5 spec owner-approved-bounded-approach-c-observation-candidate-preparation-only. Owner approved Approach C metadata-only preparation/static/synthetic verification under 13 GET/10-minute proposed limits; no actual acquisition, package downloads, installation, Docker invocation, restricted execution or active trust policy change. Exact spec anchor owner-approved-bounded-approach-c-metadata-only-preparation-and-synthetic-core. Owner approved narrow metadata bootstrap preparation on existing two reviewed images including GnuPG/necessary existing dependencies, no acquisition/restricted execution/integrated verification/active policy change, original 13 GET/10 min bounds. Exact spec anchor owner-approved-narrow-metadata-bootstrap-preparation-and-finite-key-evidence-contract. Owner approved two-stage key/metadata sequence preparation including bounded public signing-key private repository retention proposal, combined 13 GET/600s/256 MiB; no actual acquisition, restricted execution or active policy change. Exact spec anchor owner-approved-two-stage-preparation-and-consolidated-custody-core. Owner approved exact C-D09 managed-development CI evidence rationalisation at proposal 2cbed51, recorded in C5 implementation spec; limited bootstrap trust and residual risk accepted, prepare concrete bounded validation candidate only, no acquisition, installation, restricted execution, migration, new expenditure or phase advancement. Owner approved one-time C5 proportionate publisher-first inspection method (okay lets try that), recorded at docs/C5_PROPORTIONATE_INSPECTION_DECISION_2026-11-27.md; no new restricted authority or acceptance waiver. Owner explicitly approved standalone Windows Stage A preparation preserving all security and acceptance requirements; see docs/C5_STANDALONE_WINDOWS_A_PREPARATION_2026-11-27.md. No restricted execution grant. Owner explicitly approved exact Astral CPython 3.11.18 Windows x64 candidate for standalone Stage A preparation only; docs/C5_WINDOWS_A_ASTRAL_PREPARATION_2026-11-27.md. No new restricted grant. Owner explicitly approved simplified C5 applicability-based development policy and preparation of consolidated Stage A transaction; see ENGINEERING_DECISIONS_CURRENT.md section 27-november--owner-approved-c5-applicability-policy-and-consolidated-stage-a-transaction. No restricted authority or acceptance waiver. Owner explicitly approved bounded G2 equivalent evidence feasibility assessment and design only; see ENGINEERING_DECISIONS_CURRENT.md section 27-november--g2-equivalent-evidence-feasibility-and-design-disposition. Assessment complete, no implementation, live method adoption or restricted execution authority. Owner adopted aggressive product-first framework (okay lets follow you new frame work); PRODUCT-FIRST-20261127 in phase policy. Independent concrete scoped P4 source work and narrowly rationalised standard C5 control metadata preparation, no new restricted execution grant. Owner approved preparation of bounded browser-only GitHub verification (okay do ti); detached 26ab490, no activation/acquisition/execution grant; exact receipt in engineering decisions. Owner approved proceeding with corrected Chrome .88 and Playwright 1.65.1 alternative (do it), exact candidate 920df39 prepared; no exact bounded activation grant yet; preserve original locks. Owner explicitly approved isolated ReportLab 5.1.2 evaluation and coordinated dependency-range and lock preparation, preserving all security, acceptance and execution boundaries; exact owner decision in ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-isolated-reportlab-512-projections-and-metadata-holds. Detached 4dd5525 data-only proposal; no acquisition, installation, execution or live adoption authority. Owner explicitly approved reduced 24-artifact static inspection scope and exact execution-binding preparation, 24 direct GETs/104436509 bytes/30 minutes/one attempt/no redirects or retries, preserving all boundaries; ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-reduced-static-receipt-and-custody-binding-preparation. Preparation only; no actual GET, dispatch or installation authority. Owner explicitly approved preparation of bounded read-only hosted cgroup v2 feasibility observation, five minutes, one attempt, zero package downloads, no privilege or security changes; ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-read-only-cgroup-feasibility-preparation. No actual observation/dispatch or acquisition authority.",
+    "preparation_only": "Owner approved consolidated shared-bundle disarmed acquisition-before-signature source and exact limited existing host bootstrap; owner approved proposed limited local Docker control-plane and host-derived rootfs trust/no-pull isolation method for preparation only. Authentication before extraction/use; no Docker invocation, acquisition, verification execution, installation or live cutover authorised. Owner approved bounded first-collision encoded public member-path diagnostic preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-bounded-first-collision-diagnostic-preparation-only. No restricted execution authority. Owner approved finite exact Linux data-only terminfo inventory policy and bounded receipt projection as proposed in 8cc1a696, preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-finite-exact-linux-terminfo-inventory-policy-and-bounded-receipt-preparation-only. Strict Windows/gh and other safeguards unchanged; no acquisition, extraction or restricted execution. Owner explicitly approved preparation and static/synthetic verification only of Approach C observation-only candidate (11 fixed roles, five minutes); no restricted execution, acquisition, Docker invocation or active policy change. Exact reference in C5 spec owner-approved-bounded-approach-c-observation-candidate-preparation-only. Owner approved Approach C metadata-only preparation/static/synthetic verification under 13 GET/10-minute proposed limits; no actual acquisition, package downloads, installation, Docker invocation, restricted execution or active trust policy change. Exact spec anchor owner-approved-bounded-approach-c-metadata-only-preparation-and-synthetic-core. Owner approved narrow metadata bootstrap preparation on existing two reviewed images including GnuPG/necessary existing dependencies, no acquisition/restricted execution/integrated verification/active policy change, original 13 GET/10 min bounds. Exact spec anchor owner-approved-narrow-metadata-bootstrap-preparation-and-finite-key-evidence-contract. Owner approved two-stage key/metadata sequence preparation including bounded public signing-key private repository retention proposal, combined 13 GET/600s/256 MiB; no actual acquisition, restricted execution or active policy change. Exact spec anchor owner-approved-two-stage-preparation-and-consolidated-custody-core. Owner approved exact C-D09 managed-development CI evidence rationalisation at proposal 2cbed51, recorded in C5 implementation spec; limited bootstrap trust and residual risk accepted, prepare concrete bounded validation candidate only, no acquisition, installation, restricted execution, migration, new expenditure or phase advancement. Owner approved one-time C5 proportionate publisher-first inspection method (okay lets try that), recorded at docs/C5_PROPORTIONATE_INSPECTION_DECISION_2026-11-27.md; no new restricted authority or acceptance waiver. Owner explicitly approved standalone Windows Stage A preparation preserving all security and acceptance requirements; see docs/C5_STANDALONE_WINDOWS_A_PREPARATION_2026-11-27.md. No restricted execution grant. Owner explicitly approved exact Astral CPython 3.11.18 Windows x64 candidate for standalone Stage A preparation only; docs/C5_WINDOWS_A_ASTRAL_PREPARATION_2026-11-27.md. No new restricted grant. Owner explicitly approved simplified C5 applicability-based development policy and preparation of consolidated Stage A transaction; see ENGINEERING_DECISIONS_CURRENT.md section 27-november--owner-approved-c5-applicability-policy-and-consolidated-stage-a-transaction. No restricted authority or acceptance waiver. Owner explicitly approved bounded G2 equivalent evidence feasibility assessment and design only; see ENGINEERING_DECISIONS_CURRENT.md section 27-november--g2-equivalent-evidence-feasibility-and-design-disposition. Assessment complete, no implementation, live method adoption or restricted execution authority. Owner adopted aggressive product-first framework (okay lets follow you new frame work); PRODUCT-FIRST-20261127 in phase policy. Independent concrete scoped P4 source work and narrowly rationalised standard C5 control metadata preparation, no new restricted execution grant. Owner approved preparation of bounded browser-only GitHub verification (okay do ti); detached 26ab490, no activation/acquisition/execution grant; exact receipt in engineering decisions. Owner approved proceeding with corrected Chrome .88 and Playwright 1.65.1 alternative (do it), exact candidate 920df39 prepared; no exact bounded activation grant yet; preserve original locks. Owner explicitly approved isolated ReportLab 5.1.2 evaluation and coordinated dependency-range and lock preparation, preserving all security, acceptance and execution boundaries; exact owner decision in ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-isolated-reportlab-512-projections-and-metadata-holds. Detached 4dd5525 data-only proposal; no acquisition, installation, execution or live adoption authority. Owner explicitly approved reduced 24-artifact static inspection scope and exact execution-binding preparation, 24 direct GETs/104436509 bytes/30 minutes/one attempt/no redirects or retries, preserving all boundaries; ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-reduced-static-receipt-and-custody-binding-preparation. Preparation only; no actual GET, dispatch or installation authority. Owner explicitly approved preparation of bounded read-only hosted cgroup v2 feasibility observation, five minutes, one attempt, zero package downloads, no privilege or security changes; ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-read-only-cgroup-feasibility-preparation. No actual observation/dispatch or acquisition authority. Owner approved isolated method evaluation/preparation, prioritising existing provider isolation or constrained cgroup subtree; no execution/privileged operations/security modification/package acquisition without distinct authority; ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-isolated-method-evaluation-and-system-manager-projection.",
     "restricted_active": [],
     "consumed_disarmed_count": 57,
     "consumed_history": {
@@ -1000,6 +1007,10 @@
       {
         "sha": "29d8b962c3f26279307c9e66dc9ca6c0bec477f2",
         "scope": "Inert exact gated source/one-use workflow, marker and terminal disarm projection from b577826 via 1389a07 and c544eae; 14 static/readback checks plus final disarm pin pass. Trigger audit incomplete, no live execution or authority."
+      },
+      {
+        "sha": "12d9b04cea4b2d1ad2cee41ed4c6c090d2adff84",
+        "scope": "Inert two-file system-manager isolated slice/service method projection and generated fixture; 15 static/readback checks pass, no actual manager/fixture execution. Detached from 29d8b96; live consumed 123rd workflow not in this historical tree."
       }
     ]
   },
@@ -1042,7 +1053,8 @@
     "b577826 feasibility probe cannot establish pre-child empty baseline, provider ownership, universal migration prevention or full privileged/detached host settlement; no actual host observation or execution approval.",
     "29d8b96 activation binding: connector limit blocked full trigger audit; new gated CLI/YAML/runtime not tested, independent provider settlement unproved. No active marker/workflow.",
     "Cgroup trigger audit and fixture gate/YAML checks pass; actual provider boundary, ownership, migration prevention, hosted execution and checkout not verified. Explicit one-use observation execution approval still required.",
-    "Run 46085466531 same-group observation NOT_FEASIBLE_OR_UNPROVED; provider-exclusive command boundary not established; distinct method decision required, no replay."
+    "Run 46085466531 same-group observation NOT_FEASIBLE_OR_UNPROVED; provider-exclusive command boundary not established; distinct method decision required, no replay.",
+    "12d9b04 preferred conditional isolation method; manager/tool availability, realized retained empty slice, actual effective restrictions and positive settlement unproved. Dynamic UID vs runner-owned archive custody remains unresolved; no privilege/transfer authority."
   ],
   "context": {
     "protocol": {
