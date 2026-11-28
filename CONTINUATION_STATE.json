@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "DLA-STAGE1-LISTENER-AND-SOURCE-BINDING-20261128",
-    "parent_sha": "8144bcb945081a7340371bc9fdb3a51c4729a13b",
-    "previous_snapshot_sha": "8144bcb945081a7340371bc9fdb3a51c4729a13b",
-    "scope": "DLA Stage 1 private listener source and disarmed dependency-free regression binding; no restricted operation",
-    "state": "RECONCILED",
+    "operation_id": "DLA-STAGE1-SOURCE-ONCE-20261128",
+    "parent_sha": "782f35af8e921f4a161050c3235f8b713200c591",
+    "previous_snapshot_sha": "782f35af8e921f4a161050c3235f8b713200c591",
+    "scope": "Exact isolated branch feature/dla-stage1-source-20261128 creation at disarmed 388d5515e6845eb63f5211bc28fe693acb947af6; reconcile creation event then one non-force update to 3342db5fc87a9d92121187e636f3dac3e5254668. Five-minute Ubuntu 24.04 x64 managed Python 3.12.3 source-only job, attempt 1, six in-memory syntax checks and seven generated unittest cases, no dependency install, retries, artifact acquisition, native/model execution, owner-device access or production integration. Preserve all safeguards. Forward disarm and reconcile.",
+    "state": "PREPARED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "blob_sha": "b0c904b29e2c878772f62d40bafcf60c841b6b20",
-      "anchor": "28-november--dla-stage-1-private-listener-source-and-disarmed-regression-binding",
-      "start_line": 1181,
-      "end_line": 1189
+      "anchor": "28-november--owner-authorises-one-isolated-dla-stage-1-source-regression",
+      "blob_sha": "cd053fe8ee9b32727dc941ec2952a8f9a7370ae6",
+      "start_line": 1191,
+      "end_line": 1193
     }
   },
   "product": {
@@ -132,11 +132,11 @@
     }
   },
   "task": {
-    "id": "P4-DLA-STAGE1-SOURCE-EXECUTION-DECISION-20261128",
-    "status": "BLOCKED",
-    "scope": "One exact isolated dependency-free source-only verification of disarmed binding 388d5515e6845eb63f5211bc28fe693acb947af6; no native/model/acquisition/integration.",
-    "next_action": "Seek one exact isolated source-only execution approval for binding 388d5515e6845eb63f5211bc28fe693acb947af6 (feature/dla-stage1-source-20261128, five minutes, one Ubuntu 24.04 job, six in-memory syntax checks and seven generated Python tests, no installs/retries/native/model/owner access). On approval recheck exact triggers and branch, persist write-ahead, bind exact activation to before SHA, reconcile disarmed creation event, activate only source job, verify result, forward-disarm. Do not acquire runtime archive or perform Windows compile under this approval. No repeat of preparation.",
-    "next_action_kind": "OWNER_DECISION",
+    "id": "DLA-STAGE1-SOURCE-ONCE-20261128",
+    "status": "PREPARED",
+    "scope": "Exact isolated branch feature/dla-stage1-source-20261128 creation at disarmed 388d5515e6845eb63f5211bc28fe693acb947af6; reconcile creation event then one non-force update to 3342db5fc87a9d92121187e636f3dac3e5254668. Five-minute Ubuntu 24.04 x64 managed Python 3.12.3 source-only job, attempt 1, six in-memory syntax checks and seven generated unittest cases, no dependency install, retries, artifact acquisition, native/model execution, owner-device access or production integration. Preserve all safeguards. Forward disarm and reconcile.",
+    "next_action": "Create exact isolated branch at disarmed binding only, reconcile creation event before one exact activation, verify and disarm.",
+    "next_action_kind": "EXECUTION",
     "after": [
       "Explore source-only verification passed; preserve 541cbeb and isolated disarmed ref. Functional numerical parity, React/browser stale recovery and physical memory comparison still gated by C5 pre-use and exact execution scope; no live merge or unchanged source rerun.",
       "Retain critical early E2 physical R03.3/R03.4, original E-02/W07, R06 historical strict FAIL/UNKNOWN and prospective G2 hold. No automatic execution/fallback or owner-local access.",
@@ -145,10 +145,10 @@
     "read": [
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "blob_sha": "b0c904b29e2c878772f62d40bafcf60c841b6b20",
-        "anchor": "28-november--dla-stage-1-private-listener-source-and-disarmed-regression-binding",
-        "start_line": 1181,
-        "end_line": 1189
+        "anchor": "28-november--owner-authorises-one-isolated-dla-stage-1-source-regression",
+        "blob_sha": "cd053fe8ee9b32727dc941ec2952a8f9a7370ae6",
+        "start_line": 1191,
+        "end_line": 1193
       },
       {
         "path": "docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md",
@@ -217,27 +217,51 @@
       {
         "path": "docs/PILOTODIN_PACKAGE_C_RESOURCE_TRUST_SPEC_2026-11-24.md"
       }
-    ],
-    "blocker": "Distinct one-use source execution authority and exact new-ref trigger/branch reconciliation needed; Python tests not run, native compile and artifact pre-use prerequisites still held."
+    ]
   },
   "operation": {
-    "id": "DLA-STAGE1-LISTENER-AND-SOURCE-BINDING-20261128",
-    "state": "RECONCILED",
-    "starting_sha": "8144bcb945081a7340371bc9fdb3a51c4729a13b",
-    "outcome": "Three detached source/binding commits recorded, real private listener provider source prepared but uncompiled; 14 static checks pass, seven generated Python tests not run. Binding all jobs disarmed, zero CI.",
-    "reconcile_before_retry": false,
-    "receipt": {
+    "id": "DLA-STAGE1-SOURCE-ONCE-20261128",
+    "state": "PREPARED",
+    "starting_sha": "782f35af8e921f4a161050c3235f8b713200c591",
+    "scope": "Exact isolated branch feature/dla-stage1-source-20261128 creation at disarmed 388d5515e6845eb63f5211bc28fe693acb947af6; reconcile creation event then one non-force update to 3342db5fc87a9d92121187e636f3dac3e5254668. Five-minute Ubuntu 24.04 x64 managed Python 3.12.3 source-only job, attempt 1, six in-memory syntax checks and seven generated unittest cases, no dependency install, retries, artifact acquisition, native/model execution, owner-device access or production integration. Preserve all safeguards. Forward disarm and reconcile.",
+    "intended_paths": [
+      ".github/workflows/p4-target-ranking.yml"
+    ],
+    "target_ref": "feature/dla-stage1-source-20261128",
+    "authority_ref": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "blob_sha": "b0c904b29e2c878772f62d40bafcf60c841b6b20",
-      "anchor": "28-november--dla-stage-1-private-listener-source-and-disarmed-regression-binding",
-      "start_line": 1181,
-      "end_line": 1189
-    }
+      "anchor": "28-november--owner-authorises-one-isolated-dla-stage-1-source-regression",
+      "blob_sha": "cd053fe8ee9b32727dc941ec2952a8f9a7370ae6",
+      "start_line": 1191,
+      "end_line": 1193
+    },
+    "expected_evidence": "Exact creation event all jobs skipped; one source job attempt 1; six syntax and seven tests, terminal marker or actual failure; other four skipped; forward disarm.",
+    "recovery": "Inspect actual ref/run/attempt before each action; no retry or replay. Preserve unknown work. Exact before binding and attempt 1 only.",
+    "reconcile_before_retry": true,
+    "candidate_sha": "3342db5fc87a9d92121187e636f3dac3e5254668",
+    "source_sha": "e57032165ad302d516dab2a2da4d616cb122c6d4",
+    "binding_sha": "388d5515e6845eb63f5211bc28fe693acb947af6",
+    "workflow_blob": "6aa7f8c2ccf732b9a17214bc53661a082de8729c"
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next. Owner-approved GitHub-only development installation and bounded technical autonomy amendment applies within exact approved batches; no broader authority.",
     "preparation_only": "Owner approved consolidated shared-bundle disarmed acquisition-before-signature source and exact limited existing host bootstrap; owner approved proposed limited local Docker control-plane and host-derived rootfs trust/no-pull isolation method for preparation only. Authentication before extraction/use; no Docker invocation, acquisition, verification execution, installation or live cutover authorised. Owner approved bounded first-collision encoded public member-path diagnostic preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-bounded-first-collision-diagnostic-preparation-only. No restricted execution authority. Owner approved finite exact Linux data-only terminfo inventory policy and bounded receipt projection as proposed in 8cc1a696, preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-finite-exact-linux-terminfo-inventory-policy-and-bounded-receipt-preparation-only. Strict Windows/gh and other safeguards unchanged; no acquisition, extraction or restricted execution. Owner explicitly approved preparation and static/synthetic verification only of Approach C observation-only candidate (11 fixed roles, five minutes); no restricted execution, acquisition, Docker invocation or active policy change. Exact reference in C5 spec owner-approved-bounded-approach-c-observation-candidate-preparation-only. Owner approved Approach C metadata-only preparation/static/synthetic verification under 13 GET/10-minute proposed limits; no actual acquisition, package downloads, installation, Docker invocation, restricted execution or active trust policy change. Exact spec anchor owner-approved-bounded-approach-c-metadata-only-preparation-and-synthetic-core. Owner approved narrow metadata bootstrap preparation on existing two reviewed images including GnuPG/necessary existing dependencies, no acquisition/restricted execution/integrated verification/active policy change, original 13 GET/10 min bounds. Exact spec anchor owner-approved-narrow-metadata-bootstrap-preparation-and-finite-key-evidence-contract. Owner approved two-stage key/metadata sequence preparation including bounded public signing-key private repository retention proposal, combined 13 GET/600s/256 MiB; no actual acquisition, restricted execution or active policy change. Exact spec anchor owner-approved-two-stage-preparation-and-consolidated-custody-core. Owner approved exact C-D09 managed-development CI evidence rationalisation at proposal 2cbed51, recorded in C5 implementation spec; limited bootstrap trust and residual risk accepted, prepare concrete bounded validation candidate only, no acquisition, installation, restricted execution, migration, new expenditure or phase advancement. Owner approved one-time C5 proportionate publisher-first inspection method (okay lets try that), recorded at docs/C5_PROPORTIONATE_INSPECTION_DECISION_2026-11-27.md; no new restricted authority or acceptance waiver. Owner explicitly approved standalone Windows Stage A preparation preserving all security and acceptance requirements; see docs/C5_STANDALONE_WINDOWS_A_PREPARATION_2026-11-27.md. No restricted execution grant. Owner explicitly approved exact Astral CPython 3.11.18 Windows x64 candidate for standalone Stage A preparation only; docs/C5_WINDOWS_A_ASTRAL_PREPARATION_2026-11-27.md. No new restricted grant. Owner explicitly approved simplified C5 applicability-based development policy and preparation of consolidated Stage A transaction; see ENGINEERING_DECISIONS_CURRENT.md section 27-november--owner-approved-c5-applicability-policy-and-consolidated-stage-a-transaction. No restricted authority or acceptance waiver. Owner explicitly approved bounded G2 equivalent evidence feasibility assessment and design only; see ENGINEERING_DECISIONS_CURRENT.md section 27-november--g2-equivalent-evidence-feasibility-and-design-disposition. Assessment complete, no implementation, live method adoption or restricted execution authority. Owner adopted aggressive product-first framework (okay lets follow you new frame work); PRODUCT-FIRST-20261127 in phase policy. Independent concrete scoped P4 source work and narrowly rationalised standard C5 control metadata preparation, no new restricted execution grant. Owner approved preparation of bounded browser-only GitHub verification (okay do ti); detached 26ab490, no activation/acquisition/execution grant; exact receipt in engineering decisions. Owner approved proceeding with corrected Chrome .88 and Playwright 1.65.1 alternative (do it), exact candidate 920df39 prepared; no exact bounded activation grant yet; preserve original locks. Owner explicitly approved isolated ReportLab 5.1.2 evaluation and coordinated dependency-range and lock preparation, preserving all security, acceptance and execution boundaries; exact owner decision in ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-isolated-reportlab-512-projections-and-metadata-holds. Detached 4dd5525 data-only proposal; no acquisition, installation, execution or live adoption authority. Owner explicitly approved reduced 24-artifact static inspection scope and exact execution-binding preparation, 24 direct GETs/104436509 bytes/30 minutes/one attempt/no redirects or retries, preserving all boundaries; ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-reduced-static-receipt-and-custody-binding-preparation. Preparation only; no actual GET, dispatch or installation authority. Owner explicitly approved preparation of bounded read-only hosted cgroup v2 feasibility observation, five minutes, one attempt, zero package downloads, no privilege or security changes; ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-read-only-cgroup-feasibility-preparation. No actual observation/dispatch or acquisition authority. Owner approved isolated method evaluation/preparation, prioritising existing provider isolation or constrained cgroup subtree; no execution/privileged operations/security modification/package acquisition without distinct authority; ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-isolated-method-evaluation-and-system-manager-projection. Owner explicitly approved preparation of proportionate Managed Hosted Tool Assurance as narrow C-D09 extension: standard Ubuntu package checks, observed executable identities and same-job rechecks; no independent reconstructed managed executable manifests; preserve containment/settlement/trusted privileged startup/dependency integrity/rights/original data/acceptance. No privilege/acquisition/installation or active workflows until exact separate approval. See ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-managed-hosted-tool-assurance-and-disarmed-consolidated-candidate. Owner approved narrow systemd service quiet/diagnostic source correction and generated regression only (okay lets do that); exact detached 88cdf6d, no privileged run or evidence method change. Owner approved finite upstream-supported /run diagnostic/restructuring preparation (lets do it), detached 8bbfc5a; no exact restricted grant, no security weakening or live method adoption. Owner explicitly approved narrow exact named failed-unit reset correction preparation and generated regression only; fresh clean A may serve as prospective B gate, historical failure unchanged, separate exact execution/B authority mandatory; detached 9840f65/c6ed4df. Owner explicitly accepts limited host-runtime isolation objective rather than literal /run inaccessibility and approves narrow detached B observer/wrapper and targeted generated regression preparation only; a2fd5f54fea557c8f0794fecb63211e14e277160, receipt 28-november--owner-approved-detached-b-private-runtime-preparation-and-targeted-regression. No execution, activation, acquisition, installation or automatic B. Owner approved narrow strict cgroup topology verification correction and generated regression (okay lets do that); detached 35ae3127c3d10f8ea74d3f30df1df3571cc1a38c and inert binding a734fefb9f147d0095190d816e11df95eaecf604; no execution, activation, acquisition, installation, retries or automatic downstream work. Owner approved PRODUCT-FIRST V2 architecture direction and documentation cleanup (i approve also do a document, audit , clean uppdate, optimize (without losing key information)); finite C5/G2 and test coverage assessment only, no implementation or changed method/authority. See policy 28-november-2026--owner-approved-product-first-v2-architecture-direction. Owner explicitly approved proposed E2 and R06 engineering preparation, preserving all original requirements and approval boundaries; P4-E2-R06-PREP-20261128, see ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-e2-and-r06-preparation-and-readiness-holds. No native/model/acquisition/owner-device access, execution, workflow or method adoption authority. Owner explicitly approved focused dependency-free Explore regression preparation using existing P4 infrastructure and isolated development ref; binding 0264f7d77cc3f9c1b11e00a255e5742b10ea6e9f, PERF-EXPLORE-SOURCE-BINDING-20261128. No branch creation, workflow activation, dependency installation or restricted execution authority. Owner explicitly approved finite isolated Qwen3 0.6B source preparation using existing infrastructure, no acquisition/native execution/owner-device access; finite assessment reconciled NO-GO without implementation or tests, see docs/ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-qwen3-06b-finite-preparation-no-go. No restricted grant. Owner requested new Universal Local AI direction and documentation audit, DLA-DIRECTIVE-AUDIT-20261128. Prior narrow Qwen provenance/settlement preparation approval is recorded but parked, not transferable. Current Granite/Liquid direction and finite read-only readiness proposal only; exact adoption, evidence-method changes, execution, acquisition, native/model/owner access, integration and release require separate authority. Owner explicitly approved DLA Stage 1 isolated source preparation and proposed independent runtime-member expectation method at 6fcfa10; no artifact acquisition, native execution, owner-device access or production integration. Partial disarmed candidate a35e92936c95cebf33e4062863944c3fd92b6b4f retained; no new restricted grant, no transfer.",
-    "restricted_active": [],
+    "restricted_active": [
+      {
+        "id": "DLA-STAGE1-SOURCE-ONCE-20261128",
+        "state": "APPROVED",
+        "source_sha": "3342db5fc87a9d92121187e636f3dac3e5254668",
+        "scope": "Exact isolated branch feature/dla-stage1-source-20261128 creation at disarmed 388d5515e6845eb63f5211bc28fe693acb947af6; reconcile creation event then one non-force update to 3342db5fc87a9d92121187e636f3dac3e5254668. Five-minute Ubuntu 24.04 x64 managed Python 3.12.3 source-only job, attempt 1, six in-memory syntax checks and seven generated unittest cases, no dependency install, retries, artifact acquisition, native/model execution, owner-device access or production integration. Preserve all safeguards. Forward disarm and reconcile.",
+        "owner_authority_ref": {
+          "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+          "anchor": "28-november--owner-authorises-one-isolated-dla-stage-1-source-regression",
+          "blob_sha": "cd053fe8ee9b32727dc941ec2952a8f9a7370ae6",
+          "start_line": 1191,
+          "end_line": 1193
+        },
+        "reconcile_before_retry": true
+      }
+    ],
     "consumed_disarmed_count": 65,
     "consumed_history": {
       "commit": "b9864b70fb9bb5a72d0f79c37f15b94100722192",
