@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-MHTA-RUN-NAMESPACE-AB-PREPARATION-20261128",
-    "parent_sha": "3474a01ba41656e43503b18c4f0c59c839cd3eff",
-    "previous_snapshot_sha": "3474a01ba41656e43503b18c4f0c59c839cd3eff",
-    "scope": "Prepare bounded upstream-backed /run namespace diagnostic A/B core; generated-only, no restricted execution or acceptance change.",
+    "operation_id": "C5-MHTA-RUN-NAMESPACE-A-COLLECTOR-PREPARATION-20261128",
+    "parent_sha": "b8a279c8163ee39db053ede88bff0f4f2ddf45d1",
+    "previous_snapshot_sha": "b8a279c8163ee39db053ede88bff0f4f2ddf45d1",
+    "scope": "Disarmed A-only diagnostic attribution and failure cleanup source preparation; generated mocks only.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "28-november--upstream-backed-namespace-ab-diagnostic-preparation",
-      "blob_sha": "fa6ca863a9fd762bb221cbb65b288b2afcab4059",
-      "start_line": 937,
-      "end_line": 943
+      "anchor": "28-november--disarmed-a-only-diagnostic-attempt-collector-and-cleanup-preparation",
+      "blob_sha": "9a341a52debe1db825253e3aeed44a576df68fa8",
+      "start_line": 945,
+      "end_line": 949
     }
   },
   "product": {
@@ -137,8 +137,8 @@
     "id": "C5-LINUX-FIRST-20261127",
     "status": "BLOCKED",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "Prior three fixture grants consumed. Upstream /run namespace failure hypothesis supported; actual cause and containment/cleanup remain unproved. Detached 8bbfc5a pure diagnostic core 8/8; collector, positive cleanup and exact inert binding incomplete.",
-    "next_action": "Complete minimal attempt-bound service status collector and safe failure cleanup proof for A; review exact B tmpfs serialization and equivalent host runtime isolation/mount proof, retain all 13 facts. Run full exact generated regression and only then prepare inert exact A/B binding if safe. Separate owner approval before any restricted execution; A and B separate disposable jobs, no B on unknown cleanup or attribution. No replay, arbitrary reduced-security permutations or product acceptance change.",
+    "blocker": "A-only collector prepared and generated tests 10/10; actual cause and failure settlement unproved; success branch intentionally not integrated, B mount equivalence and exact execution binding incomplete.",
+    "next_action": "Integrate exact A collector with unchanged original successful-service lifecycle and trusted pinned wrapper receipt contract; review attribution and safe failure cleanup including disappeared unit and no stderr visibility. Complete B effective private /run mount proof and finite conditional progression, then full exact generated regression and only if safe prepare inert exact workflow for separate approval. No B on uncertain A settlement; no replay or generic expansion.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "Finite upstream-supported /run alternative preparation only; if positive failure cleanup or equivalent isolation cannot be established, stop and park; no restricted activation absent distinct exact approval. Reduced static inspection/custody remain held.",
@@ -148,99 +148,106 @@
     "read": [
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "28-november--disarmed-a-only-diagnostic-attempt-collector-and-cleanup-preparation",
+        "blob_sha": "9a341a52debe1db825253e3aeed44a576df68fa8",
+        "start_line": 945,
+        "end_line": 949
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--upstream-backed-namespace-ab-diagnostic-preparation",
-        "blob_sha": "fa6ca863a9fd762bb221cbb65b288b2afcab4059",
+        "blob_sha": "9a341a52debe1db825253e3aeed44a576df68fa8",
         "start_line": 937,
         "end_line": 943
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--quiet-fixture-terminal-nonzero-manager-exit-and-one-use-disarm",
-        "blob_sha": "fa6ca863a9fd762bb221cbb65b288b2afcab4059",
+        "blob_sha": "9a341a52debe1db825253e3aeed44a576df68fa8",
         "start_line": 919,
         "end_line": 935
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--owner-authorised-quiet-isolated-fixture-once",
-        "blob_sha": "fa6ca863a9fd762bb221cbb65b288b2afcab4059",
+        "blob_sha": "9a341a52debe1db825253e3aeed44a576df68fa8",
         "start_line": 915,
         "end_line": 917
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--full-quiet-correction-regression-and-fresh-inert-execution-decision",
-        "blob_sha": "fa6ca863a9fd762bb221cbb65b288b2afcab4059",
+        "blob_sha": "9a341a52debe1db825253e3aeed44a576df68fa8",
         "start_line": 909,
         "end_line": 913
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--manager-stderr-correction-preparation-and-scoped-generated-checks",
-        "blob_sha": "fa6ca863a9fd762bb221cbb65b288b2afcab4059",
+        "blob_sha": "9a341a52debe1db825253e3aeed44a576df68fa8",
         "start_line": 901,
         "end_line": 907
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--pristine-fixture-terminal-manager-refusal-and-one-use-disarm",
-        "blob_sha": "fa6ca863a9fd762bb221cbb65b288b2afcab4059",
+        "blob_sha": "9a341a52debe1db825253e3aeed44a576df68fa8",
         "start_line": 883,
         "end_line": 899
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--full-pristine-regression-and-fresh-inert-execution-decision",
-        "blob_sha": "fa6ca863a9fd762bb221cbb65b288b2afcab4059",
+        "blob_sha": "9a341a52debe1db825253e3aeed44a576df68fa8",
         "start_line": 873,
         "end_line": 877
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--managed-hosted-assurance-terminal-refusal-and-one-use-disarm",
-        "blob_sha": "fa6ca863a9fd762bb221cbb65b288b2afcab4059",
+        "blob_sha": "9a341a52debe1db825253e3aeed44a576df68fa8",
         "start_line": 845,
         "end_line": 861
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--upstream-backed-pristine-slice-admission-correction",
-        "blob_sha": "fa6ca863a9fd762bb221cbb65b288b2afcab4059",
+        "blob_sha": "9a341a52debe1db825253e3aeed44a576df68fa8",
         "start_line": 863,
         "end_line": 871
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--owner-approved-managed-hosted-tool-assurance-and-disarmed-consolidated-candidate",
-        "blob_sha": "fa6ca863a9fd762bb221cbb65b288b2afcab4059",
+        "blob_sha": "9a341a52debe1db825253e3aeed44a576df68fa8",
         "start_line": 809,
         "end_line": 829
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--owner-approved-reduced-static-receipt-and-custody-binding-preparation",
-        "blob_sha": "fa6ca863a9fd762bb221cbb65b288b2afcab4059",
+        "blob_sha": "9a341a52debe1db825253e3aeed44a576df68fa8",
         "start_line": 725,
         "end_line": 733
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--retained-evidence-and-reduced-static-inspection-decision",
-        "blob_sha": "fa6ca863a9fd762bb221cbb65b288b2afcab4059",
+        "blob_sha": "9a341a52debe1db825253e3aeed44a576df68fa8",
         "start_line": 717,
         "end_line": 723
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--owner-approved-linux-first-c5-allocation-and-exact-reduced-input-plan",
-        "blob_sha": "fa6ca863a9fd762bb221cbb65b288b2afcab4059",
+        "blob_sha": "9a341a52debe1db825253e3aeed44a576df68fa8",
         "start_line": 211,
         "end_line": 219
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--linux-stage-a-actual-19-test-pass-and-one-use-disarm",
-        "blob_sha": "fa6ca863a9fd762bb221cbb65b288b2afcab4059",
+        "blob_sha": "9a341a52debe1db825253e3aeed44a576df68fa8",
         "start_line": 317,
         "end_line": 323
       },
@@ -261,17 +268,17 @@
     ]
   },
   "operation": {
-    "id": "C5-MHTA-RUN-NAMESPACE-AB-PREPARATION-20261128",
+    "id": "C5-MHTA-RUN-NAMESPACE-A-COLLECTOR-PREPARATION-20261128",
     "state": "RECONCILED",
-    "starting_sha": "3474a01ba41656e43503b18c4f0c59c839cd3eff",
-    "outcome": "Detached 8bbfc5a three inert QA paths, actual 8/8 pure generated tests PASS; documented upstream failure supports hypothesis only. No execution-ready collector or workflow; no activation.",
+    "starting_sha": "b8a279c8163ee39db053ede88bff0f4f2ddf45d1",
+    "outcome": "Detached 3f7f506 two new inert QA files, 10/10 generated mock tests PASS, exact Git hashes; A success lifecycle/receipt integration and B mount proof remain incomplete. No restricted execution.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "28-november--upstream-backed-namespace-ab-diagnostic-preparation",
-      "blob_sha": "fa6ca863a9fd762bb221cbb65b288b2afcab4059",
-      "start_line": 937,
-      "end_line": 943
+      "anchor": "28-november--disarmed-a-only-diagnostic-attempt-collector-and-cleanup-preparation",
+      "blob_sha": "9a341a52debe1db825253e3aeed44a576df68fa8",
+      "start_line": 945,
+      "end_line": 949
     }
   },
   "authority": {
@@ -307,7 +314,7 @@
       "receipt": {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--quiet-fixture-terminal-nonzero-manager-exit-and-one-use-disarm",
-        "blob_sha": "fa6ca863a9fd762bb221cbb65b288b2afcab4059",
+        "blob_sha": "9a341a52debe1db825253e3aeed44a576df68fa8",
         "start_line": 919,
         "end_line": 935
       }
@@ -681,11 +688,15 @@
       {
         "sha": "8bbfc5a2f1a2d90a137d7feea731647ddde6ba52",
         "scope": "Inert /run namespace A/B pure diagnostic core and proposed finite plan; actual 8/8 generated tests PASS with exact local Git blob hashes, three QA paths only. Not execution-ready; collector, cleanup, mount equivalence and exact separate approval required."
+      },
+      {
+        "sha": "3f7f5060fc6689a163b9e857eb4dfc1eca79f427",
+        "scope": "Inert A-only attempt attribution/failure cleanup collector, two QA files, 10/10 generated mocks actual local PASS and exact Git hashes. No successful-start lifecycle integration or activation; B mount proof outstanding."
       }
     ]
   },
   "remaining_risks": [
-    "Prior 46129641931 MANAGER_EXIT_NONZERO, 46127278663 MANAGER_COMMAND and 46120862249 PREEXISTING retained. Upstream specific /run 226/NAMESPACE hypothesis supported, actual cause unproved. Detached 8bbfc5a pure core 8/8; collector, positive cleanup, B equivalent runtime isolation, settlement/custody and exact approval outstanding. No replay or speculative generic expansion.",
+    "Three historical fixture refusals retained. /run namespace hypothesis not established at runtime. Detached 3f7f506 A collector 10/10 generated tests; success integration, actual ownership/cleanup, B isolation and exact separate execution approval outstanding. No acceptance changes.",
     "Reduced static inspection 596390f is held: 24 artifacts, proposed 24 direct GETs/104436509 bytes/30min/one attempt/no redirects or retries, preparation only. No archive acquisition, use, install, parser execution or custody inference; exact tests, staged metadata/notice/native facts, actual independent settlement and ownership handoff remain. 23/23 historical targeted release identities reviewed; 0/23 final pre-use dispositions. Security, actual compatible graph, applicable rights and independent hashes remain required; no blanket clearance.",
     "ReportLab 4.5.1 remains HOLD; 5.1.2 is a disarmed proposed alternative with coordinated range/lock/metadata/notice and offline graph review outstanding. Actual native/parser/library/loader applicability (PDFium/Brotli, numerical runtimes, LZMA, Tauri and relevant Python/npm components) remains open. Preserve all prior identities, notices and source evidence; no silent lock cutover, installation or release.",
     "Linux Stage A 19/19 exact generated fixtures previously passed; corrected Pillow static Brotli evidence and authenticated Chrome .88/Playwright 1.65.1 basic sandboxed smoke retained at their exact scopes, not durable current custody, full product compatibility, Windows or general security/rights clearance. Full Linux profile/frontend/browser/functional regression and all four machine profiles remain held; Windows-specific exact inputs, Astral runtime candidate if applicable, rights, security, owned settlement and browser-dev verification mandatory before D1. Reuse accepted evidence; no repeated broad identity probes.",
