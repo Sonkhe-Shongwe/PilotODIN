@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-DEV-VM-01-S2-CONSOLIDATED-OVERLAY-20261128",
-    "parent_sha": "434142a15aeec6dad9931598591853f5bca2e683",
-    "previous_snapshot_sha": "434142a15aeec6dad9931598591853f5bca2e683",
-    "scope": "C5 held consolidated source overlay and exact functional input binding",
+    "operation_id": "C5-DEV-VM-01-S2-FUNCTIONAL-DRIVER-20261128",
+    "parent_sha": "b8dcfec251e78509ad780ce1d247a2d717510d61",
+    "previous_snapshot_sha": "b8dcfec251e78509ad780ce1d247a2d717510d61",
+    "scope": "C5 disarmed managed functional driver, browser configurations and ordered validation workflow",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "blob_sha": "fb198aa09b6fbfc05f0bd4a99d87604f4032409b",
-      "anchor": "28-november--dev-vm-01-consolidated-held-source-overlay-and-input-binding",
-      "start_line": 1315,
-      "end_line": 1321
+      "blob_sha": "cd33d37205c4d6d06a0ba98edee616dbacbdb508",
+      "anchor": "28-november--dev-vm-01-disarmed-functional-driver-and-windows-first-workflow",
+      "start_line": 1323,
+      "end_line": 1329
     }
   },
   "product": {
@@ -135,15 +135,22 @@
     "id": "C5-DEV-VM-01-S2-PREUSE-AND-OVERLAY-20261128",
     "status": "READY",
     "scope": "S2 review of actual S1 facts at exact receipt blob 02ce4c6d821bae913691d0a5501fe516df2fd908 and conditional dependency overlays targeting bb46e49; complete exact applicable pre-use and consolidated Windows/Linux regression preparation.",
-    "blocker": "Consolidated candidate assembled and exact input/lock/witness pins bound, still uncompiled/unexecuted; applicable security/rights/native linkage and managed environment holds remain. Exact functional runner/browser configs and activation binding outstanding. Production remains BLOCKED historical incompatible lock.",
+    "blocker": "Exact applicable dependency rights/security/native component and actual managed tool/browser qualification held. Consolidated source/driver/workflow prepared, uncompiled/unexecuted; exact reviewed disposition and activation binding absent. No package consumption or execution authority.",
     "next_action_kind": "PREPARATION",
-    "next_action": "Resume consolidated detached 950678b (includes b8dd9c5 and 5c9e67d). Complete exact disarmed Windows-first/Linux-second functional workflow and browser configurations (standard sandbox, no automatic downloads or fallback); resolve finite applicable pre-use security/rights/component and exact tool/browser holds. Preserve original test predicates; only then request exact bounded execution approval. No repeat identity inspections or unrelated work.",
+    "next_action": "Resume consolidated detached 2e7f10c including 69c23d3/4cf72b4/aee2862. Resolve finite actual applicable dependency rights/security/component/notice and managed tool/browser evidence holds, including ReportLab flagged source/cache and PDFium linkage. Review exact final candidate/driver semantics and activation patch, request exact bounded approval only when viable. Windows-first then Linux, no duplicate identity inspections or unrelated preparation.",
     "after": [
       "Verify consolidated functional Windows/Linux synthetic stages only when applicable pre-use and exact authority satisfied; no auto-use or live merge.",
       "Close C5 and award only qualifying original evidence; all six P4 and native D/G2/E2/8GB/Gate C requirements preserved.",
       "DLA parked; P5/installer/release remain unauthorised."
     ],
     "read": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "cd33d37205c4d6d06a0ba98edee616dbacbdb508",
+        "anchor": "28-november--dev-vm-01-disarmed-functional-driver-and-windows-first-workflow",
+        "start_line": 1323,
+        "end_line": 1329
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "blob_sha": "fb198aa09b6fbfc05f0bd4a99d87604f4032409b",
@@ -216,17 +223,17 @@
     ]
   },
   "operation": {
-    "id": "C5-DEV-VM-01-S2-CONSOLIDATED-OVERLAY-20261128",
+    "id": "C5-DEV-VM-01-S2-FUNCTIONAL-DRIVER-20261128",
     "state": "RECONCILED",
-    "starting_sha": "434142a15aeec6dad9931598591853f5bca2e683",
-    "outcome": "b8dd9c5/5c9e67d/950678b detached source and input binding exact trees verified; no runtime or acceptance evidence.",
+    "starting_sha": "b8dcfec251e78509ad780ce1d247a2d717510d61",
+    "outcome": "Four detached source candidates assembled with exact Git diff/tree readback; concrete runner/workflow disarmed, no tests or acceptance evidence.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "blob_sha": "fb198aa09b6fbfc05f0bd4a99d87604f4032409b",
-      "anchor": "28-november--dev-vm-01-consolidated-held-source-overlay-and-input-binding",
-      "start_line": 1315,
-      "end_line": 1321
+      "blob_sha": "cd33d37205c4d6d06a0ba98edee616dbacbdb508",
+      "anchor": "28-november--dev-vm-01-disarmed-functional-driver-and-windows-first-workflow",
+      "start_line": 1323,
+      "end_line": 1329
     }
   },
   "authority": {
@@ -760,6 +767,22 @@
       {
         "sha": "950678b94525cc694c5690dd1d7b0bbd5b495920",
         "scope": "Final held browser/S1 provenance and proposed exact functional input ceilings; no execution."
+      },
+      {
+        "sha": "69c23d3d6b74c97fd195777c1e13a957410ad8bc",
+        "scope": "Dedicated managed sandbox browser configs and persistent context path, unexecuted."
+      },
+      {
+        "sha": "4cf72b47599c490a8e38826bdc236ba910c63555",
+        "scope": "Mandatory final functional regression binding to existing staged coordinator, unexecuted."
+      },
+      {
+        "sha": "aee2862735245fbeb685b75751a0765c686caced",
+        "scope": "Concrete disarmed managed driver and ordered Windows/Linux workflow draft, no authority."
+      },
+      {
+        "sha": "2e7f10c6d23b14cebc76051c80b71eee0b17db57",
+        "scope": "Exact reviewed managed tool and browser checks, bounded count/identifier evidence; candidate final tree checked, no execution."
       }
     ]
   },
@@ -790,7 +813,8 @@
     "S2 7aea354 exact projections are inert; applicable rights/security/linkage and final managed tool compatibility, PDFium equivalence, font/preflight and final workflow still held. Mounted browser tests ae3e9d7 unexecuted; actual version-change race still needs coverage. No acceptance delta.",
     "Mounted version transition source 615c0f7 supersedes missing coverage risk of ae3e9d7, but five scenarios remain uncompiled/unexecuted; actual selector and renderer behaviour require authorised functional regression.",
     "cb83bec binds candidate font version only; full profile/preflight graph rebind and functional test required. Root pin 5.1.2 conflicts with historical production 4.5.1, production remains BLOCKED. Exact Inter/Manrope OFL notice matches not full package or release clearance.",
-    "950678b candidate assembled but no compile, source regression or native/runtime verification; current production historical lock incompatible with proposed root. Exact functional runner/browser configs and pre-use security/rights/managed identity remain held."
+    "950678b candidate assembled but no compile, source regression or native/runtime verification; current production historical lock incompatible with proposed root. Exact functional runner/browser configs and pre-use security/rights/managed identity remain held.",
+    "2e7f10c disarmed driver/workflow uncompiled and unexecuted, exact managed tool/disposition/activation absent; browser reporter semantics, full source-copy runtime and process/transport behavior need authorised validation. No native or physical evidence."
   ],
   "context": {
     "protocol": {
@@ -865,6 +889,13 @@
       }
     ],
     "evidence": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "cd33d37205c4d6d06a0ba98edee616dbacbdb508",
+        "anchor": "28-november--dev-vm-01-disarmed-functional-driver-and-windows-first-workflow",
+        "start_line": 1323,
+        "end_line": 1329
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "blob_sha": "fb198aa09b6fbfc05f0bd4a99d87604f4032409b",
