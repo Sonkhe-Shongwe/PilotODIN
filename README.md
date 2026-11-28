@@ -1,5 +1,7 @@
 # PilotODIN 1.0
 
+**Current local AI direction (proposed implementation):** [Universal Local AI architecture](docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md#28-november--universal-local-ai-directive): one owned inference worker, Granite as proposed default, Liquid optional, Core deterministic. Qwen remains the historical baseline until a successor is qualified and cutover approved. No new model is implemented or qualified. [Documentation audit](docs/DOCUMENTATION_AUDIT_C5_D1_MIGRATION_2026-11-27.md#11-universal-local-ai-direction-and-documentation-audit-28-november-2026).
+
 **Local-first Windows data investigation, analytics and predictive modelling.** PilotODIN combines a React/TypeScript workspace, local FastAPI/SQLite analytical engine and Tauri desktop shell. The 1.0 roadmap covers versioned data-quality approval, evidence-backed investigation, model evaluation, reports and a bundled local ODIN assistant.
 
 **Development, not release certification.** P4 Target Intelligence is active; P1–P3 have bounded development closure records. P5 is unauthorised and the P8 installer remains frozen until final approved release. Source remediation and official acceptance are separate measures.
