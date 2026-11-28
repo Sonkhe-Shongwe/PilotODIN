@@ -1,5 +1,7 @@
 # PilotODIN: Build B, the new Investigation Canvas
 
+> **Historical Build B guide.** Start current work from the [session handoff](docs/SESSION_HANDOFF_CURRENT.md) and [phase policy](docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md).
+
 Start with [docs/BUILD_B_CANVAS_SPIKE.md](docs/BUILD_B_CANVAS_SPIKE.md).
 
 This is the **complete Build A source plus an additive, separate Build B investigation-first experience**. It preserves existing capabilities, the secure Tauri scaffold, AI provider settings and quality workflows. It does not replace them with an HTML toy application.

@@ -1,0 +1,13 @@
+# Consumed after standard Pillow verification run 46062661845; do not replay.
+name: C5 owned temporary verification slot (disarmed)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  disabled:
+    if: ${{ false }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - run: exit 2

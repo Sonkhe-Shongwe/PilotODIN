@@ -1,0 +1,171 @@
+name: C5 CD10 Ubuntu security metadata once
+on:
+  workflow_dispatch:
+permissions: {}
+jobs:
+  metadata-once:
+    if: ${{ false }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Signed Ubuntu metadata and read-only transaction
+        shell: bash
+        run: |
+          /usr/bin/python3 -I -B - <<'PY'
+          import datetime as dt
+          import email.utils
+          import hashlib
+          import json
+          import lzma
+          import os
+          import pathlib
+          import re
+          import subprocess
+          import sys
+          import tempfile
+          
+          VERSION = "2.42-4ubuntu2.11"
+          OLD = "2.42-4ubuntu2.10"
+          NAMES = ("binutils", "binutils-common", "binutils-x86-64-linux-gnu", "libbinutils", "libctf0", "libctf-nobfd0", "libgprofng0", "libsframe1")
+          BASE = "https://security.ubuntu.com/ubuntu/dists/noble-security/"
+          INDEX = "main/binary-amd64/Packages.xz"
+          receipt = {"status": "REFUSED", "source": os.environ.get("GITHUB_SHA"), "image": os.environ.get("ImageVersion"), "requests": 0, "verified_bytes": 0, "packages": [], "simulation": "NOT_RUN", "installed_changes": 0, "deb_requests": 0}
+          def need(ok, reason):
+              if not ok:
+                  raise ValueError(reason)
+          def fields(text):
+              out = {}
+              key = None
+              for line in text.splitlines():
+                  if line.startswith((" ", "\t")):
+                      need(key is not None, "CONTROL_CONTINUATION")
+                      out[key] += "\n" + line.strip()
+                  elif line:
+                      key, sep, val = line.partition(":")
+                      need(sep and re.fullmatch(r"[A-Za-z0-9-]+", key) and key not in out, "CONTROL_FIELD")
+                      out[key] = val.strip()
+              return out
+          def records(text):
+              for stanza in re.split(r"\n[ \t]*\n", text):
+                  if stanza.strip():
+                      yield fields(stanza)
+          def main(root):
+              need(os.environ.get("ImageOS") == "ubuntu24" and os.uname().machine == "x86_64", "RUNNER")
+              need(sys.implementation.name == "cpython" and sys.version_info[:3] == (3,12,3) and pathlib.Path(sys.executable).resolve() == pathlib.Path("/usr/bin/python3.12"), "PYTHON")
+              env = {"PATH": "/usr/bin:/bin", "LC_ALL": "C", "HOME": str(root), "TMPDIR": str(root), "GNUPGHOME": str(root)}
+              def run(argv, timeout=20, extra=None):
+                  p = subprocess.run(argv, env={**env, **(extra or {})}, cwd=root, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=timeout, check=False)
+                  need(len(p.stdout)+len(p.stderr) <= 1024*1024, "TOOL_OUTPUT_CAP")
+                  return p
+              def get(url, dest, cap, exact=None):
+                  need(receipt["requests"] < 2 and url.startswith(BASE) and not dest.exists(), "REQUEST_SCOPE")
+                  receipt["requests"] += 1
+                  p = run(["/usr/bin/curl", "-q", "--silent", "--show-error", "--fail", "--noproxy", "*", "--http1.1", "--proto", "=https", "--proto-redir", "=https", "--max-redirs", "0", "--retry", "0", "--connect-timeout", "10", "--max-time", "30", "--max-filesize", str(cap), "--header", "Accept-Encoding: identity", "--output", str(dest), "--write-out", "%{http_code} %{size_download}", url], 32)
+                  need(p.returncode == 0 and not p.stderr and dest.is_file(), "HTTPS_TRANSFER")
+                  size = dest.stat().st_size
+                  need(0 < size <= cap and (exact is None or size == exact) and p.stdout == ("200 " + str(size)).encode(), "HTTPS_SIZE")
+                  receipt["verified_bytes"] += size
+                  return dest.read_bytes()
+              curl = run(["/usr/bin/dpkg-query", "-W", "-f=${Status} ${Version}", "curl"])
+              need(curl.returncode == 0 and curl.stdout == b"install ok installed 8.5.0-2ubuntu10.16", "CURL_PACKAGE")
+              keyring = pathlib.Path("/usr/share/keyrings/ubuntu-archive-keyring.gpg")
+              need(keyring.is_file() and not keyring.is_symlink(), "ARCHIVE_KEYRING")
+              receipt["keyring_sha256"] = hashlib.sha256(keyring.read_bytes()).hexdigest()
+              ir = root / "InRelease"
+              irraw = get(BASE+"InRelease", ir, 512*1024)
+              release = root / "Release"
+              sig = run(["/usr/bin/gpgv", "--keyring", str(keyring), "--status-fd", "1", "--output", str(release), str(ir)])
+              need(sig.returncode == 0 and release.is_file(), "SIGNATURE")
+              fingerprints = re.findall(rb"(?m)^\[GNUPG:\] VALIDSIG ([0-9A-F]{40,64}) ", sig.stdout)
+              need(bool(fingerprints), "SIGNER")
+              r = fields(release.read_text(encoding="utf-8"))
+              need(r.get("Origin") == "Ubuntu" and r.get("Label") == "Ubuntu" and r.get("Suite") == "noble-security" and r.get("Codename") == "noble" and "amd64" in r.get("Architectures","").split() and "main" in r.get("Components","").split(), "RELEASE_SCOPE")
+              now = dt.datetime.now(dt.timezone.utc)
+              date = email.utils.parsedate_to_datetime(r["Date"])
+              need(now-dt.timedelta(days=3) <= date <= now+dt.timedelta(minutes=5), "RELEASE_FRESHNESS")
+              if r.get("Valid-Until"):
+                  need(now < email.utils.parsedate_to_datetime(r["Valid-Until"]), "RELEASE_EXPIRED")
+              entry = [x.split() for x in r["SHA256"].splitlines() if x.split() and x.split()[-1] == INDEX]
+              need(len(entry) == 1 and len(entry[0]) == 3 and re.fullmatch(r"[0-9a-f]{64}", entry[0][0]), "INDEX_PIN")
+              sha, size, _ = entry[0]
+              size = int(size)
+              need(0 < size <= 16*1024**2, "INDEX_CAP")
+              receipt["release"] = {"date": r["Date"], "valid_until": r.get("Valid-Until"), "sha256": hashlib.sha256(irraw).hexdigest(), "signers": [x.decode() for x in fingerprints], "index_sha256": sha, "index_bytes": size}
+              url = BASE + ("main/binary-amd64/by-hash/SHA256/"+sha if r.get("Acquire-By-Hash") == "yes" else INDEX)
+              raw = get(url, root/"Packages.xz", 16*1024**2, size)
+              need(hashlib.sha256(raw).hexdigest() == sha, "INDEX_HASH")
+              dec = lzma.LZMADecompressor(format=lzma.FORMAT_XZ, memlimit=128*1024**2)
+              data = dec.decompress(raw, max_length=128*1024**2+1)
+              need(dec.eof and not dec.unused_data and len(data) <= 128*1024**2, "INDEX_EXPANSION")
+              # Bind the decompressed Packages file to its signed Release entry as well.
+              plain = [x.split() for x in r["SHA256"].splitlines() if x.split() and x.split()[-1] == INDEX[:-3]]
+              need(len(plain) == 1 and len(plain[0]) == 3 and plain[0][0] == hashlib.sha256(data).hexdigest() and int(plain[0][1]) == len(data), "PLAIN_INDEX_PIN")
+              selected = {}
+              for row in records(data.decode("utf-8", "strict")):
+                  name = row.get("Package")
+                  if name not in NAMES or row.get("Version") != VERSION or row.get("Architecture") != "amd64":
+                      continue
+                  need(name not in selected and row.get("Source","binutils").split()[0] == "binutils", "PACKAGE_SOURCE")
+                  need(re.fullmatch(r"pool/main/b/binutils/[A-Za-z0-9.+_~%-]+_amd64\.deb", row.get("Filename","")) and re.fullmatch(r"[0-9a-f]{64}", row.get("SHA256","")) and 0 < int(row["Size"]) <= 64*1024**2, "PACKAGE_PIN")
+                  selected[name] = {k: row[k] for k in ("Package","Version","Architecture","Filename","Size","SHA256") }
+                  for key in ("Depends","Pre-Depends","Breaks","Conflicts","Replaces","Source"):
+                      if key in row:
+                          selected[name][key] = row[key]
+              receipt["packages"] = [selected[n] for n in NAMES if n in selected]
+              need(set(selected) == set(NAMES), "PATCH_SET_MISSING")
+              receipt["status"] = "AUTHENTICATED_METADATA"
+              # Read-only isolated APT cache and simulation; no apt update, no .deb transfer.
+              lists = root/"lists"
+              lists.mkdir()
+              (lists/"partial").mkdir()
+              prefix = "security.ubuntu.com_ubuntu_dists_noble-security"
+              (lists/(prefix+"_InRelease")).write_bytes(irraw)
+              (lists/(prefix+"_main_binary-amd64_Packages")).write_bytes(data)
+              sources = root/"sources.list"
+              sources.write_text("deb [arch=amd64 signed-by="+str(keyring)+"] https://security.ubuntu.com/ubuntu noble-security main\n")
+              cfg = root/"apt.conf"
+              cfg.write_text(
+                  'Dir::Etc::main "/dev/null";\nDir::Etc::parts "-";\n'
+                  + 'Dir::Etc::sourcelist "'+str(sources)+'";\nDir::Etc::sourceparts "-";\n'
+                  + 'Dir::Etc::preferences "/dev/null";\nDir::Etc::preferencesparts "-";\n'
+                  + 'Dir::State::lists "'+str(lists)+'";\nDir::State::status "/var/lib/dpkg/status";\n'
+                  + 'Dir::Cache::pkgcache "";\nDir::Cache::srcpkgcache "";\nAPT::Architecture "amd64";\nAPT::Architectures { "amd64"; };\nDebug::NoLocking "true";\n')
+              aptenv = {"APT_CONFIG": str(cfg)}
+              installed = {}
+              for name in NAMES:
+                  p = run(["/usr/bin/dpkg-query", "-W", "-f=${Status} ${Version}", name])
+                  need(p.returncode == 0 and p.stdout.decode() in ("install ok installed "+OLD, "install ok installed "+VERSION), "INSTALLED_SET")
+                  installed[name] = p.stdout.decode().split()[-1]
+                  p = run(["/usr/bin/apt-cache", "show", name+"="+VERSION], extra=aptenv)
+                  need(p.returncode == 0, "APT_CACHE")
+                  matches = [x for x in records(p.stdout.decode()) if all(x.get(k) == selected[name][k] for k in ("Package","Version","Architecture","Filename","Size","SHA256"))]
+                  need(len(matches) == 1, "APT_INDEX_BINDING")
+              receipt["installed"] = installed
+              p = run(["/usr/bin/apt-get", "-s", "--no-download", "--no-install-recommends", "install", *[n+"="+VERSION for n in NAMES]], timeout=45, extra=aptenv)
+              receipt["simulation"] = "REFUSED"
+              need(p.returncode == 0, "APT_SIMULATION")
+              actions = [line for line in p.stdout.decode().splitlines() if line.startswith(("Inst ","Conf ","Remv ","Purg "))]
+              expected = {n for n,v in installed.items() if v != VERSION}
+              seen = set()
+              for line in actions:
+                  m = re.fullmatch(r"Inst ([a-z0-9-]+)(?::amd64)? \[([^\]]+)\] \(([^ ]+) [^)]*\)", line)
+                  if m:
+                      n, old, new = m.groups()
+                      need(n in expected and n not in seen and old == OLD and new == VERSION, "APT_UNEXPECTED_INSTALL")
+                      seen.add(n)
+                  else:
+                      m = re.fullmatch(r"Conf ([a-z0-9-]+)(?::amd64)? \(([^ ]+) [^)]*\)", line)
+                      need(m and m.group(1) in expected and m.group(2) == VERSION, "APT_UNEXPECTED_ACTION")
+              need(seen == expected, "APT_INCOMPLETE_TRANSACTION")
+              receipt["simulation"] = "PASS"
+              receipt["planned_actions"] = actions
+              receipt["package_bytes"] = sum(int(selected[n]["Size"]) for n in expected)
+              receipt["status"] = "PASS"
+          try:
+              with tempfile.TemporaryDirectory(prefix="pilotodin-cd10-", dir=os.environ["RUNNER_TEMP"]) as scratch:
+                  main(pathlib.Path(scratch))
+          except Exception as e:
+              receipt["failure"] = str(e) if isinstance(e, ValueError) and re.fullmatch(r"[A-Z_]+",str(e)) else type(e).__name__
+          print("C5_CD10_METADATA " + json.dumps(receipt, sort_keys=True), flush=True)
+          sys.exit(0 if receipt["status"] == "PASS" else 1)
+          PY

@@ -1,0 +1,43 @@
+name: C5 freezer metadata offline review
+on:
+  push:
+    branches: [feature/live-dev-workspace-20261023]
+    paths:
+      - qa/c5_wheel_metadata/APPROVAL_FREEZER_20261125.txt
+permissions:
+  contents: read
+jobs:
+  offline-review:
+    if: ${{ false }} # Previous exact offline verification preserved.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - run: python3 -I -B qa/c5_wheel_metadata/collect_freezer.py --self-test
+      - name: Assert collection refusal
+        run: |
+          set +e
+          python3 -I -B qa/c5_wheel_metadata/collect_freezer.py --collect
+          code=$?
+          set -e
+          test "$code" = 2
+  collect-once:
+    if: ${{ false }} # Approval consumed by run 45704870236; no replay.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - run: python3 -I -B qa/c5_wheel_metadata/collect_freezer.py --self-test
+      - name: Verify exact activated collector blob
+        run: test "$(git hash-object qa/c5_wheel_metadata/collect_freezer.py)" = 1c4fc2c49a6e574ccbb7dfb5e2c6c7173def5724
+      - name: Freezer metadata only, approved one use
+        env:
+          C5_APPROVED_ONCE: C5-FREEZER-METADATA-ONCE-20261125
+          C5_EXPECTED_SOURCE_SHA: ${{ github.sha }}
+        run: python3 -I -B qa/c5_wheel_metadata/collect_freezer.py --collect

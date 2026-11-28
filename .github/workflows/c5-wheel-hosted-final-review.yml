@@ -1,0 +1,150 @@
+name: C5 hosted policy-v3 one-use acquisition
+on:
+  push:
+    branches: [feature/live-dev-workspace-20261023]
+    paths:
+      - qa/c5_wheel_metadata/wheel_hosted_final.py
+      - qa/c5_wheel_metadata/test_wheel_hosted_final.py
+      - .github/workflows/c5-wheel-hosted-final-review.yml
+permissions:
+  contents: read
+jobs:
+  synthetic:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Exact historical pins and inert evidence replay
+        shell: bash
+        run: |
+          set -e
+          test "$(git rev-parse HEAD:qa/c5_wheel_metadata/wheel_archive_inspector_v2.py)" = 9bf91fb983bd354f0b6db20dbb4eec32c447f369
+          test "$(git rev-parse HEAD:qa/c5_wheel_metadata/wheel_archive_inspector.py)" = aa5ab610d711fb8f9bc1fce1020c4999e53f3571
+          test "$(git rev-parse HEAD:qa/c5_wheel_metadata/wheel_notice_evidence.py)" = 141f069706d0c597214829eea90a48197c381e2c
+          test "$(git rev-parse HEAD:qa/c5_wheel_metadata/wheel_diagnostic_offline.py)" = 6aa10f588e24e582d7edf6226635adc6a591faad
+          test "$(git rev-parse HEAD:qa/c5_wheel_metadata/wheel_missing_hosted.py)" = 73311acf23aa6653c534678dd7710ff1a4e6a150
+          test "$(git rev-parse HEAD:.github/workflows/c5-wheel-missing-hosted.yml)" = 7bf52665598af6619de024f143288ab626f7ccc2
+          test ! -e qa/c5_wheel_metadata/APPROVAL_WHEEL_MISSING_HOSTED_20261126.txt
+          python --version
+          python -I -B qa/c5_wheel_metadata/test_wheel_notice_evidence.py
+          python -I -B qa/c5_wheel_metadata/test_wheel_diagnostic_offline.py
+          python -I -B qa/c5_wheel_metadata/test_wheel_notice_evidence_v2.py
+          python -I -B qa/c5_wheel_metadata/test_wheel_diagnostic_v3_offline.py
+          python -I -B qa/c5_wheel_metadata/test_wheel_license_policy.py
+          test "$(git rev-parse HEAD:qa/c5_wheel_metadata/wheel_license_policy.py)" = 876bb701544cee28e5f06851bc85c05acb74af35
+          test "$(git rev-parse HEAD:qa/c5_wheel_metadata/wheel_diagnostic_v3_offline.py)" = 8ad2a4af09f62e367863658351c3b3adc27731d5
+          test "$(git rev-parse HEAD:qa/c5_wheel_metadata/wheel_notice_evidence_v2.py)" = 81693017a1f287cafe521e6a7e958831cfd9dc6a
+          python -I -B qa/c5_wheel_metadata/test_wheel_settlement_core.py
+          test "$(git rev-parse HEAD:qa/c5_wheel_metadata/wheel_settlement_core.py)" = 263d2565d744f4e53289fb973ff0a205561e4a7c
+          test ! -e qa/c5_wheel_metadata/APPROVAL_WHEEL_POLICY_V3_HOSTED_20261126.txt
+          python -I -B qa/c5_wheel_metadata/test_wheel_hosted_policy_v3.py
+          test "$(git rev-parse HEAD:qa/c5_wheel_metadata/wheel_hosted_policy_v3.py)" = 939bb94802311a45a7f8e3f23183100c857df3be
+          python -I -B qa/c5_wheel_metadata/test_wheel_hosted_runtime.py
+          python -I -B qa/c5_wheel_metadata/test_wheel_hosted_final.py
+          test "$(git rev-parse HEAD:qa/c5_wheel_metadata/wheel_prior_notice_preservation_45729307962.json)" = 1adcd112c54ffa90ee638bcd7598d879e01798bc
+      - name: Direct restricted CLI refusals
+        shell: bash
+        run: |
+          set +e
+          result=$(python -I -B qa/c5_wheel_metadata/wheel_notice_evidence_v2.py --collect 2>&1)
+          code=$?
+          test "$code" = 1 && test "$result" = 'OFFLINE_LIBRARY_ONLY: v2 no acquisition or evidence publication CLI' || exit 1
+          printf '%s\n' "$result"
+          result=$(python -I -B qa/c5_wheel_metadata/wheel_diagnostic_v3_offline.py --collect 2>&1)
+          code=$?
+          test "$code" = 1 && test "$result" = 'FRESH_APPROVAL_REQUIRED: v3 diagnostic collection is fixture-only' || exit 1
+          printf '%s\n' "$result"
+          result=$(python -I -B qa/c5_wheel_metadata/wheel_license_policy.py --collect 2>&1)
+          code=$?
+          test "$code" = 1 && test "$result" = 'OFFLINE_LIBRARY_ONLY: licence placement policy' || exit 1
+          printf '%s\n' "$result"
+          result=$(python -I -B qa/c5_wheel_metadata/wheel_settlement_core.py --collect 2>&1)
+          code=$?
+          test "$code" = 1 && test "$result" = 'OFFLINE_LIBRARY_ONLY: policy-bound settlement core' || exit 1
+          printf '%s\n' "$result"
+          result=$(python -I -B qa/c5_wheel_metadata/wheel_settlement_fixture.py --collect 2>&1)
+          code=$?
+          test "$code" = 1 && test "$result" = 'FRESH_APPROVAL_REQUIRED: policy settlement fixture-only' || exit 1
+          printf '%s\n' "$result"
+          for mode in --collect --retrieve; do
+            result=$(python -I -B qa/c5_wheel_metadata/wheel_hosted_policy_v3.py "$mode" 2>&1)
+            code=$?
+            test "$code" = 1 && test "$result" = 'FRESH_APPROVAL_REQUIRED: hosted policy-v3 adapter disabled' || exit 1
+            printf '%s\n' "$result"
+          done
+          for mode in --collect --retrieve; do
+            result=$(python -I -B qa/c5_wheel_metadata/wheel_hosted_runtime.py "$mode" 2>&1)
+            code=$?
+            test "$code" = 1 && test "$result" = 'FRESH_APPROVAL_REQUIRED: hosted runtime disabled' || exit 1
+            printf '%s\n' "$result"
+          done
+          for mode in --collect --retrieve; do
+            result=$(python -I -B qa/c5_wheel_metadata/wheel_hosted_final.py "$mode" 2>&1)
+            code=$?
+            test "$code" = 1 && test "$result" = 'FRESH_APPROVAL_REQUIRED: final hosted driver disabled' || exit 1
+            printf '%s\n' "$result"
+          done
+  collect-once:
+    if: ${{ false }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    outputs:
+      record: ${{ steps.collect.outputs.record }}
+      settlement: ${{ steps.collect.outputs.settlement }}
+      artifact-id: ${{ steps.upload.outputs.artifact-id }}
+      digest: ${{ steps.upload.outputs.artifact-digest }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+      - id: collect
+        run: python3 -I -B qa/c5_wheel_metadata/wheel_hosted_final.py --collect
+        env:
+          C5_REVIEWED_EXPECTATION: ${{ vars.C5_REVIEWED_EXPECTATION }}
+          C5_DRIVER_BLOB: ${{ vars.C5_DRIVER_BLOB }}
+          C5_WORKFLOW_BLOB: ${{ vars.C5_WORKFLOW_BLOB }}
+          C5_APPROVED_ONCE: C5-WHEEL-POLICY-V3-HOSTED-ONCE-20261126
+      - id: upload
+        if: ${{ false }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: c5-final-policy-v3-receipts-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ steps.collect.outputs.receipt_bundle }}
+          retention-days: 7
+          compression-level: 0
+          overwrite: false
+          if-no-files-found: error
+  retrieve-once:
+    if: ${{ false }}
+    needs: collect-once
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+      - run: python3 -I -B qa/c5_wheel_metadata/wheel_hosted_final.py --retrieve
+        env:
+          C5_REVIEWED_EXPECTATION: ${{ vars.C5_REVIEWED_EXPECTATION }}
+          C5_DRIVER_BLOB: ${{ vars.C5_DRIVER_BLOB }}
+          C5_WORKFLOW_BLOB: ${{ vars.C5_WORKFLOW_BLOB }}
+          C5_APPROVED_ONCE: C5-WHEEL-POLICY-V3-HOSTED-ONCE-20261126
+          C5_BUNDLE_RECORD: ${{ needs.collect-once.outputs.record }}
+          C5_PRODUCER_SETTLEMENT: ${{ needs.collect-once.outputs.settlement }}
+          C5_ARTIFACT_ID: ${{ needs.collect-once.outputs.artifact-id }}
+          C5_UPLOAD_DIGEST: ${{ needs.collect-once.outputs.digest }}
+          GH_TOKEN: ${{ github.token }}

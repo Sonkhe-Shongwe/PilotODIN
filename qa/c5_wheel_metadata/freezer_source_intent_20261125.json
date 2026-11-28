@@ -1,0 +1,81 @@
+{
+  "status": "HISTORICAL_INTENT_AND_UPSTREAM_SOURCE_ONLY_NOT_SELECTED_WHEELS",
+  "local_source_pins": [
+    {
+      "path": "backend/requirements.txt",
+      "blob": "30d347462aa29b4db9c7308079f231185f4c1703"
+    },
+    {
+      "path": "tools/p2_pdf_prepare_full_sidecar_builder.py",
+      "blob": "df64f78a70b2b1aecfa3aec88bfb9c86929e452e"
+    },
+    {
+      "path": "tools/p2_pdf_pyinstaller_tooling_devqa.py",
+      "blob": "200717331cbe11d37e5650119d262873cc5bb8fd"
+    },
+    {
+      "path": "desktop/Build_Python_Sidecar.ps1",
+      "blob": "de8e804ac6ef56f7c26341847990d8e13d046ba4"
+    }
+  ],
+  "historical_builder": {
+    "commit": "898230f116266e064f6925c03d538c8e3b863f7e",
+    "path": "desktop/Build_Python_Sidecar.ps1",
+    "blob": "721e73085e1648be36c92deede85f5507bdeb098",
+    "intent": [
+      "backend/requirements.txt",
+      "pyinstaller>=6,<7"
+    ],
+    "onefile": true,
+    "collect_all": [
+      "sklearn",
+      "scipy"
+    ],
+    "historical_only": true
+  },
+  "upstream": [
+    {
+      "repo": "pyinstaller/pyinstaller",
+      "tag": "v6.22.3",
+      "commit": "ecd7993d65c43b254f4e3f718e36d5b4a70a3ed5",
+      "path": "pyproject.toml",
+      "blob": "390a8b5500b7d90589d983aa918ce194cf57d7d6",
+      "version_source_blob": "b0f7e62677dc8e7c096262370aa3aef27dd47702",
+      "requires_python": ">=3.8, <3.16"
+    },
+    {
+      "repo": "pyinstaller/pyinstaller-hooks-contrib",
+      "tag": "v2026.9",
+      "commit": "222e37fea0d8300595af3601a4f42d2fcf634a37",
+      "path": "setup.cfg",
+      "blob": "0aec193be0ffe4144c8f296f344f4a05e8025efd",
+      "version_source_blob": "48d6e26536cf5759af70d2ad324374dda46d51f5",
+      "requires_python": ">=3.8"
+    }
+  ],
+  "candidate_declarations": {
+    "historical_devqa_roots": [
+      "pyinstaller==6.22.3",
+      "pyinstaller-hooks-contrib==2026.9"
+    ],
+    "pyinstaller-6.22.3": [
+      "setuptools >= 42.0.0",
+      "altgraph",
+      "pefile >= 2022.5.30 ; sys_platform == 'win32'",
+      "pywin32-ctypes >= 0.2.1 ; sys_platform == 'win32'",
+      "macholib >= 1.8 ; sys_platform == 'darwin'",
+      "pyinstaller-hooks-contrib >= 2026.7",
+      "importlib_metadata >= 4.6 ; python_version < '3.10'",
+      "packaging >= 22.0"
+    ],
+    "pyinstaller-hooks-contrib-2026.9": [
+      "importlib_metadata >= 4.6 ; python_version < '3.10'",
+      "packaging >= 22.0"
+    ]
+  },
+  "limitations": [
+    "Historical pins proposed for review only; no version choice or acquisition approved.",
+    "Upstream source declarations are not exact selected wheel metadata, artifact digests, license clearance or complete transitive closure.",
+    "Source-test CPython 3.11.9 runtime subset is not independent production selection."
+  ]
+}

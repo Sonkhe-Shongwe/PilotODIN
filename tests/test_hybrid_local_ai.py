@@ -5,18 +5,21 @@ import sys
 import urllib.error
 from pathlib import Path
 import pytest
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
+from tests.settings_fixture import isolate_ai_store
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from backend import ai_provider
 from backend.main import app
-client=TestClient(app)
+client=fixture_client(app)
 
 @pytest.fixture(autouse=True)
 def config(tmp_path, monkeypatch):
-    monkeypatch.setattr(ai_provider,'CONFIG_PATH',tmp_path/'settings.json')
-    monkeypatch.setattr(ai_provider,'SECRETS_PATH',tmp_path/'keys.dpapi')
+    isolate_ai_store(monkeypatch, ai_provider, tmp_path)
     ai_provider._memory_keys.clear();ai_provider._cooldowns.clear()
     for env in ai_provider.ENV_KEYS.values():monkeypatch.delenv(env,raising=False)
+    monkeypatch.delenv('PILOTODIN_DESKTOP_SESSION',raising=False)
+    monkeypatch.setattr(ai_provider.resource_policy,'admit_new_work',lambda *_:{'decision':'allow'})
+    monkeypatch.setattr(ai_provider.bundled_inference,'generate',lambda *a,**k:pytest.fail('Unexpected bundled model'))
     yield
     ai_provider._memory_keys.clear();ai_provider._cooldowns.clear()
 
@@ -50,7 +53,7 @@ def test_default_is_hybrid_and_cloud_opt_in():
 
 def test_local_model_before_cloud_even_when_cloud_enabled(monkeypatch):
     requests=fake_local(monkeypatch)
-    monkeypatch.setattr(ai_provider,'_call_provider',lambda *args: (_ for _ in ()).throw(AssertionError('Cloud not expected')))
+    monkeypatch.setattr(ai_provider,'_call_provider',lambda *args,**kwargs: pytest.fail('Cloud not expected'))
     setmode(cloud=True)
     ai_provider.set_key('gemini','key_for_test_00000999')
     r=ai_provider.respond(ctx(),'assistant','What is missing?','local guidance')
@@ -58,16 +61,13 @@ def test_local_model_before_cloud_even_when_cloud_enabled(monkeypatch):
     assert requests[0][1]['verified_context']==ctx()
 
 
-def test_hybrid_local_failure_then_consented_cloud(monkeypatch):
+def test_hybrid_local_failure_never_escalates_to_cloud(monkeypatch):
     setmode(cloud=True)
     ai_provider.set_key('gemini','key_for_test_00000999')
     monkeypatch.setattr(ai_provider,'_call_ollama',lambda *a: (_ for _ in ()).throw(TimeoutError('LOCAL_PRIVATE_ERROR')))
-    calls=[]
-    monkeypatch.setattr(ai_provider,'_call_provider',lambda *args: (calls.append(args[0]) or 'Grounded cloud explanation'))
+    monkeypatch.setattr(ai_provider,'_call_provider',lambda *a,**k:pytest.fail('Unexpected cloud escalation'))
     r=ai_provider.respond(ctx(),'quality','What should I check?','local')
-    # A local TimeoutError is now reported precisely without leaking its message.
-    assert r['provider']=='gemini' and r['local_status']=='timeout'
-    assert calls==['gemini']
+    assert r['provider']=='local' and r['fallback'] and r['local_status']=='timeout'
     assert 'LOCAL_PRIVATE_ERROR' not in json.dumps(r)
 
 
@@ -75,7 +75,7 @@ def test_hybrid_refuses_cloud_without_consent(monkeypatch):
     setmode(cloud=False)
     ai_provider.set_key('groq','saved-but-not-authorized_12345')
     monkeypatch.setattr(ai_provider,'_call_ollama',lambda *a: (_ for _ in ()).throw(TimeoutError('offline')))
-    monkeypatch.setattr(ai_provider,'_call_provider',lambda *a: (_ for _ in ()).throw(AssertionError('No cloud without consent')))
+    monkeypatch.setattr(ai_provider,'_call_provider',lambda *a,**k: pytest.fail('No cloud without consent'))
     r=ai_provider.respond(ctx(),'explore','Tell me','local statistical facts')
     assert r['source']=='local_computed_rules'
     assert r['answer']=='local statistical facts'
@@ -84,23 +84,25 @@ def test_hybrid_refuses_cloud_without_consent(monkeypatch):
 
 def test_offline_mode_overrides_cloud_preference(monkeypatch):
     setmode(mode='local',cloud=True)
-    fake_local(monkeypatch)
+    monkeypatch.setattr(ai_provider,'_call_ollama',lambda *a,**k:pytest.fail('Explicit cloud refusal must not wake local model'))
     ai_provider.set_key('gemini','key_for_test_00000999')
-    monkeypatch.setattr(ai_provider,'_call_provider',lambda *a: (_ for _ in ()).throw(AssertionError('No cloud in local mode')))
-    assert ai_provider.respond(ctx(),'assistant','Hi','local',selected_provider='gemini')['provider']=='ollama'
+    monkeypatch.setattr(ai_provider,'_call_provider',lambda *a,**k:pytest.fail('No cloud in local mode'))
+    r=ai_provider.respond(ctx(),'assistant','Hi','local',selected_provider='gemini',cloud_intent=True)
+    assert r['provider']=='local' and r['fallback']
 
 
-def test_cloud_first_falls_back_to_local_when_no_consent(monkeypatch):
+def test_cloud_mode_without_explicit_intent_uses_deterministic_rules(monkeypatch):
     setmode(mode='cloud',cloud=False)
-    fake_local(monkeypatch)
-    monkeypatch.setattr(ai_provider,'_call_provider',lambda *a: (_ for _ in ()).throw(AssertionError('No cloud permitted')))
-    assert ai_provider.respond(ctx(),'assistant','Hi','local')['provider']=='ollama'
+    monkeypatch.setattr(ai_provider,'_call_ollama',lambda *a,**k:pytest.fail('Unexpected local model wake'))
+    monkeypatch.setattr(ai_provider,'_call_provider',lambda *a,**k:pytest.fail('No cloud permitted'))
+    r=ai_provider.respond(ctx(),'assistant','Hi','local')
+    assert r['provider']=='local' and r['fallback']
 
 
 def test_explicit_local_rules_bypasses_models(monkeypatch):
     setmode(mode='hybrid',cloud=True)
-    monkeypatch.setattr(ai_provider,'_call_ollama',lambda *a: (_ for _ in ()).throw(AssertionError('LLM not permitted')))
-    monkeypatch.setattr(ai_provider,'_call_provider',lambda *a: (_ for _ in ()).throw(AssertionError('Cloud not permitted')))
+    monkeypatch.setattr(ai_provider,'_call_ollama',lambda *a,**k: pytest.fail('LLM not permitted'))
+    monkeypatch.setattr(ai_provider,'_call_provider',lambda *a,**k: pytest.fail('Cloud not permitted'))
     r=ai_provider.respond(ctx(),'assistant','Hi','local',selected_provider='local')
     assert r['provider']=='local'
 
@@ -109,7 +111,7 @@ def test_explicit_ollama_does_not_escalate(monkeypatch):
     setmode(mode='hybrid',cloud=True)
     ai_provider.set_key('gemini','key_for_test_00000999')
     monkeypatch.setattr(ai_provider,'_call_ollama',lambda *a: (_ for _ in ()).throw(TimeoutError()))
-    monkeypatch.setattr(ai_provider,'_call_provider',lambda *a: (_ for _ in ()).throw(AssertionError('No cloud when Ollama selected')))
+    monkeypatch.setattr(ai_provider,'_call_provider',lambda *a,**k: pytest.fail('No cloud when Ollama selected'))
     assert ai_provider.respond(ctx(),'assistant','Hi','deterministic',selected_provider='ollama')['fallback']
 
 @pytest.mark.parametrize('payload',[
@@ -143,6 +145,7 @@ def test_local_api_is_fixed_loopback(monkeypatch):
     import urllib.request
     calls=[]
     class Response:
+        status = 200
         def __enter__(self):return self
         def __exit__(self,*a):pass
         def read(self,n):return b'{"models":[]}'

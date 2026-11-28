@@ -1,0 +1,12 @@
+# Consumed or refused one-use cgroup observation. Do not replay.
+name: C5 cgroup feasibility once 20261128 (disarmed)
+on:
+  workflow_dispatch:
+permissions: {}
+jobs:
+  disabled:
+    if: ${{ false }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - run: exit 2

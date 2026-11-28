@@ -1,0 +1,52 @@
+name: Live Development Backend Regression
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+jobs:
+  backend-tests:
+    runs-on: windows-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: backend/requirements-test.txt
+      - name: Install backend requirements and pytest
+        run: python -m pip install -r backend/requirements-test.txt
+      - name: Compile all backend modules
+        run: python -m compileall -q backend
+      - name: P2 offline PDF export release-gate and authenticated API contracts
+        # Source-only, temporary HOME. No model/font assets, installer or real reports.
+        # This manual workflow does not authorize the unsigned font release.
+        shell: pwsh
+        run: python -B tools/p2_pdf_export_source_route_devqa.py
+      - name: Focused non-AI Python correctness and reporting regression
+        env:
+          PILOTODIN_HOME: ${{ runner.temp }}/pilotodin-live-tests
+        run: >-
+          python -m pytest -q
+          tests/test_non_ai_correctness_gates.py
+          tests/test_model_library_expansion.py
+          tests/test_ml_a3_preparation_and_split_safety.py
+          tests/test_ml_a3_baseline_and_prediction_warnings.py
+          tests/test_ml_a3_memory_and_explainability.py
+          tests/test_ml_a3_group_and_model_caps.py
+          tests/test_explore_chart_quality.py
+          tests/test_scatter_interactions.py
+          tests/test_explore_linked_filters.py
+          tests/test_explore_null_category_identity.py
+          tests/test_explore_record_inspector.py
+          tests/test_explore_line_box_inspection.py
+          tests/test_column_intelligence.py
+          tests/test_saved_explore_analyses.py
+          tests/test_explore_to_report_evidence.py
+          tests/test_correlation_matrix.py
+          tests/test_chart_counts_semantics.py
+          tests/test_report_exhibit_render.py
+          tests/test_build_e_persistent_reports.py
+          tests/test_quality_increment1.py
+          tests/test_quality_deep_investigations.py

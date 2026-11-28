@@ -2,8 +2,12 @@ import React, {useEffect,useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import {UnifiedShell} from './UnifiedShell';
 import {isDesktop, startDesktopBackend} from './desktopBootstrap';
+import {configureDevelopmentAPI,configureInterceptedFixtureAPI} from './api';
+import './studio-fonts.css';
 import './styles.css';
 import './studio.css';
+import './design-tokens.css';
+import './finish-polish.css';
 
 const root = createRoot(document.getElementById('root')!);
 
@@ -25,6 +29,22 @@ async function initialise() {
     try {await startDesktopBackend();}
     catch (error) {
       showStarting(error instanceof Error ? error.message : 'An unexpected error occurred starting the desktop engine.', true);
+      return;
+    }
+  }
+  else {
+    try {
+      if(import.meta.env.DEV && import.meta.env.MODE==='intercepted-fixture' &&
+         import.meta.env.VITE_PILOTODIN_AUTH_DEV===undefined &&
+         import.meta.env.VITE_PILOTODIN_NATIVE_SMOKE===undefined){
+        configureInterceptedFixtureAPI(window.location.origin);
+      } else if(import.meta.env.DEV && import.meta.env.VITE_PILOTODIN_AUTH_DEV==='1'){
+        configureDevelopmentAPI(window.location.origin);
+      } else {
+        throw new Error('Explicit API bootstrap required');
+      }
+    } catch {
+      showStarting('Invalid isolated Live Dev connection. Restart both launcher consoles.',true);
       return;
     }
   }

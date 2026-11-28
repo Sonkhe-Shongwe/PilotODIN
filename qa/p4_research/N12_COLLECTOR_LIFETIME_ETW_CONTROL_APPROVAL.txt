@@ -1,0 +1,2 @@
+reviewed_source=f8a3c11d701bcf2cc455608d8f19ace0df31862b
+scope=n12-one-collector-lifetime-etw-control

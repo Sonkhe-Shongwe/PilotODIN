@@ -1,0 +1,3 @@
+13 November 2026. The owner approved one unpackaged PilotODIN run on a disposable hosted Windows runner with synthetic data.
+Reviewed source: da406d9a806148c09265d52b4328ec27dfac13c3.
+Scope: N11 Quality approval and Prepare version transition in the actual desktop app, including WebView reload. No installer, executable transfer, owner PC or original data access, Qwen, model fitting or repeat builds.

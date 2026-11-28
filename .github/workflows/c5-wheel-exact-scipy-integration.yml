@@ -1,0 +1,55 @@
+name: C5 disarmed exact SciPy integration
+on:
+  push:
+    branches: [feature/live-dev-workspace-20261023]
+    paths:
+      - qa/c5_wheel_metadata/wheel_exact_scipy_policy.py
+      - qa/c5_wheel_metadata/wheel_exact_scipy_integration.py
+      - qa/c5_wheel_metadata/wheel_exact_scipy_policy_pins.json
+      - qa/c5_wheel_metadata/test_wheel_exact_scipy_integration.py
+      - .github/workflows/c5-wheel-exact-scipy-integration.yml
+permissions:
+  contents: read
+jobs:
+  synthetic:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Exact inert fixtures and historical regressions
+        shell: bash
+        run: |
+          set -e
+          python --version
+          python -I -B qa/c5_wheel_metadata/test_wheel_exact_scipy_integration.py
+          python -I -B qa/c5_wheel_metadata/test_wheel_exact_path_candidate.py
+          python -I -B qa/c5_wheel_metadata/test_wheel_archive_inspector.py
+          python -I -B qa/c5_wheel_metadata/test_wheel_archive_inspector_v2.py
+          python -I -B qa/c5_wheel_metadata/test_wheel_notice_evidence.py
+          python -I -B qa/c5_wheel_metadata/test_wheel_notice_evidence_v2.py
+          python -I -B qa/c5_wheel_metadata/test_wheel_license_policy.py
+          python -I -B qa/c5_wheel_metadata/test_wheel_settlement_core.py
+          python -I -B qa/c5_wheel_metadata/test_wheel_hosted_final.py
+      - name: Candidate CLI refusal
+        shell: bash
+        run: |
+          set +e
+          result=$(python -I -B qa/c5_wheel_metadata/wheel_exact_scipy_integration.py --discover 2>&1)
+          code=$?
+          set -e
+          printf '%s\n' "$result"
+          test "$code" = 1
+          test "$result" = 'DISARMED: exact SciPy integration has no acquisition CLI'
+          set +e
+          result=$(python -I -B qa/c5_wheel_metadata/wheel_exact_scipy_policy.py --collect 2>&1)
+          code=$?
+          set -e
+          test "$code" = 1
+          test "$result" = 'DISARMED: exact SciPy parser has no acquisition CLI'

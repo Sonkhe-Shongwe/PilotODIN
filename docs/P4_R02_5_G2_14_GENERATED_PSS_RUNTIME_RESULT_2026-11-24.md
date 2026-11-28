@@ -1,0 +1,31 @@
+# PilotODIN R02.5 G2.14 | Genuine generated-only Windows PSS runtime outcome
+
+**24 November 2026 | Actual Windows generated-only experiment completed. Narrow negative finding, NOT R02.5 native acceptance.**
+
+## Provenanced timeline
+1. Reviewed source [`4f456ab`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/4f456ab6d302276ee889267dbb9669a53fa00a70), with corrected C++ PSS enum ABI from earlier [`b62f0df`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/b62f0dfa3df77e22c73df4bb02852cf14f94644b). Disarmed new `.github/workflows/p4-r025-g214-generated-pss-runtime.yml`, distinct fresh marker path and source-only [#45298882516](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45298882516) **COMPLETED SUCCESS**, previous corrective test-draft failure retained in CI history.
+2. Owner's "full authority" followed by "next" was applied to **one generated-only, disposable hosted-Windows G2.14 attempt**, never product/native FileIO, owner original data, network instrumentation or installer. New activation [`1237c27`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/1237c27edcf07a7bf8bd47e65a5dbfd67366fb56) was the direct child of reviewed source and changed **only** the guarded G2.14 workflow and added `qa/p4_research/N12_G214_GENERATED_PSS_RUNTIME_OWNER_APPROVAL_FRESH_ONE_USE.txt` with exactly two lines.
+3. Immediate disarm [`5988ca8`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/5988ca832de11513716731f7df992d9b68ceb675) modified only the G2.14 workflow back to `if: ${{ false }}`; its marker remains **PRESENT AND CONSUMED**, cannot be reused and no retry is authorised.
+4. **Actual hosted Windows run [#45299036681](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45299036681), attempt 1 at activation SHA, COMPLETED SUCCESS.** Exact-source/host/consent/direct-parent preflight PASSED, x64 MSVC compiled and linked the generated source, executable DID RUN once, and emitted the fixed-label line:
+   `g2_13=G213_GENERATED_FILE_TYPE_UNAVAILABLE`
+   This is the expected public label of the reused G2.13 probe executable, NOT a second G2.13 run. The generated fixture handle was located in the bounded PSS walk and the executable reported successful cleanup, but **a valid `File` TypeName was not established**. Its code accepts this *negative diagnostic* as process exit 0 by design, so the workflow's green state is a completed experiment, **NOT positive File TypeName feasibility**.
+5. [Disarmed-head R02.5 source CI #45299045341](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45299045341) **COMPLETED SUCCESS**, following the intentionally failing source-only activation check (that check prohibits enabled workflows). The dormant original G2.13 workflow remains disabled and its older approval marker consumed.
+
+## What the result proves and does not prove
+
+**Proven:** A generated self-process Windows PSS handle walk with capture flags `PSS_CAPTURE_HANDLES | PSS_CAPTURE_HANDLE_BASIC_INFORMATION` (`0x14`) can compile, link, run and observe its own previously opened disposable file handle in this runner. No valid `File` type-name classification was returned by this restricted probe. The fixed receipt does **not** distinguish whether `PSS_HANDLE_HAVE_TYPE` was missing, the name pointer absent or the name did not match. Do not invent a more specific underlying cause.
+
+**Not proven:** A file type on any actual WebView2 handle, original owner of a kernel FileObject/IRP or write request, handle reuse exclusion across snapshots, physical destination at request time, effective WebView2 user data folder, product containment, complete ETW loss review, protected original data preservation or filesystem acceptance. The prior full-app filesystem **FAIL**, network **FAIL** and FileIO coverage **BLOCKED** continue to govern.
+
+## API research and engineering decision
+
+Microsoft [PSS_CAPTURE_FLAGS](https://learn.microsoft.com/en-us/windows/win32/api/processsnapshot/ne-processsnapshot-pss_capture_flags) defines `0x04` as handle values and `0x10` as basic handle information. `0x08` explicitly captures **handle name information**, which may be private and is NOT authorised here. `0x20` captures type-specific data for named supported types Process, Thread, Event, Mutant and Section, **not File**. The [PSS_WALK_HANDLES](https://learn.microsoft.com/en-us/windows/win32/api/processsnapshot/ne-processsnapshot-pss_walk_information_class) entry's TypeName may be available, but the tested minimal flags did not verify `File`. No additional PSS flag is permitted merely to force a green result.
+
+**Stop relying on the existing TypeName-only PSS path for G2.** The current synthetic candidate already blocks missing `File`, and the added regression ensures the observed negative shape remains BLOCKED. The next technically defensible alternative, for source-only design and a separately reviewed future native one-use scope, is an independently verified original WebView2 process handle plus process-scoped duplicate-handle classification using Win32 [DuplicateHandle](https://learn.microsoft.com/en-us/windows/win32/api/handleapi/nf-handleapi-duplicatehandle) and [GetFileType](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-getfiletype) with strict lifetime, bound and cleanup limits, without querying file names. Even `FILE_TYPE_DISK` is **not** original file-object identity, mutation proof or a specific path. Link genuine original writer ownership to ETW FileObject/IRP/request-time canonical physical destination and independently reviewed loss/negative controls before any G2 credit. Do not enumerate systemwide handles or widen original/protected root permissions.
+
+## Scores and next action
+
+- **R02.5 official 0/5, P4 14/20 (70%), N12 0/2**, unchanged.
+- **File-mutation engineering 3/4 (75%), four-gate R02.5 delivery 1/4 (25%)**, unchanged. G2 real application evidence still open.
+- The next bounded source step is to design and negative-test the **verified process-scoped duplicated-handle type** admission, or alternatively obtain separately authorised real WebView2 capture evidence that can identify a different authenticated writer/physical path. Neither is enabled by this completed G2.14 consent.
+- P4 active, P5 not authorised, intermediate installer freeze unchanged.

@@ -8,12 +8,15 @@ import threading
 import time
 
 import pytest
-from fastapi.testclient import TestClient
+from contextlib import closing
+from secrets import token_hex
+from tests.fixture_http import fixture_client
+from backend.request_auth import RequestTrust
 
 from backend.main import app
-from backend import autonomy, investigations, storage, quality
+from backend import ai_provider, autonomy, investigations, resource_policy, storage, quality
 
-client=TestClient(app)
+client=fixture_client(app)
 RAW=b'Region,Revenue,Profit,CustomerSegment\nNorth,100,25,Consumer\nSouth,200,80,\nNorth,300,120,Enterprise\nSouth,400,175,\n'
 
 
@@ -238,10 +241,168 @@ def test_public_api_endpoints(monkeypatch):
 
 def test_autonomy_api_requires_authenticated_desktop_session(monkeypatch):
     _,inv_id=new_inv()
-    monkeypatch.setenv('PILOTODIN_DESKTOP_SESSION','local-secret-'+'b'*60)
+    trust=RequestTrust("desktop",9012,token_hex(32))
     route=f'/api/investigations/{inv_id}/autonomy'
-    assert client.get(route).status_code==401
-    assert client.get(route,headers={'Origin':'https://unknown.example',
-          'X-PilotODIN-Session':'local-secret-'+'b'*60}).status_code==403
-    assert client.get(route,headers={'Origin':'http://tauri.localhost',
-          'X-PilotODIN-Session':'local-secret-'+'b'*60}).status_code==200
+    with closing(fixture_client(app,trust=trust,authenticated=False)) as desktop:
+        with monkeypatch.context() as guarded:
+            guarded.setattr(investigations,"load",
+                            lambda *_:pytest.fail("Unauthorized investigation read"))
+            assert desktop.get(route).status_code==401
+            assert desktop.get(route,headers={'Origin':'https://unknown.example',
+                  'X-PilotODIN-Session':trust.secret}).status_code==403
+        assert desktop.get(route,headers={'Origin':'http://tauri.localhost',
+              'X-PilotODIN-Session':trust.secret}).status_code==200
+
+
+@pytest.mark.parametrize(('enabled', 'free_gib', 'reason'), [
+    (False, 4.0, 'Enable it in AI Settings'),
+    (True, 0.8, 'requires 2.0 GiB free'),
+    (True, None, 'could not measure available RAM'),
+])
+def test_automatic_investigation_rejects_unavailable_offline_ai(monkeypatch, enabled, free_gib, reason):
+    pid, inv_id = new_inv()
+    monkeypatch.setattr(ai_provider, 'offline_inference_enabled', lambda: enabled)
+    monkeypatch.setattr(resource_policy, 'read_policy', lambda: {'mode': 'low_memory'})
+    def observed_memory():
+        if free_gib is None:
+            raise OSError('Unavailable memory probe')
+        return 8 * 1024**3, int(free_gib * 1024**3), 'test_fixture'
+
+    monkeypatch.setattr(resource_policy, '_physical_memory_bytes', observed_memory)
+    route = f'/api/investigations/{inv_id}/autonomy'
+    preflight = client.get('/api/resource/preflight', params={'investigation_autonomy': 'true'})
+    assert preflight.json()['decision'] == ('defer' if enabled else 'skip')
+    monkeypatch.setattr(autonomy, '_launch', lambda *_: pytest.fail('Started an unavailable planner'))
+    blocked = client.post(f'{route}/start', json={})
+    assert blocked.status_code == 409 and reason in blocked.json()['detail']
+    assert client.get(route).json() is None
+    with monkeypatch.context() as seed:
+        seed.setattr(autonomy, '_launch', lambda *_: None)
+        run = autonomy.start(inv_id, planner=lambda _: pytest.fail('Unexpected planning'))
+    autonomy._set(run['id'], 'interrupted')
+    blocked = client.post(f'{route}/resume', json={})
+    assert blocked.status_code == 409 and reason in blocked.json()['detail']
+    assert client.get(route).json()['status'] == 'interrupted'
+    assert investigations.load(inv_id)['artifacts'] == []
+    assert storage.get_project(pid) is not None
+
+
+def test_planner_rechecks_offline_ai_before_request(monkeypatch):
+    monkeypatch.setenv('PILOTODIN_DESKTOP_SESSION', 'test-desktop-session')
+    monkeypatch.setattr(ai_provider, 'offline_inference_enabled', lambda: False)
+    monkeypatch.setattr(autonomy.bundled_inference, 'generate', lambda *_a, **_kw: pytest.fail('Called disabled AI'))
+    with pytest.raises(RuntimeError, match='Enable it in AI Settings'):
+        autonomy.default_planner({})
+
+
+def test_planner_can_use_worker_when_offline_ai_and_memory_allow_it(monkeypatch):
+    import json
+
+    monkeypatch.setenv('PILOTODIN_DESKTOP_SESSION', 'test-desktop-session')
+    monkeypatch.setattr(ai_provider, 'offline_inference_enabled', lambda: True)
+    monkeypatch.setattr(resource_policy, 'read_policy', lambda: {'mode': 'low_memory'})
+    monkeypatch.setattr(resource_policy, '_physical_memory_bytes',
+                        lambda: (8 * 1024**3, 2 * 1024**3, 'test_fixture'))
+    monkeypatch.setattr(autonomy.bundled_inference, 'generate',
+                        lambda *_a, **_kw: (json.dumps(propose()), False, 'stop'))
+    assert autonomy.default_planner({}) == propose()
+
+
+def test_resume_recovers_final_saved_step_with_offline_ai_disabled(monkeypatch):
+    _, inv_id = new_inv()
+    monkeypatch.setattr(ai_provider, 'offline_inference_enabled', lambda: False)
+    with monkeypatch.context() as setup:
+        setup.setattr(autonomy, '_launch', lambda *_: None)
+        run = autonomy.start(inv_id, max_steps=1, planner=lambda _: pytest.fail('Unexpected planning'))
+    autonomy._claim_step(run['id'], 0, propose('overview'))
+    autonomy._set(run['id'], 'interrupted')
+    r = client.post(f'/api/investigations/{inv_id}/autonomy/resume', json={})
+    assert r.status_code == 202, r.text
+    state = await_done(inv_id)
+    assert state['status'] == 'needs_review'
+    assert len(state['steps']) == 1 and state['steps'][0]['evidence_id']
+
+
+@pytest.mark.parametrize("status", (301, 302, 303, 307, 308, 401, 503))
+@pytest.mark.parametrize("operation", ("tags", "chat", "planner"))
+def test_legacy_local_inference_refuses_redirect_and_sanitizes_errors(monkeypatch, status, operation):
+    # Mock transport only: no actual Ollama, external endpoint or inference.
+    import io
+    import urllib.error
+    import urllib.request
+    from unittest.mock import Mock
+
+    monkeypatch.delenv("PILOTODIN_DESKTOP_SESSION", raising=False)
+    monkeypatch.setattr(autonomy, "_require_planner_admission", lambda: None)
+    monkeypatch.setenv("HTTP_PROXY", "http://invalid.example:3128")
+    monkeypatch.setenv("ALL_PROXY", "http://invalid.example:3128")
+    monkeypatch.setenv("NO_PROXY", "")
+    error_body = io.BytesIO(b"untrusted response")
+    error = urllib.error.HTTPError("http://127.0.0.1:11434", status, "untrusted reason",
+                                  {"Location": "http://invalid.example/redirect-trap"}, error_body)
+    opener = Mock()
+    opener.open.side_effect = error
+    build = Mock(return_value=opener)
+    monkeypatch.setattr(urllib.request, "build_opener", build)
+
+    with pytest.raises(urllib.error.HTTPError) as refused:
+        if operation == "planner":
+            autonomy.default_planner({"objective": "synthetic"})
+        elif operation == "chat":
+            ai_provider._ollama_request("/api/chat", payload={"synthetic": True})
+        else:
+            ai_provider._ollama_request("/api/tags")
+    assert refused.value.code == status
+    assert refused.value.headers is None
+    assert "redirect-trap" not in str(refused.value)
+    assert "untrusted reason" not in str(refused.value)
+    assert error_body.closed
+    build.assert_called_once()
+    proxy, redirect = build.call_args.args
+    assert isinstance(proxy, urllib.request.ProxyHandler) and proxy.proxies == {}
+    assert isinstance(redirect, urllib.request.HTTPRedirectHandler)
+    assert redirect.redirect_request(None, None, status, None, {}, "http://invalid.example") is None
+    opener.open.assert_called_once()
+    request = opener.open.call_args.args[0]
+    expected = "generate" if operation == "planner" else operation
+    assert request.full_url == "http://127.0.0.1:11434/api/" + expected
+    assert request.get_method() == ("GET" if operation == "tags" else "POST")
+
+
+@pytest.mark.parametrize("operation", ("tags", "chat", "planner"))
+def test_legacy_local_inference_success_still_uses_original_request(monkeypatch, operation):
+    import io
+    import json
+    import urllib.request
+    from unittest.mock import Mock
+
+    monkeypatch.delenv("PILOTODIN_DESKTOP_SESSION", raising=False)
+    monkeypatch.setattr(autonomy, "_require_planner_admission", lambda: None)
+    expected = propose()
+    data = {"response": json.dumps(expected)} if operation == "planner" else {"synthetic": True}
+    response = io.BytesIO(json.dumps(data).encode())
+    response.status = 200
+    opener = Mock()
+    opener.open.return_value = response
+    monkeypatch.setattr(urllib.request, "build_opener", Mock(return_value=opener))
+    if operation == "planner":
+        assert autonomy.default_planner({"objective": "synthetic"}) == expected
+    elif operation == "chat":
+        assert ai_provider._ollama_request("/api/chat", payload={"synthetic": True}) == data
+    else:
+        assert ai_provider._ollama_request("/api/tags") == data
+    opener.open.assert_called_once()
+    assert response.closed
+
+
+def test_legacy_local_inference_refuses_unexpected_destination_before_open(monkeypatch):
+    import urllib.request
+    from unittest.mock import Mock
+
+    build = Mock()
+    monkeypatch.setattr(urllib.request, "build_opener", build)
+    with pytest.raises(ValueError, match="destination"):
+        with ai_provider._local_inference_response(
+                urllib.request.Request("http://invalid.example/api/generate"), 1):
+            pytest.fail("Unexpected transport")
+    build.assert_not_called()

@@ -1,0 +1,11 @@
+name: C5 DEV-VM-01 S1 static inspection once (consumed)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  disarmed:
+    if: ${{ false }}
+    runs-on: ubuntu-24.04
+    steps:
+      - run: exit 1

@@ -14,23 +14,24 @@ from pathlib import Path
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 import pytest
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
+from tests.settings_fixture import isolate_ai_store
+from tests.test_c1_product_integration import product_composition
 from backend import ai_provider,ai_context,quality,storage
 from backend.main import app
 
-client=TestClient(app)
+client=fixture_client(app)
 
 @pytest.fixture(autouse=True)
 def clean_ai_config(tmp_path,monkeypatch):
-    monkeypatch.setattr(ai_provider,'CONFIG_PATH',tmp_path/'ai_settings.json')
-    monkeypatch.setattr(ai_provider,'SECRETS_PATH',tmp_path/'ai_secrets.dpapi')
+    isolate_ai_store(monkeypatch, ai_provider, tmp_path)
     ai_provider._memory_keys.clear();ai_provider._cooldowns.clear()
     for env in ai_provider.ENV_KEYS.values():monkeypatch.delenv(env,raising=False)
     yield
     ai_provider._memory_keys.clear();ai_provider._cooldowns.clear()
 
 @pytest.fixture
-def pid():
+def pid(product_composition):
     csv='TransactionID,Province,SalesAmount,CustomerSegment,InvoiceDate\n'
     for i in range(48):
         place='Private Person Alice' if i==20 else ('Mpimilanga' if i in (21,22,23) else 'Gauteng')
@@ -58,14 +59,14 @@ def test_disabled_by_default_and_no_credentials_leaked():
     assert all(not x['connected'] for x in r.json()['providers'])
 
 
-def test_keys_stored_and_never_returned():
+def test_keys_stored_and_never_returned(tmp_path):
     key='MY_SENSITIVE_TEST_KEY_1234567'
     r=client.put('/api/ai/key',json={'provider':'gemini','key':key})
     assert r.status_code==200 and r.json()['providers'][0]['connected']
     assert key not in r.text and key not in client.get('/api/ai/settings').text
     assert ai_provider._get_key('gemini')==key
-    assert not ai_provider.CONFIG_PATH.exists()
-    assert not ai_provider.SECRETS_PATH.exists() if sys.platform!='win32' else ai_provider.SECRETS_PATH.exists()
+    assert not (tmp_path/'ai_settings.json').exists()
+    assert (tmp_path/'ai_secrets.dpapi').exists() == (sys.platform=='win32')
 
 
 def test_remove_key():
@@ -84,13 +85,13 @@ def test_cloud_cannot_enable_without_opt_in():
     assert client.get('/api/ai/settings').json()['cloud_enabled'] is False
 
 
-def test_settings_persist_without_creds():
+def test_settings_persist_without_creds(tmp_path):
     r=client.put('/api/ai/settings',json={'cloud_enabled':True,'share_aggregates':True,
                     'provider_order':['groq','gemini','openrouter'],'timeout_seconds':12,'auto_insights':True})
     assert r.status_code==200,r.text
     assert client.get('/api/ai/settings').json()['provider_order'][0]=='groq'
-    assert json.loads(ai_provider.CONFIG_PATH.read_text())['auto_insights']
-    assert 'API_KEY' not in ai_provider.CONFIG_PATH.read_text()
+    assert json.loads((tmp_path/'ai_settings.json').read_text())['auto_insights']
+    assert 'API_KEY' not in (tmp_path/'ai_settings.json').read_text()
 
 @pytest.mark.parametrize('order', [[],['gemini','groq'],['gemini','gemini','groq'],['groq','openrouter','random']])
 def test_invalid_orders_rejected(order):
@@ -128,14 +129,16 @@ def test_connected_but_cloud_not_enabled_still_local(pid,monkeypatch):
 def test_primary_gemini_cloud_result(pid,monkeypatch):
     settings();ai_provider.set_key('gemini','gemini_local_testing_key')
     called=[]
-    def fake(provider,model,system,user,key,timeout):
-        called.append((provider,model,user));return 'Check the outlier and confirm categories before trusting the mean.'
+    def fake(provider,model,system,user,key,timeout,**kwargs):
+        assert kwargs['strict'] is True and kwargs['still_authorized']()
+        called.append((provider,model,user))
+        return 'Check the outlier and confirm categories before trusting the mean.'
     monkeypatch.setattr(ai_provider,'_call_provider',fake)
-    r=client.post(f'/api/projects/{pid}/ai/insight',json={'context':'explore'})
+    r=client.post(f'/api/projects/{pid}/ai/insight',json={'context':'explore','selected_provider':'gemini','cloud_intent':True})
     assert r.status_code==200 and not r.json()['fallback']
     assert r.json()['provider']=='gemini'
     assert r.json()['model']=='gemini-3.1-flash-lite'
-    assert called[0][0]=='gemini'
+    assert len(called)==1 and called[0][0]=='gemini'
     assert 'Private Person Alice' not in called[0][2]
     assert 'Mpimilanga' not in called[0][2]
 
@@ -143,49 +146,58 @@ def test_primary_gemini_cloud_result(pid,monkeypatch):
 def test_deeper_model_route(pid,monkeypatch):
     settings();ai_provider.set_key('gemini','gemini_local_testing_key')
     used=[]
-    monkeypatch.setattr(ai_provider,'_call_provider',lambda p,m,*a: (used.append(m) or 'Exploratory finding'))
-    r=client.post(f'/api/projects/{pid}/ai/insight',json={'context':'model','deep':True,'target':'SalesAmount'})
-    assert r.status_code==200 and used==['gemini-3-flash-preview']
+    def fake(p,m,*args,**kwargs):
+        assert kwargs['strict'] is True and kwargs['still_authorized']()
+        used.append(m)
+        return 'Exploratory finding'
+    monkeypatch.setattr(ai_provider,'_call_provider',fake)
+    r=client.post(f'/api/projects/{pid}/ai/insight',json={'context':'model','deep':True,'target':'SalesAmount','selected_provider':'gemini','cloud_intent':True})
+    assert r.status_code==200 and not r.json()['fallback'] and used==['gemini-3-flash-preview']
 
 
-def test_gemini_rate_limit_fails_over_to_groq(pid,monkeypatch):
+def test_gemini_rate_limit_never_fails_over_to_groq(pid,monkeypatch):
     settings();ai_provider.set_key('gemini','gemini_local_testing_key');ai_provider.set_key('groq','groq_local_testing_key')
     called=[]
-    def fake(p,*_):
+    def fake(p,*args,**kwargs):
+        assert kwargs['strict'] is True and kwargs['still_authorized']()
         called.append(p)
-        if p=='gemini':raise urllib.error.HTTPError('https://example.test',429,'quota',None,None)
-        return 'Groq verified interpretation'
+        raise urllib.error.HTTPError('https://example.test',429,'quota',None,None)
     monkeypatch.setattr(ai_provider,'_call_provider',fake)
-    r=client.post(f'/api/projects/{pid}/ai/insight',json={'context':'quality'})
-    assert r.status_code==200 and r.json()['provider']=='groq'
-    assert r.json()['attempts']==[{'provider':'gemini','status':'http_429'}]
-    assert called==['gemini','groq']
+    r=client.post(f'/api/projects/{pid}/ai/insight',json={'context':'quality','selected_provider':'gemini','cloud_intent':True})
+    assert r.status_code==200 and r.json()['provider']=='local' and r.json()['fallback']
+    assert r.json()['attempts']==[{'provider':'gemini','status':'unavailable'}]
+    assert called==['gemini']
 
 
-def test_three_failures_result_in_local_fallback(pid,monkeypatch):
+def test_selected_failure_with_three_saved_keys_is_local(pid,monkeypatch):
     settings()
     for p in ai_provider.PROVIDERS:ai_provider.set_key(p,'local_testing_key_for_'+p)
     called=[]
-    def fail(p,*_):called.append(p);raise TimeoutError('sensitive_private_key_never_report')
+    def fail(p,*args,**kwargs):
+        assert kwargs['strict'] is True and kwargs['still_authorized']()
+        called.append(p)
+        raise TimeoutError('sensitive_private_key_never_report')
     monkeypatch.setattr(ai_provider,'_call_provider',fail)
-    r=client.post(f'/api/projects/{pid}/ai/insight',json={'context':'assistant','question':'What is the dataset overview?'})
+    r=client.post(f'/api/projects/{pid}/ai/insight',json={'context':'assistant','question':'What is the dataset overview?','selected_provider':'groq','cloud_intent':True})
     assert r.status_code==200
     data=r.json()
-    assert data['fallback'] and data['provider']=='local' and len(data['attempts'])==3
+    assert data['fallback'] and data['provider']=='local' and len(data['attempts'])==1
     assert 'sensitive_private_key' not in r.text
-    assert called==list(ai_provider.PROVIDERS)
+    assert called==['groq']
 
 
-def test_cooldown_prevents_repeated_failed_provider(pid,monkeypatch):
+def test_new_explicit_request_does_not_inherit_alternate_provider(pid,monkeypatch):
     settings();ai_provider.set_key('gemini','gemini_local_testing_key');ai_provider.set_key('groq','groq_local_testing_key')
     called=[]
-    def fake(p,*_):
+    def fake(p,*args,**kwargs):
+        assert kwargs['strict'] is True and kwargs['still_authorized']()
         called.append(p)
-        if p=='gemini':raise urllib.error.HTTPError('https://test',429,'quota',None,None)
-        return 'Fallback results'
+        raise urllib.error.HTTPError('https://test',429,'quota',None,None)
     monkeypatch.setattr(ai_provider,'_call_provider',fake)
-    for _ in range(2):assert client.post(f'/api/projects/{pid}/ai/insight',json={'context':'overview'}).status_code==200
-    assert called==['gemini','groq','groq']
+    for _ in range(2):
+        r=client.post(f'/api/projects/{pid}/ai/insight',json={'context':'overview','selected_provider':'gemini','cloud_intent':True})
+        assert r.status_code==200 and r.json()['fallback']
+    assert called==['gemini','gemini']
 
 
 def test_context_has_no_raw_rows_or_category_values(pid):
@@ -232,28 +244,47 @@ def test_env_var_key_detected_without_writing_to_disk(monkeypatch):
 def test_prompt_never_contains_secret(pid,monkeypatch):
     settings(); key='gemini_private_super_secret_key'
     ai_provider.set_key('gemini',key)
-    def fake(p,m,system,user,cred,timeout):
+    seen=[]
+    def fake(p,m,system,user,cred,timeout,**kwargs):
+        assert kwargs['strict'] is True and kwargs['still_authorized']()
         assert cred==key
         assert key not in user and key not in system
         assert 'No personal data' in system
+        seen.append(p)
         return 'Use validated rules.'
     monkeypatch.setattr(ai_provider,'_call_provider',fake)
-    assert client.post(f'/api/projects/{pid}/ai/insight',json={'context':'quality'}).status_code==200
+    r=client.post(f'/api/projects/{pid}/ai/insight',json={'context':'quality','selected_provider':'gemini','cloud_intent':True})
+    assert r.status_code==200 and not r.json()['fallback'] and seen==['gemini']
 
+
+# B8: retain the historical wire-format assertions, but use the mandatory
+# strict transport and bounded response seam instead of the removed urlopen path.
 class _HTTPReply:
-    def __init__(self,data):self.data=json.dumps(data).encode('utf-8')
+    def __init__(self,data,url):
+        from email.message import Message
+        import io
+        raw=json.dumps(data).encode("utf-8")
+        self.data=io.BytesIO(raw)
+        self.url=url
+        self.status=200
+        self.headers=Message()
+        self.headers["Content-Type"]="application/json"
+        self.headers["Content-Length"]=str(len(raw))
+    def geturl(self):return self.url
     def __enter__(self):return self
-    def __exit__(self,*_):return False
-    def read(self,limit):return self.data[:limit]
+    def __exit__(self,*_):self.data.close()
+    def read1(self,limit):return self.data.read(limit)
 
 
 def test_real_gemini_wire_format_without_network(monkeypatch):
+    from types import SimpleNamespace
     sent=[]
     def fake(request,timeout):
         sent.append(request)
-        return _HTTPReply({'candidates':[{'content':{'parts':[{'text':'Evidence-based Gemini answer.'}]}}]})
-    monkeypatch.setattr(ai_provider.urllib.request,'urlopen',fake)
-    value=ai_provider._call_provider('gemini','gemini-3.1-flash-lite','system','question','test-secret-key',7)
+        return _HTTPReply({'candidates':[{'content':{'parts':[{'text':'Evidence-based Gemini answer.'}]},'finishReason':'STOP'}]},request.full_url)
+    monkeypatch.setattr(ai_provider.urllib.request,'build_opener',lambda *_:SimpleNamespace(open=fake))
+    value=ai_provider._call_provider('gemini','gemini-3.1-flash-lite','system','question','test-secret-key',7,
+                                    strict=True,still_authorized=lambda:True)
     assert value=='Evidence-based Gemini answer.'
     assert '/models/gemini-3.1-flash-lite:generateContent' in sent[0].full_url
     assert sent[0].get_header('X-goog-api-key')=='test-secret-key'
@@ -267,23 +298,30 @@ def test_real_gemini_wire_format_without_network(monkeypatch):
     ('groq','api.groq.com'),('openrouter','openrouter.ai')
 ])
 def test_openai_compatible_wire_format_without_network(monkeypatch,provider,expected_domain):
+    from types import SimpleNamespace
     sent=[]
     def fake(request,timeout):
         sent.append(request)
-        return _HTTPReply({'choices':[{'message':{'content':'Validated response'}}]})
-    monkeypatch.setattr(ai_provider.urllib.request,'urlopen',fake)
-    txt=ai_provider._call_provider(provider,ai_provider.MODELS[provider]['routine'],'instructions','context','secret',5)
+        return _HTTPReply({'choices':[{'message':{'content':'Validated response'},'finish_reason':'stop'}]},request.full_url)
+    monkeypatch.setattr(ai_provider.urllib.request,'build_opener',lambda *_:SimpleNamespace(open=fake))
+    txt=ai_provider._call_provider(provider,ai_provider.MODELS[provider]['routine'],'instructions','context','fixture-secret-key',5,
+                                  strict=True,still_authorized=lambda:True)
     assert txt=='Validated response'
     req=sent[0];assert expected_domain in req.full_url
-    assert req.get_header('Authorization')=='Bearer secret'
+    assert req.get_header('Authorization')=='Bearer fixture-secret-key'
     assert json.loads(req.data)['messages'][1]['content']=='context'
 
 
 def test_corrupt_response_triggers_safe_local_fallback(pid,monkeypatch):
     settings();ai_provider.set_key('gemini','gemini_local_testing_key')
-    monkeypatch.setattr(ai_provider,'_call_provider',lambda *a: '')
-    r=client.post(f'/api/projects/{pid}/ai/insight',json={'context':'quality'}).json()
-    assert r['fallback'] is True and r['provider']=='local'
+    seen=[]
+    def fake(*args,**kwargs):
+        assert kwargs['strict'] is True and kwargs['still_authorized']()
+        seen.append(args[0])
+        return ''
+    monkeypatch.setattr(ai_provider,'_call_provider',fake)
+    r=client.post(f'/api/projects/{pid}/ai/insight',json={'context':'quality','selected_provider':'gemini','cloud_intent':True}).json()
+    assert r['fallback'] is True and r['provider']=='local' and seen==['gemini']
 
 
 def test_no_sensitive_values_in_model_metrics_context(pid):

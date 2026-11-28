@@ -11,10 +11,10 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 import numpy as np
 import pandas as pd
 import pytest
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
 from backend.main import app
 
-client=TestClient(app)
+client=fixture_client(app)
 
 
 def upload_frame(frame:pd.DataFrame, ext='.csv'):
@@ -116,7 +116,7 @@ def test_saved_pipeline_reusable_from_new_api_client():
     select=client.post(f'/api/experiments/{exp["id"]}/select',json={'model_key':'linear_regression'})
     assert select.status_code==200,select.text
     # A fresh API client reads the persisted experiment and fitted pipeline artifacts.
-    with TestClient(app) as resumed_client:
+    with fixture_client(app) as resumed_client:
         saved=resumed_client.get(f'/api/projects/{pid}').json()
         assert any(item['id']==exp['id'] for item in saved['experiments'])
         response=resumed_client.post(f'/api/experiments/{exp["id"]}/predict',json={

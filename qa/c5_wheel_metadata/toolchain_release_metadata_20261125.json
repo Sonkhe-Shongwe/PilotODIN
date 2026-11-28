@@ -1,0 +1,158 @@
+{
+  "schema_version": 1,
+  "status": "EVIDENCE_ONLY_NOT_INSTALLABLE",
+  "previous_matrix_blob": "ff8df5bb45a1b58bde2972f88facfbe0648ed0ed",
+  "review_start": "4c395579af55029ad1d820586168be689b8af8d5",
+  "python_runner_manifest": {
+    "repository": "actions/python-versions",
+    "commit": "9bc1fe8f6b4befbb1edd3955a1adc8fc086b3e08",
+    "path": "versions-manifest.json",
+    "blob": "8468b3406cb309a299b2ead4109d0a2b2467153b"
+  },
+  "python_candidates": [
+    {
+      "target": "windows-x64",
+      "version": "3.11.9",
+      "publisher": "actions/python-versions",
+      "tag": "3.11.9-9947079978",
+      "release_id": 165538656,
+      "asset_id": 179768229,
+      "filename": "python-3.11.9-win32-x64.zip",
+      "url": "https://github.com/actions/python-versions/releases/download/3.11.9-9947079978/python-3.11.9-win32-x64.zip",
+      "published_bytes": 25934523,
+      "published_sha256": null,
+      "checksum_manifest": {
+        "asset_id": 179768224,
+        "bytes": 991,
+        "url": "https://github.com/actions/python-versions/releases/download/3.11.9-9947079978/hashes.sha256",
+        "status": "CONTENT_UNAVAILABLE"
+      },
+      "actual_bytes_verified": false,
+      "signature_verified": false,
+      "license_reviewed": false,
+      "production_selected": false
+    },
+    {
+      "target": "linux-x64-ubuntu-24.04",
+      "version": "3.11.18",
+      "publisher": "actions/python-versions",
+      "tag": "3.11.18-40260280589",
+      "release_id": 423814510,
+      "asset_id": 676813336,
+      "filename": "python-3.11.18-linux-24.04-x64.tar.gz",
+      "url": "https://github.com/actions/python-versions/releases/download/3.11.18-40260280589/python-3.11.18-linux-24.04-x64.tar.gz",
+      "published_bytes": 92610561,
+      "published_sha256": "099ef30fc27f0d7067a67be5a5fb7fd66154cfa1e4186c88f71c3a3070c81abc",
+      "checksum_manifest": {
+        "asset_id": 676813335,
+        "bytes": 821,
+        "published_sha256": "615c062066ea638c208514f9be39f3dea98feec69a7ae6088f1a2bff54335da0",
+        "url": "https://github.com/actions/python-versions/releases/download/3.11.18-40260280589/hashes.sha256",
+        "status": "CONTENT_UNAVAILABLE"
+      },
+      "actual_bytes_verified": false,
+      "signature_verified": false,
+      "license_reviewed": false,
+      "production_selected": false
+    }
+  ],
+  "upstream_source": [
+    {
+      "name": "cpython",
+      "version": "3.11.9",
+      "repository": "python/cpython",
+      "commit": "de54cf5be371a6f5e2e9f208c38def5f81d3ef02",
+      "path": "Lib/ensurepip/__init__.py",
+      "blob": "165f3963a66c1ef79118d7d8aeedb5f302e0f349",
+      "declared_bootstrap_pip": "24.0",
+      "declared_bootstrap_setuptools": "65.5.0"
+    },
+    {
+      "name": "cpython",
+      "version": "3.11.18",
+      "repository": "python/cpython",
+      "commit": "26badd80b6dc7786cd8fb63c3608a31f04754219",
+      "path": "Lib/ensurepip/__init__.py",
+      "blob": "f48edd3bc17d50d01fec2cc069a1322252bcfb9c",
+      "declared_bootstrap_pip": "24.0",
+      "declared_bootstrap_setuptools": "79.0.1"
+    },
+    {
+      "name": "node",
+      "version": "22.23.5",
+      "repository": "nodejs/node",
+      "commit": "60553651579ec33ca1aef9e1eedab2c3855f1f7e",
+      "release_id": 441952610,
+      "path": "deps/npm/package.json",
+      "blob": "67734361b670b8872f197bbb8043e260903b0cf0",
+      "declared_bundled_npm": "10.9.9",
+      "distribution_sha256": null
+    },
+    {
+      "name": "npm",
+      "version": "10.9.9",
+      "repository": "npm/cli",
+      "commit": "65d58277c32ac47721680bd3faa0434dcb59beec",
+      "release_id": 361954555,
+      "path": "package.json",
+      "blob": "67734361b670b8872f197bbb8043e260903b0cf0",
+      "declared_license": "Artistic-2.0",
+      "distribution_sha256": null
+    },
+    {
+      "name": "rust",
+      "version": "1.100.0",
+      "repository": "rust-lang/rust",
+      "commit": "0ef1bc386059596dada8fb65b50425aab2ea637a",
+      "release_id": 443343882,
+      "path": "src/version",
+      "blob": "7a9fecd3f0edec2d6395f35db16bfe8218f168d1",
+      "distribution_sha256": null
+    }
+  ],
+  "public_document_review": [
+    {
+      "url": "https://www.python.org/downloads/release/python-3119/",
+      "finding": "Official Windows x64 installer listed with rounded 25.0 MB, MD5 and signature links, not independently verified SHA256 or exact byte count; distinct from runner zip. Last regular bugfix release; historical candidate not security/release clearance."
+    },
+    {
+      "url": "https://www.python.org/downloads/release/python-31118/",
+      "finding": "404 in public web retrieval; exact CPython source tag and runner release verified via GitHub instead."
+    },
+    {
+      "url": "https://nodejs.org/dist/v22.23.5/SHASUMS256.txt",
+      "finding": "Text manifest unavailable to web tool; release tag verified but no binary digest or size established."
+    },
+    {
+      "url": "https://static.rust-lang.org/dist/channel-rust-1.100.0.toml",
+      "finding": "Text manifest unavailable to web tool; dated manifest also unavailable. Release tag verified but no host/component distribution hash or size established."
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/visualstudio/releases/2022/release-history",
+      "finding": "Fixed-version bootstrapper route documented; retrieved history did not establish exact runner 17.14.37906.3 payload closure; bootstrapper identity cannot establish exact compiler/linker payloads."
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/windows/apps/windows-sdk/downloads",
+      "finding": "SDK download/archive route found; exact selected SDK and servicing payload identity unestablished."
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist/",
+      "finding": "Latest supported v14 route is not an immutable exact candidate pin."
+    },
+    {
+      "url": "https://learn.microsoft.com/cpp/windows/redistributing-visual-cpp-files",
+      "finding": "Redistribution requires review of actual permitted files and terms, no blanket clearance."
+    }
+  ],
+  "unresolved": {
+    "pip": "Source ensurepip declares 24.0 on both versions but WHEEL_PKG_DIR may override and installed pip can differ; no exact observed CP311 pip or selected bootstrap bytes. No registry requests.",
+    "node": "Source npm package.json identical to npm CLI tag. No actual binary archive, checksum/signature or Windows candidate selection.",
+    "rust_cargo": "Source release confirmed; exact host/target components, signed manifest and checksums/size absent.",
+    "windows_native": "Exact cl/link, MSVC component files, SDK servicing version, signed VC runtime identity, actual redistribution terms outstanding."
+  },
+  "actual_distributions_verified": 0,
+  "selected_production_toolchains": 0,
+  "live_registry_requests": 0,
+  "artifact_downloads": 0,
+  "installable_profiles": 0
+}

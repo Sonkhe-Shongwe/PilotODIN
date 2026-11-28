@@ -11,13 +11,13 @@ from pathlib import Path
 os.environ.setdefault('PILOTODIN_HOME', tempfile.mkdtemp(prefix='pilotodin-export-'))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
 import openpyxl
 import pandas as pd
 from backend.main import app
 from backend import quality, storage
 
-client = TestClient(app)
+client = fixture_client(app)
 
 
 def project():

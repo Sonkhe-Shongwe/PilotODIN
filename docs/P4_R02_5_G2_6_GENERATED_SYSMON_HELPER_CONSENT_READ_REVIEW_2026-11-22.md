@@ -1,0 +1,24 @@
+# PilotODIN P4 R02.5 | G2.6 generated Sysmon helper consent read reconciliation
+
+**22 November 2026. Source-only follow-up.** No Windows rerun or new native approval is implied by this document.
+
+## Single approved Windows attempt
+
+- Approved reviewed source: `aea47e35e257b0f227059a39127c2daa458e3c85`. One direct-child activation: [`65c7ee999ae463d851e81fe6d54f11abf46771fa`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/65c7ee999ae463d851e81fe6d54f11abf46771fa), modifying only the disarmed generated workflow and adding `qa/p4_research/N12_GENERATED_BOOKENDS_OWNER_APPROVAL_G2_5_FRESH_ONE_USE.txt` with the reviewed SHA and exact one-use scope.
+- Hosted Windows [run #45046709245](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45046709245) **COMPLETED FAILURE**, first attempt. GitHub approved-source and first-run checks, Python setup and verified Microsoft Sysmon provisioning completed. The generated Python receipt was `BLOCKED / preflight`, `product_launched=false`, `native_N12_acceptance=NOT_EVALUATED`. Neither initial nor final TCP/UDP calibration bookend was completed. No real timing or native file-handle credit; no raw trace upload.
+- Immediate independent [disarm `e8bad5ae2f591bc03ed47141a6f8fc1ff855f3ed`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/e8bad5ae2f591bc03ed47141a6f8fc1ff855f3ed) restored `if: ${{ false }}` with a one-line workflow-only change. One-use approval consumed. No retry occurred.
+
+## Concrete source mismatch and repair
+
+- The generated-only driver calls `n12_app_journey.sysmon_tail()` before creating a fixture. That Python function invokes `qa/p4_research/Invoke_N12_Journey_Evidence.ps1 sysmon-tail` as a **separate PowerShell process**.
+- At the approved source SHA, the helper's authorisation expression lacked a generated-only branch, so it required unrelated unpackaged-app consent or older collector permissions. The generated workflow deliberately provided only the generated Sysmon consent. This is a clear **source defect and likely early preflight blocker**. The fixed-label `preflight` receipt did not expose the failing suboperation, so definitive native root-cause attribution is unavailable.
+- [Helper source fix `c486758`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/c48675832aa218f267325ada3c0c18a5aa71b17a) introduces `$generatedBookendRead` **exclusively for `sysmon-tail`**, requiring hosted Windows first-attempt push, expected feature branch, numeric run ID, exact generated-only one-use consent, 40-character approved SHA and `git rev-parse HEAD` equality. All other helper operations, app and FileIO captures, raw/protected data, existing consent requirements and strict Sysmon verification remain unchanged.
+- Subsequent source-only test corrections [`f87ed014`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/f87ed0144c6ab4f4880ec0c150f76be78b9d35b4), [`5dfea4b`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/5dfea4b27261c73790d4121c308a727a0475bd9f) and [`c1e42967`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/c1e429672484a3f73ad531b3356f9c907adba19c) fixed a synthetic newline fixture, reconciled the newly consumed G2.5 marker, retargeted the still-disabled workflow to the **absent** G2.6 marker and corrected a case-sensitive warning assertion. Neither Windows workflow was activated.
+- Final exact-source [Linux CI #45047289406](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45047289406) **COMPLETED SUCCESS** at `c1e429672484a3f73ad531b3356f9c907adba19c`: **159/159 synthetic/source tests in ten suites** (35 physical destination, 43 file-pair, 3 integration, 12 writer identity, 25 no-CDP strict reducer, 8 mutation triage, 9 G2 static preflight, 4 final-window, 15 generated bookends, 5 guarded source), plus syntax checks. Earlier intermediate Linux CI failures were test-fixture and consumed-marker expectations, not native measurements.
+
+## Safety and decisions
+
+- Both generated-only and original full no-CDP FileIO Windows workflows remain **DISARMED**. Historical one-use markers (including G2.5) are preserved as consumed; new `qa/p4_research/N12_GENERATED_BOOKENDS_OWNER_APPROVAL_G2_6_FRESH_ONE_USE.txt` is absent.
+- No installer, PilotODIN app launch, WebView2 traffic, Kernel-File ETW, raw trace upload, original owner files, root/allowlist changes or automatic retry were authorised or performed.
+- Next possible actual hosted-Windows check requires **new explicit one-use source-pinned owner consent**, a distinct newly added marker, one direct-child activation, strict redacted reporting, and immediate disarm. Passing such generated fixtures would prove collector calibration only, **not** original WebView2 file handles or N12 acceptance.
+- G1 PASSED; G2 **OPEN**. Four-phase delivery **1/4 = 25%**; official R02.5 **0/5**, N12 **0/2**, P4 **14/20 (70%)**, historical file-mutation preparation **3/4 (75%)**. No increment follows from this source fix.

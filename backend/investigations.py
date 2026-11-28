@@ -9,9 +9,9 @@ import json
 import re
 import pandas as pd
 try:
-    from . import analytics, quality, storage
+    from . import analytics, quality, storage, project_lifecycle
 except ImportError:
-    import analytics, quality, storage
+    import analytics, quality, storage, project_lifecycle
 
 ALLOWED = frozenset({'overview', 'compare', 'missingness', 'distribution'})
 
@@ -22,7 +22,8 @@ def init():
         CREATE TABLE IF NOT EXISTS investigations_v1 (
           id TEXT PRIMARY KEY, project_id TEXT NOT NULL, objective TEXT NOT NULL,
           dataset_version INTEGER NOT NULL, status TEXT NOT NULL,
-          created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+          created_at TEXT NOT NULL, updated_at TEXT NOT NULL,
+          FOREIGN KEY(project_id) REFERENCES projects(id)
         );
         CREATE INDEX IF NOT EXISTS ix_investigations_v1_project
           ON investigations_v1(project_id, updated_at DESC);
@@ -61,6 +62,13 @@ def create(project_id: str, objective: str):
     version = quality.current_version(project_id)
     uid, now = storage.uid(), storage.now()
     with storage.connect() as con:
+        con.execute('BEGIN IMMEDIATE')
+        project_lifecycle.require_active_for_write(con,project_id)
+        latest=con.execute(
+            "SELECT current_version FROM quality_state WHERE project_id=?",(project_id,)
+        ).fetchone()
+        if latest is None or latest["current_version"]!=version:
+            raise RuntimeError("Dataset changed before investigation creation. Refresh and try again.")
         con.execute('INSERT INTO investigations_v1 VALUES (?,?,?,?,?,?,?)',
                     (uid, project_id, objective, version, 'draft', now, now))
     return load(uid)
@@ -120,7 +128,12 @@ def run(ident: str, operation: str, params: dict, expected_version: int, *, exec
     if expected_version != investigation['version'] or investigation['stale']:
         raise RuntimeError('Dataset version changed. Start a new investigation to preserve prior evidence.')
     project_id = investigation['project_id']
-    df, current = quality.current_data(project_id)
+    try:
+        df, current = quality.current_data(project_id)
+    except quality.QualityArchivedError as exc:
+        # Early read-side archive admission must not escape the existing
+        # lifecycle conflict contract for investigation mutations.
+        raise project_lifecycle.ProjectLifecycleError(str(exc), exc.status) from exc
     if current != expected_version:
         raise RuntimeError('Dataset changed during the investigation. Refresh before running a tool.')
     args = {}
@@ -155,6 +168,7 @@ def run(ident: str, operation: str, params: dict, expected_version: int, *, exec
         # Reserve the write lock BEFORE validating version; quality commits
         # cannot slip in between the final check and the evidence insert.
         con.execute('BEGIN IMMEDIATE')
+        project_lifecycle.require_active_for_write(con,project_id)
         if quality.current_version(project_id) != current:
             raise RuntimeError('Dataset changed while processing. Result was not saved.')
         if execution_key is not None:

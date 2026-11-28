@@ -1,0 +1,3 @@
+13 November 2026. Owner approved one unpackaged GitHub-hosted Windows build to verify the revised docking test.
+Reviewed source: 124e2f2d34d63bce6e0db9905739bcd5259b63b0.
+Scope: isolated hosted Windows runner, one disposable synthetic project, synchronized R04 docking, and the existing scoped TCP and write diagnostics. No installer, executable transfer, owner PC access, original data, Qwen, model fitting or repeat compilation.

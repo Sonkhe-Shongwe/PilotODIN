@@ -1,0 +1,77 @@
+name: C5 wheel archive synthetic offline review
+on:
+  push:
+    branches: [feature/live-dev-workspace-20261023]
+    paths:
+      - .github/workflows/c5-wheel-archive-review.yml
+      - qa/c5_wheel_metadata/wheel_archive_inspector.py
+      - qa/c5_wheel_metadata/test_wheel_archive_inspector.py
+      - qa/c5_wheel_metadata/wheel_notice_evidence.py
+      - qa/c5_wheel_metadata/test_wheel_notice_evidence.py
+      - qa/c5_wheel_metadata/wheel_acquisition_offline.py
+      - qa/c5_wheel_metadata/test_wheel_acquisition_offline.py
+      - qa/c5_wheel_metadata/wheel_hosted_proposal.py
+      - qa/c5_wheel_metadata/test_wheel_hosted_proposal.py
+permissions:
+  contents: read
+jobs:
+  synthetic-wheel:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Interpreter observation and inert wheel fixtures
+        shell: bash
+        run: |
+          python --version
+          python -I -B qa/c5_wheel_metadata/test_wheel_archive_inspector.py
+          python -I -B qa/c5_wheel_metadata/test_wheel_notice_evidence.py
+          python -I -B qa/c5_wheel_metadata/test_wheel_acquisition_offline.py
+          python -I -B qa/c5_wheel_metadata/test_wheel_hosted_proposal.py
+      - name: Require direct acquisition refusal
+        shell: bash
+        run: |
+          set +e
+          result=$(python -I -B qa/c5_wheel_metadata/wheel_archive_inspector.py --collect 2>&1)
+          code=$?
+          set -e
+          printf '%s\n' "$result"
+          test "$code" = 1
+          test "$result" = 'OFFLINE_LIBRARY_ONLY: no acquisition or arbitrary wheel CLI'
+      - name: Require direct evidence publication refusal
+        shell: bash
+        run: |
+          set +e
+          result=$(python -I -B qa/c5_wheel_metadata/wheel_notice_evidence.py --collect 2>&1)
+          code=$?
+          set -e
+          printf '%s\n' "$result"
+          test "$code" = 1
+          test "$result" = 'OFFLINE_LIBRARY_ONLY: no acquisition or evidence publication CLI'
+      - name: Require disabled wheel collection
+        shell: bash
+        run: |
+          set +e
+          result=$(python -I -B qa/c5_wheel_metadata/wheel_acquisition_offline.py --collect 2>&1)
+          code=$?
+          set -e
+          printf '%s\n' "$result"
+          test "$code" = 1
+          test "$result" = 'FRESH_APPROVAL_REQUIRED: wheel acquisition is disabled'
+      - name: Require disabled hosted wheel collection
+        shell: bash
+        run: |
+          set +e
+          result=$(python -I -B qa/c5_wheel_metadata/wheel_hosted_proposal.py --collect 2>&1)
+          code=$?
+          set -e
+          printf '%s\n' "$result"
+          test "$code" = 1
+          test "$result" = 'FRESH_APPROVAL_REQUIRED: hosted wheel acquisition is disabled'

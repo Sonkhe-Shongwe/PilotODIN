@@ -9,12 +9,27 @@ name = "pilotodin_desktop"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
-tauri-build = { version = "2", features = [] }
+tauri-build = { version = "=2.7.6", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = [] }
-tauri-plugin-shell = "2"
+tauri = { version = "=2.12.7", features = [] }
+tauri-plugin-shell = "=2.6.0"
+tauri-plugin-dialog = "=2.8.4"
 serde = { version = "1", features = ["derive"] }
 uuid = { version = "1", features = ["v4"] }
 sha2 = "0.10"
 serde_json = "1"
+percent-encoding = "2"
+
+[dev-dependencies]
+# Mock runtime only for the separately approved, ignored native integration fixture.
+tauri = { version = "=2.12.7", features = ["test"] }
+
+[target.'cfg(windows)'.dependencies]
+webview2-com = "=0.39.1"
+windows-core = "=0.62.2"
+
+# Owner-approved source derivative; exact upstream shell 2.6.0 version retained.
+# See third_party/tauri-plugin-shell-2.6.0/UPSTREAM.json for source provenance.
+[patch.crates-io]
+tauri-plugin-shell = { path = "../../third_party/tauri-plugin-shell-2.6.0" }

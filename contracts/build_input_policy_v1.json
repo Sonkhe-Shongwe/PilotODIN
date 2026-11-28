@@ -1,0 +1,122 @@
+{
+  "schema_version": 1,
+  "source_commit": "0d91a071fcf07c564ed493a940015146f654b73e",
+  "source_inputs": [
+    {
+      "path": "backend/requirements.txt",
+      "git_blob_sha1": "30d347462aa29b4db9c7308079f231185f4c1703",
+      "bytes": 185
+    },
+    {
+      "path": "backend/requirements-test.txt",
+      "git_blob_sha1": "0ed0b88920a281167cf1dc8a3ca038096bf1e7b8",
+      "bytes": 156
+    },
+    {
+      "path": "frontend/package-lock.json",
+      "git_blob_sha1": "845bc92192a1b77432f4d472c7a056f47ca3a3a7",
+      "bytes": 48652
+    },
+    {
+      "path": "frontend/package.json",
+      "git_blob_sha1": "fbb17a9f2e53eecb812498f02196fa7638f85299",
+      "bytes": 852
+    },
+    {
+      "path": "frontend/src-tauri/Cargo.lock",
+      "git_blob_sha1": "f635ba1f8257266c242429e2b44ae94b039329b9",
+      "bytes": 117650
+    },
+    {
+      "path": "frontend/src-tauri/Cargo.toml",
+      "git_blob_sha1": "e18d6854da5d48022766103b4e2ada4b036dd0ba",
+      "bytes": 1066
+    },
+    {
+      "path": "third_party/tauri-plugin-shell-2.6.0/UPSTREAM.json",
+      "git_blob_sha1": "2446ade2b58a21753a3b0ac96d0086103c09b5bc",
+      "bytes": 3719
+    }
+  ],
+  "vendored_shell_tree": "54514a2feed82db5a61e9c37e8d43f6fe99b7696",
+  "profiles": [
+    {
+      "id": "windows-x64-cp311-production-build",
+      "platform": "windows",
+      "arch": "x64",
+      "python_abi_candidate": "cp311",
+      "purpose": "production-build",
+      "planned_lock": "backend/locks/windows-x64-cp311-production-build.txt",
+      "status": "BLOCKED",
+      "blockers": [
+        "interpreter_distribution",
+        "pip_distribution",
+        "selected_wheel_graph",
+        "wheel_metadata_and_tags",
+        "wheel_artifact_sha256",
+        "license_inventory",
+        "pyinstaller_and_hooks",
+        "node_npm_toolchain",
+        "rust_msvc_sdk_toolchain",
+        "vendored_crate_bytes",
+        "runtime_model_and_dll_inventory",
+        "webview2_and_nsis_inputs",
+        "offline_bundler_consumption"
+      ]
+    },
+    {
+      "id": "windows-x64-cp311-source-test",
+      "platform": "windows",
+      "arch": "x64",
+      "python_abi_candidate": "cp311",
+      "purpose": "source-test",
+      "planned_lock": "backend/locks/windows-x64-cp311-source-test.txt",
+      "status": "BLOCKED",
+      "blockers": [
+        "interpreter_distribution",
+        "pip_distribution",
+        "selected_wheel_graph",
+        "wheel_metadata_and_tags",
+        "wheel_artifact_sha256",
+        "license_inventory"
+      ]
+    },
+    {
+      "id": "linux-x64-cp311-source-test",
+      "platform": "linux",
+      "arch": "x64",
+      "python_abi_candidate": "cp311",
+      "purpose": "source-test",
+      "planned_lock": "backend/locks/linux-x64-cp311-source-test.txt",
+      "status": "BLOCKED",
+      "blockers": [
+        "interpreter_distribution",
+        "pip_distribution",
+        "selected_wheel_graph",
+        "wheel_metadata_and_tags",
+        "wheel_artifact_sha256",
+        "license_inventory"
+      ]
+    },
+    {
+      "id": "windows-x64-browser-dev",
+      "platform": "windows",
+      "arch": "x64",
+      "python_abi_candidate": "unresolved",
+      "purpose": "browser-dev",
+      "planned_lock": null,
+      "status": "BLOCKED",
+      "blockers": [
+        "interpreter_distribution",
+        "pip_distribution",
+        "selected_wheel_graph",
+        "wheel_metadata_and_tags",
+        "wheel_artifact_sha256",
+        "license_inventory",
+        "node_npm_toolchain",
+        "installed_tree_identity",
+        "legacy_environment_compatibility"
+      ]
+    }
+  ]
+}

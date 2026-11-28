@@ -1,0 +1,211 @@
+name: P4 C1 C2 owned-host integration (one-use proposal)
+
+# Native job is DISARMED. Source preflight parses both variants only.
+'on':
+  push:
+    branches: [feature/live-dev-workspace-20261023]
+    paths: ['.github/workflows/p4-c1-c2-owned-host-once.yml', 'qa/c1_c2_owned_host_preflight.rb']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pilotodin-c1-c2-owned-host-synthetic-20261124
+  cancel-in-progress: false
+
+jobs:
+  source-preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout exact source for parsing only
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Parse both complete YAML variants and scripts
+        shell: bash
+        env:
+          C1_C2_HOST_EVENT_MESSAGE: ${{ github.event.head_commit.message }}
+        run: ruby qa/c1_c2_owned_host_preflight.rb
+  c1-c2-owned-host-integration:
+    needs: source-preflight
+    if: ${{ false }} # DISARMED OWNED HOST; fresh exact approval required.
+    runs-on: windows-2022
+    timeout-minutes: 65
+    env:
+      CARGO_INCREMENTAL: '0'
+    steps:
+      - name: Checkout exact reviewed product source without credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: 1d23ea139762d94d25e689c4c3489b72fb34acc9
+          persist-credentials: false
+      - name: Verify reviewed source and toolchain
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:GITHUB_RUN_ATTEMPT -ne '1') { throw 'Approval consumed' }
+          if ((git rev-parse HEAD).Trim() -ne '1d23ea139762d94d25e689c4c3489b72fb34acc9') { throw 'Wrong reviewed source' }
+          if ((git hash-object frontend/src-tauri/Cargo.lock).Trim() -ne 'f635ba1f8257266c242429e2b44ae94b039329b9') { throw 'Cargo lock changed' }
+          if ((git rev-parse HEAD:third_party/tauri-plugin-shell-2.6.0).Trim() -ne '54514a2feed82db5a61e9c37e8d43f6fe99b7696') { throw 'Reviewed shell derivative changed' }
+          if ((git rev-parse HEAD:frontend/src-tauri).Trim() -ne '53318b86bf97ff0d2ff5ffe896863bfed6c318b6') { throw 'Reviewed native source changed' }
+          if ((git rev-parse HEAD:backend).Trim() -ne '3ee7f6799916c9eea7f945fb856e56223ee0e2da') { throw 'Reviewed broker changed' }
+          if ((git hash-object qa/c1_c2_owned_host_fixture.py).Trim() -ne '4f162d6f94606b2cab656ddc91495747dc012e91') { throw 'Reviewed fixture changed' }
+          rustc +stable --version
+          if ($LASTEXITCODE -ne 0) { throw 'Hosted Rust unavailable' }
+          cargo +stable --version
+          if ($LASTEXITCODE -ne 0) { throw 'Hosted Cargo unavailable' }
+          $targets = rustup target list --installed --toolchain stable
+          if ($LASTEXITCODE -ne 0 -or 'x86_64-pc-windows-msvc' -notin $targets) { throw 'Hosted MSVC target unavailable' }
+          python --version
+          if ($LASTEXITCODE -ne 0) { throw 'Hosted Python unavailable' }
+          Write-Host 'REVIEWED-SOURCE 1d23ea139762d94d25e689c4c3489b72fb34acc9'
+          Write-Host "LOCK-SHA256 $((Get-FileHash frontend/src-tauri/Cargo.lock -Algorithm SHA256).Hash)"
+      - name: Stage intentionally invalid compile-only fixtures
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tauri = 'frontend/src-tauri'
+          $marker = "$tauri/NATIVE_COMPILE_PROBE_ONLY.txt"
+          $assets = @(
+            "$tauri/binaries/pilotodin-engine-x86_64-pc-windows-msvc.exe",
+            "$tauri/binaries/pilotodin-inference-x86_64-pc-windows-msvc.exe",
+            "$tauri/resources/models/qwen3-1.7b-q4_k_m.gguf",
+            "$tauri/resources/models/model-manifest.json"
+          )
+          foreach ($file in ($assets + @($marker, 'frontend/dist'))) {
+            if (Test-Path -LiteralPath $file) { throw "Refusing to overwrite existing asset: $file" }
+          }
+          Set-Content -LiteralPath $marker -Value 'NEVER DISTRIBUTE - C1 C2 SYNTHETIC COMPILE AND LIBRARY TEST ONLY'
+          foreach ($file in $assets) {
+            [System.IO.File]::WriteAllBytes((Join-Path $PWD $file), [byte[]](0,1,2))
+          }
+          New-Item -ItemType Directory -Path 'frontend/dist' | Out-Null
+          Set-Content -LiteralPath 'frontend/dist/index.html' -Value 'INVALID COMPILE-ONLY FRONTEND; NEVER LAUNCH'
+          python desktop/verify_inference_assets.py
+          if ($LASTEXITCODE -ne 2) { throw 'Release preflight did not reject invalid fixtures' }
+          Write-Host 'RELEASE-PREFLIGHT-REJECTED; no real runtime/model assets'
+          exit 0
+      - name: Locked check, isolated manifest correction and single exact ignored owned-host test
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $false
+          if ($env:GITHUB_RUN_ATTEMPT -ne '1') { throw 'Approval consumed' }
+          $root = Join-Path $env:RUNNER_TEMP "pilotodin-c1-c2-compile-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
+          $fixture = Join-Path $env:RUNNER_TEMP "pilotodin-c1-c2-owned-host-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
+          foreach ($dir in @($root,$fixture)) {
+            if (Test-Path -LiteralPath $dir) { throw 'Existing synthetic root refused' }
+            New-Item -ItemType Directory -Path $dir | Out-Null
+          }
+          $testTemp = Join-Path $root 'test-temp'
+          New-Item -ItemType Directory -Path $testTemp | Out-Null
+          $env:CARGO_TARGET_DIR = Join-Path $root 'target'
+          cargo +stable check --locked --all-targets --manifest-path frontend/src-tauri/Cargo.toml --target x86_64-pc-windows-msvc
+          if ($LASTEXITCODE -ne 0) { throw 'Owned host locked all-targets check failed' }
+          Write-Host 'C1-C2-HOST-LOCKED-ALL-TARGETS-PASS'
+          $env:TEMP = $testTemp
+          $env:TMP = $testTemp
+          $env:PILOTODIN_C1_C2_FIXTURE_ROOT = $fixture
+          $env:PILOTODIN_C1_C2_FIXTURE_PYTHON = (Get-Command python.exe -CommandType Application -ErrorAction Stop).Source
+          $env:PILOTODIN_C1_C2_FIXTURE_APPROVAL = 'OWNED_HOST_SYNTHETIC_ONCE'
+          $expected = 'resource_integration_fixture::actual_owned_pipe_job_and_writer_lifecycle'
+          $log = Join-Path $root 'test.log'
+          try {
+            $json = Join-Path $root 'test-build.jsonl'
+            cargo +stable test --locked --no-run --message-format=json --manifest-path frontend/src-tauri/Cargo.toml --target x86_64-pc-windows-msvc --lib > $json
+            if ($LASTEXITCODE -ne 0) { throw 'Locked fixture compile failed' }
+            $executables = @(Get-Content -LiteralPath $json | ForEach-Object {
+              $msg = $_ | ConvertFrom-Json
+              if ($msg.reason -eq 'compiler-artifact' -and $msg.target.name -eq 'pilotodin_desktop' -and $msg.profile.test -eq $true -and $msg.executable) { $msg.executable }
+            } | Select-Object -Unique)
+            if ($executables.Count -ne 1) { throw 'Expected exactly one library test executable' }
+            $original = (Get-Item -LiteralPath $executables[0] -ErrorAction Stop).FullName
+            if (-not $original.StartsWith((Join-Path $root 'target') + '\', [StringComparison]::OrdinalIgnoreCase) -or [IO.Path]::GetExtension($original) -ne '.exe') { throw 'Unexpected fixture executable' }
+            $originalHash = (Get-FileHash -LiteralPath $original -Algorithm SHA256).Hash
+            $copy = Join-Path (Split-Path -Parent $original) 'pilotodin_owned_host_manifest_fixture.exe'
+            if (Test-Path -LiteralPath $copy) { throw 'Existing fixture copy refused' }
+            Copy-Item -LiteralPath $original -Destination $copy
+            $sdk = Join-Path ${env:ProgramFiles(x86)} 'Windows Kits/10/bin'
+            $mtTools = @(Get-ChildItem -LiteralPath $sdk -Directory | Where-Object { $_.Name -match '^10\.\d+\.\d+\.\d+$' -and (Test-Path -LiteralPath (Join-Path $_.FullName 'x64/mt.exe')) } | Sort-Object { [version]$_.Name } -Descending)
+            if ($mtTools.Count -eq 0) { throw 'Hosted Windows SDK manifest tool unavailable' }
+            $mt = Join-Path $mtTools[0].FullName 'x64/mt.exe'
+            $before = Join-Path $root 'original.manifest'
+            $extract = @(& $mt -nologo "-inputresource:$original;#1" "-out:$before" 2>&1)
+            $extractCode = $LASTEXITCODE
+            $ns = 'urn:schemas-microsoft-com:asm.v1'
+            $dependency = '<dependency xmlns="urn:schemas-microsoft-com:asm.v1"><dependentAssembly><assemblyIdentity type="win32" name="Microsoft.Windows.Common-Controls" version="6.0.0.0" processorArchitecture="amd64" publicKeyToken="6595b64144ccf1df" language="*" /></dependentAssembly></dependency>'
+            if ($extractCode -eq 0) {
+              [xml]$manifest = Get-Content -LiteralPath $before -Raw
+              if ($manifest.DocumentElement.LocalName -ne 'assembly' -or $manifest.DocumentElement.NamespaceURI -ne $ns -or $manifest.DocumentType) { throw 'Unexpected original manifest' }
+              if (@($manifest.SelectNodes("//*[local-name()='assemblyIdentity' and @name='Microsoft.Windows.Common-Controls']")).Count -ne 0) { throw 'Common Controls dependency already declared; hypothesis requires review' }
+              foreach ($level in $manifest.SelectNodes("//*[local-name()='requestedExecutionLevel']")) {
+                if ($level.level -ne 'asInvoker' -or $level.uiAccess -eq 'true') { throw 'Unexpected original privilege request' }
+              }
+              Write-Host 'FIXTURE-ORIGINAL-MANIFEST-PRESENT; no Common Controls dependency'
+            } else {
+              $detail = (($extract | Out-String) -replace '\s+', ' ').Trim()
+              if ($extractCode -eq 0 -or $detail -notmatch '(?i)\bgeneral error c101008c:\s*Failed to read the manifest from the resource of file\b' -or $detail -notmatch '(?i)\bThe specified (?:image file did not contain a resource section|resource (?:type|name|language ID) cannot be found in the image file)\.' -or (Test-Path -LiteralPath $before)) { throw "Cannot establish original manifest absence: $detail" }
+              [xml]$manifest = '<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0"><assemblyIdentity type="win32" name="PilotODIN.OwnedHostSyntheticFixture" version="1.0.0.0" processorArchitecture="amd64"/><trustInfo xmlns="urn:schemas-microsoft-com:asm.v3"><security><requestedPrivileges><requestedExecutionLevel level="asInvoker" uiAccess="false"/></requestedPrivileges></security></trustInfo></assembly>'
+              Write-Host 'FIXTURE-ORIGINAL-MANIFEST-ABSENT'
+            }
+            [xml]$depDoc = $dependency
+            $null = $manifest.DocumentElement.AppendChild($manifest.ImportNode($depDoc.DocumentElement,$true))
+            $merged = Join-Path $root 'fixture-v6.manifest'
+            $manifest.Save($merged)
+            & $mt -nologo -manifest $merged "-outputresource:$copy;#1"
+            if ($LASTEXITCODE -ne 0) { throw 'Fixture manifest embedding failed' }
+            $verified = Join-Path $root 'verified.manifest'
+            & $mt -nologo "-inputresource:$copy;#1" "-out:$verified"
+            if ($LASTEXITCODE -ne 0) { throw 'Fixture manifest extraction failed' }
+            [xml]$actual = Get-Content -LiteralPath $verified -Raw
+            $controls = @($actual.SelectNodes("//*[local-name()='dependency']/*[local-name()='dependentAssembly']/*[local-name()='assemblyIdentity' and @name='Microsoft.Windows.Common-Controls']"))
+            if ($controls.Count -ne 1 -or $controls[0].version -ne '6.0.0.0' -or $controls[0].processorArchitecture -ne 'amd64' -or $controls[0].publicKeyToken -ne '6595b64144ccf1df' -or $controls[0].type -ne 'win32' -or $controls[0].language -ne '*') { throw 'Fixture Common Controls identity mismatch' }
+            foreach ($level in $actual.SelectNodes("//*[local-name()='requestedExecutionLevel']")) {
+              if ($level.level -ne 'asInvoker' -or $level.uiAccess -eq 'true') { throw 'Unexpected fixture privilege request' }
+            }
+            if ((Get-FileHash -LiteralPath $original -Algorithm SHA256).Hash -ne $originalHash) { throw 'Original generated executable changed' }
+            Write-Host "C1-FIXTURE-MANIFEST-V6-VERIFIED; original $originalHash; copy $((Get-FileHash -LiteralPath $copy -Algorithm SHA256).Hash)"
+            & $copy --ignored --exact --test-threads=1 --nocapture $expected 2>&1 | Tee-Object -FilePath $log
+            if ($LASTEXITCODE -ne 0) { throw "Owned host synthetic fixture failed: $LASTEXITCODE" }
+          } finally {
+            Remove-Item Env:PILOTODIN_C1_C2_FIXTURE_APPROVAL -ErrorAction SilentlyContinue
+          }
+          $output = Get-Content -LiteralPath $log -Raw
+          if ($output -notmatch 'test result: ok\. 1 passed; 0 failed; 0 ignored;') { throw 'Unexpected owned host test count' }
+          if ($output -notmatch [regex]::Escape($expected)) { throw 'Missing exact fixture test' }
+          if ($output -notmatch 'C1-C2-INFERENCE-GROUP-ZERO: retained owned job observed empty after release') { throw 'Missing real inference group witness' }
+          if ($output -notmatch 'C1-C2-ACTUAL-OWNED-HOST-PASS: real pipes; real job descendant and zero; shared lane; joined saves; graceful STOP') { throw 'Missing real shared-host lifecycle result' }
+          if ((git hash-object frontend/src-tauri/Cargo.lock).Trim() -ne 'f635ba1f8257266c242429e2b44ae94b039329b9') { throw 'Cargo lock changed' }
+          git diff --exit-code
+          if ($LASTEXITCODE -ne 0) { throw 'Tracked source changed during fixture' }
+          Write-Host 'C1-C2-OWNED-HOST-VERIFICATION-PASS 1/1; disposable fixture roots retained on runner; no product launch'
+      - name: Remove only owned compile-only placeholders
+        if: always()
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tauri = 'frontend/src-tauri'
+          $marker = "$tauri/NATIVE_COMPILE_PROBE_ONLY.txt"
+          if (-not (Test-Path -LiteralPath $marker)) { return }
+          $assets = @(
+            "$tauri/binaries/pilotodin-engine-x86_64-pc-windows-msvc.exe",
+            "$tauri/binaries/pilotodin-inference-x86_64-pc-windows-msvc.exe",
+            "$tauri/resources/models/qwen3-1.7b-q4_k_m.gguf",
+            "$tauri/resources/models/model-manifest.json",
+            'frontend/dist/index.html'
+          )
+          foreach ($file in $assets) {
+            if (Test-Path -LiteralPath $file) {
+              if ((Get-Item -LiteralPath $file).Length -gt 256) { throw "Unexpected content; refusing cleanup: $file" }
+              Remove-Item -LiteralPath $file -Force
+            }
+          }
+          if (Test-Path -LiteralPath 'frontend/dist') {
+            if (@(Get-ChildItem -LiteralPath 'frontend/dist' -Force).Count -ne 0) { throw 'Unexpected frontend fixture content' }
+            Remove-Item -LiteralPath 'frontend/dist'
+          }
+          Remove-Item -LiteralPath $marker
+          Write-Host 'COMPILE-ONLY-FIXTURES-REMOVED; no executable artifact upload or application launch'

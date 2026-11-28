@@ -1,0 +1,3 @@
+13 November 2026. The owner approved one unpackaged Windows developer build and synthetic native QA on a disposable Windows runner in the PilotODIN conversation.
+Reviewed source: 07f736cb71ee1280e6e24745498db50060825e09.
+Scope excludes installers, output transfers, original owner data, owner PC access, Qwen and model fitting. Re-runs are outside this approval.

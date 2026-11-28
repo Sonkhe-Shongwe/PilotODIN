@@ -1,0 +1,333 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PilotODIN C5 blocked build-input policy v1",
+  "description": "Records candidate profiles, not build authorisation or executable lock. All production/test/dev profiles remain blocked until reviewed evidence and a separate contract revision.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "source_commit",
+    "source_inputs",
+    "vendored_shell_tree",
+    "profiles"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "source_commit": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "source_inputs": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "git_blob_sha1",
+          "bytes"
+        ],
+        "properties": {
+          "path": {
+            "enum": [
+              "backend/requirements.txt",
+              "backend/requirements-test.txt",
+              "frontend/package-lock.json",
+              "frontend/package.json",
+              "frontend/src-tauri/Cargo.lock",
+              "frontend/src-tauri/Cargo.toml",
+              "third_party/tauri-plugin-shell-2.6.0/UPSTREAM.json"
+            ]
+          },
+          "git_blob_sha1": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{40}$"
+          },
+          "bytes": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 2097152
+          }
+        }
+      }
+    },
+    "vendored_shell_tree": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "profiles": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "platform",
+              "arch",
+              "python_abi_candidate",
+              "purpose",
+              "planned_lock",
+              "status",
+              "blockers"
+            ],
+            "properties": {
+              "id": {
+                "const": "windows-x64-cp311-production-build"
+              },
+              "platform": {
+                "const": "windows"
+              },
+              "arch": {
+                "const": "x64"
+              },
+              "python_abi_candidate": {
+                "const": "cp311"
+              },
+              "purpose": {
+                "const": "production-build"
+              },
+              "planned_lock": {
+                "const": "backend/locks/windows-x64-cp311-production-build.txt"
+              },
+              "status": {
+                "const": "BLOCKED"
+              },
+              "blockers": {
+                "const": [
+                  "interpreter_distribution",
+                  "pip_distribution",
+                  "selected_wheel_graph",
+                  "wheel_metadata_and_tags",
+                  "wheel_artifact_sha256",
+                  "license_inventory",
+                  "pyinstaller_and_hooks",
+                  "node_npm_toolchain",
+                  "rust_msvc_sdk_toolchain",
+                  "vendored_crate_bytes",
+                  "runtime_model_and_dll_inventory",
+                  "webview2_and_nsis_inputs",
+                  "offline_bundler_consumption"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "platform",
+              "arch",
+              "python_abi_candidate",
+              "purpose",
+              "planned_lock",
+              "status",
+              "blockers"
+            ],
+            "properties": {
+              "id": {
+                "const": "windows-x64-cp311-source-test"
+              },
+              "platform": {
+                "const": "windows"
+              },
+              "arch": {
+                "const": "x64"
+              },
+              "python_abi_candidate": {
+                "const": "cp311"
+              },
+              "purpose": {
+                "const": "source-test"
+              },
+              "planned_lock": {
+                "const": "backend/locks/windows-x64-cp311-source-test.txt"
+              },
+              "status": {
+                "const": "BLOCKED"
+              },
+              "blockers": {
+                "const": [
+                  "interpreter_distribution",
+                  "pip_distribution",
+                  "selected_wheel_graph",
+                  "wheel_metadata_and_tags",
+                  "wheel_artifact_sha256",
+                  "license_inventory"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "platform",
+              "arch",
+              "python_abi_candidate",
+              "purpose",
+              "planned_lock",
+              "status",
+              "blockers"
+            ],
+            "properties": {
+              "id": {
+                "const": "linux-x64-cp311-source-test"
+              },
+              "platform": {
+                "const": "linux"
+              },
+              "arch": {
+                "const": "x64"
+              },
+              "python_abi_candidate": {
+                "const": "cp311"
+              },
+              "purpose": {
+                "const": "source-test"
+              },
+              "planned_lock": {
+                "const": "backend/locks/linux-x64-cp311-source-test.txt"
+              },
+              "status": {
+                "const": "BLOCKED"
+              },
+              "blockers": {
+                "const": [
+                  "interpreter_distribution",
+                  "pip_distribution",
+                  "selected_wheel_graph",
+                  "wheel_metadata_and_tags",
+                  "wheel_artifact_sha256",
+                  "license_inventory"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "platform",
+              "arch",
+              "python_abi_candidate",
+              "purpose",
+              "planned_lock",
+              "status",
+              "blockers"
+            ],
+            "properties": {
+              "id": {
+                "const": "windows-x64-browser-dev"
+              },
+              "platform": {
+                "const": "windows"
+              },
+              "arch": {
+                "const": "x64"
+              },
+              "python_abi_candidate": {
+                "const": "unresolved"
+              },
+              "purpose": {
+                "const": "browser-dev"
+              },
+              "planned_lock": {
+                "const": null
+              },
+              "status": {
+                "const": "BLOCKED"
+              },
+              "blockers": {
+                "const": [
+                  "interpreter_distribution",
+                  "pip_distribution",
+                  "selected_wheel_graph",
+                  "wheel_metadata_and_tags",
+                  "wheel_artifact_sha256",
+                  "license_inventory",
+                  "node_npm_toolchain",
+                  "installed_tree_identity",
+                  "legacy_environment_compatibility"
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "candidateWheel": {
+      "description": "Candidate artifact row structural constraints. The standard-library verifier additionally checks normalized distribution identity, version equality, expanded tag compatibility, exact URL binding, duplicate rows and license sentinel rejection. Neither schema nor row validity grants setup authority.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "version",
+        "filename",
+        "bytes",
+        "sha256",
+        "source",
+        "metadata_source",
+        "license_expression",
+        "license_review"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[0-9][A-Za-z0-9_.+!]*$"
+        },
+        "filename": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_]+-[0-9][A-Za-z0-9_.+!]*(?:-[0-9][A-Za-z0-9_]*)?-[a-z0-9_.]+-[a-z0-9_.]+-[a-z0-9_.]+\\.whl$",
+          "maxLength": 240
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "source": {
+          "type": "string",
+          "pattern": "^https://files\\.pythonhosted\\.org/packages/[0-9a-f]{2}/[0-9a-f]{2}/[0-9a-f]{60}/[A-Za-z0-9_.+!-]+\\.whl$"
+        },
+        "metadata_source": {
+          "type": "string",
+          "pattern": "^https://pypi\\.org/pypi/[a-z0-9]+(?:-[a-z0-9]+)*/[0-9][A-Za-z0-9_.+!]*/json$"
+        },
+        "license_expression": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "^[ -~]+$"
+        },
+        "license_review": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "^[ -~]+$"
+        }
+      }
+    }
+  }
+}

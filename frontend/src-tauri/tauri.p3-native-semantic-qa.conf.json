@@ -1,0 +1,25 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "identifier": "com.pilotodin.p3semanticqa",
+  "build": {
+    "beforeDevCommand": "npm run dev -- --port 5178",
+    "devUrl": "http://127.0.0.1:5178/p3_native_semantic_qa.html"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "PilotODIN P3 Semantic Context - SYNTHETIC NATIVE QA",
+        "width": 1350,
+        "height": 850,
+        "minWidth": 1010,
+        "minHeight": 680
+      }
+    ]
+  },
+  "bundle": {
+    "active": false,
+    "externalBin": [],
+    "resources": []
+  }
+}

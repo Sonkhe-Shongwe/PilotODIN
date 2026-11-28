@@ -1,5 +1,7 @@
 # PilotODIN Studio · Complete Project
 
+> **HISTORICAL STUDIO PREVIEW GUIDE (October 2026).** This is not the current PilotODIN P4 operating or migration procedure. **Do not run the old project-import/migration batch instructions against an existing installation or original dataset based on this guide.** Consult [current development status](README.md), [continuation handoff](docs/SESSION_HANDOFF_CURRENT.md), and [owner safety policy](docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md). Historical text below is preserved.
+
 A new light-first frontend with the existing working local-first Python analytics, data-quality, ML and multi-AI backends. This is a **Studio preview**, not a signed Windows installer or a production-certified application.
 
 ## What's new in v0.8 (October 2026)

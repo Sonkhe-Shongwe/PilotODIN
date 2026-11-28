@@ -1,0 +1,50 @@
+name: C5 prior notice preservation once
+on:
+  push:
+    branches: [feature/live-dev-workspace-20261023]
+    paths:
+      - qa/c5_wheel_metadata/wheel_prior_notice_preservation.py
+      - qa/c5_wheel_metadata/test_wheel_prior_notice_preservation.py
+      - .github/workflows/c5-wheel-prior-notice-preservation.yml
+      - qa/c5_wheel_metadata/wheel_prior_notice_preservation_45729307962.json
+permissions:
+  contents: read
+jobs:
+  offline-review:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Verify fixture and exact persisted evidence if present
+        run: |
+          test "$(git hash-object qa/c5_wheel_metadata/wheel_prior_notice_preservation.py)" = "8bc7159fe3b0adb760aa2e510f5c76afe8231403"
+          python3 -I -B qa/c5_wheel_metadata/test_wheel_prior_notice_preservation.py
+          if test -e qa/c5_wheel_metadata/wheel_prior_notice_preservation_45729307962.json; then python3 -I -B qa/c5_wheel_metadata/wheel_prior_notice_preservation.py --verify-preserved; fi
+          set +e
+          result=$(python3 -I -B qa/c5_wheel_metadata/wheel_prior_notice_preservation.py --retrieve 2>&1)
+          code=$?
+          set -e
+          test "$code" = 1
+          test "$result" = 'FRESH_APPROVAL_REQUIRED: prior notice preservation disabled'
+  preserve-notices:
+    if: ${{ false }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Exact prior notice evidence retrieval
+        run: python3 -I -B qa/c5_wheel_metadata/wheel_prior_notice_preservation.py --retrieve
+        env:
+          C5_DRIVER_BLOB: 8bc7159fe3b0adb760aa2e510f5c76afe8231403
+          C5_APPROVED_ONCE: C5-PRIOR-NOTICE-PRESERVATION-ONCE-20261126
+          GH_TOKEN: ${{ github.token }}

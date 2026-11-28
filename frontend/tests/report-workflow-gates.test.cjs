@@ -1,0 +1,3 @@
+const{test}=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs');const path=require('node:path');const read=n=>fs.readFileSync(path.join(__dirname,'../src',n),'utf8');
+test('Report composer distinguishes saved revisions, drafts and explicit exports',()=>{const s=read('ReportWorkspace.tsx');assert.match(s,/hasDraftChanges/);assert.match(s,/Save a frozen report revision/);assert.match(s,/Preview report contents/);assert.match(s,/Export HTML/);assert.match(s,/userStartedDraft/);});
+test('HTML fallback filename never falsely uses pdf extension',()=>{const s=read('api.ts');assert.match(s,/pilotodin_report\.\$\{format\}/)});

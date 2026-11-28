@@ -1,0 +1,13 @@
+# Consumed one-use approval; never replay.
+name: C5 managed hosted namespace A diagnostic once 20261128
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  observe-once:
+    if: ${{ false }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - run: echo 'Consumed run 46131676265; disabled. No retry.'

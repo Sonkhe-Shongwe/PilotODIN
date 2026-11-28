@@ -1,0 +1,1010 @@
+{
+  "schema_version": 1,
+  "purpose": "Historical CI-selected wheel names only; not expected artifacts, a dependency graph, or installation authority.",
+  "profiles": [
+    {
+      "profile": "windows-x64-cp311-source-test",
+      "platform": "win32",
+      "architecture": "x64",
+      "observed_cpython": "3.11.9",
+      "source_commit": "6cfb8375df68bd714b28bbd12b4c62ac9e933eb2",
+      "run_id": 45682825061,
+      "job_id": 139447529266,
+      "status": "OBSERVED_ONLY_BLOCKED",
+      "selected_wheels": [
+        {
+          "name": "annotated-doc",
+          "version": "0.0.7",
+          "filename": "annotated_doc-0.0.7-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/annotated-doc/0.0.7/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "annotated-types",
+          "version": "0.8.0",
+          "filename": "annotated_types-0.8.0-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/annotated-types/0.8.0/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "anyio",
+          "version": "4.16.0",
+          "filename": "anyio-4.16.0-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/anyio/4.16.0/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "certifi",
+          "version": "2026.11.20",
+          "filename": "certifi-2026.11.20-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/certifi/2026.11.20/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "charset-normalizer",
+          "version": "3.5.3",
+          "filename": "charset_normalizer-3.5.3-cp311-cp311-win_amd64.whl",
+          "metadata_url": "https://pypi.org/pypi/charset-normalizer/3.5.3/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "click",
+          "version": "8.5.1",
+          "filename": "click-8.5.1-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/click/8.5.1/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "cloudpickle",
+          "version": "3.1.3",
+          "filename": "cloudpickle-3.1.3-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/cloudpickle/3.1.3/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "colorama",
+          "version": "0.4.6",
+          "filename": "colorama-0.4.6-py2.py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/colorama/0.4.6/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "et-xmlfile",
+          "version": "2.0.0",
+          "filename": "et_xmlfile-2.0.0-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/et-xmlfile/2.0.0/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "fastapi",
+          "version": "0.165.0",
+          "filename": "fastapi-0.165.0-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/fastapi/0.165.0/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "h11",
+          "version": "0.16.0",
+          "filename": "h11-0.16.0-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/h11/0.16.0/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "httpcore",
+          "version": "1.0.9",
+          "filename": "httpcore-1.0.9-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/httpcore/1.0.9/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "httpcore2",
+          "version": "2.16.2",
+          "filename": "httpcore2-2.16.2-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/httpcore2/2.16.2/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "httptools",
+          "version": "0.9.0",
+          "filename": "httptools-0.9.0-cp311-cp311-win_amd64.whl",
+          "metadata_url": "https://pypi.org/pypi/httptools/0.9.0/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "httpx",
+          "version": "0.28.1",
+          "filename": "httpx-0.28.1-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/httpx/0.28.1/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "httpx2",
+          "version": "2.16.2",
+          "filename": "httpx2-2.16.2-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/httpx2/2.16.2/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "idna",
+          "version": "3.20",
+          "filename": "idna-3.20-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/idna/3.20/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "iniconfig",
+          "version": "2.3.1",
+          "filename": "iniconfig-2.3.1-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/iniconfig/2.3.1/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "joblib",
+          "version": "1.6.0",
+          "filename": "joblib-1.6.0-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/joblib/1.6.0/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "narwhals",
+          "version": "2.29.0",
+          "filename": "narwhals-2.29.0-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/narwhals/2.29.0/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "numpy",
+          "version": "2.4.6",
+          "filename": "numpy-2.4.6-cp311-cp311-win_amd64.whl",
+          "metadata_url": "https://pypi.org/pypi/numpy/2.4.6/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "openpyxl",
+          "version": "3.1.5",
+          "filename": "openpyxl-3.1.5-py2.py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/openpyxl/3.1.5/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "opentelemetry-api",
+          "version": "1.45.2",
+          "filename": "opentelemetry_api-1.45.2-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/opentelemetry-api/1.45.2/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "packaging",
+          "version": "26.4",
+          "filename": "packaging-26.4-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/packaging/26.4/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "pandas",
+          "version": "2.3.3",
+          "filename": "pandas-2.3.3-cp311-cp311-win_amd64.whl",
+          "metadata_url": "https://pypi.org/pypi/pandas/2.3.3/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "pillow",
+          "version": "13.0.0",
+          "filename": "pillow-13.0.0-cp311-cp311-win_amd64.whl",
+          "metadata_url": "https://pypi.org/pypi/pillow/13.0.0/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "pluggy",
+          "version": "1.7.0",
+          "filename": "pluggy-1.7.0-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/pluggy/1.7.0/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "pydantic",
+          "version": "2.14.4",
+          "filename": "pydantic-2.14.4-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/pydantic/2.14.4/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "pydantic-core",
+          "version": "2.50.5",
+          "filename": "pydantic_core-2.50.5-cp311-cp311-win_amd64.whl",
+          "metadata_url": "https://pypi.org/pypi/pydantic-core/2.50.5/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "pygments",
+          "version": "2.21.0",
+          "filename": "pygments-2.21.0-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/pygments/2.21.0/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "pymupdf",
+          "version": "1.28.2",
+          "filename": "pymupdf-1.28.2-cp310-abi3-win_amd64.whl",
+          "metadata_url": "https://pypi.org/pypi/pymupdf/1.28.2/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "pytest",
+          "version": "9.2.0",
+          "filename": "pytest-9.2.0-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/pytest/9.2.0/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "python-dateutil",
+          "version": "4.0.0",
+          "filename": "python_dateutil-4.0.0-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/python-dateutil/4.0.0/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "python-dotenv",
+          "version": "1.2.4",
+          "filename": "python_dotenv-1.2.4-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/python-dotenv/1.2.4/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "python-multipart",
+          "version": "0.0.34",
+          "filename": "python_multipart-0.0.34-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/python-multipart/0.0.34/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "pytz",
+          "version": "2026.6",
+          "filename": "pytz-2026.6-py2.py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/pytz/2026.6/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "pyyaml",
+          "version": "6.0.4",
+          "filename": "pyyaml-6.0.4-cp311-cp311-win_amd64.whl",
+          "metadata_url": "https://pypi.org/pypi/pyyaml/6.0.4/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "reportlab",
+          "version": "4.5.1",
+          "filename": "reportlab-4.5.1-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/reportlab/4.5.1/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "scikit-learn",
+          "version": "1.9.1",
+          "filename": "scikit_learn-1.9.1-cp311-cp311-win_amd64.whl",
+          "metadata_url": "https://pypi.org/pypi/scikit-learn/1.9.1/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "scipy",
+          "version": "1.17.1",
+          "filename": "scipy-1.17.1-cp311-cp311-win_amd64.whl",
+          "metadata_url": "https://pypi.org/pypi/scipy/1.17.1/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "starlette",
+          "version": "1.10.0",
+          "filename": "starlette-1.10.0-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/starlette/1.10.0/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "threadpoolctl",
+          "version": "3.8.0",
+          "filename": "threadpoolctl-3.8.0-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/threadpoolctl/3.8.0/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "truststore",
+          "version": "0.10.5",
+          "filename": "truststore-0.10.5-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/truststore/0.10.5/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "typing-extensions",
+          "version": "4.16.0",
+          "filename": "typing_extensions-4.16.0-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/typing-extensions/4.16.0/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "typing-inspection",
+          "version": "0.4.5",
+          "filename": "typing_inspection-0.4.5-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/typing-inspection/0.4.5/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "tzdata",
+          "version": "2026.6",
+          "filename": "tzdata-2026.6-py2.py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/tzdata/2026.6/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "uvicorn",
+          "version": "0.54.0",
+          "filename": "uvicorn-0.54.0-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/uvicorn/0.54.0/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "watchfiles",
+          "version": "1.3.0",
+          "filename": "watchfiles-1.3.0-cp310-abi3-win_amd64.whl",
+          "metadata_url": "https://pypi.org/pypi/watchfiles/1.3.0/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "websockets",
+          "version": "17.4",
+          "filename": "websockets-17.4-cp311-cp311-win_amd64.whl",
+          "metadata_url": "https://pypi.org/pypi/websockets/17.4/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        }
+      ]
+    },
+    {
+      "profile": "linux-x64-cp311-source-test",
+      "platform": "linux",
+      "architecture": "x64",
+      "observed_cpython": "3.11.18",
+      "source_commit": "6cfb8375df68bd714b28bbd12b4c62ac9e933eb2",
+      "run_id": 45682825061,
+      "job_id": 139447529613,
+      "status": "OBSERVED_ONLY_BLOCKED",
+      "selected_wheels": [
+        {
+          "name": "annotated-doc",
+          "version": "0.0.7",
+          "filename": "annotated_doc-0.0.7-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/annotated-doc/0.0.7/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "annotated-types",
+          "version": "0.8.0",
+          "filename": "annotated_types-0.8.0-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/annotated-types/0.8.0/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "anyio",
+          "version": "4.16.0",
+          "filename": "anyio-4.16.0-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/anyio/4.16.0/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "certifi",
+          "version": "2026.11.20",
+          "filename": "certifi-2026.11.20-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/certifi/2026.11.20/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "charset-normalizer",
+          "version": "3.5.3",
+          "filename": "charset_normalizer-3.5.3-cp311-cp311-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl",
+          "metadata_url": "https://pypi.org/pypi/charset-normalizer/3.5.3/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "click",
+          "version": "8.5.1",
+          "filename": "click-8.5.1-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/click/8.5.1/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "cloudpickle",
+          "version": "3.1.3",
+          "filename": "cloudpickle-3.1.3-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/cloudpickle/3.1.3/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "et-xmlfile",
+          "version": "2.0.0",
+          "filename": "et_xmlfile-2.0.0-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/et-xmlfile/2.0.0/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "fastapi",
+          "version": "0.165.0",
+          "filename": "fastapi-0.165.0-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/fastapi/0.165.0/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "h11",
+          "version": "0.16.0",
+          "filename": "h11-0.16.0-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/h11/0.16.0/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "httpcore",
+          "version": "1.0.9",
+          "filename": "httpcore-1.0.9-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/httpcore/1.0.9/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "httpcore2",
+          "version": "2.16.2",
+          "filename": "httpcore2-2.16.2-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/httpcore2/2.16.2/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "httptools",
+          "version": "0.9.0",
+          "filename": "httptools-0.9.0-cp311-cp311-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl",
+          "metadata_url": "https://pypi.org/pypi/httptools/0.9.0/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "httpx",
+          "version": "0.28.1",
+          "filename": "httpx-0.28.1-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/httpx/0.28.1/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "httpx2",
+          "version": "2.16.2",
+          "filename": "httpx2-2.16.2-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/httpx2/2.16.2/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "idna",
+          "version": "3.20",
+          "filename": "idna-3.20-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/idna/3.20/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "iniconfig",
+          "version": "2.3.1",
+          "filename": "iniconfig-2.3.1-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/iniconfig/2.3.1/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "joblib",
+          "version": "1.6.0",
+          "filename": "joblib-1.6.0-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/joblib/1.6.0/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "narwhals",
+          "version": "2.29.0",
+          "filename": "narwhals-2.29.0-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/narwhals/2.29.0/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "numpy",
+          "version": "2.4.6",
+          "filename": "numpy-2.4.6-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+          "metadata_url": "https://pypi.org/pypi/numpy/2.4.6/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "openpyxl",
+          "version": "3.1.5",
+          "filename": "openpyxl-3.1.5-py2.py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/openpyxl/3.1.5/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "opentelemetry-api",
+          "version": "1.45.2",
+          "filename": "opentelemetry_api-1.45.2-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/opentelemetry-api/1.45.2/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "packaging",
+          "version": "26.4",
+          "filename": "packaging-26.4-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/packaging/26.4/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "pandas",
+          "version": "2.3.3",
+          "filename": "pandas-2.3.3-cp311-cp311-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl",
+          "metadata_url": "https://pypi.org/pypi/pandas/2.3.3/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "pillow",
+          "version": "13.0.0",
+          "filename": "pillow-13.0.0-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+          "metadata_url": "https://pypi.org/pypi/pillow/13.0.0/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "pluggy",
+          "version": "1.7.0",
+          "filename": "pluggy-1.7.0-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/pluggy/1.7.0/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "pydantic",
+          "version": "2.14.4",
+          "filename": "pydantic-2.14.4-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/pydantic/2.14.4/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "pydantic-core",
+          "version": "2.50.5",
+          "filename": "pydantic_core-2.50.5-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+          "metadata_url": "https://pypi.org/pypi/pydantic-core/2.50.5/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "pygments",
+          "version": "2.21.0",
+          "filename": "pygments-2.21.0-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/pygments/2.21.0/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "pymupdf",
+          "version": "1.28.2",
+          "filename": "pymupdf-1.28.2-cp310-abi3-manylinux_2_28_x86_64.whl",
+          "metadata_url": "https://pypi.org/pypi/pymupdf/1.28.2/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "pytest",
+          "version": "9.2.0",
+          "filename": "pytest-9.2.0-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/pytest/9.2.0/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "python-dateutil",
+          "version": "4.0.0",
+          "filename": "python_dateutil-4.0.0-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/python-dateutil/4.0.0/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "python-dotenv",
+          "version": "1.2.4",
+          "filename": "python_dotenv-1.2.4-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/python-dotenv/1.2.4/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "python-multipart",
+          "version": "0.0.34",
+          "filename": "python_multipart-0.0.34-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/python-multipart/0.0.34/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "pytz",
+          "version": "2026.6",
+          "filename": "pytz-2026.6-py2.py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/pytz/2026.6/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "pyyaml",
+          "version": "6.0.4",
+          "filename": "pyyaml-6.0.4-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl",
+          "metadata_url": "https://pypi.org/pypi/pyyaml/6.0.4/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "reportlab",
+          "version": "4.5.1",
+          "filename": "reportlab-4.5.1-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/reportlab/4.5.1/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "scikit-learn",
+          "version": "1.9.1",
+          "filename": "scikit_learn-1.9.1-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+          "metadata_url": "https://pypi.org/pypi/scikit-learn/1.9.1/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "scipy",
+          "version": "1.17.1",
+          "filename": "scipy-1.17.1-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+          "metadata_url": "https://pypi.org/pypi/scipy/1.17.1/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "starlette",
+          "version": "1.10.0",
+          "filename": "starlette-1.10.0-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/starlette/1.10.0/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "threadpoolctl",
+          "version": "3.8.0",
+          "filename": "threadpoolctl-3.8.0-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/threadpoolctl/3.8.0/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "truststore",
+          "version": "0.10.5",
+          "filename": "truststore-0.10.5-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/truststore/0.10.5/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "typing-extensions",
+          "version": "4.16.0",
+          "filename": "typing_extensions-4.16.0-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/typing-extensions/4.16.0/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "typing-inspection",
+          "version": "0.4.5",
+          "filename": "typing_inspection-0.4.5-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/typing-inspection/0.4.5/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "tzdata",
+          "version": "2026.6",
+          "filename": "tzdata-2026.6-py2.py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/tzdata/2026.6/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "uvicorn",
+          "version": "0.54.0",
+          "filename": "uvicorn-0.54.0-py3-none-any.whl",
+          "metadata_url": "https://pypi.org/pypi/uvicorn/0.54.0/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "uvloop",
+          "version": "0.23.0",
+          "filename": "uvloop-0.23.0-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl",
+          "metadata_url": "https://pypi.org/pypi/uvloop/0.23.0/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "watchfiles",
+          "version": "1.3.0",
+          "filename": "watchfiles-1.3.0-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+          "metadata_url": "https://pypi.org/pypi/watchfiles/1.3.0/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        },
+        {
+          "name": "websockets",
+          "version": "17.4",
+          "filename": "websockets-17.4-cp311-cp311-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl",
+          "metadata_url": "https://pypi.org/pypi/websockets/17.4/json",
+          "artifact_sha256": null,
+          "artifact_bytes": null,
+          "requires_dist": null,
+          "license_review": null
+        }
+      ]
+    }
+  ]
+}

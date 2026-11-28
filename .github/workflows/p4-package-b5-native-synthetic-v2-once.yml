@@ -1,0 +1,200 @@
+name: P4 B5 Windows synthetic library tests V2 (one-use proposal)
+
+# Source preflight is ordinary source CI. Native job is DISARMED.
+# Previous failed dispatch is historical; no approval is carried over.
+'on':
+  push:
+    branches: [feature/live-dev-workspace-20261023]
+    paths: ['.github/workflows/p4-package-b5-native-synthetic-v2-once.yml', 'qa/b5_native_workflow_preflight.rb']
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: pilotodin-package-b5-one-native-synthetic-v2-20261124
+  cancel-in-progress: false
+
+jobs:
+  source-preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout exact workflow and source for parsing only
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Parse both complete YAML variants and embedded scripts
+        shell: bash
+        env:
+          B5_EVENT_MESSAGE: ${{ github.event.head_commit.message }}
+        run: ruby qa/b5_native_workflow_preflight.rb
+  b5-synthetic-library-tests:
+    needs: source-preflight
+    if: ${{ false }} # DISARMED V2; fresh exact approval required.
+    runs-on: windows-2022
+    timeout-minutes: 55
+    env:
+      CARGO_INCREMENTAL: '0'
+    steps:
+      - name: Checkout exact reviewed source, no retained credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: 8e3cc9112073b9744ff18ffa3e4e549662504a97
+          persist-credentials: false
+      - name: Verify source and locked dependency identity
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ((git rev-parse HEAD).Trim() -ne '8e3cc9112073b9744ff18ffa3e4e549662504a97') { throw 'Wrong reviewed source' }
+          if ((git hash-object frontend/src-tauri/Cargo.lock).Trim() -ne '1aaa20850762ba0054b1dbd56139a248da6eba25') { throw 'Cargo lock identity changed' }
+          if ($env:GITHUB_RUN_ATTEMPT -ne '1') { throw 'Approval consumed' }
+          rustc +stable --version
+          if ($LASTEXITCODE -ne 0) { throw 'Hosted Rust unavailable' }
+          cargo +stable --version
+          if ($LASTEXITCODE -ne 0) { throw 'Hosted Cargo unavailable' }
+          $targets = rustup target list --installed --toolchain stable
+          if ($LASTEXITCODE -ne 0 -or 'x86_64-pc-windows-msvc' -notin $targets) { throw 'Hosted MSVC target unavailable' }
+          python --version
+          if ($LASTEXITCODE -ne 0) { throw 'Hosted Python unavailable' }
+          Write-Host "REVIEWED-SOURCE 8e3cc9112073b9744ff18ffa3e4e549662504a97"
+          Write-Host "LOCK-SHA256 $((Get-FileHash frontend/src-tauri/Cargo.lock -Algorithm SHA256).Hash)"
+      - name: Stage intentionally invalid compile-only fixtures
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tauri = 'frontend/src-tauri'
+          $marker = "$tauri/NATIVE_COMPILE_PROBE_ONLY.txt"
+          $assets = @(
+            "$tauri/binaries/pilotodin-engine-x86_64-pc-windows-msvc.exe",
+            "$tauri/binaries/pilotodin-inference-x86_64-pc-windows-msvc.exe",
+            "$tauri/resources/models/qwen3-1.7b-q4_k_m.gguf",
+            "$tauri/resources/models/model-manifest.json"
+          )
+          foreach ($file in ($assets + @($marker, 'frontend/dist'))) {
+            if (Test-Path -LiteralPath $file) { throw "Refusing to overwrite existing asset: $file" }
+          }
+          Set-Content -LiteralPath $marker -Value 'NEVER DISTRIBUTE - ONE SYNTHETIC LIBRARY TEST ONLY'
+          foreach ($file in $assets) {
+            [System.IO.File]::WriteAllBytes((Join-Path $PWD $file), [byte[]](0,1,2))
+          }
+          New-Item -ItemType Directory -Path 'frontend/dist' | Out-Null
+          Set-Content -LiteralPath 'frontend/dist/index.html' -Value 'INVALID COMPILE-ONLY FRONTEND; NEVER LAUNCH'
+          python desktop/verify_inference_assets.py
+          if ($LASTEXITCODE -ne 2) { throw 'Release preflight did not reject invalid fixtures' }
+          Write-Host 'RELEASE-PREFLIGHT-REJECTED; no real runtime/model assets'
+          exit 0
+      - name: Fetch and verify the exact synthetic workbook artifact
+        shell: pwsh
+        env:
+          B5_ARTIFACT_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $root = Join-Path $env:RUNNER_TEMP "pilotodin-b5-native-synthetic-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
+          if (Test-Path -LiteralPath $root) { throw 'Existing synthetic fixture directory refused' }
+          New-Item -ItemType Directory -Path $root | Out-Null
+          $env:B5_FIXTURE_ROOT = $root
+          $zip = Join-Path $root 'fixture.zip'
+          # Fixed repository, run/attempt and artifact provenance, read-only token.
+          # PowerShell strips authorization on redirect by default. Do not preserve it.
+          Invoke-WebRequest -Uri 'https://api.github.com/repos/Sonkhe-Shongwe/PilotODIN/actions/artifacts/14937864793/zip' -Headers @{
+            Authorization = "Bearer $env:B5_ARTIFACT_TOKEN"
+            Accept = 'application/vnd.github+json'
+            'X-GitHub-Api-Version' = '2022-11-28'
+          } -MaximumRedirection 5 -OutFile $zip
+          if ((Get-Item -LiteralPath $zip).Length -ne 4860) { throw 'Unexpected artifact archive size' }
+          if ((Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLowerInvariant() -ne '9ff7eff70d5f27fdc5aba03119f53fe0d719329fdfbb4f85a30cf1e47eee8ae1') { throw 'Artifact archive digest mismatch' }
+          @'
+          import hashlib, json, os, re, zipfile
+          from pathlib import Path
+          root = Path(os.environ["B5_FIXTURE_ROOT"])
+          filename = "Generated_cleaned_v0.xlsx"
+          with zipfile.ZipFile(root / "fixture.zip") as archive:
+              entries = archive.infolist()
+              assert len(entries) == 2 and {e.filename for e in entries} == {filename, "manifest.json"}
+              assert all(not e.is_dir() and not e.flag_bits & 1 for e in entries)
+              assert 0 < archive.getinfo("manifest.json").file_size <= 4096
+              assert 0 < archive.getinfo(filename).file_size <= 1024 * 1024
+              manifest = json.loads(archive.read("manifest.json"))
+              data = archive.read(filename)
+          assert set(manifest) == {"source_sha", "sha256", "size", "filename", "classification"}
+          assert manifest["source_sha"] == "7789f8499709b06d0c944fc3bd91e90c47b5a708"
+          assert manifest["filename"] == filename
+          assert manifest["classification"] == "synthetic-only; not Windows acceptance"
+          assert type(manifest["size"]) is int and manifest["size"] == len(data)
+          assert re.fullmatch("[0-9a-f]{64}", manifest["sha256"])
+          assert hashlib.sha256(data).hexdigest() == manifest["sha256"]
+          with (root / filename).open("xb") as out:
+              out.write(data)
+          (root / "test-temp").mkdir(exist_ok=False)
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as out:
+              out.write(f"PILOTODIN_B5_XLSX_FIXTURE={root / filename}\n")
+              out.write(f"PILOTODIN_B5_XLSX_SHA256={manifest['sha256']}\n")
+              out.write(f"B5_SYNTHETIC_TEMP={root / 'test-temp'}\n")
+          print("B5-SYNTHETIC-FIXTURE-VERIFIED", manifest["source_sha"], manifest["sha256"], manifest["size"])
+          '@ | python -
+          if ($LASTEXITCODE -ne 0) { throw 'Synthetic archive/manifest verification failed' }
+      - name: Build and run only the seven B5 library unit tests (including exact generated workbook)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $false
+          if ($env:GITHUB_RUN_ATTEMPT -ne '1') { throw 'Approval consumed' }
+          if (-not $env:B5_SYNTHETIC_TEMP -or -not $env:PILOTODIN_B5_XLSX_FIXTURE -or -not $env:PILOTODIN_B5_XLSX_SHA256) { throw 'Verified fixture environment missing' }
+          $env:TEMP = $env:B5_SYNTHETIC_TEMP
+          $env:TMP = $env:B5_SYNTHETIC_TEMP
+          $env:CARGO_TARGET_DIR = Join-Path $env:RUNNER_TEMP "pilotodin-b5-synthetic-target-$env:GITHUB_RUN_ID"
+          $log = Join-Path $env:RUNNER_TEMP "pilotodin-b5-synthetic-test-$env:GITHUB_RUN_ID.log"
+          # --lib builds the library test harness only, not the desktop app.
+          # This is an approved-scope test executable, NOT an application launch.
+          $expected = @(
+            'dataset_attestation::tests::canonical_metadata_rejects_mismatched_filename_and_bounds',
+            'dataset_attestation::tests::rejects_duplicate_and_noncanonical_headers',
+            'dataset_attestation::tests::python_hmac_vector_and_tampering',
+            'dataset_file::tests::rejects_wrong_version_format_size_digest_and_controls',
+            'dataset_file::tests::backend_generated_xlsx_fixture_matches_native_contract',
+            'dataset_file::tests::publication_failures_do_not_clobber_or_certify_uncertain_destination',
+            'dataset_file::tests::new_file_publication_refuses_existing_and_protected_paths'
+          )
+          # Exact libtest filters: no substring-based selection or additional invocation.
+          cargo +stable test --locked --manifest-path frontend/src-tauri/Cargo.toml --target x86_64-pc-windows-msvc --lib -- --exact --include-ignored --test-threads=1 @expected 2>&1 | Tee-Object -FilePath $log
+          if ($LASTEXITCODE -ne 0) { throw "B5 native synthetic library tests failed: $LASTEXITCODE" }
+          $output = Get-Content -LiteralPath $log -Raw
+          foreach ($name in $expected) {
+            if ($output -notmatch ('(?m)^test ' + [regex]::Escape($name) + ' \.\.\. ok\s*$')) { throw "Missing exact test success: $name" }
+          }
+          if ($output -notmatch 'test result: ok\. 7 passed; 0 failed; 0 ignored;') { throw 'Unexpected B5 test count or ignored cases' }
+          if ((git hash-object frontend/src-tauri/Cargo.lock).Trim() -ne '1aaa20850762ba0054b1dbd56139a248da6eba25') { throw 'Cargo lock changed' }
+          git diff --exit-code
+          if ($LASTEXITCODE -ne 0) { throw 'Tracked source changed during tests' }
+          if (@(Get-ChildItem -LiteralPath $env:B5_SYNTHETIC_TEMP -Force).Count -ne 0) { throw 'Synthetic test temp has unexpected residual files; leave untouched on disposable runner' }
+          Write-Host 'B5-NATIVE-SYNTHETIC-LIBRARY-TESTS-PASS 7/7; no app launch or physical acceptance'
+      - name: Remove only owned compile-only placeholders
+        if: always()
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tauri = 'frontend/src-tauri'
+          $marker = "$tauri/NATIVE_COMPILE_PROBE_ONLY.txt"
+          if (-not (Test-Path -LiteralPath $marker)) { return }
+          $assets = @(
+            "$tauri/binaries/pilotodin-engine-x86_64-pc-windows-msvc.exe",
+            "$tauri/binaries/pilotodin-inference-x86_64-pc-windows-msvc.exe",
+            "$tauri/resources/models/qwen3-1.7b-q4_k_m.gguf",
+            "$tauri/resources/models/model-manifest.json",
+            'frontend/dist/index.html'
+          )
+          foreach ($file in $assets) {
+            if (Test-Path -LiteralPath $file) {
+              if ((Get-Item -LiteralPath $file).Length -gt 256) { throw "Unexpected content; refusing cleanup: $file" }
+              Remove-Item -LiteralPath $file -Force
+            }
+          }
+          if (Test-Path -LiteralPath 'frontend/dist') {
+            if (@(Get-ChildItem -LiteralPath 'frontend/dist' -Force).Count -ne 0) { throw 'Unexpected frontend fixture content' }
+            Remove-Item -LiteralPath 'frontend/dist'
+          }
+          Remove-Item -LiteralPath $marker
+          Write-Host 'COMPILE-ONLY-FIXTURES-REMOVED; no executable artifact upload or application launch'

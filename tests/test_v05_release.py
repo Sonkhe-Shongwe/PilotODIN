@@ -12,19 +12,19 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
+from tests.settings_fixture import isolate_ai_store
 from tests.quality_compat_client import LegacyQualityClient
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from backend import ai_provider,analytics,engine
 from backend.main import app
 
-client=LegacyQualityClient(TestClient(app))
+client=LegacyQualityClient(fixture_client(app))
 
 @pytest.fixture(autouse=True)
 def isolate_ai(tmp_path,monkeypatch):
-    monkeypatch.setattr(ai_provider,'CONFIG_PATH',tmp_path/'settings.json')
-    monkeypatch.setattr(ai_provider,'SECRETS_PATH',tmp_path/'secrets.dpapi')
+    isolate_ai_store(monkeypatch, ai_provider, tmp_path)
     ai_provider._memory_keys.clear();ai_provider._cooldowns.clear();ai_provider._health.clear()
     for v in ai_provider.ENV_KEYS.values(): monkeypatch.delenv(v,raising=False)
     yield
@@ -37,47 +37,58 @@ def upload_df(df):
     return res.json()['id']
 
 
-def test_handshake_measures_real_provider_and_redacts_key(monkeypatch):
+def test_explicit_handshake_requires_consent_and_redacts_key(monkeypatch):
     key='PRIVATE_VALID_EXAMPLE_KEY_1234567'
     ai_provider.set_key('gemini',key)
     assert not next(p for p in ai_provider.config_status()['providers'] if p['id']=='gemini')['verified']
     seen=[]
-    monkeypatch.setattr(ai_provider,'_call_provider',lambda *args:(seen.append(args) or 'READY'))
-    response=client.post('/api/ai/test/gemini')
-    assert response.status_code==200
-    assert response.json()['status']=='connected'
-    assert response.json()['latency_ms']>=0
-    assert seen[0][3]=='Say READY'
+    def fake(*args,**kwargs):
+        assert kwargs['strict'] is True and kwargs['still_authorized']()
+        seen.append(args)
+        return 'READY'
+    monkeypatch.setattr(ai_provider,'_call_provider',fake)
+    assert client.post('/api/ai/test/gemini').json()['status']=='explicit_intent_required'
+    assert client.post('/api/ai/test/gemini',json={'cloud_intent':True}).json()['status']=='not_configured'
+    assert not seen
+    ai_provider.update_settings(cloud_enabled=True,share_aggregates=True,auto_insights=False,
+                                provider_order=list(ai_provider.PROVIDERS),timeout_seconds=20)
+    response=client.post('/api/ai/test/gemini',json={'cloud_intent':True})
+    assert response.status_code==200 and response.json()['status']=='connected'
+    assert len(seen)==1 and seen[0][3]=='Say READY'
     assert key not in response.text and key not in client.get('/api/ai/settings').text
     assert next(p for p in client.get('/api/ai/settings').json()['providers'] if p['id']=='gemini')['verified']
 
 
-def test_handshake_bad_key_safely_reports_auth(monkeypatch):
+def test_handshake_bad_key_safely_reports_unavailable(monkeypatch):
     ai_provider.set_key('groq','TEST_SECRET_123456789')
-    def fail(*_):
+    ai_provider.update_settings(cloud_enabled=True,share_aggregates=True,auto_insights=False,
+                                provider_order=list(ai_provider.PROVIDERS),timeout_seconds=20)
+    seen=[]
+    def fail(*args,**kwargs):
+        assert kwargs['strict'] is True and kwargs['still_authorized']()
+        seen.append(args[0])
         raise urllib.error.HTTPError('https://safe.example',401,'bad_auth',None,None)
     monkeypatch.setattr(ai_provider,'_call_provider',fail)
-    data=client.post('/api/ai/test/groq').json()
-    assert data['status']=='authentication_failed'
-    assert data['http_status']==401
-    assert 'TEST_SECRET' not in str(data)
+    data=client.post('/api/ai/test/groq',json={'cloud_intent':True}).json()
+    assert data=={'provider':'groq','status':'unavailable'} and seen==['groq']
+    assert 'TEST_SECRET' not in str(data) and 'bad_auth' not in str(data)
 
 
-def test_manual_provider_preference_and_fallback(monkeypatch):
+def test_manual_provider_requires_explicit_intent_and_no_fanout(monkeypatch):
     ai_provider.update_settings(cloud_enabled=True,share_aggregates=True,auto_insights=False,
                                 provider_order=['gemini','groq','openrouter'],timeout_seconds=20,
-                                preferred_provider='groq',workspace_preferences={})
+                                preferred_provider='groq',workspace_preferences={},local_model_enabled=False)
     for p in ('gemini','groq'):ai_provider.set_key(p,'TEST_KEY_123456_'+p)
     seen=[]
-    def response(p,*rest):
+    def response(p,*args,**kwargs):
+        assert kwargs['strict'] is True and kwargs['still_authorized']()
         seen.append(p)
-        if p=='groq':raise TimeoutError('not responding')
-        return 'Reasoned answer'
+        raise TimeoutError('not responding')
     monkeypatch.setattr(ai_provider,'_call_provider',response)
-    result=ai_provider.respond({'rows':30},'explore','Question','local')
-    assert result['provider']=='gemini'
-    assert seen==['groq','gemini']
-    assert result['attempts'][0]['provider']=='groq'
+    assert ai_provider.respond({'row_count':30},'explore','Question','local')['fallback'] and not seen
+    result=ai_provider.respond({'row_count':30},'explore','Question','local',selected_provider='groq',cloud_intent=True)
+    assert result['provider']=='local' and result['fallback'] and seen==['groq']
+    assert result['attempts']==[{'provider':'groq','status':'unavailable'}]
 
 
 def test_local_preference_never_uses_cloud(monkeypatch):
@@ -90,15 +101,15 @@ def test_local_preference_never_uses_cloud(monkeypatch):
     assert result['provider']=='local' and 'selected' in result['reason'].lower()
 
 
-def test_per_workspace_override_supersedes_global(monkeypatch):
+def test_saved_workspace_cloud_selection_never_authorizes_dispatch(monkeypatch):
     ai_provider.update_settings(cloud_enabled=True,share_aggregates=True,auto_insights=False,
                                 provider_order=['gemini','groq','openrouter'],timeout_seconds=20,
-                                preferred_provider='gemini',workspace_preferences={'quality':'openrouter'})
+                                preferred_provider='gemini',workspace_preferences={'quality':'openrouter'},local_model_enabled=False)
     ai_provider.set_key('openrouter','TEST_KEY_OPENROUTER_123456')
-    called=[]
-    monkeypatch.setattr(ai_provider,'_call_provider',lambda p,*args:(called.append(p) or 'Review categories'))
-    assert ai_provider.respond({},'quality','Review','local')['provider']=='openrouter'
-    assert called==['openrouter']
+    monkeypatch.setattr(ai_provider,'_call_provider',lambda *a,**k:pytest.fail('Unexpected cloud dispatch'))
+    assert ai_provider.respond({},'quality','Review','local')['fallback']
+    result=ai_provider.respond({},'quality','Review','local',selected_provider='openrouter',cloud_intent=True)
+    assert result['fallback'] and 'disclosure' in result['reason']
 
 
 def test_global_provider_validation_rejects_untrusted_selections():

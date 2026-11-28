@@ -1,5 +1,7 @@
 # PilotODIN Build C: Hybrid ODIN Intelligence
 
+> **Historical Build C guide.** Use the [session handoff](docs/SESSION_HANDOFF_CURRENT.md) and [phase policy](docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md) for current runtime, model and approval requirements.
+
 This ZIP is **the complete Build B source with an additive local-first AI integration**. It keeps the new Investigation Canvas, the old Studio, dataset versioning, experiments, existing cloud connectors, Tauri foundation and tests. It is not a standalone HTML demo.
 
 ## First steps on Windows

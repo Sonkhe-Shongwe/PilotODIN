@@ -1,0 +1,1389 @@
+{
+  "schema_version": 2,
+  "repository": {
+    "name": "Sonkhe-Shongwe/PilotODIN",
+    "branch": "feature/live-dev-workspace-20261023"
+  },
+  "checkpoint": {
+    "operation_id": "C5-DEV-VM-01-S2-APPLICABILITY-AND-LOCK-PREP-20261128",
+    "parent_sha": "daf0fc445ee42901ca7e03bdaec3591905a987cb",
+    "previous_snapshot_sha": "daf0fc445ee42901ca7e03bdaec3591905a987cb",
+    "scope": "Review targeted static facts against scoped actual product/QA sources; prepare inert corrected Pillow lock projections",
+    "state": "RECONCILED",
+    "receipt": {
+      "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+      "blob_sha": "83bac3ff13e94550753ba899a95704e6d2259d42",
+      "anchor": "28-november--dev-vm-01-s2-applicability-review-and-corrected-pillow-lock-projections",
+      "start_line": 1473,
+      "end_line": 1485
+    }
+  },
+  "product": {
+    "sha": "afcb3d614ce42a419191b6d20b3c9fe39b35c830",
+    "scope": "Latest integrated product source-only verification; full dependency-consuming regression deferred, not broad or native acceptance.",
+    "verification": [
+      {
+        "run_id": 46049494187,
+        "sha": "afcb3d614ce42a419191b6d20b3c9fe39b35c830",
+        "status": "SUCCESS",
+        "scope": "P2 3/3 built-in Node source contracts; full regression deferred"
+      },
+      {
+        "run_id": 46049494186,
+        "sha": "afcb3d614ce42a419191b6d20b3c9fe39b35c830",
+        "status": "SUCCESS",
+        "scope": "P4 12/12 original standard-library unittest source contracts; full regression deferred"
+      }
+    ],
+    "prior_broad_baseline": {
+      "sha": "c5f4bd8b9737e62de5010ee483f3405f2809cc4b",
+      "scope": "Latest verified P2/P4 ordinary source/synthetic baseline; not Windows desktop compilation or native acceptance",
+      "verification": [
+        {
+          "run_id": 46008752167,
+          "sha": "c5f4bd8b9737e62de5010ee483f3405f2809cc4b",
+          "status": "SUCCESS",
+          "scope": "P2 report safety, standalone writer, actual production frontend build"
+        },
+        {
+          "run_id": 46008752135,
+          "sha": "c5f4bd8b9737e62de5010ee483f3405f2809cc4b",
+          "status": "SUCCESS",
+          "scope": "P4 source/synthetic, Windows storage object compile and synthetic engine lifecycle, disposable browser; native preservation collector skipped"
+        }
+      ]
+    }
+  },
+  "phase": {
+    "active": "P4",
+    "closed_scoped": [
+      "P0",
+      "P1",
+      "P2",
+      "P3"
+    ],
+    "next_phase_authorized": false,
+    "installer_frozen": true,
+    "release_certified": false,
+    "source_progress": {
+      "A": [
+        5,
+        5
+      ],
+      "B": [
+        5,
+        5
+      ],
+      "C": [
+        4,
+        5
+      ],
+      "D": [
+        0,
+        2
+      ],
+      "total": [
+        14,
+        17
+      ]
+    },
+    "c5_checklist": [
+      4,
+      8
+    ],
+    "official_score_projection": {
+      "earned": 14,
+      "total": 20,
+      "open": [
+        "R02.5",
+        "R02.6",
+        "R03.3",
+        "R03.4",
+        "R06.1",
+        "R06.2"
+      ],
+      "owner": {
+        "path": "docs/PROJECT_STATUS_CURRENT.md",
+        "blob_sha": "3a1560f1b0f89460b843b1edf6f88692b9edf239",
+        "anchor": "p4-engineering-scorecard"
+      }
+    },
+    "other_gates": {
+      "R02_5": [
+        0,
+        5
+      ],
+      "N12": [
+        0,
+        2
+      ],
+      "four_gate": [
+        1,
+        4
+      ],
+      "mutation_preparation": [
+        3,
+        4
+      ],
+      "G2": "BLOCKED",
+      "G3": "PENDING",
+      "G4": "PENDING",
+      "gate_C": "UNVERIFIED_REQUIRED_FOR_REAL_PREDICTION_USE"
+    }
+  },
+  "task": {
+    "id": "C5-DEV-VM-01-S2-PREUSE-AND-OVERLAY-20261128",
+    "status": "READY",
+    "scope": "S2 review of actual S1 facts at exact receipt blob 02ce4c6d821bae913691d0a5501fe516df2fd908 and conditional dependency overlays targeting bb46e49; complete exact applicable pre-use and consolidated Windows/Linux regression preparation.",
+    "blocker": "Corrected inert locks prepared; no durable corrected Pillow delivery route or actual resolver, exact ReportLab internal cache/eval reachability and rights, Windows PDFium publisher build applicability and other per-profile security/rights/tool/browser dispositions remain held.",
+    "next_action_kind": "PREPARATION",
+    "next_action": "Complete finite use-specific applicability review using retained source/publisher evidence (ReportLab direct cache/loader/control-flow and rights, Windows PDFium publisher build/compiled-component scope, other per-profile holds), determine feasible corrected Pillow authenticated delivery route, prepare coordinated exact graph/guard rebind and distinct owner decision where required. No repeat identity acquisition or live lock cutover; no restricted execution without fresh exact authority.",
+    "after": [
+      "Verify consolidated functional Windows/Linux synthetic stages only when applicable pre-use and exact authority satisfied; no auto-use or live merge.",
+      "Close C5 and award only qualifying original evidence; all six P4 and native D/G2/E2/8GB/Gate C requirements preserved.",
+      "DLA parked; P5/installer/release remain unauthorised."
+    ],
+    "read": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "83bac3ff13e94550753ba899a95704e6d2259d42",
+        "anchor": "28-november--dev-vm-01-s2-applicability-review-and-corrected-pillow-lock-projections",
+        "start_line": 1473,
+        "end_line": 1485
+      },
+      {
+        "path": "qa/c5_managed_dev/dev_vm_01_s2_corrected_pillow_projection.PROPOSED.json",
+        "blob_sha": "524c9c9608b6d7e0d39adefd952beca4c9518cc2",
+        "commit": "2131f6503c98688a5159073597e18b9c724d612b"
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "8c68635c76a34f0c82c081c2a39b6a1940e0f836",
+        "anchor": "28-november--dev-vm-01-corrected-s2-static-inspection-pass-and-disarm",
+        "start_line": 1463,
+        "end_line": 1471
+      },
+      {
+        "path": "docs/C5_DEV_VM_01_S2_CORRECTED_RECEIPT_46186791961.json",
+        "blob_sha": "b4c6e8df4da63b20bc648546e42ba633ddf0fd74"
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "bce55ffddb7de7932684afc3d4017867e3c84d08",
+        "anchor": "28-november--dev-vm-01-fresh-corrected-s2-static-inspection-write-ahead",
+        "start_line": 1459,
+        "end_line": 1461
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "9d13d2cbe7fb3e04617bc60caa054f9fe2df96b4",
+        "anchor": "28-november--dev-vm-01-s2-font-refusal-reproduced-and-disarmed-correction",
+        "start_line": 1421,
+        "end_line": 1457
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "f961c24823224e603388cf2e57fd8c13c3fdec0f",
+        "anchor": "28-november--dev-vm-01-s2-targeted-inspection-terminal-refusal-and-disarm",
+        "start_line": 1409,
+        "end_line": 1419
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "8cec1525f13f1dc5a8a10691490899c48e43f148",
+        "anchor": "28-november--dev-vm-01-s2-targeted-two-wheel-write-ahead",
+        "start_line": 1405,
+        "end_line": 1407
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "9a25c202e37b64be90e5046b40b9303ecc467d68",
+        "anchor": "28-november--dev-vm-01-s2-two-wheel-static-source-prepared",
+        "start_line": 1399,
+        "end_line": 1403
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "be38a5615cf59d2214a8f2d150bc0a7fa0bdd29b",
+        "anchor": "28-november--dev-vm-01-corrected-windows-pillow-artifact-inspected",
+        "start_line": 1391,
+        "end_line": 1397
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "75d9ffe463487f1278cf249710f8084594e52687",
+        "anchor": "28-november--dev-vm-01-affected-pillow-projection-hold-and-finite-evidence-decision",
+        "start_line": 1381,
+        "end_line": 1389
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "0468e4353c1a0779b7cda867e972919e8a51ee5d",
+        "anchor": "28-november--dev-vm-01-pdfium-notice-discrepancy-resolved-and-remaining-actual-use-holds",
+        "start_line": 1331,
+        "end_line": 1379
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "cd33d37205c4d6d06a0ba98edee616dbacbdb508",
+        "anchor": "28-november--dev-vm-01-disarmed-functional-driver-and-windows-first-workflow",
+        "start_line": 1323,
+        "end_line": 1329
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "fb198aa09b6fbfc05f0bd4a99d87604f4032409b",
+        "anchor": "28-november--dev-vm-01-consolidated-held-source-overlay-and-input-binding",
+        "start_line": 1315,
+        "end_line": 1321
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "5dd4d862f19f997206c1b972a48cf89415fd7d78",
+        "anchor": "28-november--dev-vm-01-c5-closure-focus-and-font-witness-rebind",
+        "start_line": 1307,
+        "end_line": 1313
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "6d157d1ec210a6eed43ac94047072cee926235d8",
+        "anchor": "28-november--dev-vm-01-mounted-dataset-version-transition-test-source",
+        "start_line": 1299,
+        "end_line": 1305
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "de38145ce1f823a81bc6cb13fa6c70b3cb7ad200",
+        "anchor": "28-november--dev-vm-01-s2-exact-static-projections-and-mounted-test-source",
+        "start_line": 1289,
+        "end_line": 1297
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "65f8eaadd83abc5ec3fdcc9cf8a15e75061a8604",
+        "anchor": "28-november--dev-vm-01-s1-static-inspection-pass-and-disarm",
+        "start_line": 1283,
+        "end_line": 1287
+      },
+      {
+        "path": "docs/C5_DEV_VM_01_S1_RECEIPT_46174130791.json",
+        "blob_sha": "02ce4c6d821bae913691d0a5501fe516df2fd908"
+      },
+      {
+        "path": "docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md",
+        "anchor": "28-november-2026--owner-approved-product-first-v3-directive-01-and-dev-vm-01"
+      },
+      {
+        "path": "docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md",
+        "anchor": "28-november-2026--owner-approved-product-first-v3-directive-01-and-dev-vm-01"
+      },
+      {
+        "path": "docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md",
+        "anchor": "28-november--product-first-v3-directive-01-dev-vm-01-adopted"
+      },
+      {
+        "path": "docs/C5_CONSOLIDATED_COMPLETION_PLAN_2026-11-27.md"
+      },
+      {
+        "path": "qa/c5_managed_dev/validation_inputs_20261127.json",
+        "blob_sha": "872bdfd04f320267e39a5aef29fe19b8929f7cbd"
+      },
+      {
+        "path": "qa/c5_managed_dev/pdfium_use_candidate_20261127.json",
+        "blob_sha": "7d89ba820429b2005f7a70cc1b5ed1415f7b1161"
+      },
+      {
+        "path": "qa/c5_managed_dev/validation_workflow.DRAFT.yml",
+        "blob_sha": "d537e518401b2397d748334b0de65131de8a705d"
+      },
+      {
+        "path": "docs/PROJECT_STATUS_CURRENT.md"
+      }
+    ]
+  },
+  "operation": {
+    "id": "C5-DEV-VM-01-S2-APPLICABILITY-AND-LOCK-PREP-20261128",
+    "state": "RECONCILED",
+    "starting_sha": "daf0fc445ee42901ca7e03bdaec3591905a987cb",
+    "outcome": "Scoped ReportLab/PDFium applicability reviewed; residual internal-use rights/security and delivery held. Two exact 49-row proposed locks, 48 unchanged per profile; no active change, no new acquisition or acceptance.",
+    "reconcile_before_retry": false,
+    "receipt": {
+      "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+      "blob_sha": "83bac3ff13e94550753ba899a95704e6d2259d42",
+      "anchor": "28-november--dev-vm-01-s2-applicability-review-and-corrected-pillow-lock-projections",
+      "start_line": 1473,
+      "end_line": 1485
+    }
+  },
+  "authority": {
+    "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next. Owner-approved GitHub-only development installation and bounded technical autonomy amendment applies within exact approved batches; no broader authority.",
+    "preparation_only": "Owner approved consolidated shared-bundle disarmed acquisition-before-signature source and exact limited existing host bootstrap; owner approved proposed limited local Docker control-plane and host-derived rootfs trust/no-pull isolation method for preparation only. Authentication before extraction/use; no Docker invocation, acquisition, verification execution, installation or live cutover authorised. Owner approved bounded first-collision encoded public member-path diagnostic preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-bounded-first-collision-diagnostic-preparation-only. No restricted execution authority. Owner approved finite exact Linux data-only terminfo inventory policy and bounded receipt projection as proposed in 8cc1a696, preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-finite-exact-linux-terminfo-inventory-policy-and-bounded-receipt-preparation-only. Strict Windows/gh and other safeguards unchanged; no acquisition, extraction or restricted execution. Owner explicitly approved preparation and static/synthetic verification only of Approach C observation-only candidate (11 fixed roles, five minutes); no restricted execution, acquisition, Docker invocation or active policy change. Exact reference in C5 spec owner-approved-bounded-approach-c-observation-candidate-preparation-only. Owner approved Approach C metadata-only preparation/static/synthetic verification under 13 GET/10-minute proposed limits; no actual acquisition, package downloads, installation, Docker invocation, restricted execution or active trust policy change. Exact spec anchor owner-approved-bounded-approach-c-metadata-only-preparation-and-synthetic-core. Owner approved narrow metadata bootstrap preparation on existing two reviewed images including GnuPG/necessary existing dependencies, no acquisition/restricted execution/integrated verification/active policy change, original 13 GET/10 min bounds. Exact spec anchor owner-approved-narrow-metadata-bootstrap-preparation-and-finite-key-evidence-contract. Owner approved two-stage key/metadata sequence preparation including bounded public signing-key private repository retention proposal, combined 13 GET/600s/256 MiB; no actual acquisition, restricted execution or active policy change. Exact spec anchor owner-approved-two-stage-preparation-and-consolidated-custody-core. Owner approved exact C-D09 managed-development CI evidence rationalisation at proposal 2cbed51, recorded in C5 implementation spec; limited bootstrap trust and residual risk accepted, prepare concrete bounded validation candidate only, no acquisition, installation, restricted execution, migration, new expenditure or phase advancement. Owner approved one-time C5 proportionate publisher-first inspection method (okay lets try that), recorded at docs/C5_PROPORTIONATE_INSPECTION_DECISION_2026-11-27.md; no new restricted authority or acceptance waiver. Owner explicitly approved standalone Windows Stage A preparation preserving all security and acceptance requirements; see docs/C5_STANDALONE_WINDOWS_A_PREPARATION_2026-11-27.md. No restricted execution grant. Owner explicitly approved exact Astral CPython 3.11.18 Windows x64 candidate for standalone Stage A preparation only; docs/C5_WINDOWS_A_ASTRAL_PREPARATION_2026-11-27.md. No new restricted grant. Owner explicitly approved simplified C5 applicability-based development policy and preparation of consolidated Stage A transaction; see ENGINEERING_DECISIONS_CURRENT.md section 27-november--owner-approved-c5-applicability-policy-and-consolidated-stage-a-transaction. No restricted authority or acceptance waiver. Owner explicitly approved bounded G2 equivalent evidence feasibility assessment and design only; see ENGINEERING_DECISIONS_CURRENT.md section 27-november--g2-equivalent-evidence-feasibility-and-design-disposition. Assessment complete, no implementation, live method adoption or restricted execution authority. Owner adopted aggressive product-first framework (okay lets follow you new frame work); PRODUCT-FIRST-20261127 in phase policy. Independent concrete scoped P4 source work and narrowly rationalised standard C5 control metadata preparation, no new restricted execution grant. Owner approved preparation of bounded browser-only GitHub verification (okay do ti); detached 26ab490, no activation/acquisition/execution grant; exact receipt in engineering decisions. Owner approved proceeding with corrected Chrome .88 and Playwright 1.65.1 alternative (do it), exact candidate 920df39 prepared; no exact bounded activation grant yet; preserve original locks. Owner explicitly approved isolated ReportLab 5.1.2 evaluation and coordinated dependency-range and lock preparation, preserving all security, acceptance and execution boundaries; exact owner decision in ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-isolated-reportlab-512-projections-and-metadata-holds. Detached 4dd5525 data-only proposal; no acquisition, installation, execution or live adoption authority. Owner explicitly approved reduced 24-artifact static inspection scope and exact execution-binding preparation, 24 direct GETs/104436509 bytes/30 minutes/one attempt/no redirects or retries, preserving all boundaries; ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-reduced-static-receipt-and-custody-binding-preparation. Preparation only; no actual GET, dispatch or installation authority. Owner explicitly approved preparation of bounded read-only hosted cgroup v2 feasibility observation, five minutes, one attempt, zero package downloads, no privilege or security changes; ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-read-only-cgroup-feasibility-preparation. No actual observation/dispatch or acquisition authority. Owner approved isolated method evaluation/preparation, prioritising existing provider isolation or constrained cgroup subtree; no execution/privileged operations/security modification/package acquisition without distinct authority; ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-isolated-method-evaluation-and-system-manager-projection. Owner explicitly approved preparation of proportionate Managed Hosted Tool Assurance as narrow C-D09 extension: standard Ubuntu package checks, observed executable identities and same-job rechecks; no independent reconstructed managed executable manifests; preserve containment/settlement/trusted privileged startup/dependency integrity/rights/original data/acceptance. No privilege/acquisition/installation or active workflows until exact separate approval. See ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-managed-hosted-tool-assurance-and-disarmed-consolidated-candidate. Owner approved narrow systemd service quiet/diagnostic source correction and generated regression only (okay lets do that); exact detached 88cdf6d, no privileged run or evidence method change. Owner approved finite upstream-supported /run diagnostic/restructuring preparation (lets do it), detached 8bbfc5a; no exact restricted grant, no security weakening or live method adoption. Owner explicitly approved narrow exact named failed-unit reset correction preparation and generated regression only; fresh clean A may serve as prospective B gate, historical failure unchanged, separate exact execution/B authority mandatory; detached 9840f65/c6ed4df. Owner explicitly accepts limited host-runtime isolation objective rather than literal /run inaccessibility and approves narrow detached B observer/wrapper and targeted generated regression preparation only; a2fd5f54fea557c8f0794fecb63211e14e277160, receipt 28-november--owner-approved-detached-b-private-runtime-preparation-and-targeted-regression. No execution, activation, acquisition, installation or automatic B. Owner approved narrow strict cgroup topology verification correction and generated regression (okay lets do that); detached 35ae3127c3d10f8ea74d3f30df1df3571cc1a38c and inert binding a734fefb9f147d0095190d816e11df95eaecf604; no execution, activation, acquisition, installation, retries or automatic downstream work. Owner approved PRODUCT-FIRST V2 architecture direction and documentation cleanup (i approve also do a document, audit , clean uppdate, optimize (without losing key information)); finite C5/G2 and test coverage assessment only, no implementation or changed method/authority. See policy 28-november-2026--owner-approved-product-first-v2-architecture-direction. Owner explicitly approved proposed E2 and R06 engineering preparation, preserving all original requirements and approval boundaries; P4-E2-R06-PREP-20261128, see ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-e2-and-r06-preparation-and-readiness-holds. No native/model/acquisition/owner-device access, execution, workflow or method adoption authority. Owner explicitly approved focused dependency-free Explore regression preparation using existing P4 infrastructure and isolated development ref; binding 0264f7d77cc3f9c1b11e00a255e5742b10ea6e9f, PERF-EXPLORE-SOURCE-BINDING-20261128. No branch creation, workflow activation, dependency installation or restricted execution authority. Owner explicitly approved finite isolated Qwen3 0.6B source preparation using existing infrastructure, no acquisition/native execution/owner-device access; finite assessment reconciled NO-GO without implementation or tests, see docs/ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-qwen3-06b-finite-preparation-no-go. No restricted grant. Owner requested new Universal Local AI direction and documentation audit, DLA-DIRECTIVE-AUDIT-20261128. Prior narrow Qwen provenance/settlement preparation approval is recorded but parked, not transferable. Current Granite/Liquid direction and finite read-only readiness proposal only; exact adoption, evidence-method changes, execution, acquisition, native/model/owner access, integration and release require separate authority. Owner explicitly approved DLA Stage 1 isolated source preparation and proposed independent runtime-member expectation method at 6fcfa10; no artifact acquisition, native execution, owner-device access or production integration. Partial disarmed candidate a35e92936c95cebf33e4062863944c3fd92b6b4f retained; no new restricted grant, no transfer. Owner expressly approved DEV-VM-01 under PRODUCT-FIRST V3 (28 Nov), managed disposable ordinary synthetic CI risk and scope as policy section; prepare one consolidated bounded C5 batch targeting bb46e49. Development-only evidence-method change, no restricted execution authority; plan 0f454aa disarmed. Preserve all native product acceptance, dependency integrity, security and rights.",
+    "restricted_active": [],
+    "consumed_disarmed_count": 71,
+    "consumed_history": {
+      "commit": "b9864b70fb9bb5a72d0f79c37f15b94100722192",
+      "path": "docs/TAB_MIGRATION_HANDOFF_CURRENT.md",
+      "anchor": "4-immediate-next-work-in-order"
+    },
+    "forbidden": [
+      "new restricted network/acquisition",
+      "native compilation or execution",
+      "model fitting/inference/download",
+      "owner data or owner workspace access/migration",
+      "OS/security changes outside standard authenticated development package installation in explicitly approved disposable GitHub scope; no security weakening",
+      "installer/packaging",
+      "workflow activation outside scope",
+      "evidence-method changes",
+      "phase activation",
+      "release",
+      "replay of consumed or uncertain approval"
+    ],
+    "guards": "64 consumed/disarmed, zero active/pending. Latest run 46139755871 terminal CG_SHARED after startup; 88/88 generated tests, original 4/13, B1/4, cleanup unverified, qualification=false. Previous B 46137431814 CGROUP_MOUNT_COUNT and A failures retained. No replay, security weakening, retry-budget expansion or speculative verifier/collector variants. C1/C2 and OWNED_RESOURCE_ENABLED remain false, no fallback. Reduced inspection/custody and original full regressions held, not waived. C-D09 and prior exact development/technical retry bounds remain binding; no change to independent settlement, rights or evidence method until separately approved. V2 preparation only, no implementation, restricted execution, acquisition/installation, workflow activation, native/model/owner-data or phase work. Codespace stop/consumed-variable cleanup unverified; owner-local uninspected/preserved. Prior chronological guard text preserved at immutable parent state bcbceb51dca20baf5b99d4beff5a94037d1abb5b and exact engineering receipts.",
+    "last_consumed": {
+      "id": "C5-DEV-VM-01-S2-CORRECTED-TWO-GET-20261128",
+      "source_sha": "4b280869aa38c29bd7f6d3fe0c58737a5190a7a1",
+      "write_ahead_sha": "ed6858789ce7c7354407fc184ecc9f20a5e9cbb6",
+      "activation_sha": "adccaabe92ca488bb6c1d03d53608351898d048c",
+      "run_id": 46186791961,
+      "job_id": 141108388323,
+      "outcome": "STATIC_FACTS_PASS_NO_USE_CLEARANCE",
+      "receipt": {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "8c68635c76a34f0c82c081c2a39b6a1940e0f836",
+        "anchor": "28-november--dev-vm-01-corrected-s2-static-inspection-pass-and-disarm",
+        "start_line": 1463,
+        "end_line": 1471
+      }
+    }
+  },
+  "pending_runs": [],
+  "pending_operations": [],
+  "unpublished": {
+    "owner_local": "UNINSPECTED_PRESERVE; never infer clean or publish",
+    "detached": [
+      {
+        "sha": "5e149a034c7bb37dd3afe4945026d1a581af3ed3",
+        "scope": "prior standard-library pure rehearsal; not live product"
+      },
+      {
+        "sha": "ae673c4d5ba462bbece4252f4d5bc66db94e16d6",
+        "scope": "disarmed integrated portable source; five QA paths, 118 workflows unchanged, zero runs; untested"
+      },
+      {
+        "sha": "b7c9b6eed2e475023aa8cfa6922fd4019c849da0",
+        "scope": "owner-approved limited existing-host trust; disarmed QA preparation, five changed QA paths versus ae673c4, workflows unchanged, zero runs, static read-back only; runtime untested"
+      },
+      {
+        "sha": "c2264da688f053d377fd02cddca5e7230866a493",
+        "scope": "exact inert C5 activation proposal; four QA paths changed vs b7c9b6e, 118 workflows unchanged, seven staged payloads read-back exact, zero runs; no runtime tests"
+      },
+      {
+        "sha": "393679c51c3752e2e6204ad77e57c229b25e7633",
+        "scope": "Inert observed-image revision only; five QA paths changed from c2264da, seven embedded payloads read-back exact, no workflow changes, zero runs; fresh owner approval required"
+      },
+      {
+        "sha": "1e5267ff3ac7e39f02c62ec5dbce1be5ff32689e",
+        "scope": "Inert preflight-only stage diagnostic; three added QA paths; three embedded payloads read-back exact; zero runs, fresh approval required"
+      },
+      {
+        "sha": "df35b972e0e32b33603e6c8be6d2ba190d8b84ba",
+        "scope": "Exact inert integrated local no-pull Docker rootfs/provenance proposal, ten QA paths vs 393679c, 11/11 embedded disarmed and active hashes read back; 28/28 pure exact-snippet assertions, full suite not run and mandatory before driver; zero candidate runs, execution approval required"
+      },
+      {
+        "sha": "3c46865af8a608cadd085d8c4480d229c9658ff4",
+        "scope": "Rootfs-only correction (three QA paths), exact snippets 2 methods/21 cases PASS in local mocked Python; full suite and host regression not run; inherited activation template/manifest pins stale; no workflows changed, no runs; fresh approval required."
+      },
+      {
+        "sha": "3aeebbc9c9021f8d8810b82e0b2b9c148df172cd",
+        "scope": "Corrected exact inert rootfs Docker proposal; five QA paths vs df35b97, 2 additional exact snippet methods PASS, 11/11 disarmed/active pins regenerated, full module suite NOT RUN, zero candidate runs; fresh exact execution approval required."
+      },
+      {
+        "sha": "3877bcda80a54f5f4b96ad9eaa2cdbfce459a1b1",
+        "scope": "Stdlib alias-only source correction, three QA files, 2 exact synthetic snippet methods PASS, template stale; no workflow activation."
+      },
+      {
+        "sha": "5701ff8ded08cf378b1fed8eee7e456267fe1c35",
+        "scope": "Exact inert stdlib alias omission Docker proposal; five QA paths vs 3aeebbc, 22/22 refreshed pins read back; full updated 14-method suite NOT RUN, zero candidate runs, fresh approval required."
+      },
+      {
+        "sha": "c466b5b2faff2a7bb1b6df5020185b3de798952d",
+        "scope": "Inert finite documented two-image compatibility proposal; six QA paths, two new exact methods PASS with mocked host, 22/22 refreshed pins and cross-layer binding read back; updated full 16-method suite NOT RUN, zero candidate runs; new policy and execution require explicit owner approval."
+      },
+      {
+        "sha": "72e11429adf316316d71084a5eb6f3fd3da048df",
+        "scope": "Inert exact LLVM 18 option correction, five QA paths, one new exact snippet test PASS, 22/22 refreshed pins and ten source files read back; updated full 17-method suite NOT RUN, zero candidate runs; execution needs fresh exact owner approval."
+      },
+      {
+        "sha": "9653f9137c1c42232342464bc24c17b33d56d79f",
+        "scope": "Inert two-file case-collision diagnostic source proposal; one new exact mocked synthetic method PASS, four snippet SHA256 matches, full 18-method suite NOT RUN, activation template/manifest stale, no candidate runs or workflow changes; diagnostic evidence scope and future exact execution require fresh explicit owner approvals."
+      },
+      {
+        "sha": "05866bc9bcbf405a6c3da9e403c745164d5707a6",
+        "scope": "Complete exact inert integrated case-collision diagnostic candidate; four QA files vs 72e1142, 22/22 pins and ten exact source matches, 34 staging/37 total, one exact mocked test PASS, full 18-method suite NOT RUN, zero candidate runs; no new workflow or product changes; exact one-use execution requires fresh owner approval."
+      },
+      {
+        "sha": "494e478fa2099592480cd1adade399c0c272ec15",
+        "scope": "Initial inert finite Linux terminfo proposal; isolated synthetic fixture failed because unlisted leaf collision generated; retained history, superseded by test-only corrected 8cc1a696; no activation."
+      },
+      {
+        "sha": "8cc1a6965fb6983d2fa0f4e07e603988d57ff059",
+        "scope": "Corrected inert two-file finite exact Linux terminfo case-policy proposal; one isolated mocked test PASS, three exact snippet SHA256 matches; full 19-method gate NOT RUN, stale inherited template/manifest, no candidate runs, changed policy and separate execution require fresh authority."
+      },
+      {
+        "sha": "76e60bc2a39e3eb795805f2efa717999464c8ce8",
+        "scope": "Complete exact inert integrated finite Linux terminfo policy candidate; four QA paths vs 05866bc9, 22/22 pins, ten exact source matches, 36 staging/39 total, one exact mocked test rerun PASS, full 19-method suite NOT RUN, receipt producer reviewed, zero candidate runs, no workflow/product changes; separate exact one-use execution approval required."
+      },
+      {
+        "sha": "28181cf992ab6efd5156265e5ea7d4752b00e66f",
+        "scope": "Exact inert candidate; 22/22 pins and 10 sources confirmed; one distinct activation 0e789c2/run 45907585039 refused unreviewed image before staging; full 19-method suite NOT RUN; consumed/disarmed, no replay."
+      },
+      {
+        "sha": "68f40aa3cceef75eeae3b08e0934363a47b3760c",
+        "scope": "Exact inert observation candidate; one-use run 45909617464 SUCCESS on approved image, 11 observed roles; disarmed, consumed, no replay; not host qualification."
+      },
+      {
+        "sha": "8514efee89259b5303f4e62000309bef063c3724",
+        "scope": "Inert metadata-only synthetic core, 3 QA files, 9/9 local fixture tests and static/extra checks passed. No approved key anchors, live adapter or activation template; no execution authority."
+      },
+      {
+        "sha": "01a617d1b645cc7922cdadac6cd053adcbdc8efd",
+        "scope": "Inert narrow metadata bootstrap contract; 5 local synthetic tests and static disarm pass, no actual GnuPG or key parsing/transport adapter. New staged custody decision and exact execution approval required."
+      },
+      {
+        "sha": "813f3f059c80a7a94e40133f6ef55e202e7f80f1",
+        "scope": "Consolidated nine inert QA paths, six new actual local pure custody fixture tests passed; previous six blobs retained. No live adapters or key material, no execution readiness; C5 necessity audit next."
+      },
+      {
+        "sha": "3239d8c65ec8e94219242b4b87654ac8cb132e2f",
+        "scope": "Exact detached corrected simulation workflow, single-path diff, inverse transformation and exact read-back PASS; full fresh parser/compile not run, no activation/marker/run, fresh explicit execution approval required."
+      },
+      {
+        "sha": "37f4a3fec3997162aada3093cd3fc1318392dd62",
+        "scope": "Exact current-base detached conditional PDFium overlay (29 paths) plus three inert coordinator QA paths; all 120 workflows unchanged, zero runs; not applied, no execution approval."
+      },
+      {
+        "sha": "dad085669e3a130437e8a25751834784a5b611c5",
+        "scope": "Exact current-base conditional 29-path overlay, four QA staging/final witness paths, two inactive managed-browser config additions; 120 workflows unchanged, zero candidate runs; no activation, no execution approval."
+      },
+      {
+        "sha": "65f5ca6acbdec0743c2c93360bc607cc7e9338a9",
+        "scope": "Alternative detached 29-path PDFium overlay with direct RGB buffer copy, two pure helper/test paths and two inactive browser configs; original manifest deliberately retained pending review/rebinding; not execution-ready, no migration."
+      },
+      {
+        "sha": "0c1590f57c4d62d58dca482c03ac9948009e90a4",
+        "scope": "Exact reduced Stage A detached source candidate; 35 changes; manifest rebound, coordinator moves Pillow to B, existing test split updated. Historical workflow/inspection pins unchanged; no execution or migration."
+      },
+      {
+        "sha": "8ca9f6f9c96f2f9eb1473ae26ed8e1a7e7ac7010",
+        "scope": "Exact detached reduced Stage A successor, six additive QA paths (four existing standalone plan/lock/inspector blobs plus new standalone functional adapter and pure tests); disarmed; four local scoped checks pass, native/19 predicates not executed. No activation, acquisition, installer or phase change."
+      },
+      {
+        "sha": "7431d98c6adeb50c60895cc3a5a5a75e86870e43",
+        "scope": "Disarmed initial owned Windows command runner/test candidate; superseded by corrected successor, not activated."
+      },
+      {
+        "sha": "fa610dcff5e73b89290cc5df3ec99e5b7d45a17f",
+        "scope": "Disarmed detached Windows command runner successor; two QA paths vs previous Stage A; exact pure prefix and test hashes matched, 8 selected mock tests PASS, full module/native not executed, no activation or restricted grant."
+      },
+      {
+        "sha": "bb31566cda9cd35e4e8ce8a6a1c8470537c141e3",
+        "scope": "Disarmed Stage A staging successor; two new QA paths and import-only change to existing inspection adapter. Five scoped local synthetic tests pass with exact new blobs; no actual archive, native, transport or provenance execution."
+      },
+      {
+        "sha": "7a502bb0380bd0db7f0040d6eca18f7f004bdf6f",
+        "scope": "Initial independent P4 legacy owned-job shutdown correction, superseded by successor retaining interruption across entire close retry; not activated."
+      },
+      {
+        "sha": "b8fa995ae1b86c044c77610abd1db1b7fa8cedd0",
+        "scope": "One-file detached active legacy desktop shutdown correction, original OwnedJob retained through leader and positive zero-job settlement, interruption across retries; exact source reviewed, no compilation/native/regression or merge."
+      },
+      {
+        "sha": "dae0cda99f11cb6adf609e29de7b55039f135bfa",
+        "scope": "Exact uncertain legacy startup correction and one existing source regression; 11/11 local static PASS and negative control fails. Candidate for ordinary source integration; no native execution."
+      },
+      {
+        "sha": "4118d4708d33d616bd58f1835a6c78ea528af066",
+        "scope": "Exact reduced Linux Stage A disarmed data plan/lock and reused pip lock, ten source pins and 19 predicates unchanged, seven archives 7,808,390 bytes. Not execution-ready or actual verification."
+      },
+      {
+        "sha": "10fefd5535776ab0183a0c7fd1a4ec22870ed688",
+        "scope": "Initial detached three-path Linux standalone Stage A source, superseded by ef44885 transport-env and receipt binding correction. No activation or functional run."
+      },
+      {
+        "sha": "ef448858bc753a7219e2b9720645911e0cca1a8c",
+        "scope": "Detached exact Linux standalone Stage A successor, 3 QA paths vs 4118d47, ten original pins and both locks unchanged, 19 predicates retained, 12 static checks and 3 copied mocked group checks pass; full module/actual transfer/install/native/functional/settlement not run. All gates disarmed; future pre-use disposition, exact activation and separate one-use approval required."
+      },
+      {
+        "sha": "70ee69cb4d860e6499da114cfec7cf7e85ca6510",
+        "scope": "One-path detached Linux Stage A successor aligning managed bootstrap to approved C-D09; same image historic curl drift pin, Python observed fingerprint/recheck, unchanged independent archive pins/locks and 19 tests; 9 static and 6 copied synthetic-file checks PASS. Full module, host/package/native/functional execution NOT RUN; no pre-use eligibility, activation or grant."
+      },
+      {
+        "sha": "783027ca68ce75a8f91c910b9856387da8cebfc4",
+        "scope": "Two-path disarmed Stage A successor: generated-fixture scope binding and fixed seven-package managed-host pre-use query. Original plan/locks/19 IDs retained. Eight copied parser cases PASS; actual full module, host, transfer, install, native, functional tests NOT RUN, no disposition approval or activation."
+      },
+      {
+        "sha": "496a18584e13701ccd73552e32a0660b28d27956",
+        "scope": "Two disarmed workflow drafts outside .github/workflows; exact CP311.18 Stage A setup, conditional managed Chrome 158.0.8127.88, eight static checks and exact readbacks; no actual setup, use clearance, browser availability or tests."
+      },
+      {
+        "sha": "adfc019d8706c665099621884e74f8509fa3b866",
+        "scope": "Five Stage A preparation paths; exact bounded proposal, rolling host observations with concrete security minimums and disarmed invocation. Twelve static checks/exact readbacks; no actual setup, host check, installation or test. Approval pending."
+      },
+      {
+        "sha": "304b24d71aef1c8e3e98211bb5e8ba2430932f4f",
+        "scope": "Owner-approved exact isolated Stage A source activation; five source gates/pin and two disposition/review paths only. No live product or workflow activation yet; one-use scope only."
+      },
+      {
+        "sha": "f1cf3d2e01b8f7a67c8f7b214525ede69aa9cce4",
+        "scope": "Exact inert two-file data-only Linux full-profile proposal; 49-row corrected Pillow pin, 86 exact uses/157012942 staged bytes, 85 direct bodies/149435321; readback, 29 overlay base identities and selector path checks pass. No source overlay applied, staging/settlement/hosted handoff or execution authority; no actual tests or resolver."
+      },
+      {
+        "sha": "a282f3d401e998d40d2d8c8bca30ca994b441711",
+        "scope": "Final isolated disarmed Linux source/guard/manifest rebind; parent 85f0e62 retained by ancestry. 33 paths, 17 static checks, 29 exact overlay bindings, all four profiles blocked, no live product/workflow changes. Existing Stage B adapters, custody, rights/security and actual browser readiness pending; no test execution."
+      },
+      {
+        "sha": "93fbdad5db71b72d40e5c2e560fb10253df4c490",
+        "scope": "Disarmed Linux Stage B callback adapter, five existing QA paths; exact historical Stage A receipt, full staging inventory, local Pillow vs 85 direct transfers, shared mixed/font/frontend predicates and prior process-group primitive. Static review only, source/disposition and actual host callback/settlement unbound; no tests."
+      },
+      {
+        "sha": "aae9b255a91d6ed116bbb96436e23c2fa6c854fd",
+        "scope": "Disarmed Route B hosted Pillow exact artifact retrieval adapter + pure refusal tests + prospective route data, three QA additions, 12 static checks. No acquisition; token/redirect and hard host/source/receipt integration pending."
+      },
+      {
+        "sha": "9006133f95ad3519a9d1540ba171b858e26cc6cc",
+        "scope": "Independent P4 source-only stale backend connection admission fix, exact live parent 0785ffd, two paths, 14 static checks. Recorded exit and final generation fence, no replacement/ownership release. Actual source test/compile/native and publication pending."
+      },
+      {
+        "sha": "982435f458d4ed10006833c0141df40490b30315",
+        "scope": "Recovered Linux Stage B mixed-callback result collision fix, two exact QA paths, 16/16 extracted mock checks, full module not run; disarmed."
+      },
+      {
+        "sha": "26ab490c657846cf05f11e2fcabbd6fdf4a18b7e",
+        "scope": "Disarmed two-file browser-only smoke draft; 13 static checks and 2/2 prior lock/receipt archive matches, unchanged 121 workflows, zero runs; exact pre-use, transport, settlement and one-use execution binding pending."
+      },
+      {
+        "sha": "920df394447648564863665e01acc38f2b066251",
+        "scope": "Disarmed three-file corrected browser-only candidate; independently corroborated Playwright SHA512, proposed signed Google package chain, 14 static checks/readback, zero runs, no product lock change. Exact approval/source and actual pre-use checks pending."
+      },
+      {
+        "sha": "c5a8faf9ef9826f312807005eb60eab36ebbbc3d",
+        "scope": "Single-path exact isolated npm user/global config correction after actual run 46054007845 failed; inverse diff/readback PASS; no run, compile or approval for correction."
+      },
+      {
+        "sha": "2809df9781e803af7c43bc882576b5dfeeb2bdee",
+        "scope": "Authenticated standard Chrome disposable-runner candidate after prior host namespace refusal; one-path diff, 13 static checks, no actual run yet."
+      },
+      {
+        "sha": "9d35fe7f223d459a3c9fd8b17f37838aedf849a4",
+        "scope": "Embedded Chrome credits correction; two-file exact diff, 13 static checks, not executed."
+      },
+      {
+        "sha": "4cbb1370227c180fda6a7b8e5c4e24297b2c672f",
+        "scope": "Exact public Pillow nightly static verification candidate; no acquisition yet."
+      },
+      {
+        "sha": "a2a61cca9c141496f428467928985d7ef0031d5c",
+        "scope": "Exact direct Pillow quarantine static verification; no acquisition yet."
+      },
+      {
+        "sha": "65928fac7fa7392dd3d62a282633af25c4bc392c",
+        "scope": "Exact controlled publisher storage Pillow quarantine static verification; no acquisition yet."
+      },
+      {
+        "sha": "b1836a87f3a79d06bae47c8c7ab51ee327d8af71",
+        "scope": "Standard bounded curl and offline hash-locked pip Pillow candidate; no execution yet."
+      },
+      {
+        "sha": "60df105a215a899113709c9a58580e58e3f2c308",
+        "scope": "Recovered isolated C5 overlay, exact Playwright lock proposal, disarmed."
+      },
+      {
+        "sha": "f7a6f6b0eab868090fdbc2d5ea72a17d7aa073ef",
+        "scope": "Corrected reusable Pillow/Chrome acquisition and npm/browser guards; disarmed."
+      },
+      {
+        "sha": "73243c94d1b5743eba98ce8ffaebc95287509ca1",
+        "scope": "Consolidated manifest, credits witness, disarmed draft."
+      },
+      {
+        "sha": "9402a0859d2586b5e25bdaaed2aecad90ac9b9b9",
+        "scope": "Consolidated draft with regression commands and finite input bounds, not execution-ready."
+      },
+      {
+        "sha": "61c10076bf3450b154bfc5eb73f8bea83e3d0f75",
+        "scope": "Detached five-path finite consolidated partition, report writer command and direct installed Vite config successor of 9402a08; nine static/readback checks and manifest arithmetic pass; synthetic tests written not run; disarmed, no acquisition/execution."
+      },
+      {
+        "sha": "0204090f1f14832cbc482d40bf10fd7683faeeed",
+        "scope": "Detached consolidated successor of 61c1007 through 049ea0d: measured receipt and bounded transport/targeted fact preparation, revised npm witness and regression-before-cleanup lifecycle; 14 grouped static checks and 13 fingerprint-matched copied excerpt synthetic checks pass. Full modules/actual acquisition/use/CI not run; disarmed."
+      },
+      {
+        "sha": "f4273dfab350767417bb799ad932431a5b915840",
+        "scope": "Detached consolidated successor of 0204090 through cc10efc: staged offline installer/exact reviewed pre-use gate, measured Chrome and owned transaction. 25 grouped static checks and nine fingerprint-matched pure excerpt tests pass; full modules/actual acquisition/use/CI not run, disarmed."
+      },
+      {
+        "sha": "4e2cc44ec393dee1fa507b3bfcabc2c91e713aaa",
+        "scope": "Detached successor of f4273df: conditional exact Playwright hash/cap permits measured length, retains all disposition and fact gates. Eight static readback checks pass; test source only. No execution."
+      },
+      {
+        "sha": "ee5df25b62fc68f579a92cb96994f46c4fdcd686",
+        "scope": "Detached successor of 4e2cc44: exact export marker and report display DevQA prerequisites for consolidated pytest, isolated mode-specific homes; 11 grouped static checks pass, test source only; no execution."
+      },
+      {
+        "sha": "8d24d2920b12f2cb234032e6ebabbd32a983c551",
+        "scope": "Successor of ee5df25 via 440cb74; consolidated-only notice Git blob hashes and Tauri loader/package facts, nine static and nine scoped local helper tests pass, full archive tests unexecuted; all gates false."
+      },
+      {
+        "sha": "615c73bb719ac364b1f30cbe08fc4c60230dbcf5",
+        "scope": "Successor of 8d24d29: independently pinned exact notice/native/metadata conditional comparison and pre-transfer hold review; 10 grouped static checks and 13 scoped helper cases pass, full tests unexecuted; all gates false."
+      },
+      {
+        "sha": "2235d385391087978f32d9184e823a280bfa5e96",
+        "scope": "Successor of 615c73b; shared deadline and redacted bounded command receipts, direct/Pillow and generic capture, group plus independent whole-job settlement gate; 13 static checks and 13 mocked helper assertions pass, full tests unexecuted, all gates false."
+      },
+      {
+        "sha": "e44143160a18ed0f358a617c5ed6bf895831a4e3",
+        "scope": "Detached successor of 2235d38; five QA paths, fixed-route Chrome worker under shared deadline and redacted reserved-GET/partial file receipts for all three transfer routes. 12 static/readback and 18 exact excerpt mocked assertions PASS; full tests and actual host/acquisition/settlement not run. All gates disarmed."
+      },
+      {
+        "sha": "9970039f764112a40fce3880822a7cc1d0db6560",
+        "scope": "Disarmed successor of e441431 through 9b23a98; five QA paths, transfer caps and no-replacement on incomplete accounting, exact 6 P1/13 P4 receipt and credits validators. 12 static/readback and 27 fingerprint-matched synthetic assertions PASS; actual reporter/host/acquisition/full module tests not run."
+      },
+      {
+        "sha": "4dd55250bf7cb43d47338493d656afb9eaf5b6c9",
+        "scope": "Disarmed one-file ReportLab 5.1.2 inert proposal successor of 9970039. Exact published hash, five full dependency projections and coordinated pin rebindings, 15 static/readback and six pure packaging comparisons PASS. Actual metadata/rights/security/graph/host/regression unresolved; no acquisition or active lock change."
+      },
+      {
+        "sha": "d9119bdd0fd9973fdd288fd789a43c8492ac2993",
+        "scope": "Disarmed data-only successor of 4dd5525; ReportLab URL corroborated and finite 28-row static inspection ceiling (29 GETs/116350181 bytes, not authorised); 14/14 static/readback pass. Metadata/rights/security, exact reduced scope and host containment unresolved."
+      },
+      {
+        "sha": "8d0b3e3204ad90f2c8d7b356fbca9311da592849",
+        "scope": "Disarmed one-file reduced 24-artifact static facts proposal; 22 historical identity matches, four retained-evidence exclusions, 24 GET/104436509 byte proposed ceiling, 12/12 static checks pass. Exact executable receipt, host custody and owner decision required."
+      },
+      {
+        "sha": "596390fa397a3839074c64ef342b69ac54c37873",
+        "scope": "Disarmed five-path reduced static metadata/receipt/staged-file binding successor of 8d0b3e3 via 3144e56; 19 static/readback checks pass; exact Python tests not run, host/cleanup and independent use facts unresolved."
+      },
+      {
+        "sha": "b57782643d634449ad7922db3b42e59d7ecb13ce",
+        "scope": "Disarmed three-path read-only cgroup v2 feasibility observation successor of 596390f; 14 static/5 local excerpt fixture checks pass. No actual host observation, qualification or execution authority; exact one-use workflow binding and independent boundary evidence pending."
+      },
+      {
+        "sha": "29d8b962c3f26279307c9e66dc9ca6c0bec477f2",
+        "scope": "Inert exact gated source/one-use workflow, marker and terminal disarm projection from b577826 via 1389a07 and c544eae; 14 static/readback checks plus final disarm pin pass. Trigger audit incomplete, no live execution or authority."
+      },
+      {
+        "sha": "12d9b04cea4b2d1ad2cee41ed4c6c090d2adff84",
+        "scope": "Inert two-file system-manager isolated slice/service method projection and generated fixture; 15 static/readback checks pass, no actual manager/fixture execution. Detached from 29d8b96; live consumed 123rd workflow not in this historical tree."
+      },
+      {
+        "sha": "42e5a3f9b2709388024673188a0dfb66e25d23fb",
+        "scope": "Disarmed concrete manager fixture launcher/observer and exact v255.4 transient allow-list correction, three paths via 9c2985a from 12d9b04. 18 static/7 generated excerpt tests pass, full lifecycle and actual host unexecuted; exact tool pins null and privilege approval absent."
+      },
+      {
+        "sha": "af444316e44385d97674602d3ece5c1714d00be9",
+        "scope": "Detached two-path generated-only observer lifecycle witness and disarmed data-only root startup projection. Exact observe excerpt 1 positive/13 negative subcases pass with mocks; full module and actual host unexecuted, no tool pins or authority. Readback exact; preserve separately from live tree."
+      },
+      {
+        "sha": "6ef95bc5de9146eaf3192fdd6ef54836dc6fdf8c",
+        "scope": "Disarmed managed hosted assurance preflight, standard local package integrity and exact source/observed rechecks, three paths; 7 exact generated tests PASS; no execution."
+      },
+      {
+        "sha": "0d5afc9dfc3a3b0c8eb813874c05f95a638e69ff",
+        "scope": "Disarmed consolidated same-job wrapper and exact pins, five new QA paths vs af44431; 10 exact generated unittest methods PASS; reviewed versions and activation null; no actual host/privilege/workflow. Preserve separately from live."
+      },
+      {
+        "sha": "4edc4c4964e30e4c1e986bbfbacdaf46082e7853",
+        "scope": "Disarmed streaming bounded client/adapter/wrapper and generated subprocess tests; 14/14 local pass, no actual host."
+      },
+      {
+        "sha": "1ab5546198137e66c2b45eee69a24a2cf4fcc175",
+        "scope": "Exact conditional eight-package reviewed map and startup tests; 27/27 generated local methods pass, no hosted or privilege."
+      },
+      {
+        "sha": "4cb3271b96b98eaba467d31a3b038270be27f536",
+        "scope": "Inert exact one-use workflow text and JSON/marker binding; no active workflow or execution. Preserve detached 122-workflow history separately."
+      },
+      {
+        "sha": "7a5bebdca47f90f067ad6ed9591719cbbb8d5d11",
+        "scope": "Upstream-backed disarmed pristine slice correction, six QA paths, 4/4 focused exact excerpt tests pass; full revised suite and fresh activation not prepared. No hosted execution."
+      },
+      {
+        "sha": "02b694ddea655dff7d3b822b1cb3ead1c4ce9a19",
+        "scope": "Fresh inert pristine-slice execution proposal/source 7a5bebd; exact local 31/31 tests PASS, syntax verified; no live workflow or execution. Separate exact grant required."
+      },
+      {
+        "sha": "88cdf6d761725a5b2695f2e7bbf4e542800e9917",
+        "scope": "Disarmed five-path manager stderr correction, exact --quiet and fixed distinct refusal codes; ten source pins and unchanged observe body verified; 2/2 focused fingerprint-matched excerpt methods PASS, four negatives; full 32-method suite and actual host untested. No activation template or grant."
+      },
+      {
+        "sha": "a28be41c0c74c91da0956f270c2f4f52c93ddf37",
+        "scope": "Fresh inert exact quiet fixture candidate/source 88cdf6d, actual full local 32/32 generated tests PASS with ten Git blob matches before/after; 11 source pins, exact YAML structure, 3 shell syntax and 2 embedded Python checks pass; no live activation, separate grant required."
+      },
+      {
+        "sha": "8bbfc5a2f1a2d90a137d7feea731647ddde6ba52",
+        "scope": "Inert /run namespace A/B pure diagnostic core and proposed finite plan; actual 8/8 generated tests PASS with exact local Git blob hashes, three QA paths only. Not execution-ready; collector, cleanup, mount equivalence and exact separate approval required."
+      },
+      {
+        "sha": "3f7f5060fc6689a163b9e857eb4dfc1eca79f427",
+        "scope": "Inert A-only attempt attribution/failure cleanup collector, two QA files, 10/10 generated mocks actual local PASS and exact Git hashes. No successful-start lifecycle integration or activation; B mount proof outstanding."
+      },
+      {
+        "sha": "570610bd553ac265b28071615f42f325c3f8e445",
+        "scope": "Integrated A-only self-contained observer, separate wrapper and tests, eight added QA files on detached corrected source; 58/58 full generated tests PASS with 17 exact Python hashes, no actual manager or privilege."
+      },
+      {
+        "sha": "bf64c6d700bc3be5f7da48a577cd52c90446daa4",
+        "scope": "Fresh exact inert A-only workflow and proposal; 19 source pins and local YAML/bash/Python syntax checks verified; no activation or B authority."
+      },
+      {
+        "sha": "9840f65d3543534449303e7ebc695a134a0f398d",
+        "scope": "Detached A cleanup correction, three modified QA files and inert plan, actual 64/64 local generated tests with 17 exact Python hashes; no actual systemd/privilege."
+      },
+      {
+        "sha": "c6ed4df396c4f60d7dd2831d4e5df85aa2b89f7c",
+        "scope": "Fresh inert A-only reset cleanup workflow and proposal, 20 exact pins and syntax verification. Separate exact execution approval required; no B."
+      },
+      {
+        "sha": "a2fd5f54fea557c8f0794fecb63211e14e277160",
+        "scope": "Owner-approved detached B private-runtime observer/wrapper, eight targeted generated regression methods and inert plan; 8/8 exact targeted local pass, 23 source pins verified; combined 72 and actual runtime equivalence unverified, no execution binding."
+      },
+      {
+        "sha": "6e9c933eae5b205e26ea9898604dfa71313440ba",
+        "scope": "Exact inert B-only workflow and manifest after combined 72/72 local generated tests; 24 pins, 20 local Python hashes, YAML/bash/Python static checks verified. Authority false; separate exact execution approval required."
+      },
+      {
+        "sha": "35ae3127c3d10f8ea74d3f30df1df3571cc1a38c",
+        "scope": "Strict effective worker cgroup topology correction; four added QA paths, exact generated tests 88/88, original B unchanged; preparation only."
+      },
+      {
+        "sha": "a734fefb9f147d0095190d816e11df95eaecf604",
+        "scope": "Exact inert topology-only B execution binding; 28 pins and static syntax checks verified; authority false."
+      },
+      {
+        "sha": "541cbeb18777c4ba7600076631f2760f4705f282",
+        "scope": "PERF-EXPLORE-BOOTSTRAP-01 detached five-file source candidate, 7/7 prior direct JS static groups; no functional/runtime/CI or live integration. Exact pins and trigger audit in PERF-EXPLORE-RECONCILE-20261128."
+      },
+      {
+        "sha": "0264f7d77cc3f9c1b11e00a255e5742b10ea6e9f",
+        "scope": "Owner-approved disarmed isolated Explore source-only binding; one existing workflow changed, all five jobs false. No branch creation/activation/run/installation. Exact pins and proposed one-use activation in PERF-EXPLORE-SOURCE-BINDING-20261128."
+      },
+      {
+        "sha": "a9d2993025eeef0ed4726902e645b12ef418e95c",
+        "scope": "DLA Stage 1 intermediate detached three-file pure archive/evaluator source contract, not merged, no execution."
+      },
+      {
+        "sha": "a35e92936c95cebf33e4062863944c3fd92b6b4f",
+        "scope": "DLA Stage 1 isolated four-file disarmed source candidate, 12 connector static assertions; Python/Rust generated tests not run, no complete listener provider or Granite size, no CI/native/model/acquisition/production integration."
+      },
+      {
+        "sha": "67a94c9bb4894b71aaee6b43733d8b334d8e1e44",
+        "scope": "DLA opt-in original-process-handle and TCP listener QA source intermediate, no compilation/execution."
+      },
+      {
+        "sha": "e57032165ad302d516dab2a2da4d616cb122c6d4",
+        "scope": "DLA private listener provider source + seventh exact ZIP test, QA-only optional feature, uncompiled/untested, not merged."
+      },
+      {
+        "sha": "388d5515e6845eb63f5211bc28fe693acb947af6",
+        "scope": "DLA existing dependency-free source-only regression binding, all five jobs literal false, no branch creation/activation/run. Six syntax and seven generated Python tests pending."
+      },
+      {
+        "sha": "dad4b36e6f26aa1a3816057b34851e7fdac8a601",
+        "scope": "Disarmed independent runtime archive inspection driver, exact publisher URL/size/digest and bounded TLS redirect, memory-only; 3 transport tests prepared not run, no acquisition."
+      },
+      {
+        "sha": "618128b9607e05e87e7db1fcf95cc7ed34ef9201",
+        "scope": "Disarmed DLA archive-only inspection binding; five false job guards, driver false, before/driver pins disarmed. No branch/run/acquisition."
+      },
+      {
+        "sha": "e53ac8c1eb9f52d993b4d6b8feafcdbcf35acd14",
+        "scope": "P4 Local analytics missingness overview bounded coverage disclosure and two API regression methods; detached source candidate, exact diff readback only; no tests, activation or integration."
+      },
+      {
+        "sha": "60d8c0d138dcdbdde395059e2ea5827fa952e2a1",
+        "scope": "P4 local insight explicit dataset-version request/response and continuation fences in two HTTP compositions and mounted panels; 20 parameterised HTTP cases and one frontend contract prepared, nine direct source assertions/readback only; not run or integrated."
+      },
+      {
+        "sha": "bb46e49035f3853e4b1a0045d45c3a984a232064",
+        "scope": "Consolidated detached P4 Explore, missingness and Local ODIN version-bound source/test candidate; exact 12 base uses, 11 paths, 130 workflows preserved; no execution or live product integration."
+      },
+      {
+        "sha": "0f454aa0a452733494f843b539fe456ceb713a9a",
+        "scope": "DEV-VM-01 disarmed consolidated C5 data-only staged batch; target bb46e49, exact 25 source pins, conditional 86 inputs per profile, 24 static-only inspection rows, proposed 3 initial/5 max jobs. No actual execution, final dependency overlay or lock migration."
+      },
+      {
+        "sha": "57c9f8dfc0057901f23a5b264123077bd8dad3d9",
+        "scope": "DEV-VM-01 S1 static inspection source; exact retained reduced parser and transfer, standard supervision, four new pure contracts; Python compile exact new blobs only; no execution."
+      },
+      {
+        "sha": "7ffef75c9c6025d41c7e62e9a054414cff70c3ed",
+        "scope": "Exact inert S1 source/tree/nine blob pins, proposed workflow and marker, 24 GETs/104436509 body cap/one Ubuntu job/30 minutes/no retries or installs; YAML/Bash syntax verified, no activation."
+      },
+      {
+        "sha": "ae3e9d7ee039ac5910f851d069560203a3eb0556",
+        "scope": "Three mounted synthetic Local ODIN browser test scenarios; exact readback only, no execution."
+      },
+      {
+        "sha": "7aea3548f66460ee254e057dd9854a2303e30c79",
+        "scope": "S2 inert exact dependency projections and 24 use holds; no lock cutover, execution or integration."
+      },
+      {
+        "sha": "615c0f74ee6de119e5e62c6fb966931cfc6400f8",
+        "scope": "Two additional mounted synthetic dataset-version transition races; exact source readback/diff verified, not compiled or executed."
+      },
+      {
+        "sha": "cb83becc72fed6c0e273c93c8200a127729b9647",
+        "scope": "Disarmed ReportLab 5.1.2 exact font witness identity rebind and negative fixture cases, not executed."
+      },
+      {
+        "sha": "b8dd9c5d9533f91764476fe308bce0c7ba5a07ba",
+        "scope": "36-path held coordinated source overlay and historical graph/preflight separation; exact tree verified, no execution."
+      },
+      {
+        "sha": "5c9e67d5442699e75fbd83eaeaf59fb38b721152",
+        "scope": "Exact S1 receipt and functional input/npm witness pin rebinding, disarmed."
+      },
+      {
+        "sha": "950678b94525cc694c5690dd1d7b0bbd5b495920",
+        "scope": "Final held browser/S1 provenance and proposed exact functional input ceilings; no execution."
+      },
+      {
+        "sha": "69c23d3d6b74c97fd195777c1e13a957410ad8bc",
+        "scope": "Dedicated managed sandbox browser configs and persistent context path, unexecuted."
+      },
+      {
+        "sha": "4cf72b47599c490a8e38826bdc236ba910c63555",
+        "scope": "Mandatory final functional regression binding to existing staged coordinator, unexecuted."
+      },
+      {
+        "sha": "aee2862735245fbeb685b75751a0765c686caced",
+        "scope": "Concrete disarmed managed driver and ordered Windows/Linux workflow draft, no authority."
+      },
+      {
+        "sha": "2e7f10c6d23b14cebc76051c80b71eee0b17db57",
+        "scope": "Exact reviewed managed tool and browser checks, bounded count/identifier evidence; candidate final tree checked, no execution."
+      },
+      {
+        "sha": "571914e8420b3b2aa335bf777e5490d59c969874",
+        "scope": "Two-wheel bounded targeted static inspection source and generated tests, unexecuted."
+      },
+      {
+        "sha": "8b1107f85b59e8d48b13f66572282071d3305ef8",
+        "scope": "Refined exact member identity and Type1 font header inspection; read-back verified, no activation."
+      },
+      {
+        "sha": "868c56ebaba1a92fb96d2ce65e0aa5aa8c3e0ccc",
+        "scope": "Exact inert S2 static-only one-job binding, seven source pins, marker and workflow; no live activation at this commit."
+      },
+      {
+        "sha": "efedd8b4a00b0a376e735b22063c6fcce1835770",
+        "scope": "Disarmed S2 font diagnostics and partial receipt correction; helper/tests locally verified by exact Git blob, integrated driver not run."
+      },
+      {
+        "sha": "4b280869aa38c29bd7f6d3fe0c58737a5190a7a1",
+        "scope": "Exact corrected S2 inspection source with thirteen generated tests, fresh operation gate; detached only."
+      },
+      {
+        "sha": "866e502292526dd08b5a2670ec394d73475dd04f",
+        "scope": "Inert exact fresh corrected S2 one-use job and marker binding; no live activation."
+      },
+      {
+        "sha": "2131f6503c98688a5159073597e18b9c724d612b",
+        "scope": "Data-only corrected Pillow source-test lock projections and delivery holds; no manifest activation, offline resolver or use."
+      }
+    ]
+  },
+  "remaining_risks": [
+    "Historical A 46131676265 cleanup timeout and fresh A 46134318998 complete failure cleanup, prior B 46137431814 CGROUP_MOUNT_COUNT and topology B 46139755871 CG_SHARED refusals immutable. Actual topology B 88/88 generated tests and startup, original 4/13 and B 1/4 only. Shared mount record detected; actual peer/topology/aliases and full runtime protection, settlement/cleanup unverified. Dynamic UID custody held; exact grants consumed/disarmed, route parked, no replay or automatic downstream execution.",
+    "Reduced static inspection 596390f is held: 24 artifacts, proposed 24 direct GETs/104436509 bytes/30min/one attempt/no redirects or retries, preparation only. No archive acquisition, use, install, parser execution or custody inference; exact tests, staged metadata/notice/native facts, actual independent settlement and ownership handoff remain. 23/23 historical targeted release identities reviewed; 0/23 final pre-use dispositions. Security, actual compatible graph, applicable rights and independent hashes remain required; no blanket clearance.",
+    "ReportLab 4.5.1 remains HOLD; 5.1.2 is a disarmed proposed alternative with coordinated range/lock/metadata/notice and offline graph review outstanding. Actual native/parser/library/loader applicability (PDFium/Brotli, numerical runtimes, LZMA, Tauri and relevant Python/npm components) remains open. Preserve all prior identities, notices and source evidence; no silent lock cutover, installation or release.",
+    "Linux Stage A 19/19 exact generated fixtures previously passed; corrected Pillow static Brotli evidence and authenticated Chrome .88/Playwright 1.65.1 basic sandboxed smoke retained at their exact scopes, not durable current custody, full product compatibility, Windows or general security/rights clearance. Full Linux profile/frontend/browser/functional regression and all four machine profiles remain held; Windows-specific exact inputs, Astral runtime candidate if applicable, rights, security, owned settlement and browser-dev verification mandatory before D1. Reuse accepted evidence; no repeated broad identity probes.",
+    "Latest integrated product source afcb3d6: P2 3/3 and P4 12/12 source-only; prior broad source/synthetic c5f4bd8 retained. Restore original full dependency-consuming regressions only after use clearance; no native equivalence or new acceptance. All eight C5 checklist rows must be satisfied before source closure; C5 4/8, D0/2.",
+    "G2 original issuing handle, independent physical destination and complete attributable mutation coverage unresolved; native runs 44838416004/45342345634 filesystem/network failures retained. G2 alternative feasibility NO-GO, G3/G4 pending; no method adoption or weakened evidence. D1 production identifier/bundled engine and real disposable Windows profile, IPC, DPAPI, network/durability and positive descendant settlement required, not external Python/Vite diagnostic equivalence.",
+    "Original early E2 physical 8 GB offline bundled Qwen startup and coexistence with analytics/UI remain blocking acceptance obligations; ordinary available headroom previously prevented startup. Gate C unverified before real prediction use; if target feasibility cannot be demonstrated, seek explicit owner product decision, not silent deferral. R03.3/R03.4 outstanding, no P5 before P4 closure/signoff.",
+    "R06 historical 74 original app-data differences, unknown writer; incident disposition and prospective owner-device interval/endpoint preservation remain open. R02.5/R02.6 unresolved; no owner data access or preservation claim. Owner-local work untouched/uninspected; Codespace stop and consumed-variable cleanup unverified.",
+    "All prior 100 detached candidate records and exact authority history preserved; owner recovery archive delivered for 1d033ce only, not current HEAD/full Git history/detached backup or build proof. Root LICENSE, NOTICE and SECURITY.md absent; explicit owner decision required. Installer frozen, P5 unauthorized, release not certified.",
+    "Universal Local AI proposed, not adopted: Granite/Liquid exact publisher GGUF identities, rights, runtime compatibility, independent member inventory and positive owned process/listener settlement not established. Qwen 0.6B prior hosted 2/4, no physical qualification; old Qwen prep parked. Original R03.3 wording requires explicit successor acceptance mapping before credit, R03.4 and 8 GB offline coexistence unchanged.",
+    "DLA-A official publisher checksums identified; Liquid exact pointer confirmed; Granite exact bytes and pinned pointer unavailable. Existing runtime member/notice inventory and candidate evaluator/listener binding remain holds. Proposed independent pinned archive review and disarmed adapter not adopted; no acquisition or execution authority.",
+    "DLA Stage 1 source candidate prepared but partial: missing immutable Granite byte count, actual independent runtime member/notice inventory, applicable rights, real owned listener identity provider and generated source verification. No acquisition, run or integration authority.",
+    "DLA private listener source now prepared but uncompiled; opt-in Cargo feature and FFI/ABI require separate Windows validation. Seven Python generated tests awaiting exact isolated source-only execution. Runtime archive independent member/rights review and Granite immutable pointer/size still unresolved.",
+    "DLA Stage 1 generated Python tests passed 7/7 and syntax 6/6 at run 46167223621; no native compile/settlement, actual member/notice inventory, rights disposition, Granite immutable exact byte count or model qualification. Source run consumed/disarmed.",
+    "Archive inspection exact disarmed binding 618128b prepared, actual service redirect/layout/member/notice receipt and rights review outstanding; 3 transport tests not run. Separate Windows MSVC/locked Cargo native validation inputs remain unresolved; Granite exact bytes/pointer held.",
+    "DLA archive run 46169089369 terminal refused after 3/3 transport tests; zero inventory receipt, failure stage and actual GET/body counts unknown due generic exception handling. Both guards disarmed; grant consumed. No retry or rights/member acceptance. Granite size/pointer and native validation unresolved.",
+    "Pinned b10344 Windows CPU upstream recipe copies libomp from debug_nonredist; applicable rights and actual archive contents unresolved. Old inspection parked; alternative pinned upstream standard CPU-only source build proposed not adopted, exact build/model input and settlement readiness absent. No automatic retries or pre-use waiver.",
+    "DLA finite existing-input review confirms unqualified Windows C++/SDK/redist build graph, unknown exact Granite size/pointer and no positive settlement; park route, no retry/acquisition/build. Local analytics missingness overview coverage candidate e53ac8c remains detached, functional API checks and C5 pre-use pending; no acceptance delta.",
+    "Detached Local ODIN version-binding candidate 60d8c0d: actual API/browser/build regression and applicable C5 pre-use pending; legacy non-owned model prelaunch before HTTP and post-check freshness limits remain; not native or acceptance proof.",
+    "Combined candidate bb46e49 is source-only; all three functional regression families, mounted ODIN race, C5 use-specific pre-use and settlement, exact execution authority and trigger audit remain pending. V3 not adopted.",
+    "DEV-VM-01 accepted limited disposable CI residual risk, not native settlement or zero egress. 0f454aa is data-only; actual pre-use security/rights, ReportLab/@playwright/test facts, conditional PDFium equivalence, compatible tool/browser, final overlay/workflow and exact activation approval still pending. Earlier independent hosted containment holds superseded only for reviewed synthetic DEV-VM-01; preserve all native/physical proof.",
+    "DEV-VM-01 S1 exact inert binding 7ffef75: source tests and actual host/archives unexecuted; full trigger audit incomplete (15/130 read); strict parser/patch drift and receipt output may refuse, rights/security/linkage still held; S2-S4 not yet executable.",
+    "S1 24/24 static facts PASS, not use clearance; ReportLab exact metadata and @playwright/test identity measured, applicable licence/security/native component review, exact overlays and functional tests remain. No independent wire/host settlement claim, no retained wheelhouse.",
+    "S2 7aea354 exact projections are inert; applicable rights/security/linkage and final managed tool compatibility, PDFium equivalence, font/preflight and final workflow still held. Mounted browser tests ae3e9d7 unexecuted; actual version-change race still needs coverage. No acceptance delta.",
+    "Mounted version transition source 615c0f7 supersedes missing coverage risk of ae3e9d7, but five scenarios remain uncompiled/unexecuted; actual selector and renderer behaviour require authorised functional regression.",
+    "cb83bec binds candidate font version only; full profile/preflight graph rebind and functional test required. Root pin 5.1.2 conflicts with historical production 4.5.1, production remains BLOCKED. Exact Inter/Manrope OFL notice matches not full package or release clearance.",
+    "950678b candidate assembled but no compile, source regression or native/runtime verification; current production historical lock incompatible with proposed root. Exact functional runner/browser configs and pre-use security/rights/managed identity remain held.",
+    "2e7f10c disarmed driver/workflow uncompiled and unexecuted, exact managed tool/disposition/activation absent; browser reporter semantics, full source-copy runtime and process/transport behavior need authorised validation. No native or physical evidence.",
+    "PDFium 74/74 notice identity discrepancy resolved by exact tagged source reconstruction; native build/component/licence/security applicability and ReportLab flagged exact source/cache/font terms still held. No new raw bytes or runtime evidence.",
+    "Material candidate 2e7f10c projection error: exact Linux stable Pillow confirmed affected Brotli 1.2.0 (ledger 231); Windows stable held. Corrected nightly delivery/Windows actual artifact review and exact lock rebind mandatory before consumption. No activation as written.",
+    "S2 run 46185751142 terminal S2_FONT_STRING after one exact ReportLab transfer (2017267 bytes), 4/4 generated tests passed; no Windows PDFium GET. Font range vs length-cap cause and member not distinguished, detailed evidence unresolved, one-use scope consumed/disarmed; no retry or unused-budget transfer.",
+    "Exact Vera duplicate cap refusal reproduced with 25/41 locally hash-matched font members; integrated correction efedd8b untested/disarmed, commercial Type1/Noto and remaining AFM terms plus ReportLab source/cache and Windows PDFium linkage held; new two-wheel proposal awaits fresh authority.",
+    "Corrected S2 run 46186791961 passed 13/13 generated tests and 2/2 static inspection rows; exact receipt retained. ReportLab actual use/cache reachability and font terms, PDFium compiled component applicability and corrected Pillow delivery/graph remain held; no general use or acceptance clearance.",
+    "Corrected Pillow inert lock projection 2131f65; 49 rows each, no actual resolver or durable authenticated delivery. ReportLab direct render guards and PDFium generated-only test controls reviewed, not proof of dependency-internal cache/compiled component safety or rights. All use gates retained."
+  ],
+  "context": {
+    "protocol": {
+      "path": "docs/continuation/PROTOCOL.md"
+    },
+    "governance": [
+      {
+        "path": "docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md",
+        "blob_sha": "581b9a6e040b698cd5d048804f8a67cc093132a9",
+        "anchor": "28-november-2026--owner-directed-universal-local-ai-architecture"
+      },
+      {
+        "path": "docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md",
+        "blob_sha": "4c9137b59fd83f5dae40492321fa82da144aa725",
+        "anchor": "28-november--universal-local-ai-directive"
+      },
+      {
+        "path": "docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md",
+        "anchor": "28-november-2026--owner-approved-product-first-v2-architecture-direction",
+        "blob_sha": "3082f8cafd0b50c8e6e050cdc8d8e87e7557b18b",
+        "start_line": 315,
+        "end_line": 321
+      },
+      {
+        "path": "docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md",
+        "anchor": "0-product-first-v2-finite-delivery-plan",
+        "blob_sha": "2a8166a4156b6393d76490400c231caabd4f79b8",
+        "start_line": 7,
+        "end_line": 23
+      },
+      {
+        "path": "docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md",
+        "anchor": "27-november-2026--owner-approved-aggressive-product-first-development-framework",
+        "blob_sha": "3082f8cafd0b50c8e6e050cdc8d8e87e7557b18b",
+        "start_line": 299,
+        "end_line": 313
+      },
+      {
+        "path": "docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md",
+        "anchor": "27-november-2026--owner-approved-consolidated-c5-development-preparation-and-engineering-autonomy",
+        "blob_sha": "3082f8cafd0b50c8e6e050cdc8d8e87e7557b18b",
+        "start_line": 3,
+        "end_line": 5
+      },
+      {
+        "path": "docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md",
+        "anchor": "26-november-2026--owner-decision-on-c5-scope-rationalisation",
+        "blob_sha": "3082f8cafd0b50c8e6e050cdc8d8e87e7557b18b",
+        "start_line": 39,
+        "end_line": 41
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md"
+      }
+    ],
+    "knowledge": [
+      {
+        "path": "docs/PILOTODIN_PRODUCT_ARCHITECTURE_REVIEW_AND_REMEDIATION_2026-11-24.md"
+      },
+      {
+        "path": "docs/PILOTODIN_CONSOLIDATED_ROADMAP_COMPLEXITY_LAST.md"
+      },
+      {
+        "path": "docs/DOCUMENTATION_INDEX.md"
+      },
+      {
+        "path": "docs/DOCUMENTATION_AUDIT_C5_D1_MIGRATION_2026-11-27.md",
+        "anchor": "11-28-november-product-first-v2-documentation-and-continuity-audit",
+        "blob_sha": "d444bac0361b03211c76109381e0eca1b8f95e04",
+        "start_line": 97,
+        "end_line": 111
+      }
+    ],
+    "evidence": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "83bac3ff13e94550753ba899a95704e6d2259d42",
+        "anchor": "28-november--dev-vm-01-s2-applicability-review-and-corrected-pillow-lock-projections",
+        "start_line": 1473,
+        "end_line": 1485
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "8c68635c76a34f0c82c081c2a39b6a1940e0f836",
+        "anchor": "28-november--dev-vm-01-corrected-s2-static-inspection-pass-and-disarm",
+        "start_line": 1463,
+        "end_line": 1471
+      },
+      {
+        "path": "docs/C5_DEV_VM_01_S2_CORRECTED_RECEIPT_46186791961.json",
+        "blob_sha": "b4c6e8df4da63b20bc648546e42ba633ddf0fd74"
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "bce55ffddb7de7932684afc3d4017867e3c84d08",
+        "anchor": "28-november--dev-vm-01-fresh-corrected-s2-static-inspection-write-ahead",
+        "start_line": 1459,
+        "end_line": 1461
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "9d13d2cbe7fb3e04617bc60caa054f9fe2df96b4",
+        "anchor": "28-november--dev-vm-01-s2-font-refusal-reproduced-and-disarmed-correction",
+        "start_line": 1421,
+        "end_line": 1457
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "f961c24823224e603388cf2e57fd8c13c3fdec0f",
+        "anchor": "28-november--dev-vm-01-s2-targeted-inspection-terminal-refusal-and-disarm",
+        "start_line": 1409,
+        "end_line": 1419
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "8cec1525f13f1dc5a8a10691490899c48e43f148",
+        "anchor": "28-november--dev-vm-01-s2-targeted-two-wheel-write-ahead",
+        "start_line": 1405,
+        "end_line": 1407
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "9a25c202e37b64be90e5046b40b9303ecc467d68",
+        "anchor": "28-november--dev-vm-01-s2-two-wheel-static-source-prepared",
+        "start_line": 1399,
+        "end_line": 1403
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "be38a5615cf59d2214a8f2d150bc0a7fa0bdd29b",
+        "anchor": "28-november--dev-vm-01-corrected-windows-pillow-artifact-inspected",
+        "start_line": 1391,
+        "end_line": 1397
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "75d9ffe463487f1278cf249710f8084594e52687",
+        "anchor": "28-november--dev-vm-01-affected-pillow-projection-hold-and-finite-evidence-decision",
+        "start_line": 1381,
+        "end_line": 1389
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "0468e4353c1a0779b7cda867e972919e8a51ee5d",
+        "anchor": "28-november--dev-vm-01-pdfium-notice-discrepancy-resolved-and-remaining-actual-use-holds",
+        "start_line": 1331,
+        "end_line": 1379
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "cd33d37205c4d6d06a0ba98edee616dbacbdb508",
+        "anchor": "28-november--dev-vm-01-disarmed-functional-driver-and-windows-first-workflow",
+        "start_line": 1323,
+        "end_line": 1329
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "fb198aa09b6fbfc05f0bd4a99d87604f4032409b",
+        "anchor": "28-november--dev-vm-01-consolidated-held-source-overlay-and-input-binding",
+        "start_line": 1315,
+        "end_line": 1321
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "5dd4d862f19f997206c1b972a48cf89415fd7d78",
+        "anchor": "28-november--dev-vm-01-c5-closure-focus-and-font-witness-rebind",
+        "start_line": 1307,
+        "end_line": 1313
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "6d157d1ec210a6eed43ac94047072cee926235d8",
+        "anchor": "28-november--dev-vm-01-mounted-dataset-version-transition-test-source",
+        "start_line": 1299,
+        "end_line": 1305
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "de38145ce1f823a81bc6cb13fa6c70b3cb7ad200",
+        "anchor": "28-november--dev-vm-01-s2-exact-static-projections-and-mounted-test-source",
+        "start_line": 1289,
+        "end_line": 1297
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "65f8eaadd83abc5ec3fdcc9cf8a15e75061a8604",
+        "anchor": "28-november--dev-vm-01-s1-static-inspection-pass-and-disarm",
+        "start_line": 1283,
+        "end_line": 1287
+      },
+      {
+        "path": "docs/C5_DEV_VM_01_S1_RECEIPT_46174130791.json",
+        "blob_sha": "02ce4c6d821bae913691d0a5501fe516df2fd908"
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "52e55aed7573faa93b6a1a6a4b35b09638f0976c",
+        "anchor": "28-november--dev-vm-01-s1-owner-approved-write-ahead",
+        "start_line": 1279,
+        "end_line": 1281
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "4f698f7f6a13984734bda211b7b035db1c2e4e9f",
+        "anchor": "28-november--dev-vm-01-s1-exact-static-inspection-binding",
+        "start_line": 1271,
+        "end_line": 1277
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "9a711b1bdae286e08a7e3e02ae6fc86bf7468bc7",
+        "anchor": "28-november--dev-vm-01-owner-adoption-and-consolidated-batch-preparation",
+        "start_line": 1263,
+        "end_line": 1269
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "c7829029bc74f4c522148f741412749ccbff80c5",
+        "anchor": "28-november--consolidated-p4-product-candidate-and-directive-01-hold",
+        "start_line": 1253,
+        "end_line": 1261
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "0aae4dad1cedd4f48e7f94e2c36c3c31125e8ceb",
+        "anchor": "28-november--local-odin-explicit-dataset-version-binding-candidate",
+        "start_line": 1243,
+        "end_line": 1251
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "b4e4eb914188e91b5f61731ae25f9bc8a880d850",
+        "anchor": "28-november--finite-dla-build-readiness-hold-and-local-analytics-coverage-candidate",
+        "start_line": 1233,
+        "end_line": 1241
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "0f7ba7c0cddc1db92301393cebb1a885b89b9a2e",
+        "anchor": "28-november--product-first-dla-course-correction-and-pinned-windows-runtime-rights-concern",
+        "start_line": 1223,
+        "end_line": 1231
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "a53134c2c6873099bee0842e2378ffb9b85c7e31",
+        "anchor": "28-november--dla-independent-archive-inspection-refused-and-disarmed",
+        "start_line": 1217,
+        "end_line": 1221
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "7442de04203070463d6be998b368c4a0da836d87",
+        "anchor": "28-november--dla-independent-runtime-archive-inspection-preparation",
+        "start_line": 1201,
+        "end_line": 1211
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "16ff53d3801d869026f7c3632478f5fd9e4ee6e3",
+        "anchor": "28-november--dla-stage-1-isolated-source-regression-passed-and-disarmed",
+        "start_line": 1195,
+        "end_line": 1199
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "b0c904b29e2c878772f62d40bafcf60c841b6b20",
+        "anchor": "28-november--dla-stage-1-private-listener-source-and-disarmed-regression-binding",
+        "start_line": 1181,
+        "end_line": 1189
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "5dfaaa7681be51bf3816e56cc5d97aeecd1c4e53",
+        "anchor": "28-november--owner-approved-dla-stage-1-isolated-source-candidate",
+        "start_line": 1171,
+        "end_line": 1179
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "745c0225020795ea5f17aabbff02adc98bed6b2a",
+        "anchor": "28-november--dla-a-metadata-review-and-evaluation-hold",
+        "start_line": 1167,
+        "end_line": 1169
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "c714f32dc63eee339f8c45334eaf2feb742109e6",
+        "anchor": "28-november--universal-local-ai-direction-and-audit-decision",
+        "start_line": 1163,
+        "end_line": 1165
+      },
+      {
+        "path": "docs/DOCUMENTATION_AUDIT_C5_D1_MIGRATION_2026-11-27.md",
+        "blob_sha": "1bbbd87b04dfd052c93b7bca1ae921daab444a10",
+        "anchor": "11-universal-local-ai-direction-and-documentation-audit-28-november-2026"
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "28-november--owner-approved-qwen3-06b-finite-preparation-no-go",
+        "blob_sha": "3652ab40caccc51a0fe8a77ff42bcf8f1fcaeef1",
+        "start_line": 1153,
+        "end_line": 1161
+      },
+      {
+        "path": "docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md",
+        "anchor": "28-november--explore-isolated-source-regression-passed-and-disarmed",
+        "blob_sha": "5b84f53003a43382600500148f510e484fc6cb58",
+        "start_line": 381,
+        "end_line": 389
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "28-november--isolated-explore-source-regression-succeeds-and-is-disarmed",
+        "blob_sha": "6ec8bc64f7fc8f5006b5e8a9120bcf1638893b14",
+        "start_line": 1149,
+        "end_line": 1151
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "28-november--owner-authorises-one-isolated-explore-source-regression",
+        "blob_sha": "f5b71217b01eecdc28e336f54ed6aa89475c595b",
+        "start_line": 1145,
+        "end_line": 1147
+      },
+      {
+        "path": "docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md",
+        "anchor": "28-november--owner-approved-disarmed-isolated-explore-regression-binding",
+        "blob_sha": "1bcabea606637972b07cc5d297d6f6c129a7f72b",
+        "start_line": 359,
+        "end_line": 379
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "28-november--owner-approved-isolated-explore-source-only-binding-prepared",
+        "blob_sha": "27dee91da52a68b2d18e3419dfcaa93ac0419a8b",
+        "start_line": 1141,
+        "end_line": 1143
+      },
+      {
+        "path": "docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md",
+        "anchor": "28-november--explore-candidate-reconciliation-and-bounded-regression-route",
+        "blob_sha": "2433ae60a49dbff2143d3dd71b5c52733d2c8070",
+        "start_line": 337,
+        "end_line": 357
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "28-november--explore-detached-implementation-recovered-and-regression-route-bounded",
+        "blob_sha": "a03428f01fdb9d99faf306b0ec995ac051977c7c",
+        "start_line": 1137,
+        "end_line": 1139
+      },
+      {
+        "path": "docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md",
+        "anchor": "28-november--o1-source-audit-and-selected-explore-snapshot-optimisation",
+        "blob_sha": "c193056d87b1feb41b1fa012cc9fa8e4b000e51d",
+        "start_line": 306,
+        "end_line": 335
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "28-november--o1-audit-selects-one-version-bound-explore-snapshot",
+        "blob_sha": "9a6d09bedc301832826dec2770af6b1fbd521fe1",
+        "start_line": 1133,
+        "end_line": 1135
+      },
+      {
+        "path": "docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md",
+        "anchor": "28-november--product-first-v2-performance-resource-efficiency-and-footprint-directive",
+        "blob_sha": "b135f1d8f09300f6ef492f1ba27b7a07d7326872",
+        "start_line": 247,
+        "end_line": 304
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "28-november--product-first-v2-performance-and-footprint-directive-consolidated",
+        "blob_sha": "b8cda837b014dea9477ebf0c6ab48cc30ad0719e",
+        "start_line": 1129,
+        "end_line": 1131
+      },
+      {
+        "path": "docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md",
+        "anchor": "28-november--owner-held-asset-availability-and-exact-e2-readiness-boundary",
+        "blob_sha": "d0d8384ecfd2b2d68aef0119808bc4442e96e980",
+        "start_line": 222,
+        "end_line": 245
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "28-november--owner-held-e2-assets-confirmed-and-r06-evidence-unavailable",
+        "blob_sha": "0313875ed7c2be5dcab2dbfc5a62a6279cc9fb5f",
+        "start_line": 1125,
+        "end_line": 1127
+      },
+      {
+        "path": "docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md",
+        "anchor": "28-november--e2-and-r06-consolidated-preparation-and-finite-readiness-decision",
+        "blob_sha": "1f3c53887954b0abc8c46ff38720744796b33d87",
+        "start_line": 180,
+        "end_line": 220
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "28-november--owner-approved-e2-and-r06-preparation-and-readiness-holds",
+        "blob_sha": "48e3f35f1cab74c6a5d305d91117e41971507314",
+        "start_line": 1121,
+        "end_line": 1123
+      },
+      {
+        "path": "docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md",
+        "anchor": "28-november--v2-finite-c5g2-design-disposition-and-requirement-coverage",
+        "blob_sha": "1fdab106b32f6a8447df9d588dd23f8ed5536351",
+        "start_line": 82,
+        "end_line": 178
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "28-november--product-first-v2-finite-design-disposition",
+        "blob_sha": "888ec807d732999b6ad29e2732c6ab70a9181a0f",
+        "start_line": 1117,
+        "end_line": 1119
+      },
+      {
+        "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md"
+      },
+      {
+        "path": "docs/PROJECT_STATUS_CURRENT.md",
+        "anchor": "p4-engineering-scorecard",
+        "blob_sha": "90cbcba05e7ed2e33edcee991cd6f7beee02b099",
+        "start_line": 31,
+        "end_line": 60
+      },
+      {
+        "path": "docs/P4_R02_5_25_PERCENT_EXECUTION_TRACKER_2026-11-22.md"
+      },
+      {
+        "path": "docs/P4_R02_5_G2_CONSOLIDATED_CLOSURE_DECISION_2026-11-24.md"
+      },
+      {
+        "path": "docs/CONTINUATION_RECOVERY_CHECKS.md"
+      }
+    ],
+    "archive": {
+      "commit": "b9864b70fb9bb5a72d0f79c37f15b94100722192",
+      "paths": [
+        "AGENTS.md",
+        "docs/TAB_MIGRATION_HANDOFF_CURRENT.md",
+        "docs/ACTIVE_WORK_JOURNAL.md",
+        "docs/CONTINUATION_PROTOCOL_CURRENT.md",
+        "docs/CONTINUE_HERE.md",
+        "docs/DOCUMENTATION_INDEX.md"
+      ],
+      "note": "Full original bytes in reachable pre-migration Git commit; original product blueprint is a separate owner/Project attachment, not verified repository-contained. Use original if a normative requirement is not recoverable from repository."
+    }
+  }
+}

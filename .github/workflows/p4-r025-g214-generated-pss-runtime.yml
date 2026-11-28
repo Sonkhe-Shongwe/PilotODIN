@@ -1,0 +1,101 @@
+name: P4 R02.5 G2.14 generated-only Windows PSS runtime (DISARMED)
+on:
+  push:
+    branches:
+      - feature/live-dev-workspace-20261023
+    paths:
+      - qa/p4_research/N12_G214_GENERATED_PSS_RUNTIME_OWNER_APPROVAL_FRESH_ONE_USE.txt
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pilotodin-p4-n12-app-journey
+  cancel-in-progress: false
+
+jobs:
+  generated-pss-only:
+    if: ${{ false }} # G2.14 one-use approval consumed by activation 1237c27edcf07a7bf8bd47e65a5dbfd67366fb56; no retries.
+    runs-on: windows-2022
+    timeout-minutes: 25
+    env:
+      CI: 'true'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - name: Checkout candidate source without credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Verify new source-pinned first-attempt approval before any native compiler
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          $marker = 'qa/p4_research/N12_G214_GENERATED_PSS_RUNTIME_OWNER_APPROVAL_FRESH_ONE_USE.txt'
+          $workflow = '.github/workflows/p4-r025-g214-generated-pss-runtime.yml'
+          if ($env:GITHUB_EVENT_NAME -cne 'push' -or $env:GITHUB_RUN_ATTEMPT -cne '1' -or
+              $env:GITHUB_REF_NAME -cne 'feature/live-dev-workspace-20261023' -or
+              $env:RUNNER_ENVIRONMENT -cne 'github-hosted' -or
+              $env:RUNNER_OS -cne 'Windows' -or
+              (git rev-parse HEAD) -cne $env:GITHUB_SHA) {
+            throw 'G2.13 requires a first-attempt trusted hosted-Windows push.'
+          }
+          if (-not (Test-Path -LiteralPath $marker -PathType Leaf)) {
+            throw 'Fresh one-use G2.13 approval missing.'
+          }
+          $approval = @(Get-Content -LiteralPath $marker)
+          if ($approval.Count -ne 2 -or
+              $approval[0] -cnotmatch '^reviewed_source=([0-9a-f]{40})$' -or
+              $approval[1] -cne 'scope=g214-one-generated-process-one-pss-runtime') {
+            throw 'Approval content or scope invalid.'
+          }
+          $source = $Matches[1]
+          $parents = (git rev-list --parents -n 1 HEAD) -split ' '
+          $changed = @(git diff --name-only $source HEAD)
+          $added = @(git diff --name-only --diff-filter=A $source HEAD -- $marker)
+          if ($parents.Count -ne 2 -or $parents[1] -cne $source -or
+              $changed.Count -ne 2 -or $workflow -cnotin $changed -or
+              $marker -cnotin $changed -or $added.Count -ne 1 -or
+              $added[0] -cne $marker) {
+            throw 'Only workflow activation plus a new source-pinned approval marker is permitted.'
+          }
+          git checkout --detach $source
+          'PILOTODIN_G213_GENERATED_CONSENT=I_APPROVE_ONE_GENERATED_PSS_FEASIBILITY' >> $env:GITHUB_ENV
+          'PILOTODIN_G213_APPROVED_SOURCE=' + $source >> $env:GITHUB_ENV
+      - name: Compile Windows SDK ABI layout and generated-only self-process probe
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/Installer/vswhere.exe'
+          if (-not (Test-Path -LiteralPath $vswhere)) { throw 'Reviewed MSVC toolchain unavailable.' }
+          $vs = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          if (-not $vs) { throw 'x64 C++ toolchain unavailable.' }
+          $vcvars = Join-Path $vs 'VC/Auxiliary/Build/vcvars64.bat'
+          if (-not (Test-Path -LiteralPath $vcvars)) { throw 'x64 environment unavailable.' }
+          $exe = Join-Path $env:RUNNER_TEMP 'pilotodin-g213-generated-only.exe'
+          $cpp = 'qa/p4_native/g213_generated_pss_probe.cpp'
+          $command = '"' + $vcvars + '" && cl /nologo /EHsc /std:c++17 /W4 /WX "' + $cpp + '" /link /out:"' + $exe + '"'
+          cmd.exe /D /S /C $command
+          if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $exe)) {
+            throw 'G2.13 Windows SDK ABI compile is blocked.'
+          }
+          'PILOTODIN_G213_EXE=' + $exe >> $env:GITHUB_ENV
+      - name: Execute generated self-process PSS only (no PilotODIN)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          if ($env:PILOTODIN_G213_GENERATED_CONSENT -cne 'I_APPROVE_ONE_GENERATED_PSS_FEASIBILITY') {
+            throw 'G2.13 one-use consent missing at launch.'
+          }
+          & $env:PILOTODIN_G213_EXE
+          if ($LASTEXITCODE -ne 0) { throw 'Generated-only PSS returned BLOCKED.' }
+      - name: Publish fixed-label G2.13 scope only
+        if: always()
+        shell: pwsh
+        run: |
+          '### G2.13 generated-only PSS feasibility' >> $env:GITHUB_STEP_SUMMARY
+          'This run is NOT PilotODIN, WebView2, ETW, original-file-handle attribution or R02.5 acceptance.' >> $env:GITHUB_STEP_SUMMARY
+          'No raw handle, PID, filename, external data or ETW trace is uploaded.' >> $env:GITHUB_STEP_SUMMARY

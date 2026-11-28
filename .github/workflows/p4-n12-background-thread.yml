@@ -1,0 +1,57 @@
+name: P4 N12 Windows background writer snapshots
+
+on:
+  push:
+    branches:
+      - feature/live-dev-workspace-20261023
+    paths:
+      - qa/p4_research/N12_BACKGROUND_THREAD_APPROVAL.txt
+
+permissions:
+  contents: read
+
+jobs:
+  background-thread-control:
+    if: ${{ false }} # One-use approval consumed by run 44503331212.
+    runs-on: windows-2022
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Verify one-use approval and run the ETW control
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          $marker = 'qa/p4_research/N12_BACKGROUND_THREAD_APPROVAL.txt'
+          $workflow = '.github/workflows/p4-n12-background-thread.yml'
+          if ($env:GITHUB_EVENT_NAME -cne 'push' -or $env:GITHUB_RUN_ATTEMPT -cne '1' -or
+              $env:GITHUB_REF_NAME -cne 'feature/live-dev-workspace-20261023' -or
+              $env:RUNNER_ENVIRONMENT -cne 'github-hosted' -or $env:RUNNER_OS -cne 'Windows' -or
+              (git rev-parse HEAD) -cne $env:GITHUB_SHA) {
+            throw 'The fixture requires the first run of an approved hosted Windows push.'
+          }
+          $approval = @(Get-Content -LiteralPath $marker)
+          if ($approval.Count -ne 2 -or $approval[0] -cnotmatch '^reviewed_source=([0-9a-f]{40})$' -or
+              $approval[1] -cne 'scope=n12-one-background-thread') {
+            throw 'A fresh source-pinned background writer approval marker is required.'
+          }
+          $source = $Matches[1]
+          $parents = (git rev-list --parents -n 1 HEAD) -split ' '
+          $changed = @(git diff --name-only $source HEAD)
+          $added = @(git diff --name-only --diff-filter=A $source HEAD -- $marker)
+          if ($parents.Count -ne 2 -or $parents[1] -cne $source -or $changed.Count -ne 2 -or
+              $workflow -cnotin $changed -or $marker -cnotin $changed -or $added.Count -ne 1) {
+            throw 'The launch must directly follow the reviewed source and add only the approval and activation.'
+          }
+          git checkout --detach $source
+          $env:PILOTODIN_N12_BACKGROUND_THREAD_SOURCE = $source
+          $env:PILOTODIN_N12_BACKGROUND_THREAD_CONSENT = 'I_APPROVE_ONE_N12_BACKGROUND_THREAD'
+          $python = Get-ChildItem (Join-Path $env:RUNNER_TOOL_CACHE 'Python') -Directory |
+            Where-Object { $_.Name -match '^3\.11\.\d+$' -and (Test-Path (Join-Path $_.FullName 'x64/python.exe')) } |
+            Sort-Object { [version]$_.Name } -Descending | Select-Object -First 1
+          if (-not $python) { throw 'The hosted image has no cached Python 3.11 x64 runtime.' }
+          $env:Path = "$(Join-Path $python.FullName 'x64');$env:Path"
+          ./qa/p4_native/Test_P4_N12_ETW_Fixture.ps1 -BackgroundThread

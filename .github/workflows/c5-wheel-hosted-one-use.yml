@@ -1,0 +1,108 @@
+name: C5 wheel hosted one-use acquisition
+# Disarmed. A future separately approved arm changes only reviewed flags,
+# exact driver pin and marker-only trigger. Adapter source stays disabled.
+# Only the authorized producer process opens the adapter gate temporarily.
+on:
+  push:
+    branches: [feature/live-dev-workspace-20261023]
+    paths:
+      - .github/workflows/c5-wheel-hosted-one-use.yml
+      - qa/c5_wheel_metadata/wheel_one_use_review.py
+      - qa/c5_wheel_metadata/test_wheel_one_use_review.py
+      - qa/c5_wheel_metadata/wheel_acquisition_driver.py
+      - qa/c5_wheel_metadata/test_wheel_acquisition_driver.py
+permissions:
+  contents: read
+jobs:
+  offline-review:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Source pins, synthetic event, artifact and runtime driver review
+        run: |
+          test "$(git hash-object qa/c5_wheel_metadata/wheel_acquisition_driver.py)" = "e888774ce5cabc5737c413ee47f3da64781443c2"
+          python3 -I -B qa/c5_wheel_metadata/test_wheel_one_use_review.py
+          python3 -I -B qa/c5_wheel_metadata/test_wheel_acquisition_driver.py
+      - name: Assert disabled collection and retrieval
+        run: |
+          set +e
+          old=$(python3 -I -B qa/c5_wheel_metadata/wheel_one_use_review.py --collect 2>&1)
+          oldcode=$?
+          collect=$(python3 -I -B qa/c5_wheel_metadata/wheel_acquisition_driver.py --collect 2>&1)
+          collectcode=$?
+          retrieve=$(python3 -I -B qa/c5_wheel_metadata/wheel_acquisition_driver.py --retrieve 2>&1)
+          retrievecode=$?
+          set -e
+          printf '%s\n' "$old" "$collect" "$retrieve"
+          test "$oldcode" = 1
+          test "$old" = 'FRESH_APPROVAL_REQUIRED: one-use workflow is disabled'
+          test "$collectcode" = 2
+          test "$retrievecode" = 2
+          test "$collect" = 'C5_WHEEL_DRIVER_REFUSAL FRESH_APPROVAL_REQUIRED'
+          test "$retrieve" = 'C5_WHEEL_DRIVER_REFUSAL FRESH_APPROVAL_REQUIRED'
+  collect-once:
+    if: ${{ false }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    outputs:
+      record: ${{ steps.collect.outputs.record }}
+      settlement: ${{ steps.collect.outputs.settlement }}
+      artifact-id: ${{ steps.upload.outputs.artifact-id }}
+      digest: ${{ steps.upload.outputs.artifact-digest }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Exact driver pin and bounded collection
+        id: collect
+        run: |
+          test "$(git hash-object qa/c5_wheel_metadata/wheel_acquisition_driver.py)" = "e888774ce5cabc5737c413ee47f3da64781443c2"
+          python3 -I -B qa/c5_wheel_metadata/wheel_acquisition_driver.py --collect
+        env:
+          C5_DRIVER_BLOB: e888774ce5cabc5737c413ee47f3da64781443c2
+          C5_APPROVED_ONCE: C5-WHEEL-HOSTED-ONCE-20261126
+          C5_EXPECTED_SOURCE_SHA: ${{ github.sha }}
+      - name: Disabled receipt-only artifact upload
+        id: upload
+        if: ${{ false }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: c5-wheel-receipts-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ steps.collect.outputs.receipt_bundle }}
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
+          overwrite: false
+  retrieve-once:
+    if: ${{ false }}
+    needs: collect-once
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Independent exact receipt retrieval and replay
+        run: |
+          test "$(git hash-object qa/c5_wheel_metadata/wheel_acquisition_driver.py)" = "e888774ce5cabc5737c413ee47f3da64781443c2"
+          python3 -I -B qa/c5_wheel_metadata/wheel_acquisition_driver.py --retrieve
+        env:
+          C5_DRIVER_BLOB: e888774ce5cabc5737c413ee47f3da64781443c2
+          C5_APPROVED_ONCE: C5-WHEEL-HOSTED-ONCE-20261126
+          C5_EXPECTED_SOURCE_SHA: ${{ github.sha }}
+          C5_BUNDLE_RECORD: ${{ needs.collect-once.outputs.record }}
+          C5_PRODUCER_SETTLEMENT: ${{ needs.collect-once.outputs.settlement }}
+          C5_ARTIFACT_ID: ${{ needs.collect-once.outputs.artifact-id }}
+          C5_UPLOAD_DIGEST: ${{ needs.collect-once.outputs.digest }}
+          GH_TOKEN: ${{ github.token }}

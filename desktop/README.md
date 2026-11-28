@@ -1,5 +1,7 @@
 # PilotODIN 1.0 Build A: Desktop Foundation
 
+> **Historical Build A guide.** The current owner policy freezes intermediate installer builds and installation through P4–P7. Use the [current handoff](../docs/SESSION_HANDOFF_CURRENT.md) and [phase policy](../docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md) before any native or packaging work.
+
 This is an **engineering preview of a native Tauri 2 + React application using a bundled Python analytics sidecar**, built on the existing Studio v0.8 source. It **does not yet include a precompiled Windows installer**.
 
 ## What changes
@@ -29,13 +31,7 @@ This is an **engineering preview of a native Tauri 2 + React application using a
 
 The source ZIP deliberately excludes your `data` folder, project DB, model artifacts and API keys. The desktop application uses Windows app-local-data storage, rather than the old source-folder `data` path.
 
-If you want the old projects in the native app, **before the first launch of the native app** and with old Studio closed, run:
-
-```powershell
-py .\desktop\Migrate_Existing_Workspace.py "C:\path\to\your\old\PilotODIN"
-```
-
-The script checks the source data, copies into a temporary directory, rewrites dataset paths, then places the copy in desktop storage. It refuses to overwrite an existing desktop workspace. The original remains untouched. DPAPI keys work only in the Windows account that encrypted them.
+The historical desktop copy-and-replace migration is suspended because it does not coordinate with current workspace ownership. Preserve existing data in place. Do not run the old migration command or manually move a live database. A reviewed Package B migration design and separate owner authorization are required before any live migration. DPAPI keys remain bound to their original Windows account.
 
 ## Windows acceptance tests
 
@@ -44,7 +40,7 @@ The script checks the source data, copies into a temporary directory, rewrites d
 3. Restart app and verify saved projects and AI consent/key status persist.
 4. Verify port conflict immunity and that external processes without the session token cannot read or modify API data.
 5. Exit PilotODIN and ensure its bundled engine process also exits; force-kill it, then use Try Again.
-6. Validate project migration, audit history, selected models and DPAPI secrets on copied data.
+6. Future separately approved migration verification: validate audit history, selected models and DPAPI secrets on disposable copied data. No live migration under the current freeze.
 7. Measure actual installer size, startup seconds, RAM usage and performance at 100% and 125% display scaling.
 
 ## Known limits at this milestone

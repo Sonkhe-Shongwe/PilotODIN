@@ -1,0 +1,23 @@
+# PilotODIN | Reduced Stage A source candidate
+
+27 November 2026. Operation C5-REDUCED-STAGE-A-CANDIDATE-20261127. Reviewed parent 3ab09899940c2aeccb06977e6cdb4c8fb98c235f; owner requested tangible improvement, existing proportionate C5 decision applies. Source preparation only, no changed execution authority or evidence-method approval inferred. No product, live lock, workflow or live controller change.
+
+## Concrete candidate
+
+[Detached candidate 0c1590f](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/0c1590f57c4d62d58dca482c03ac9948009e90a4), tree d0c1277d19534b10fc593521d23bc5d80f631699, exact parent 3ab09899940c2aeccb06977e6cdb4c8fb98c235f. 35 changed paths verified: 29 overlay paths (direct RGB adapter f37d8569b0275351a661517e12e1e09a125ddade retained), two inactive browser configurations, four revised QA paths. Candidate manifest 3e9d24a30bb5c98e30a927367953fb3d96da676f rebinds the one revised overlay blob; validation_witnesses.py 1d09870057c62b9b3372da6e76ba617e8a85f70c pins it, validation_coordinator.py db5c0a3720056a513d127e75841f92daeb433cf3 moves Pillow from Stage A to Stage B, test_validation_coordinator.py 0bd82e375e6b5f2a8e55fedf484efa2d1e4a2137 updates the exact split test. All gates remain disarmed. Existing historical inspection and workflow pins remain unchanged and deliberately do not qualify this alternative; no attempt to activate or run it. Historical original manifest/receipts and prior candidates remain preserved.
+
+Read actual Stage A test source 60fd899c00d04a8dd434579fda3d9adf2b867a24, fixture helpers 15b6e000fb182034fdf174da8d3070bd9bf6a522, conftest 72137a41fda857b6188946bdc000668d26775f9a and revised PDF adapter. All 19 cases retained; none calls save_png or imports Pillow; conftest only standard library. Historical source-test graph receipt 6c95b4263e9d0f831aa00cfa68e9cb8268aebbd7 records pytest -> iniconfig, packaging, pluggy, pygments, Windows-only colorama and no further active edges from those smoke nodes. Exact PDFium pair receipt 270e49aff95923c2f4de6742336c80d55d476a5f records zero Requires-Dist entries on each PDFium wheel. Static source/dependency closure supports proposed reduction, not actual resolver or native validation. Full 49-wheel graph, per-profile 86 application uses and 172 aggregate uses, 301884524 aggregate bytes, all original stage predicates and Windows-first rule remain unchanged.
+
+| Profile | Stage A wheels (excluding pip) | Stage B additional wheels | Stage A bytes incl. pip | Pillow bytes deferred |
+| --- | ---: | ---: | ---: | ---: |
+| Windows | 7 | 42 | 8000481 | 7278471 |
+| Linux | 6 | 43 | 7808390 | 7140667 |
+| Total | 13 | 85 | 15808871 | 14419138 |
+
+Prior A bytes incl. pip 30228009; revised 15808871 (47.70% less initial transfer, not full build savings). No new synthetic-only CI, no archive acquisition, no real PDFium test run; prior 64/64 synthetic evidence remains valid for its exact earlier source, not newly revised candidate. No new acceptance credit. Pillow still required by ReportLab, and save_png still imports it. No supported corrected production pin established. No implication of CVE remediation.
+
+## Finite next step and required owner decision
+
+Present current candidate as a reduced-dependency source proposal, not an execution-ready candidate. The existing controller still requires full-profile dispositions before A and Windows A+B before Linux. Thus the reduced split alone does not enable early A execution. Request one specific evidence-sequencing decision if owner wants practical early progress: permit preparation of a standalone Windows Stage A-only evidence transaction with its eight exact inputs including pip, all 19 unmodified equivalence predicates, no Pillow/Stage B, and separate pre-use PDFium/pip and six ordinary smoke wheel rights/security, exact approved provider setup/source binding, bounded settlement/cleanup and separate explicit execution approval. Such a receipt would qualify only its Stage A scope; no Linux or Stage B execution, no native D, no closure, no weakening of final Windows-first consolidated acceptance. This is a proposed alternative, not activated or authorised. Do not build more generic infrastructure or repeatedly run synthetic tests. If owner does not approve changed sequence or specific security facts cannot be established, keep the gate blocked and pursue independent authorized product work; do not bypass previous blocked assembly or weaken pre-use checks. Concrete production Pillow remediation remains necessary; no arbitrary downgrade, unofficial replacement or unreviewed build.
+
+C5 4/8, source 14/17, official P4 14/20; 45 consumed/disarmed, zero active; G2/D/E2 unchanged, P5 unauthorized, installer frozen. Owner-local unknown and all detached work preserved.

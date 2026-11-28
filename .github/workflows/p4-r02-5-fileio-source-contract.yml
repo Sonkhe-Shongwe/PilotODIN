@@ -1,0 +1,174 @@
+name: P4 R02.5 FileIO source-only contract
+
+# This workflow is ONLY Python source/synthetic verification. It must never
+# run a native PilotODIN application, ETW/Sysmon/ProcMon collector, installer,
+# owner-data operation, remote services, or protected-root inspection.
+on:
+  push:
+    branches:
+      - feature/live-dev-workspace-20261023
+    paths:
+      - .github/workflows/p4-r02-5-fileio-source-contract.yml
+      - qa/p4_research/n12_physical_destination.py
+      - qa/p4_research/n12_fileio_pair_contract.py
+      - tests/test_p4_n12_physical_destination.py
+      - tests/test_p4_n12_fileio_pair_contract.py
+      - tests/test_p4_n12_g2_19_passive_write_coverage.py
+      - tests/test_p4_n12_g1_source_integration.py
+      - qa/p4_research/n12_fileio_identity_join.py
+      - tests/test_p4_n12_fileio_identity_join.py
+      - qa/p4_research/n12_no_cdp_fileio_review.py
+      - tests/test_p4_n12_no_cdp_fileio_review.py
+      - qa/p4_research/n12_mutation_triage.py
+      - tests/test_p4_n12_mutation_triage.py
+      - qa/p4_native/n12_etw_correlate.py
+      - qa/p4_native/n12_trace.py
+      - qa/p4_native/Invoke_P4_N12_Live_Calibration.ps1
+      - qa/p4_research/n12_app_build.py
+      - qa/p4_research/n12_app_lifetime.py
+      - tests/test_p4_n12_g2_static_preflight.py
+      - tests/test_p4_n12_g2_final_calibration_window.py
+      - qa/p4_research/n12_generated_sysmon_bookends.py
+      - tests/test_p4_n12_g2_generated_bookends.py
+      - tests/test_p4_n12_g2_bookend_source_guards.py
+      - tests/test_p4_n12_g2_7_preflight_diagnostics.py
+      - tests/test_p4_n12_g2_9_original_file_handle_admission.py
+      - qa/p4_research/n12_pss_file_handle_candidates.py
+      - tests/test_p4_n12_g2_10_pss_file_handle_candidates.py
+      - qa/p4_research/n12_pss_scoped_source_plan.py
+      - tests/test_p4_n12_g2_11_pss_scoped_source_plan.py
+      - qa/p4_research/n12_pss_win32_backend.py
+      - tests/test_p4_n12_g2_12_pss_win32_backend.py
+      - tests/test_p4_n12_g2_16_original_handle_bridge.py
+      - tests/test_p4_n12_g2_13_source_contract.py
+      - qa/p4_native/g213_generated_pss_probe.cpp
+      - .github/workflows/p4-r025-g213-generated-pss.yml
+      - .github/workflows/p4-r025-g214-generated-pss-runtime.yml
+      - qa/p4_research/n12_duplicate_handle_type.py
+      - tests/test_p4_n12_g2_15_duplicate_handle_type.py
+      - qa/p4_native/g215_generated_duplicate_type.cpp
+      - .github/workflows/p4-r025-g215-generated-duplicate-type.yml
+      - tests/test_p4_n12_g2_15_native_scope.py
+      - qa/p4_research/n12_no_cdp_child_handles.py
+      - tests/test_p4_n12_app_lifetime.py
+      - tests/test_p4_n12_no_cdp_child_handles.py
+      - tests/test_p4_n12_private_child_pipe.py
+      - qa/p4_native/n12_exit_corroboration.py
+      - qa/p4_research/n12_private_child_pipe.py
+      - qa/p4_research/n12_no_cdp_native_path.py
+      - qa/p4_native/n12_etw_probe.py
+      - .github/workflows/p4-n12-generated-sysmon-bookends.yml
+      - .github/workflows/p4-n12-*.yml
+      - tests/test_p4_n12_g2_24_native_workflow_guards.py
+      - qa/p4_research/n12_obtrace_feasibility.py
+      - qa/p4_research/n12_obtrace_win32_session.cpp
+      - tests/test_p4_n12_g2_25_obtrace_feasibility.py
+      - .github/workflows/p4-r025-g213-msvc-compile-only.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pilotodin-r025-fileio-source-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  source-only-python:
+    name: Standalone fail-closed FileIO evidence tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - name: Check out exact pushed source without persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Set up Python 3.11 with no test dependencies
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.11'
+      - name: Syntax-check sources in memory without writing bytecode
+        shell: bash
+        run: |
+          python -B - <<'PY'
+          import ast
+          from pathlib import Path
+          sources = (
+              "qa/p4_research/n12_physical_destination.py",
+              "qa/p4_research/n12_fileio_pair_contract.py",
+              "tests/test_p4_n12_physical_destination.py",
+              "tests/test_p4_n12_fileio_pair_contract.py",
+              "tests/test_p4_n12_g2_19_passive_write_coverage.py",
+              "tests/test_p4_n12_g1_source_integration.py",
+              "tests/test_p4_n12_g2_final_calibration_window.py",
+              "qa/p4_research/n12_generated_sysmon_bookends.py",
+              "tests/test_p4_n12_g2_generated_bookends.py",
+              "tests/test_p4_n12_g2_bookend_source_guards.py",
+              "tests/test_p4_n12_g2_7_preflight_diagnostics.py",
+              "tests/test_p4_n12_g2_9_original_file_handle_admission.py",
+              "qa/p4_research/n12_pss_file_handle_candidates.py",
+              "tests/test_p4_n12_g2_10_pss_file_handle_candidates.py",
+              "qa/p4_research/n12_pss_scoped_source_plan.py",
+              "tests/test_p4_n12_g2_11_pss_scoped_source_plan.py",
+              "qa/p4_research/n12_pss_win32_backend.py",
+              "tests/test_p4_n12_g2_12_pss_win32_backend.py",
+              "tests/test_p4_n12_g2_16_original_handle_bridge.py",
+              "tests/test_p4_n12_g2_13_source_contract.py",
+              "qa/p4_research/n12_duplicate_handle_type.py",
+              "tests/test_p4_n12_g2_15_duplicate_handle_type.py",
+              "tests/test_p4_n12_g2_15_native_scope.py",
+          )
+          for filename in sources:
+              ast.parse(Path(filename).read_text(encoding="utf-8"), filename=filename)
+          PY
+      - name: Test physical-destination candidate, synthetic only
+        run: python -B -m unittest discover -s tests -p 'test_p4_n12_physical_destination.py' -v
+      - name: Test cross-process original-file-pair contract, synthetic only
+        run: python -B -m unittest discover -s tests -p 'test_p4_n12_fileio_pair_contract.py' -v
+      - name: Cross-check original strict reducer and new source-only candidate
+        run: python -B -m unittest discover -s tests -p 'test_p4_n12_g1_source_integration.py' -v
+      - name: Original writer and file identity join regressions
+        run: python -B -m unittest discover -s tests -p 'test_p4_n12_fileio_identity_join.py' -v
+      - name: Original no-CDP reducer must still fail closed
+        run: python -B -m unittest discover -s tests -p 'test_p4_n12_no_cdp_fileio_review.py' -v
+      - name: Keep historical known violations and missing writes visible
+        run: python -B -m unittest discover -s tests -p 'test_p4_n12_mutation_triage.py' -v
+      - name: G2 source-only Sysmon Event3 and one-use approval preflight
+        run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_static_preflight.py' -v
+      - name: G2 final Sysmon boundary remains strict (synthetic only)
+        run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_final_calibration_window.py' -v
+      - name: G2.3 generated Sysmon bookends injected synthetic tests
+        run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_generated_bookends.py' -v
+      - name: G2.3 disabled hosted collector and strict source guards
+        run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_bookend_source_guards.py' -v
+      - name: G2.7 fixed-label preflight diagnostics, synthetic only
+        run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_7_preflight_diagnostics.py' -v
+      - name: G2.9 source-only original WebView file-handle admission boundary
+        run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_9_original_file_handle_admission.py' -v
+      - name: G2.10 process-scoped PSS handle candidate, source-only
+        run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_10_pss_file_handle_candidates.py' -v
+      - name: G2.11 bounded injected PSS resource cleanup, source-only
+        run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_11_pss_scoped_source_plan.py' -v
+      - name: G2.12 dormant Win32 PSS ABI and scoped native adapter contract
+        run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_12_pss_win32_backend.py' -v
+      - name: G2.13 generated Windows PSS feasibility scope, source-only
+        run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_13_source_contract.py' -v
+      - name: G2.15 scoped duplicated handle type candidate, synthetic only
+        run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_15_duplicate_handle_type.py' -v
+      - name: G2.15 fresh native source workflow disarmed, no execution
+        run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_15_native_scope.py' -v
+      - name: G2.16 real Win32 duplicate API bridge and process-scope mocks, source-only
+        run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_16_original_handle_bridge.py' -v
+      - name: G2.19 passive same-capture WebView write request completeness and redaction
+        run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_19_passive_write_coverage.py' -v
+      - name: G2.21 private child inventory and lifetime fail-closed regressions
+        run: |
+          python -B -m unittest discover -s tests -p 'test_p4_n12_app_lifetime.py' -v
+          python -B -m unittest discover -s tests -p 'test_p4_n12_no_cdp_child_handles.py' -v
+          python -B -m unittest discover -s tests -p 'test_p4_n12_private_child_pipe.py' -v
+      - name: G2.24 N12 native workflow disarm guard, source-only
+        run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_24_native_workflow_guards.py' -v
+      - name: G2.25 dormant ObTrace feasibility, synthetic only
+        run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_25_obtrace_feasibility.py' -v

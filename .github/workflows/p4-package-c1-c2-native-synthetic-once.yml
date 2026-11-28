@@ -1,0 +1,186 @@
+name: P4 C1 C2 Windows synthetic verification (one-use proposal)
+
+# Native job is DISARMED. Source preflight parses both variants only.
+'on':
+  push:
+    branches: [feature/live-dev-workspace-20261023]
+    paths: ['.github/workflows/p4-package-c1-c2-native-synthetic-once.yml', 'qa/c1_c2_native_workflow_preflight.rb']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pilotodin-c1-c2-one-native-synthetic-20261124
+  cancel-in-progress: false
+
+jobs:
+  source-preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout exact source for parsing only
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Parse both complete YAML variants and scripts
+        shell: bash
+        env:
+          C1_C2_EVENT_MESSAGE: ${{ github.event.head_commit.message }}
+        run: ruby qa/c1_c2_native_workflow_preflight.rb
+  c1-c2-synthetic-library-tests:
+    needs: source-preflight
+    if: ${{ false }} # DISARMED C1/C2; fresh exact approval required.
+    runs-on: windows-2022
+    timeout-minutes: 65
+    env:
+      CARGO_INCREMENTAL: '0'
+    steps:
+      - name: Checkout exact reviewed product source without credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: 388b35750316b9c5a060d603c35c7d728d5c0890
+          persist-credentials: false
+      - name: Verify reviewed source and toolchain
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:GITHUB_RUN_ATTEMPT -ne '1') { throw 'Approval consumed' }
+          if ((git rev-parse HEAD).Trim() -ne '388b35750316b9c5a060d603c35c7d728d5c0890') { throw 'Wrong reviewed source' }
+          if ((git hash-object frontend/src-tauri/Cargo.lock).Trim() -ne 'f635ba1f8257266c242429e2b44ae94b039329b9') { throw 'Cargo lock changed' }
+          if ((git rev-parse HEAD:third_party/tauri-plugin-shell-2.6.0).Trim() -ne '54514a2feed82db5a61e9c37e8d43f6fe99b7696') { throw 'Reviewed shell derivative changed' }
+          rustc +stable --version
+          if ($LASTEXITCODE -ne 0) { throw 'Hosted Rust unavailable' }
+          cargo +stable --version
+          if ($LASTEXITCODE -ne 0) { throw 'Hosted Cargo unavailable' }
+          $targets = rustup target list --installed --toolchain stable
+          if ($LASTEXITCODE -ne 0 -or 'x86_64-pc-windows-msvc' -notin $targets) { throw 'Hosted MSVC target unavailable' }
+          python --version
+          if ($LASTEXITCODE -ne 0) { throw 'Hosted Python unavailable' }
+          Write-Host 'REVIEWED-SOURCE 388b35750316b9c5a060d603c35c7d728d5c0890'
+          Write-Host "LOCK-SHA256 $((Get-FileHash frontend/src-tauri/Cargo.lock -Algorithm SHA256).Hash)"
+      - name: Stage intentionally invalid compile-only fixtures
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tauri = 'frontend/src-tauri'
+          $marker = "$tauri/NATIVE_COMPILE_PROBE_ONLY.txt"
+          $assets = @(
+            "$tauri/binaries/pilotodin-engine-x86_64-pc-windows-msvc.exe",
+            "$tauri/binaries/pilotodin-inference-x86_64-pc-windows-msvc.exe",
+            "$tauri/resources/models/qwen3-1.7b-q4_k_m.gguf",
+            "$tauri/resources/models/model-manifest.json"
+          )
+          foreach ($file in ($assets + @($marker, 'frontend/dist'))) {
+            if (Test-Path -LiteralPath $file) { throw "Refusing to overwrite existing asset: $file" }
+          }
+          Set-Content -LiteralPath $marker -Value 'NEVER DISTRIBUTE - C1 C2 SYNTHETIC COMPILE AND LIBRARY TEST ONLY'
+          foreach ($file in $assets) {
+            [System.IO.File]::WriteAllBytes((Join-Path $PWD $file), [byte[]](0,1,2))
+          }
+          New-Item -ItemType Directory -Path 'frontend/dist' | Out-Null
+          Set-Content -LiteralPath 'frontend/dist/index.html' -Value 'INVALID COMPILE-ONLY FRONTEND; NEVER LAUNCH'
+          python desktop/verify_inference_assets.py
+          if ($LASTEXITCODE -ne 2) { throw 'Release preflight did not reject invalid fixtures' }
+          Write-Host 'RELEASE-PREFLIGHT-REJECTED; no real runtime/model assets'
+          exit 0
+      - name: Locked all-targets type-check and exact synthetic library tests
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $false
+          if ($env:GITHUB_RUN_ATTEMPT -ne '1') { throw 'Approval consumed' }
+          $root = Join-Path $env:RUNNER_TEMP "pilotodin-c1-c2-synthetic-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
+          if (Test-Path -LiteralPath $root) { throw 'Existing synthetic test root refused' }
+          New-Item -ItemType Directory -Path $root | Out-Null
+          $testTemp = Join-Path $root 'test-temp'
+          New-Item -ItemType Directory -Path $testTemp | Out-Null
+          $env:CARGO_TARGET_DIR = Join-Path $root 'target'
+          cargo +stable check --locked --all-targets --manifest-path frontend/src-tauri/Cargo.toml --target x86_64-pc-windows-msvc
+          if ($LASTEXITCODE -ne 0) { throw 'C1/C2 locked all-targets check failed' }
+          Write-Host 'C1-C2-LOCKED-ALL-TARGETS-CHECK-PASS'
+          $expected = @(
+            'resource_wire::tests::exact_demand_poll_grant_worker_ready_and_finish',
+            'resource_wire::tests::native_save_grant_is_typed_and_release_is_correlated',
+            'resource_wire::tests::native_save_wrong_ack_retains_grant',
+            'resource_wire::tests::readiness_precedes_any_grant',
+            'resource_wire::tests::matching_grant_drain_release',
+            'resource_wire::tests::single_outstanding_and_lost_reply_fault',
+            'resource_wire::tests::wrong_sequence_and_pipelining_rejected',
+            'resource_wire::tests::stop_is_not_exit_and_wrong_release_retains_grant',
+            'resource_wire::tests::busy_denial_permits_new_explicit_intent',
+            'resource_transport::tests::early_reply_is_not_consumed_before_write_completion',
+            'resource_transport::tests::timeout_while_write_pending_rejects_late_completion',
+            'resource_transport::tests::deadline_not_extended_by_write_or_partial_reply',
+            'resource_transport::tests::failed_release_write_retains_grant_even_with_early_reply',
+            'resource_transport::tests::early_duplicate_and_unsolicited_stdout_fail_closed',
+            'resource_transport::tests::second_intent_does_not_replace_pending_write',
+            'resource_transport::tests::lost_transport_does_not_release_grant',
+            'resource_shell::tests::only_stop_without_grant_or_release_after_stop_is_terminal',
+            'resource_shell::tests::terminal_close_does_not_manufacture_a_reply',
+            'resource_shell::tests::job_query_waits_for_every_actual_witness',
+            'resource_shell::tests::accounting_error_is_terminal_and_does_not_release',
+            'resource_shell::tests::deadline_and_late_zero_are_not_exit_proof',
+            'resource_shell::tests::missing_begin_and_contradictory_events_never_prove_exit',
+            'resource_shell::tests::exact_child_retained_until_writer_join',
+            'resource_shell::tests::failed_write_returns_child_for_cleanup_only',
+            'resource_shell::tests::panic_does_not_reconstruct_child_or_allow_retry',
+            'resource_supervisor::tests::pending_startup_is_not_joined_or_released_on_cancel',
+            'resource_supervisor::tests::timeout_keeps_exact_startup_and_late_result_is_marked',
+            'resource_supervisor::tests::panicked_startup_is_not_never_started_proof',
+            'resource_desktop::tests::incomplete_composition_has_no_activation_switch',
+            'resource_save::tests::abandoned_ticket_requires_observed_disconnect',
+            'resource_save::tests::uncertain_publication_does_not_settle',
+            'resource_save::tests::result_waits_for_actual_join_and_release',
+            'report_save_tests::native_report_writer_accepts_only_matching_report_types',
+            'report_save_tests::raw_and_fallback_report_payloads_preserve_bytes',
+            'report_save_tests::encoded_filenames_still_pass_native_validation',
+            'report_save_tests::native_writer_preserves_raw_pdf_and_fallback_html_on_disk',
+            'worker_temp_directory_tests::worker_temp_stays_under_existing_app_data_and_refuses_unreviewed_name',
+            'native_close_ticket_tests::no_cdp_ack_needs_debug_exact_local_root_and_separate_consent',
+            'native_close_ticket_tests::synthetic_w5_finish_is_not_a_general_native_close_bypass',
+            'native_close_ticket_tests::only_current_ticket_can_authorize_one_native_close_resolution'
+          )
+          $env:TEMP = $testTemp
+          $env:TMP = $testTemp
+          $log = Join-Path $root 'test.log'
+          cargo +stable test --locked --manifest-path frontend/src-tauri/Cargo.toml --target x86_64-pc-windows-msvc --lib -- --exact --test-threads=1 @expected 2>&1 | Tee-Object -FilePath $log
+          if ($LASTEXITCODE -ne 0) { throw "C1/C2 synthetic library tests failed: $LASTEXITCODE" }
+          $output = Get-Content -LiteralPath $log -Raw
+          foreach ($name in $expected) {
+            if ($output -notmatch ('(?m)^test ' + [regex]::Escape($name) + ' \.\.\. ok\s*$')) { throw "Missing exact test success: $name" }
+          }
+          if ($output -notmatch 'test result: ok\. 40 passed; 0 failed; 0 ignored;') { throw 'Unexpected C1/C2 test count' }
+          if ((git hash-object frontend/src-tauri/Cargo.lock).Trim() -ne 'f635ba1f8257266c242429e2b44ae94b039329b9') { throw 'Cargo lock changed' }
+          git diff --exit-code
+          if ($LASTEXITCODE -ne 0) { throw 'Tracked source changed during tests' }
+          if (@(Get-ChildItem -LiteralPath $testTemp -Force).Count -ne 0) { throw 'Synthetic temp not empty; leave untouched on disposable runner' }
+          Write-Host 'C1-C2-NATIVE-SYNTHETIC-LIBRARY-TESTS-PASS 40/40; no product application launch'
+      - name: Remove only owned compile-only placeholders
+        if: always()
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tauri = 'frontend/src-tauri'
+          $marker = "$tauri/NATIVE_COMPILE_PROBE_ONLY.txt"
+          if (-not (Test-Path -LiteralPath $marker)) { return }
+          $assets = @(
+            "$tauri/binaries/pilotodin-engine-x86_64-pc-windows-msvc.exe",
+            "$tauri/binaries/pilotodin-inference-x86_64-pc-windows-msvc.exe",
+            "$tauri/resources/models/qwen3-1.7b-q4_k_m.gguf",
+            "$tauri/resources/models/model-manifest.json",
+            'frontend/dist/index.html'
+          )
+          foreach ($file in $assets) {
+            if (Test-Path -LiteralPath $file) {
+              if ((Get-Item -LiteralPath $file).Length -gt 256) { throw "Unexpected content; refusing cleanup: $file" }
+              Remove-Item -LiteralPath $file -Force
+            }
+          }
+          if (Test-Path -LiteralPath 'frontend/dist') {
+            if (@(Get-ChildItem -LiteralPath 'frontend/dist' -Force).Count -ne 0) { throw 'Unexpected frontend fixture content' }
+            Remove-Item -LiteralPath 'frontend/dist'
+          }
+          Remove-Item -LiteralPath $marker
+          Write-Host 'COMPILE-ONLY-FIXTURES-REMOVED; no executable artifact upload or application launch'

@@ -1,0 +1,10 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "identifier": "com.pilotodin.p2nativeqa",
+  "build": {
+    "beforeDevCommand": "npm run dev -- --port 5175",
+    "devUrl": "http://127.0.0.1:5175/p2_native_export_test.html"
+  },
+  "app": {"windows": [{"label":"main","title":"PilotODIN P2 Native Export QA (DEV ONLY)","width":1080,"height":820,"minWidth":850,"minHeight":650}]},
+  "bundle": {"active":false,"externalBin":[],"resources":[]}
+}

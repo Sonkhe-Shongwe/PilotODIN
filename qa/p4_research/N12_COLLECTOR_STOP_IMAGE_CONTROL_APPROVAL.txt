@@ -1,0 +1,2 @@
+reviewed_source=2685b6ddb1cff330e0e02766ec6beb24ee0d4a4b
+scope=n12-one-collector-stop-image-control

@@ -8,12 +8,14 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
+from tests.settings_fixture import isolate_ai_store
+from tests.test_c1_product_integration import product_composition
 from tests.quality_compat_client import LegacyQualityClient
 from backend import ai_provider, analytics, quality, storage
 from backend.main import app
 
-client=LegacyQualityClient(TestClient(app))
+client=LegacyQualityClient(fixture_client(app))
 
 
 def property_frame():
@@ -123,38 +125,45 @@ def test_only_numeric_columns_are_imputed():
 
 
 def test_output_finish_reason_openai_length_is_visible(monkeypatch):
+    from tests.test_multi_ai import _HTTPReply
+    from types import SimpleNamespace
     data={'choices':[{'message':{'content':'This response was not finished'},'finish_reason':'length'}]}
-    class Response:
-        def __enter__(self):return self
-        def __exit__(self,*args):pass
-        def read(self,n):return json.dumps(data).encode()
-    monkeypatch.setattr(urllib.request,'urlopen',lambda *args,**kwargs:Response())
-    text=ai_provider._call_provider('groq','model','System','User','secret',10)
+    monkeypatch.setattr(urllib.request,'build_opener',lambda *a:SimpleNamespace(
+        open=lambda request,timeout:_HTTPReply(data,request.full_url)))
+    text=ai_provider._call_provider('groq',ai_provider.MODELS['groq']['routine'],'System','User','fixture-secret-key',10,
+                                    strict=True,still_authorized=lambda:True)
     assert text.incomplete and text.finish_reason=='length'
     assert 'finished' in text
 
 
 def test_gemini_stop_reason_is_not_marked_truncated(monkeypatch):
+    from tests.test_multi_ai import _HTTPReply
+    from types import SimpleNamespace
     response={'candidates':[{'finishReason':'STOP','content':{'parts':[{'text':'Complete response.'}]}}]}
-    class Response:
-        def __enter__(self):return self
-        def __exit__(self,*args):pass
-        def read(self,n):return json.dumps(response).encode()
-    monkeypatch.setattr(urllib.request,'urlopen',lambda *args,**kwargs:Response())
-    value=ai_provider._call_provider('gemini','model','system','user','secret',10)
+    monkeypatch.setattr(urllib.request,'build_opener',lambda *a:SimpleNamespace(
+        open=lambda request,timeout:_HTTPReply(response,request.full_url)))
+    value=ai_provider._call_provider('gemini',ai_provider.MODELS['gemini']['routine'],'system','user','fixture-secret-key',10,
+                                     strict=True,still_authorized=lambda:True)
     assert not value.incomplete and value.finish_reason=='STOP'
 
 
-def test_respond_propagates_completion_status_and_safe_continuation(monkeypatch,tmp_path):
-    monkeypatch.setattr(ai_provider,'CONFIG_PATH',tmp_path/'ai.json')
-    ai_provider._memory_keys.clear();ai_provider._cooldowns.clear()
-    monkeypatch.setattr(ai_provider,'_get_key',lambda p:'token' if p=='groq' else None)
-    monkeypatch.setattr(ai_provider,'_call_provider',lambda *args:ai_provider.ProviderText('Useful paragraph','length',True))
+def test_respond_propagates_completion_status_and_refuses_cloud_continuation(monkeypatch,tmp_path):
+    isolate_ai_store(monkeypatch, ai_provider, tmp_path)
+    ai_provider.set_key('groq','fixture-secret-key')
+    seen=[]
+    def fake(*args,**kwargs):
+        assert kwargs['strict'] is True and kwargs['still_authorized']()
+        seen.append(args)
+        return ai_provider.ProviderText('Useful paragraph','length',True)
+    monkeypatch.setattr(ai_provider,'_call_provider',fake)
     ai_provider.update_settings(cloud_enabled=True,share_aggregates=True,auto_insights=False,
       provider_order=list(ai_provider.PROVIDERS),timeout_seconds=10,preferred_provider='groq')
-    result=ai_provider.respond({'row_count':10},'assistant','Investigate','local',continuation_text='Earlier response')
+    result=ai_provider.respond({'row_count':10},'assistant','Investigate','local',
+        selected_provider='groq',cloud_intent=True,continuation_text='Earlier response')
+    assert result['fallback'] and not seen
+    result=ai_provider.respond({'row_count':10},'assistant','Investigate','local',selected_provider='groq',cloud_intent=True)
     assert result['provider']=='groq' and result['incomplete'] and result['finish_reason']=='length'
-    ai_provider._memory_keys.clear()
+    assert len(seen)==1 and 'Earlier response' not in seen[0][3]
 
 
 def test_invalid_chart_selection_still_rejected_by_backend():
@@ -168,34 +177,43 @@ def test_investigation_planner_does_not_execute_arbitrary_code():
     assert report is None
 
 
-def test_cloud_investigation_uses_only_redacted_aggregates(monkeypatch,tmp_path):
+def test_cloud_investigation_uses_only_redacted_aggregates(monkeypatch,tmp_path,product_composition):
     pid,_=upload()
-    monkeypatch.setattr(ai_provider,'CONFIG_PATH',tmp_path/'config.json')
-    monkeypatch.setattr(ai_provider,'_get_key',lambda p:'fake-token' if p=='groq' else None)
-    ai_provider._cooldowns.clear()
+    isolate_ai_store(monkeypatch, ai_provider, tmp_path)
+    ai_provider.set_key('groq','fixture-secret-key')
     ai_provider.update_settings(cloud_enabled=True,share_aggregates=True,auto_insights=False,
         provider_order=list(ai_provider.PROVIDERS),timeout_seconds=10,preferred_provider='groq')
     payloads=[]
-    def fake(provider,model,system,user,key,timeout):
-        payloads.append(json.loads(user));return ai_provider.ProviderText('Investigated verified facts.','stop',False)
+    def fake(provider,model,system,user,key,timeout,**kwargs):
+        assert kwargs['strict'] is True and kwargs['still_authorized']()
+        payloads.append(json.loads(user))
+        return ai_provider.ProviderText('Investigated verified facts.','stop',False)
     monkeypatch.setattr(ai_provider,'_call_provider',fake)
-    response=client.post(f'/api/projects/{pid}/ai/insight',json={'context':'assistant','question':'Please analyse missing Bedrooms values'})
+    response=client.post(f'/api/projects/{pid}/ai/insight',json={'context':'assistant','question':'Please analyse missing Bedrooms values','selected_provider':'groq','cloud_intent':True})
     assert response.status_code==200,response.text
-    assert response.json()['source']=='cloud_llm'
+    assert response.json()['source']=='cloud_llm' and len(payloads)==1
     assert response.json()['investigation']['row_numbers']==[3,7]
     cloud=payloads[0]['verified_context']['verified_investigation']
-    assert cloud['missing_rows']==2
+    assert cloud['missing_rows']==2 and cloud['numeric_comparisons']==[]
     assert 'row_numbers' not in json.dumps(cloud)
     assert 'Gauteng' not in json.dumps(cloud) and 'Mpumalanga' not in json.dumps(cloud)
 
 
 def test_local_origin_development_ports_are_restricted():
-    accepted=client.get('/api/ai/settings',headers={'Origin':'http://127.0.0.1:5175'})
-    assert accepted.status_code==200,accepted.text
-    denied=client.get('/api/ai/settings',headers={'Origin':'http://evil.example:5175'})
-    assert denied.status_code==403
-    denied2=client.get('/api/ai/settings',headers={'Origin':'http://127.0.0.1:5555'})
-    assert denied2.status_code==403
+    from contextlib import closing
+    from secrets import token_hex
+    from backend.request_auth import RequestTrust
+    trust = RequestTrust("dev", 8000, token_hex(32), "http://127.0.0.1:5175")
+    with closing(fixture_client(app, trust=trust)) as scoped:
+        accepted=scoped.get('/api/ai/settings',headers={'Origin':'http://127.0.0.1:5175'})
+        assert accepted.status_code==200,accepted.text
+        denied=scoped.get('/api/ai/settings',headers={'Origin':'http://evil.example:5175'})
+        assert denied.status_code==403
+        denied2=scoped.get('/api/ai/settings',headers={'Origin':'http://127.0.0.1:5555'})
+        assert denied2.status_code==403
+        assert scoped.get('/api/ai/settings',headers={'Origin':'http://127.0.0.1:5173'}).status_code==403
+    with closing(fixture_client(app, trust=trust, authenticated=False)) as scoped:
+        assert scoped.get('/api/ai/settings',headers={'Origin':trust.dev_origin}).status_code==401
 
 
 def test_imputation_is_never_part_of_unapproved_autopilot():

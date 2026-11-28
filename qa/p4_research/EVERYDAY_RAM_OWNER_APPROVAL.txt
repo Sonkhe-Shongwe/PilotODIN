@@ -1,0 +1,2 @@
+reviewed_source=1cfeb9421a3986ec75c97d8dd9b88f831596c9eb
+scope=one-unpackaged-analytics-only-everyday-ram-owner-kit

@@ -1,0 +1,2 @@
+C5-SELECTED-WHEEL-METADATA-MISSING-ONCE-20261125
+One hosted attempt; 22 index and 29 hash-advertised sidecars maximum; 32 MiB/index, 128 MiB aggregate.

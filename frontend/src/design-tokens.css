@@ -1,0 +1,25 @@
+/* Live editable PilotODIN palette; the final Neural Horizon logo remains pending approval. */
+:root {
+  --po-font-family: Inter, 'Segoe UI', system-ui, sans-serif;
+  --po-primary: #5538c6;
+  --po-brand: #31218d;
+  --po-pilot: #0878b8;
+  --po-pilot-bright: #08a3e5;
+  --po-teal: #087b87;
+  --po-navy: #111b37;
+  --po-ink: #202b49;
+  --po-muted: #6b7894;
+  --po-bg: #f5f7fd;
+  --po-violet-tint: #eeeaff;
+  --po-border: #dfe4f1;
+  --po-sidebar-compact: 64px;
+  --po-sidebar-expanded: 236px;
+  /* Motion v2: composed transitions instead of fast, abrupt page swaps. */
+  --po-motion-fast: 210ms;
+  --po-motion-stage: 500ms;
+  --po-motion-sidebar: 520ms;
+  --po-motion-exit: 220ms;
+  --po-motion-ease: cubic-bezier(.16,1,.3,1);
+  --po-motion-ease-out: cubic-bezier(.4,0,.7,1);
+}
+.po-unified-shell { font-family: var(--po-font-family); }

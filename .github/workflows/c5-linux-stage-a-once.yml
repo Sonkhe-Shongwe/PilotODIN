@@ -1,0 +1,51 @@
+# Consumed and disarmed after run 46031011314. Do not replay.
+name: C5 Linux Stage A once 20261127
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  linux-stage-a:
+    if: ${{ false }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      C5_CHECKOUT_SOURCE: "304b24d71aef1c8e3e98211bb5e8ba2430932f4f"
+      C5_CHECKOUT_TREE: "e0c23e3f123c7b46d5bc175330b4f34359fe419e"
+    steps:
+      - name: Checkout exact isolated approved source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: "304b24d71aef1c8e3e98211bb5e8ba2430932f4f"
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Confirm immutable source before setup
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_RUN_ATTEMPT" = 1
+          test "$(git rev-parse HEAD)" = "$C5_CHECKOUT_SOURCE"
+          test "$(git rev-parse 'HEAD^{tree}')" = "$C5_CHECKOUT_TREE"
+          git diff --quiet HEAD --
+          test -z "$(git status --porcelain)"
+          printf '%s\n' 'ecbf286e0e8aa0426a647bfeea97a634599c94971024aa9b002fc9d703da4de3  qa/c5_managed_dev/linux_stage_a_host_review.md' '5e244cc7df0d43bf703a480d9b721f16ea99361cd3d7ae3e70b180997b0a0f23  qa/c5_managed_dev/linux_stage_a_disposition.json' | sha256sum -c -
+          echo "C5_STAGE_A_CHECKOUT=$C5_CHECKOUT_SOURCE"
+      - name: Select exact managed CPython
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11.18"
+          architecture: x64
+      - name: Confirm selected source and managed Python
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_RUN_ATTEMPT" = 1
+          test "$(git rev-parse HEAD)" = "$C5_CHECKOUT_SOURCE"
+          git diff --quiet HEAD --
+          python -I -B -c 'import sys,platform,struct; assert sys.implementation.name == "cpython" and sys.version_info[:3] == (3,11,18) and platform.system() == "Linux" and platform.machine() == "x86_64" and struct.calcsize("P") == 8'
+      - name: Execute approved Stage A only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -B -c 'import json,os; from pathlib import Path; from qa.c5_managed_dev.linux_stage_a import run_stage_a; p=Path("qa/c5_managed_dev"); result=run_stage_a((p/"linux_stage_a_disposition.json").read_bytes(),(p/"linux_stage_a_host_review.md").read_bytes()); result["checkout_source"]=os.environ["C5_CHECKOUT_SOURCE"]; result["checkout_tree"]=os.environ["C5_CHECKOUT_TREE"]; print("C5_LINUX_STAGE_A_JSON "+json.dumps(result,sort_keys=True,separators=(",",":")))'

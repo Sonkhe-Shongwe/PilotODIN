@@ -1,0 +1,43 @@
+name: C5 missing wheel metadata offline review
+on:
+  push:
+    branches: [feature/live-dev-workspace-20261023]
+    paths:
+      - qa/c5_wheel_metadata/APPROVAL_MISSING_20261125.txt
+permissions:
+  contents: read
+jobs:
+  offline-integration:
+    if: ${{ false }} # Exact prior offline verification preserved.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - run: python3 -I -B qa/c5_wheel_metadata/collect_missing.py --self-test
+      - name: Assert CLI refuses collection
+        run: |
+          set +e
+          python3 -I -B qa/c5_wheel_metadata/collect_missing.py --collect
+          code=$?
+          set -e
+          test "$code" = 2
+  collect-once:
+    if: ${{ false }} # Approval issued to exact run 45701493997 attempt 1; never replay.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - run: python3 -I -B qa/c5_wheel_metadata/collect_missing.py --self-test
+      - name: Verify exact activated collector blob
+        run: test "$(git hash-object qa/c5_wheel_metadata/collect_missing.py)" = 5367655eaebad4ff2792ce096354b401792d5497
+      - name: Missing metadata only, approved one use
+        env:
+          C5_APPROVED_ONCE: C5-SELECTED-WHEEL-METADATA-MISSING-ONCE-20261125
+          C5_EXPECTED_SOURCE_SHA: ${{ github.sha }}
+        run: python3 -I -B qa/c5_wheel_metadata/collect_missing.py --collect

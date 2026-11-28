@@ -3,83 +3,103 @@ from __future__ import annotations
 
 import io
 import asyncio
+import hashlib
 import logging
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, closing
 import json
 import math
-import os
-import re
 import traceback
-import hmac
-from fastapi.responses import JSONResponse, FileResponse, Response
+from fastapi.responses import JSONResponse, Response
 from pathlib import Path
+from typing import Literal
 
 import joblib
 from fastapi import BackgroundTasks, FastAPI, File, HTTPException, UploadFile, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
-from starlette.background import BackgroundTask
+from fastapi.exceptions import RequestValidationError
+from fastapi.exception_handlers import request_validation_exception_handler
+from pydantic import BaseModel, Field, ConfigDict, StrictBool, StrictStr
 
 try:
-    from . import ai_provider, ai_context, engine, storage, quality, analytics, data_exports, quality_approvals, reports
+    from .request_auth import request_authorized
+    from .settings_http import SettingsRequestGuard
 except ImportError:
-    import ai_provider, ai_context, engine, storage, quality, analytics, data_exports, quality_approvals, reports
+    from request_auth import request_authorized
+    from settings_http import SettingsRequestGuard
+
+try:
+    from . import dataset_publication, model_artifacts, ai_provider, ai_context, engine, storage, project_lifecycle, quality, quality_investigations, analytics, explore_filters, explore_inspector, column_intelligence, saved_analyses, data_exports, export_transfer, quality_approvals, reports, project_delete_impact, resource_policy, semantic_profile, semantic_review, target_opportunities, verified_answers
+except ImportError:
+    import dataset_publication, model_artifacts, ai_provider, ai_context, engine, storage, project_lifecycle, quality, quality_investigations, analytics, explore_filters, explore_inspector, column_intelligence, saved_analyses, data_exports, export_transfer, quality_approvals, reports, project_delete_impact, resource_policy, semantic_profile, semantic_review, target_opportunities, verified_answers
 
 @asynccontextmanager
 async def _lifespan(_app:FastAPI):
-    """Start responsive: verify configured cloud providers in background only after consent."""
-    checks=[]
-    try:
-        cfg=ai_provider.config_status()
-        if cfg.get('cloud_enabled') and cfg.get('share_aggregates'):
-            for provider in cfg['providers']:
-                if provider['connected']:
-                    ai_provider._health[provider['id']]={'status':'checking'}
-                    checks.append(asyncio.create_task(asyncio.to_thread(ai_provider.test_connection,provider['id'])))
-    except (OSError,ValueError):
-        pass  # Local analysis must start even with corrupt optional AI configuration.
+    """Recover local durable records without automatic provider requests."""
+    # FastAPI BackgroundTasks do not survive a backend restart. Explicitly
+    # fail orphaned ML records before admitting new work; never auto-retrain.
+    interrupted=dataset_publication.recover_pending()
+    if interrupted:
+        logging.warning("Reconciled %s incomplete dataset publication(s)", interrupted)
+    model_receipts=storage.recover_model_publications()
+    if model_receipts:
+        logging.warning("Reconciled %s unfinished model publication receipt(s)",model_receipts)
+    export_receipts=storage.recover_export_publications()
+    if export_receipts:
+        logging.warning("Reconciled %s unfinished export receipt(s)",export_receipts)
+    recovered=storage.recover_interrupted_experiments()
+    if recovered:
+        logging.warning("Marked %s unfinished ML experiment(s) failed after backend restart",recovered)
     yield
-    for job in checks:
-        if not job.done():job.cancel()
 
 app = FastAPI(title="PilotODIN", version="0.8.0",description="Local-first intelligent analytics workspace",lifespan=_lifespan)
+app.add_middleware(SettingsRequestGuard)
 app.add_middleware(CORSMiddleware,
                    allow_origin_regex=r"(?:http://(?:localhost|127\.0\.0\.1):517[3-9]|https?://tauri\.localhost|tauri://localhost)",
-                   allow_credentials=False,allow_methods=["*"],allow_headers=["*"])
+                   allow_credentials=False,allow_methods=["*"],allow_headers=["*"],
+                   expose_headers=["Content-Disposition","Content-Length",
+                                   "X-PilotODIN-Dataset-Version","X-PilotODIN-Exported-Rows",
+                                   "X-PilotODIN-Export-SHA256","X-PilotODIN-Export-Project",
+                                   "X-PilotODIN-Export-Operation","X-PilotODIN-Export-MAC"])
 MAX_BYTES = 40 * 1024 * 1024
 
-# Desktop mode uses a randomly generated per-launch secret supplied by the
-# Rust shell through the SIDE-CAR ENVIRONMENT, never through a URL or bundle.
-# CORS alone cannot protect a loopback HTTP server against local processes.
-# Existing browser-only dev mode remains unchanged when the secret is absent.
-_DESKTOP_ORIGINS = {"http://tauri.localhost", "https://tauri.localhost", "tauri://localhost"}
+
+@app.exception_handler(RequestValidationError)
+async def _redact_settings_validation(request: Request, exc: RequestValidationError):
+    # FastAPI's default validation response includes input values. Never echo
+    # a submitted key (including malformed JSON or unknown field names).
+    if request.method == "PUT" and request.url.path in (
+        "/api/ai/settings", "/api/ai/key", "/api/resource/policy",
+    ):
+        return JSONResponse({"detail":"Invalid settings request"},status_code=422,
+                            headers={"Cache-Control":"no-store"})
+    return await request_validation_exception_handler(request, exc)
+
+# Runtime trust is captured by the outer RequestGuard at serving startup.
+# No environment-based or header-only authorization is accepted here.
 
 
-def _allowed_desktop_origin(origin: str) -> bool:
-    if origin in _DESKTOP_ORIGINS:
-        return True
-    return bool(os.environ.get("PILOTODIN_DESKTOP_ALLOW_DEV") == "1" and
-                re.fullmatch(r"http://(?:localhost|127\.0\.0\.1):517[3-9]", origin))
+@app.middleware("http")
+async def workspace_scratch_guard(request: Request, call_next):
+    # Registered inside the desktop authentication guard. Refuse before
+    # multipart parsing or endpoint-level third-party temporary file writes.
+    try:
+        storage.check_scratch()
+    except storage.WorkspaceBoundaryError:
+        return JSONResponse({"detail": "Workspace scratch unavailable or unsafe"}, status_code=503)
+    return await call_next(request)
 
 
 @app.middleware("http")
 async def desktop_session_guard(request: Request, call_next):
-    secret = os.environ.get("PILOTODIN_DESKTOP_SESSION", "")
-    if not secret:
-        return await call_next(request)
-    # Let CORSMiddleware handle preflight; it must not grant an arbitrary
-    # cross-site origin permission. Browser actual requests still need token.
-    if request.method == "OPTIONS":
-        return await call_next(request)
-    origin = request.headers.get("origin", "")
-    if origin and not _allowed_desktop_origin(origin):
-        return JSONResponse({"detail": "Untrusted desktop request origin"}, status_code=403)
-    host = request.url.hostname
-    if host not in ("127.0.0.1", "localhost", "testserver"):
-        return JSONResponse({"detail": "Desktop API is local-only"}, status_code=403)
-    provided = request.headers.get("x-pilotodin-session", "")
-    if not hmac.compare_digest(provided, secret):
-        return JSONResponse({"detail": "Desktop session authentication required"}, status_code=401)
+    # The immutable outer RequestGuard must admit every HTTP request first.
+    # Its identity-only witness cannot be supplied by a request header.
+    # Negotiation is handled exclusively by the outer guard, not business routes.
+    if not request_authorized(request.scope) or request.method == "OPTIONS":
+        return JSONResponse({"detail": "Local API request refused"}, status_code=401,
+                            headers={"Cache-Control": "no-store"})
+    archived = project_lifecycle.archived_mutation_project(request.method, request.url.path)
+    if archived is not None:
+        return JSONResponse({"detail": "Project is archived. Restore it in Manage projects before making changes."},status_code=409)
     return await call_next(request)
 
 
@@ -89,9 +109,16 @@ class ExperimentRequest(BaseModel):
     excluded_features: list[str] = Field(default_factory=list)
     models: list[str] = Field(min_length=1,max_length=5)
     acknowledge_random_split: bool = False
+    acknowledge_feature_risks: bool = False
+    # v1 supported numeric alternatives; default preserves old experiment behavior.
+    numeric_imputation: Literal['median','mean'] = 'median'
+    categorical_imputation: Literal['most_frequent','constant'] = 'most_frequent'
     split_strategy: str = 'random'
     split_column: str | None = None
     expected_quality_version: int | None = Field(default=None, ge=0)
+    # An explicit cooperative soft timeout. No implicit deadline; sklearn fit
+    # and cross_val_score are not forcibly interrupted mid-call.
+    max_duration_seconds: int | None = Field(default=None, ge=60, le=14400)
 
 class SelectionRequest(BaseModel):
     model_key: str
@@ -157,23 +184,44 @@ async def create_project(file: UploadFile = File(...)):
     if len(b)>MAX_BYTES:
         raise HTTPException(status_code=413,detail="File exceeds local 40 MB limit")
     if not b: raise HTTPException(status_code=400,detail="Empty file")
-    path=storage.HOME / "datasets" / f"{storage.uid()}{ext}"
-    path.write_bytes(b)
-    pid=None
     try:
-        df=engine.read_data(str(path),ext)
-        prof=engine.profile(df,filename)
-        pid=storage.save_project(Path(filename).stem,filename,ext,path,prof)
-        quality.register(pid)  # Anchor the immutable source hash at upload.
+        pid,prof=dataset_publication.publish(filename,ext,b)
+    except dataset_publication.UnconfirmedPublication as e:
+        raise HTTPException(status_code=500,
+                            detail="Import could not be confirmed. Refresh projects and check local logs before retrying.") from e
     except Exception as e:
-        if pid is not None:
-            with storage.connect() as con:
-                con.execute("DELETE FROM quality_versions WHERE project_id=?", (pid,))
-                con.execute("DELETE FROM quality_state WHERE project_id=?", (pid,))
-                con.execute("DELETE FROM projects WHERE id=?", (pid,))
-        path.unlink(missing_ok=True)
-        raise HTTPException(status_code=422,detail=f"Could not process dataset: {str(e)[:280]}")
+        raise HTTPException(status_code=422,detail=f"Could not process dataset: {str(e)[:280]}") from e
     return {"id":pid,"name":Path(filename).stem,"profile":prof}
+
+
+
+class ProjectLifecycleRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    action: Literal['rename','archive','restore']
+    expected_revision: int = Field(ge=0)
+    name: str | None = None
+
+
+@app.get("/api/projects/manage")
+def manage_projects():
+    return project_lifecycle.listing()
+
+
+@app.put("/api/projects/{project_id}/lifecycle")
+def change_project_lifecycle(project_id: str, body: ProjectLifecycleRequest):
+    try:
+        return project_lifecycle.change(project_id, body.action, body.expected_revision, body.name)
+    except project_lifecycle.ProjectLifecycleError as error:
+        raise HTTPException(status_code=error.status,detail=str(error)) from error
+
+
+@app.get("/api/projects/{project_id}/deletion-impact")
+def get_project_deletion_impact(project_id: str, expected_revision: int = Query(ge=0)):
+    """Read-only deletion impact review; no deletion capability is exposed."""
+    try:
+        return project_delete_impact.impact(project_id, expected_revision)
+    except project_lifecycle.ProjectLifecycleError as error:
+        raise HTTPException(status_code=error.status,detail=str(error)) from error
 
 
 @app.get("/api/projects/{project_id}")
@@ -184,30 +232,69 @@ def get_project(project_id:str):
 
 
 @app.get("/api/projects/{project_id}/preparation")
-def prepare(project_id:str,target:str):
-    p=project_or_404(project_id)
-    try: return engine.preparation(df_for(p),target)
-    except ValueError as e: raise HTTPException(status_code=422,detail=str(e))
+def prepare(project_id: str, target: str,
+            expected_version: int | None = Query(default=None, ge=0)):
+    """Return a revision-bound Prepare plan without changing legacy readers."""
+    project_or_404(project_id)
+    try:
+        frame, version = quality.current_data(project_id)
+        if expected_version is not None and version != expected_version:
+            raise HTTPException(
+                status_code=409,
+                detail="Working dataset version changed. Refresh Prepare before continuing.",
+            )
+        result = engine.preparation(frame, target)
+        if expected_version is not None:
+            _require_p4_review_version_fresh(project_id, version)
+        return {"quality_version": version, **result}
+    except quality.QualityError as exc:
+        raise HTTPException(status_code=exc.status, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 def train_background(eid:str,pid:str,config:dict):
-    storage.mark(eid,"running")
+    # Compare-and-set: never resurrect a job marked terminal or interrupted.
+    if not storage.claim_queued_experiment(eid):
+        return
     try:
+        storage.check_training_interruption(eid)
+        source_sha256=storage.model_training_source(eid,pid,config)
         p=storage.get_project(pid)
         df=df_for(p,config["quality_version"])
-        result, pipes, x_test, y_test = engine.run_training(df,**{k:config[k] for k in ("target","excluded","models","task","split_strategy","split_column")})
-        # Only locally produced artifacts are loaded; untrusted model uploads are prohibited.
-        path=storage.HOME / "models" / eid
-        path.mkdir(parents=True,exist_ok=True)
-        for name,pipe in pipes.items(): joblib.dump(pipe,path/f"{name}.joblib")
-        joblib.dump((x_test,y_test),path/"test_set.joblib")
-        storage.mark(eid,"completed",results=result)
+        if not storage.advance_running_experiment(
+            eid,"training_models","Data loaded; cross-validating and fitting the selected model candidates."
+        ):
+            return  # A recovery/terminal transition superseded this worker.
+        result, pipes, x_test, y_test = engine.run_training(
+            df,**{k:config[k] for k in ("target","excluded","models","task","split_strategy","split_column")},
+            stop_check=lambda: storage.check_training_interruption(eid),
+            numeric_imputation=config.get("numeric_imputation", "median"),
+            categorical_imputation=config.get("categorical_imputation", "most_frequent"),
+        )
+        if not storage.advance_running_experiment(
+            eid,"saving_artifacts","Model comparisons finished; saving fitted pipelines and held-out evaluation data."
+        ):
+            return
+        model_artifacts.publish(eid,config,source_sha256,result,pipes,(x_test,y_test))
+    except storage.TrainingInterrupted as e:
+        storage.finish_interrupted_experiment(eid,e.status)
     except Exception as e:
-        storage.mark(eid,"failed",error=f"{type(e).__name__}: {str(e)[:600]}")
+        # A committed experiment cannot be downgraded by a lost acknowledgement.
+        storage.finish_running_experiment(eid,"failed",error=f"{type(e).__name__}: {str(e)[:600]}")
 
 
 @app.post("/api/projects/{project_id}/experiments",status_code=202)
-def new_experiment(project_id:str,body:ExperimentRequest,background_tasks:BackgroundTasks):
+def new_experiment(project_id:str,body:ExperimentRequest,background_tasks:BackgroundTasks,request:Request=None):
+    # Dormant C1 seam: only the trusted server ASGI wrapper supplies an owner.
+    # Existing live and direct-call paths are unchanged until unified activation.
+    owner = None
+    if request is not None:
+        try:
+            from .resource_training import optional_training_owner
+        except ImportError:
+            from resource_training import optional_training_owner
+        owner = optional_training_owner(request.scope)
     p=project_or_404(project_id)
     if body.split_strategy not in ('random','group','time'):
         raise HTTPException(status_code=422,detail='Choose random, group, or time validation')
@@ -219,14 +306,79 @@ def new_experiment(project_id:str,body:ExperimentRequest,background_tasks:Backgr
         df, version = quality.current_data(project_id)
         if body.expected_quality_version is not None and body.expected_quality_version != version:
             raise HTTPException(status_code=409, detail=f"Dataset version changed from {body.expected_quality_version} to {version}. Refresh before training.")
-        engine.validate_config(df,body.target,body.excluded_features,body.models,body.task)
         if body.split_column and body.split_column not in df.columns:raise ValueError('Split column not found')
+        if body.split_strategy!='random' and body.split_column==body.target:
+            raise ValueError('Target cannot also be a split column')
+        # Match the worker's effective predictor set before capacity checks.
+        # The split key remains available in the original frame for group/time CV.
+        fit_excluded=list(dict.fromkeys([*body.excluded_features,
+            *([body.split_column] if body.split_strategy!='random' else [])]))
+        effective_X, _, _ = engine.validate_config(
+            df,body.target,fit_excluded,body.models,body.task,
+            categorical_imputation=body.categorical_imputation)
+        engine.check_categorical_missing_marker(effective_X, body.categorical_imputation)
+        preparation_audit=engine.preparation(df,body.target)
+        included_risks=sorted(set(preparation_audit["high_risk_features"])-set(body.excluded_features)
+                              -({body.split_column} if body.split_strategy!="random" else set()))
+        if included_risks and not body.acknowledge_feature_risks:
+            raise ValueError("Review high-risk predictors ("+", ".join(included_risks[:8])+
+                             "). Exclude them or explicitly acknowledge potential leakage before training.")
     except quality.QualityError as e:
         raise HTTPException(status_code=e.status,detail=str(e)) from e
     except ValueError as e: raise HTTPException(status_code=422,detail=str(e))
-    config={"target":body.target,"task":body.task,"excluded":body.excluded_features,"models":body.models,"quality_version":version,"split_strategy":body.split_strategy,"split_column":body.split_column}
-    eid=storage.new_experiment(project_id,config)
-    background_tasks.add_task(train_background,eid,project_id,config)
+    # Low-memory additionally screens available RAM. Every policy must still
+    # reserve the same atomic workstation-wide ML fitting slot, so switching
+    # to Adaptive or Performance cannot queue concurrent expensive training.
+    # Existing engine model/row/matrix and leakage caps remain independent.
+    if owner is None:
+        admission = resource_policy.admit_new_work("training")
+        if admission["decision"] == "defer":
+            raise HTTPException(status_code=503, detail={
+                "code": admission["code"], "operation": "training",
+                "message": admission["note"],
+                "available_gib": admission["available_gib"],
+                "required_free_gib": admission["required_free_gib"],
+                "retryable": True,
+            })
+    config={"target":body.target,"task":body.task,"excluded":body.excluded_features,"models":body.models,
+            "quality_version":version,"split_strategy":body.split_strategy,"split_column":body.split_column,
+            "acknowledge_feature_risks":bool(body.acknowledge_feature_risks),
+            "numeric_imputation":body.numeric_imputation,
+            "categorical_imputation":body.categorical_imputation,
+            "reviewed_high_risk_features":included_risks,
+            "max_duration_seconds":body.max_duration_seconds}
+    if owner is not None:
+        # Load the exact storage witnesses before entering the queue transaction.
+        try:
+            from . import resource_training_store as durable_training
+        except ImportError:
+            import resource_training_store as durable_training
+        owner.publication_started()
+    try:
+        eid=storage.new_experiment_with_capacity(
+            project_id,config,expected_quality_version=version)
+    except project_lifecycle.ProjectLifecycleError as exc:
+        if owner is not None:
+            owner.publication_refused()  # Known pre-insert transaction refusal.
+        raise HTTPException(status_code=exc.status,detail=str(exc)) from exc
+    except storage.TrainingVersionConflict as exc:
+        if owner is not None:
+            owner.publication_refused()  # Known pre-insert transaction refusal.
+        raise HTTPException(status_code=409,detail=str(exc)) from exc
+    except storage.TrainingSlotBusy as exc:
+        if owner is not None:
+            owner.publication_refused()  # Known pre-insert transaction refusal.
+        raise HTTPException(status_code=503,detail={
+            "code": "ml_training_slot_busy", "operation": "training",
+            "message": str(exc)+" Retry when that training finishes.",
+            "retryable": True,
+        }) from exc
+    if owner is None:
+        background_tasks.add_task(train_background,eid,project_id,config)
+    else:
+        callback = owner.bind(eid, lambda exact_id: train_background(exact_id,project_id,config),
+                              durable_training.settle_unstarted,durable_training.terminal)
+        background_tasks.add_task(callback)
     return {"id":eid,"status":"queued"}
 
 
@@ -235,14 +387,46 @@ def get_experiment(experiment_id:str):
     e=experiment_or_404(experiment_id)
     current_version=quality.current_version(e["project_id"])
     return {"dataset_version":e["config"].get("quality_version",0),"current_version":current_version,"is_stale":e["config"].get("quality_version",0)!=current_version,"id":e["id"],"project_id":e["project_id"],"status":e["status"],"config":e["config"],
-            "results":e["results"],"error":e["error"],"selected_model":e["selected_model"],"final_results":e["final_results"]}
+            "results":e["results"],"error":e["error"],"selected_model":e["selected_model"],"final_results":e["final_results"],
+            "progress":e["progress"],"control":e["control"]}
+
+
+@app.post("/api/experiments/{experiment_id}/cancel")
+def cancel_training(experiment_id:str, request:Request):
+    _local_request(request)
+    experiment_or_404(experiment_id)
+    state=storage.request_training_cancel(experiment_id)
+    if state is None:
+        raise HTTPException(status_code=404,detail="Experiment not found")
+    # A running request is NOT yet cancelled; it must reach a worker checkpoint.
+    return {
+        "status":state,
+        "message":(
+            "Queued experiment cancelled before execution." if state=="cancelled"
+            else "Cancellation requested. A running sklearn CV/fit cannot be forcibly stopped; "
+                 "the worker will stop at its next safe checkpoint."
+            if state=="cancellation_requested"
+            else "This experiment already finished and was not modified."
+        ),
+    }
+
+
+def verified_model_load(experiment, model_key, *, holdout=False):
+    try:
+        return model_artifacts.load_verified(experiment,model_key,holdout=holdout)
+    except model_artifacts.LoadDeferred as exc:
+        raise HTTPException(status_code=503,detail=str(exc)) from exc
+    except model_artifacts.LoadRefused as exc:
+        raise HTTPException(status_code=409,detail=str(exc)) from exc
+    except project_lifecycle.ProjectLifecycleError as exc:
+        raise HTTPException(status_code=exc.status,detail=str(exc)) from exc
 
 
 @app.post("/api/experiments/{experiment_id}/select")
 def choose_model(experiment_id:str,body:SelectionRequest):
     e=experiment_or_404(experiment_id)
     if e["status"]!="completed": raise HTTPException(status_code=409,detail="Experiment not ready")
-    if e["config"].get("quality_version",0)!=quality.current_version(e["project_id"]):
+    if e["config"].get("quality_version",0)!=quality_response(quality.current_version,e["project_id"]):
         raise HTTPException(status_code=409,detail="Dataset changed since training. Start a new experiment on the current version.")
     if e["selected_model"]:
         if e["selected_model"]==body.model_key:
@@ -250,9 +434,7 @@ def choose_model(experiment_id:str,body:SelectionRequest):
         raise HTTPException(status_code=409,detail="This experiment already has a final selected model. Create a new experiment to compare final outcomes.")
     ready={m["key"] for m in e["results"]["models"] if m["status"]=="ready"}
     if body.model_key not in ready: raise HTTPException(status_code=422,detail="Select a successfully trained model")
-    base=storage.HOME/"models"/experiment_id
-    model=joblib.load(base/f"{body.model_key}.joblib")
-    x_test,y_test=joblib.load(base/"test_set.joblib")
+    model,(x_test,y_test)=verified_model_load(e,body.model_key,holdout=True)
     predictions=model.predict(x_test)
     prob=None
     if e["results"]["task"]=="classification" and hasattr(model,"predict_proba"):
@@ -264,8 +446,41 @@ def choose_model(experiment_id:str,body:SelectionRequest):
     metrics["evaluation_rows"]=[{"actual":engine.native(a),"predicted":engine.native(b)} for a,b in list(zip(y_test,predictions))[:120]]
     metrics["baseline_cv"]=e["results"]["baseline_cv"]
     metrics["cv_score"]=next((m.get("cv_metric") for m in e["results"]["models"] if m["key"]==body.model_key),None)
+    # Frozen training-only majority class / median. Final test is consulted
+    # only *after* the candidate has been selected via development CV.
+    if "baseline_reference" in e["results"]:
+        baseline_test=engine.heldout_baseline_metric(e["results"]["task"],y_test,e["results"]["baseline_reference"])
+        metric_key="f1_macro" if e["results"]["task"]=="classification" else "mae"
+        metrics["baseline_test_metric"]=baseline_test
+        metrics["baseline_test_label"]="Macro F1" if e["results"]["task"]=="classification" else "MAE"
+        metrics["beats_heldout_baseline"]=bool(
+            metrics[metric_key]>baseline_test if e["results"]["task"]=="classification"
+            else metrics[metric_key]<baseline_test
+        )
+        metrics["baseline_test_reference"]="Majority class from development training labels" if e["results"]["task"]=="classification" else "Median of development training labels"
+    else:
+        metrics["baseline_test_note"]="Legacy experiment: no training-derived baseline was persisted. Not comparable."
     metrics["reliability"]=engine.reliability_report(e["results"],metrics,body.model_key)
-    if not storage.select_model(experiment_id,body.model_key,metrics):
+    # A bounded post-selection analysis of frozen holdout rows. Failure of an
+    # optional diagnostic must not erase a valid selected-model evaluation.
+    try:
+        metrics["feature_sensitivity"]=engine.bounded_feature_sensitivity(
+            model,x_test,y_test,e["results"]["task"])
+    except Exception:
+        # Optional diagnostic failure is logged locally and must not discard a
+        # successful one-time held-out evaluation or reveal private row values.
+        logging.getLogger(__name__).exception("Optional feature sensitivity calculation failed")
+        metrics["feature_sensitivity"]={
+            "status":"unavailable",
+            "reason":"Bounded sensitivity could not be calculated for this trained model."
+        }
+    try:
+        saved = storage.select_model(experiment_id,body.model_key,metrics)
+    except project_lifecycle.ProjectLifecycleError as exc:
+        raise HTTPException(status_code=exc.status,detail=str(exc)) from exc
+    except storage.ModelSelectionVersionConflict as exc:
+        raise HTTPException(status_code=409,detail=str(exc)) from exc
+    if not saved:
         raise HTTPException(status_code=409,detail="Model was already selected")
     return {"selected_model":body.model_key,"final_results":metrics}
 
@@ -276,9 +491,7 @@ def predict(experiment_id:str,body:PredictRequest):
     if not e["selected_model"]: raise HTTPException(status_code=409,detail="Select and evaluate a model first")
     if e["config"].get("quality_version",0)!=quality.current_version(e["project_id"]):
         raise HTTPException(status_code=409,detail="This model was trained on an older dataset version. Retrain before new predictions.")
-    artifact=storage.HOME/"models"/experiment_id/f"{e['selected_model']}.joblib"
-    if not artifact.is_file(): raise HTTPException(status_code=500,detail="Selected model artifact not found")
-    pipe=joblib.load(artifact)
+    pipe=verified_model_load(e,e["selected_model"])
     try:
         result=engine.predict_one(pipe,e["results"]["input_schema"],body.values)
         result["target"]=e["config"]["target"]
@@ -306,25 +519,23 @@ def get_quality(project_id: str):
     return quality_response(quality.snapshot, project_id)
 
 
+@app.get("/api/projects/{project_id}/quality/investigate")
+def investigate_quality_finding(project_id: str,issue_id: str = Query(min_length=1,max_length=128),
+                                expected_version: int = Query(ge=0)):
+    """Version-pinned read-only investigation with source-bound issue identity."""
+    return quality_response(quality_investigations.inspect,project_id,issue_id,expected_version)
+
+
 @app.get("/api/projects/{project_id}/quality/preview")
 def get_quality_preview(project_id: str, issue_id: str | None = None,
-                        offset: int = 0, limit: int = 20):
-    return quality_response(quality.preview, project_id, issue_id, offset, limit)
+                        offset: int = 0, limit: int = 20, expected_version: int | None = None):
+    return quality_response(quality.preview, project_id, issue_id, offset, limit, expected_version)
 
 
 @app.post("/api/projects/{project_id}/quality/export")
 def export_cleaned_dataset(project_id: str, body: data_exports.ExportRequest):
-    """Export a specific immutable version without changing the working dataset."""
-    try:
-        path, filename, count, version = data_exports.prepare(project_id, body)
-    except quality.QualityError as exc:
-        raise HTTPException(status_code=exc.status, detail=str(exc)) from exc
-    return FileResponse(
-        path, filename=filename,
-        media_type='text/csv' if body.format == 'csv' else 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        headers={'X-PilotODIN-Dataset-Version': str(version), 'X-PilotODIN-Exported-Rows': str(count),
-                 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff'},
-        background=BackgroundTask(path.unlink, missing_ok=True))
+    """The response owns preparation, verified streaming and terminal cleanup."""
+    return export_transfer.ExportResponse(project_id, body)
 
 
 @app.get("/api/projects/{project_id}/quality/history")
@@ -367,6 +578,285 @@ def restore_quality(project_id: str, body: QualityRestoreRequest):
 
 # Integrated macro workspace: read-only analysis from the currently approved
 # working version. Responses are intentionally bounded for browser safety.
+@app.get("/api/projects/{project_id}/columns/overview")
+def column_investigation_overview(project_id: str):
+    """Describe each stored dtype and analytical role in the CURRENT approved version."""
+    project_or_404(project_id)
+    frame, version = quality.current_data(project_id)
+    try:
+        return column_intelligence.overview(frame, version)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+def _require_p4_review_version_fresh(project_id: str, expected_version: int) -> None:
+    """Fail closed if a Quality revision commits during read-only target review.
+
+    Check the authoritative committed SQLite version again AFTER the bounded
+    scan. No write lock, new Quality state, data mutation or model fitting.
+    This narrows a stale-response window; it does not create an atomic snapshot
+    or replace the frontend's version-bound explicit target selection.
+    """
+    with storage.connect() as con:
+        row = con.execute(
+            "SELECT current_version FROM quality_state WHERE project_id=?",
+            (project_id,),
+        ).fetchone()
+    if row is None or int(row["current_version"]) != expected_version:
+        raise HTTPException(
+            status_code=409,
+            detail="Working dataset version changed during target review. Refresh and retry.",
+        )
+
+
+@app.get("/api/projects/{project_id}/target-opportunities")
+def target_opportunity_overview(
+    project_id: str, request: Request, expected_version: int = Query(ge=0)
+):
+    """Read-only structural screening; never selects a target or trains models."""
+    _local_request(request)
+    project_or_404(project_id)
+    frame, version = quality.current_data(project_id)
+    if version != expected_version:
+        raise HTTPException(
+            status_code=409,
+            detail="Working dataset version changed. Refresh target recommendations before selecting a target.",
+        )
+    try:
+        result = target_opportunities.recommend(
+            frame, version, storage.target_contexts(project_id, version)
+        )
+        _require_p4_review_version_fresh(project_id, version)
+        return result
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@app.get("/api/projects/{project_id}/target-opportunities/inspect")
+def inspect_manual_target_opportunity(
+    project_id: str, request: Request,
+    expected_version: int = Query(ge=0),
+    column: str = Query(min_length=1, max_length=200),
+):
+    """Exact project and Quality-version read-only, single-column review."""
+    _local_request(request)
+    project_or_404(project_id)
+    frame, version = quality.current_data(project_id)
+    if version != expected_version:
+        raise HTTPException(
+            status_code=409,
+            detail="Working dataset version changed. Refresh selected target evidence.",
+        )
+    try:
+        details = target_opportunities.inspect_manual_target(
+            frame, version, column, storage.target_contexts(project_id, version)
+        )
+        _require_p4_review_version_fresh(project_id, version)
+        return {"project_id": project_id, **details}
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+class TargetBusinessContextRequest(BaseModel):
+    expected_version: int = Field(ge=0)
+    target_column: str = Field(min_length=1, max_length=200)
+    outcome_definition: str = Field(min_length=10, max_length=600)
+    decision_action: str = Field(min_length=10, max_length=600)
+    prediction_moment: str = Field(min_length=10, max_length=500)
+    label_source: str = Field(min_length=10, max_length=500)
+
+
+@app.post("/api/projects/{project_id}/target-business-context")
+def save_target_business_context(
+    project_id: str, request: Request, body: TargetBusinessContextRequest
+):
+    """Persist only explicitly submitted user descriptions, NOT verified facts."""
+    _local_request(request)
+    project_or_404(project_id)
+    frame, version = quality.current_data(project_id)
+    if version != body.expected_version:
+        raise HTTPException(
+            status_code=409,
+            detail="Working dataset version changed. Review current columns before saving context.",
+        )
+    if body.target_column not in frame.columns:
+        raise HTTPException(status_code=422,detail="Target column is not in the approved dataset version")
+    fields = (
+        body.outcome_definition, body.decision_action,
+        body.prediction_moment, body.label_source,
+    )
+    if any(not value.strip() or len(value.strip()) < 10 for value in fields):
+        raise HTTPException(status_code=422,detail="Each context description must contain at least 10 non-space characters")
+    if not body.target_column.strip():
+        raise HTTPException(status_code=422,detail="Target column cannot be blank")
+    try:
+        return storage.save_target_context(
+            project_id, version, body.target_column, *(value.strip() for value in fields)
+        )
+    except storage.TargetContextConflict as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except project_lifecycle.ProjectLifecycleError as exc:
+        raise HTTPException(status_code=exc.status, detail=str(exc)) from exc
+
+
+class SemanticFieldDescription(BaseModel):
+    column: str = Field(min_length=1, max_length=256)
+    meaning: str = Field(min_length=10, max_length=300)
+
+
+class SemanticBusinessContextRequest(BaseModel):
+    expected_version: int = Field(ge=0)
+    domain_description: str = Field(default="", max_length=300)
+    record_grain_description: str = Field(default="", max_length=300)
+    field_definitions: list[SemanticFieldDescription] = Field(default_factory=list, max_length=8)
+
+
+@app.post("/api/projects/{project_id}/semantic-business-context")
+def save_semantic_business_context(
+    project_id: str, request: Request, body: SemanticBusinessContextRequest
+):
+    """Explicitly save user descriptions only, never verified business facts."""
+    _local_request(request)
+    project_or_404(project_id)
+    frame, version = quality.current_data(project_id)
+    if version != body.expected_version:
+        raise HTTPException(status_code=409,
+            detail="Working dataset version changed. Refresh before saving business context.")
+    if not frame.columns.is_unique:
+        raise HTTPException(status_code=422, detail="Expected distinct dataset column names")
+    domain = body.domain_description.strip()
+    grain = body.record_grain_description.strip()
+    if (domain and len(domain) < 10) or (grain and len(grain) < 10):
+        raise HTTPException(status_code=422, detail="Descriptions must contain at least 10 characters")
+    definitions = []
+    seen = set()
+    for item in body.field_definitions:
+        col, meaning = item.column.strip(), item.meaning.strip()
+        if col not in frame.columns or col in seen or len(meaning) < 10:
+            raise HTTPException(status_code=422, detail="Unknown, repeated or invalid field definition")
+        seen.add(col)
+        definitions.append({"column": col, "meaning": meaning})
+    if not (domain or grain or definitions):
+        raise HTTPException(status_code=422, detail="Enter at least one business description")
+    return storage.save_semantic_context(project_id, version, domain, grain, definitions)
+
+
+@app.get("/api/projects/{project_id}/semantics")
+def semantic_overview(
+    project_id: str, request: Request, expected_version: int = Query(ge=0)
+):
+    """Read-only semantic hypotheses for a caller-pinned approved working version."""
+    # CORS alone does not reject an external-origin API request. Reuse the
+    # existing local-origin/host guard before reading project metadata.
+    _local_request(request)
+    project_or_404(project_id)
+    frame, version = quality.current_data(project_id)
+    if version != expected_version:
+        raise HTTPException(
+            status_code=409,
+            detail="Working dataset changed. Refresh the data dictionary before reviewing semantics."
+        )
+    try:
+        result = semantic_profile.overview(frame, version)
+        result["user_context"] = storage.semantic_context(project_id, version)
+        return result
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+class HumanSemanticReviewRequest(BaseModel):
+    expected_version: int = Field(ge=0)
+    column: str = Field(min_length=1,max_length=256)
+    role: str = Field(min_length=1,max_length=96)
+    hypothesis_hash: str = Field(pattern=r"^[a-f0-9]{64}$")
+    decision: Literal["acceptable","needs_correction","cannot_assess"]
+    explanation: str = Field(default="",max_length=300)
+    expected_revision: int = Field(ge=0)
+
+
+def _current_human_review_candidates(project_id: str, expected_version: int):
+    project_or_404(project_id)
+    frame, version=quality.current_data(project_id)
+    if version != expected_version:
+        raise HTTPException(status_code=409,
+            detail="Working dataset changed. Refresh Your data before reviewing interpretations.")
+    if not frame.columns.is_unique:
+        raise HTTPException(status_code=422, detail="Expected distinct dataset column names")
+    return semantic_review.candidates(frame, version)
+
+
+@app.get("/api/projects/{project_id}/semantic-reviews")
+def list_human_semantic_reviews(
+    project_id: str, request: Request, expected_version: int = Query(ge=0)
+):
+    """Only current, explicitly human-reviewable unverified field hypotheses."""
+    _local_request(request)
+    candidates=_current_human_review_candidates(project_id,expected_version)
+    reviews=storage.human_reviews(project_id,expected_version)
+    result=[]
+    for item in candidates:
+        record=reviews.get((item["column"],item["role"]))
+        exact=record is not None and record["hypothesis_hash"] == item["hypothesis_hash"]
+        result.append({
+            **item,
+            "revision":0 if record is None else record["revision"],
+            "reassessment_required":record is not None and not exact,
+            "review":({
+                "decision":record["decision"],"explanation":record["explanation"],
+                "revision":record["revision"],"updated_at":record["updated_at"],
+                "review_state":"owner_attestation_not_independently_verified",
+            } if exact else None),
+        })
+    return {"version":expected_version,"candidates":result,
+            "note":"Human review is an owner assessment, not independently verified truth."}
+
+
+@app.post("/api/projects/{project_id}/semantic-reviews")
+def save_human_semantic_review(
+    project_id: str, request: Request, body: HumanSemanticReviewRequest
+):
+    """One explicitly chosen owner review; no automatic approvals or ML reuse."""
+    _local_request(request)
+    candidates=_current_human_review_candidates(project_id,body.expected_version)
+    column=body.column
+    role=body.role
+    matched=semantic_review.selected_candidate(
+        candidates,column,role,body.hypothesis_hash
+    )
+    if matched is None:
+        raise HTTPException(status_code=422,
+            detail="Field hypothesis changed or is unavailable. Refresh before reviewing.")
+    explanation=body.explanation.strip()
+    if body.decision == "needs_correction" and len(explanation) < 10:
+        raise HTTPException(status_code=422,
+            detail="Explain the needed correction in at least 10 characters.")
+    try:
+        return storage.save_human_review(
+            project_id,body.expected_version,column,role,body.hypothesis_hash,
+            body.decision,explanation,body.expected_revision,
+        )
+    except storage.HumanReviewConflict as exc:
+        raise HTTPException(status_code=409,detail=str(exc)) from exc
+    except project_lifecycle.ProjectLifecycleError as exc:
+        raise HTTPException(status_code=exc.status,detail=str(exc)) from exc
+
+
+@app.get("/api/projects/{project_id}/columns/detail")
+def column_investigation_detail(
+    project_id: str, name: str = Query(min_length=1, max_length=256),
+    expected_version: int = Query(ge=0)
+):
+    """Bounded on-demand examination; never silently cross a quality-version change."""
+    project_or_404(project_id)
+    frame, version = quality.current_data(project_id)
+    if version != expected_version:
+        raise HTTPException(status_code=409, detail="Working dataset changed. Refresh Your data before inspecting a column.")
+    try:
+        return column_intelligence.detail(frame, version, name)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
 @app.get("/api/projects/{project_id}/explore/overview")
 def explore_overview(project_id: str):
     project_or_404(project_id)
@@ -384,6 +874,151 @@ def explore_chart(project_id: str, x: str, y: str | None = None,
         raise HTTPException(status_code=422,detail=str(e)) from e
 
 
+@app.get("/api/projects/{project_id}/explore/correlation")
+def explore_correlation(project_id: str, method: str = "pearson"):
+    project_or_404(project_id)
+    try:
+        df, version=quality.current_data(project_id)
+        return analytics.correlation(df,version,method)
+    except ValueError as exc:
+        raise HTTPException(status_code=422,detail=str(exc)) from exc
+
+
+class ExploreFilterClause(BaseModel):
+    column: str = Field(min_length=1, max_length=256)
+    op: str
+    value: str | None = Field(default=None, max_length=256)
+    min: float | None = None
+    max: float | None = None
+
+
+class ExploreWorkbenchRequest(BaseModel):
+    expected_version: int = Field(ge=0)
+    filters: list[ExploreFilterClause] = Field(default_factory=list, max_length=4)
+    x: str = Field(min_length=1, max_length=256)
+    y: str | None = Field(default=None, max_length=256)
+    kind: str = "auto"
+    aggregation: str = "mean"
+    bins: int = Field(default=16, ge=4, le=40)
+    correlation_method: str = "pearson"
+    color_by: str | None = Field(default=None,max_length=256)
+
+
+@app.get("/api/projects/{project_id}/explore/filter-options")
+def explore_filter_options(project_id: str):
+    project_or_404(project_id)
+    frame, version = quality.current_data(project_id)
+    return explore_filters.catalog(frame, version)
+
+
+@app.post("/api/projects/{project_id}/explore/workbench")
+def explore_workbench(project_id: str, body: ExploreWorkbenchRequest):
+    """Calculate linked plots and counts on one immutable-version read snapshot."""
+    project_or_404(project_id)
+    frame, version = quality.current_data(project_id)
+    if version != body.expected_version:
+        raise HTTPException(status_code=409, detail="Working dataset version changed. Refresh Explore and review filters.")
+    try:
+        subset = explore_filters.apply(frame, [item.model_dump() for item in body.filters])
+        summary = analytics.describe(subset, version)
+        graph = None
+        chart_message = ""
+        if len(subset):
+            try:
+                graph = analytics.chart(subset, version, body.x, body.y, body.kind,
+                                        body.aggregation, body.bins, body.color_by)
+            except ValueError as exc:
+                # An otherwise valid selection may have no eligible numeric values.
+                if "requires numeric" not in str(exc).lower() and not any(
+                    text in str(exc).lower() for text in ("no numeric", "needs numeric",
+                      "must be numeric", "numeric values", "two numeric columns",
+                      "no chartable", "requires two", "empty")
+                ):
+                    raise
+                chart_message = str(exc)
+        else:
+            chart_message = "No rows match these filters. Adjust or clear them."
+        matrix = analytics.correlation(subset, version, body.correlation_method)
+        return {"version": version, "total_rows": int(len(frame)),
+                "filtered_rows": int(len(subset)), "filter_count": len(body.filters),
+                "overview": summary, "chart": graph, "chart_message": chart_message,
+                "correlation": matrix,
+                "note": "All displayed results use the same approved dataset version and active filters."}
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+
+class ExploreInspectSelection(BaseModel):
+    kind: str
+    label: str | None = Field(default=None, max_length=2048)
+    bin_index: int | None = Field(default=None, ge=0)
+    row_ref: int | None = Field(default=None, ge=0)
+    value: float | None = Field(default=None, allow_inf_nan=False)
+
+
+class ExploreInspectRequest(ExploreWorkbenchRequest):
+    selection: ExploreInspectSelection
+    offset: int = Field(default=0, ge=0, le=1_000_000)
+    limit: int = Field(default=12, ge=1, le=25)
+
+
+@app.post("/api/projects/{project_id}/explore/inspect")
+def explore_inspect(project_id: str, body: ExploreInspectRequest):
+    """Inspect only a visible chart selection under the same filters and version."""
+    project_or_404(project_id)
+    frame, version = quality.current_data(project_id)
+    if version != body.expected_version:
+        raise HTTPException(status_code=409, detail="Working dataset changed. Refresh Explore before inspecting records.")
+    try:
+        subset = explore_filters.apply(frame, [item.model_dump() for item in body.filters])
+        response = explore_inspector.inspect(
+            subset, version, x=body.x, y=body.y, kind=body.kind,
+            aggregation=body.aggregation, bins=body.bins,
+            selection=body.selection.model_dump(exclude_none=True),
+            offset=body.offset, limit=body.limit
+        )
+        return {**response, "total_filtered_rows": int(len(subset))}
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+class SaveExploreAnalysisRequest(ExploreWorkbenchRequest):
+    title: str = Field(min_length=4, max_length=120)
+
+
+def _saved_analysis_call(fn):
+    try:
+        return fn()
+    except saved_analyses.SavedAnalysisError as exc:
+        raise HTTPException(status_code=exc.status, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@app.get("/api/projects/{project_id}/explore/saved")
+def list_saved_explore_analyses(project_id: str):
+    project_or_404(project_id)
+    return _saved_analysis_call(lambda: saved_analyses.listing(project_id))
+
+
+@app.get("/api/projects/{project_id}/explore/saved/{snapshot_id}")
+def read_saved_explore_analysis(project_id: str, snapshot_id: str):
+    project_or_404(project_id)
+    return _saved_analysis_call(lambda: saved_analyses.load(project_id, snapshot_id))
+
+
+@app.post("/api/projects/{project_id}/explore/saved", status_code=201)
+def save_explore_analysis(project_id: str, body: SaveExploreAnalysisRequest):
+    project_or_404(project_id)
+    return _saved_analysis_call(lambda: saved_analyses.save(
+        project_id, title=body.title, expected_version=body.expected_version,
+        x=body.x, y=body.y, kind=body.kind, aggregation=body.aggregation,
+        bins=body.bins, correlation_method=body.correlation_method,
+        color_by=body.color_by, filters=[item.model_dump(exclude_none=True) for item in body.filters]
+    ))
+
+
 @app.get("/api/projects/{project_id}/explore/insights")
 def explore_insights(project_id: str):
     project_or_404(project_id)
@@ -391,13 +1026,25 @@ def explore_insights(project_id: str):
 
 
 @app.get("/api/projects/{project_id}/features")
-def feature_recommendations(project_id: str, target: str):
+def feature_recommendations(project_id: str, target: str,
+                            expected_version: int | None = Query(default=None, ge=0)):
+    """Reject stale advice when the displayed Quality revision differs."""
     project_or_404(project_id)
     try:
-        df,version=quality.current_data(project_id)
-        return analytics.recommend_features(df,target,version)
-    except ValueError as e:
-        raise HTTPException(status_code=422,detail=str(e)) from e
+        frame, version = quality.current_data(project_id)
+        if expected_version is not None and version != expected_version:
+            raise HTTPException(
+                status_code=409,
+                detail="Working dataset version changed. Refresh feature advice.",
+            )
+        result = analytics.recommend_features(frame, target, version)
+        if expected_version is not None:
+            _require_p4_review_version_fresh(project_id, version)
+        return result
+    except quality.QualityError as exc:
+        raise HTTPException(status_code=exc.status, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 class AskRequest(BaseModel):
@@ -417,6 +1064,7 @@ def ask_assistant(project_id: str, body: AskRequest):
 # v0.4: opt-in multi-provider intelligence. Keys never returned by API.
 # These routes are exclusively for the localhost user interface.
 class AISettingsRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True)
     cloud_enabled: bool = False
     share_aggregates: bool = False
     auto_insights: bool = False
@@ -430,9 +1078,17 @@ class AISettingsRequest(BaseModel):
     local_timeout_seconds: int = Field(default=60,ge=5,le=180)
 
 class AIKeyRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True)
     provider: str
     key: str | None = Field(default=None, max_length=512)
     remove: bool = False
+
+class LocalAnalysisFollowUp(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    project_id: str = Field(max_length=128)
+    dataset_version: int = Field(ge=0)
+    question: str = Field(min_length=1, max_length=900)
+
 
 class AIInsightRequest(BaseModel):
     context: str = 'assistant'
@@ -442,53 +1098,187 @@ class AIInsightRequest(BaseModel):
     prediction: dict | None = None
     deep: bool = False
     selected_provider: str | None = None
+    cloud_intent: StrictBool = False
+    cloud_consent_witness: StrictStr | None = Field(default=None, max_length=80)
+    expected_dataset_version: int | None = Field(default=None, ge=0, strict=True)
     continuation_text: str | None = Field(default=None, max_length=16000)
+    local_follow_up: LocalAnalysisFollowUp | None = None
+
+
+class AIConnectionRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True)
+    cloud_intent: StrictBool = False
+    cloud_consent_witness: StrictStr | None = Field(default=None, max_length=80)
 
 
 def _local_request(request:Request):
-    # CORS is not an authorization boundary. Forbid cross-site browsers from
-    # writing keys or triggering paid/external calls on localhost.
-    origin=request.headers.get('origin','')
-    allowed = (_allowed_desktop_origin(origin) if os.environ.get('PILOTODIN_DESKTOP_SESSION')
-               else bool(re.fullmatch(r'http://(?:localhost|127\.0\.0\.1):517[3-9]',origin)))
-    if origin and not allowed:
-        raise HTTPException(status_code=403,detail='AI controls are limited to the local PilotODIN interface')
-    host=request.url.hostname
-    if host not in ('localhost','127.0.0.1','testserver'):
-        raise HTTPException(status_code=403,detail='Local access only')
+    # Keep defense in depth for settings, resource and other local controls.
+    # Only the authenticated ASGI scope is authoritative, never Host or Origin alone.
+    if not request_authorized(getattr(request, "scope", {})):
+        raise HTTPException(status_code=401, detail="Local API request refused",
+                            headers={"Cache-Control": "no-store"})
+
+
+class ResourcePolicyRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    mode: Literal["adaptive", "low_memory", "performance"]
+
+
+@app.get('/api/resource/status')
+def resource_status(request: Request):
+    # Protect preference metadata with the same local-only trust boundary
+    # as the existing settings controls, including session-auth desktop.
+    _local_request(request)
+    owned = request.scope.get('pilotodin.owned_session')
+    if owned is None:
+        return resource_policy.status()
+    status = resource_policy.status()
+    status["workload"] = owned.coordinator.status()
+    return status
+
+
+@app.get('/api/resource/preflight')
+def resource_preflight(request: Request,
+                       operation: Literal["training", "local_inference"] = "local_inference",
+                       insight_context: str | None = None,
+                       selected_provider: str | None = None,
+                       investigation_autonomy: bool = False):
+    _local_request(request)
+    if operation == 'local_inference' and insight_context is not None:
+        skip = ai_provider.insight_bundled_launch_skip(insight_context, selected_provider)
+        if skip:
+            return {'decision': 'skip', 'code': skip}
+    if operation == 'local_inference' and investigation_autonomy and not ai_provider.offline_inference_enabled():
+        return {'decision': 'skip', 'code': 'local_model_disabled'}
+    # Read-only status. The decision is re-checked server-side before new
+    # training/model generation; a client report is never authorization.
+    admission = resource_policy.admit_new_work(operation)
+    if operation == 'local_inference' and insight_context == 'assistant' and selected_provider == 'ollama':
+        resource_policy.record_r03_event('desktop_preflight', **admission)
+    return admission
+
+
+@app.put('/api/resource/policy')
+def update_resource_policy(body: ResourcePolicyRequest, request: Request):
+    _local_request(request)
+    try:
+        resource_policy.save_policy(body.mode)
+    except resource_policy.settings_storage.SettingsWriteError as exc:
+        # An acknowledged replace may have occurred before readback failed.
+        # Do not promise rollback or invite an automatic retry.
+        if exc.code == "settings_commit_uncertain":
+            message = "Resource settings save outcome is uncertain. Refresh status before any further save."
+        elif exc.code == "settings_not_committed_stage_retained":
+            message = "Resource settings were not committed. A temporary file requires recovery."
+        else:
+            message = "Resource settings were not committed."
+        raise HTTPException(status_code=503, detail={"code": exc.code, "message": message}) from None
+    except OSError:
+        raise HTTPException(status_code=503, detail={
+            "code": "settings_unavailable",
+            "message": "Resource settings unavailable or unsafe. Existing preferences require review."
+        }) from None
+    return resource_policy.status()
 
 
 @app.get('/api/ai/settings')
-def ai_settings(request:Request):
+def ai_settings(request:Request,response:Response):
     _local_request(request)
+    response.headers["Cache-Control"]="no-store"
     return ai_provider.config_status()
+
+
+def _settings_mutation_error(exc):
+    code=exc.code if isinstance(exc,ai_provider.settings_storage.SettingsWriteError) else "settings_unavailable"
+    message={
+        "settings_commit_uncertain":"Save outcome uncertain. Cloud is inhibited for this session. Review status before further changes.",
+        "settings_not_committed":"Settings were not committed. Cloud is inhibited for this session.",
+        "settings_not_committed_stage_retained":"Settings were not committed. Temporary file requires recovery. Cloud is inhibited for this session.",
+        "settings_unavailable":"Settings or credential storage unavailable or unsafe. Review existing settings."
+    }.get(code,"Settings unavailable")
+    return HTTPException(status_code=503,detail={"code":code,"message":message},
+                         headers={"Cache-Control":"no-store"})
 
 
 @app.put('/api/ai/settings')
 def save_ai_settings(body:AISettingsRequest,request:Request):
     _local_request(request)
     try:return ai_provider.update_settings(**body.model_dump())
-    except ValueError as e:raise HTTPException(status_code=422,detail=str(e)) from e
+    except ValueError:raise HTTPException(status_code=422,detail='Invalid AI settings') from None
+    except OSError as exc:raise _settings_mutation_error(exc) from None
 
 
 @app.put('/api/ai/key')
 def save_ai_key(body:AIKeyRequest,request:Request):
     _local_request(request)
     try:return ai_provider.set_key(body.provider,body.key,body.remove)
-    except ValueError as e:raise HTTPException(status_code=422,detail=str(e)) from e
-    except OSError as e:raise HTTPException(status_code=500,detail='Secure credential storage unavailable') from e
+    except ValueError:raise HTTPException(status_code=422,detail='Invalid credential operation') from None
+    except OSError as exc:raise _settings_mutation_error(exc) from None
+
+
+def _insight_context_current(project_id, version):
+    # current_version rejects archived/deleted projects; uncertain reads fail closed.
+    try:
+        return quality.current_version(project_id)==version
+    except Exception:
+        return False
+
+
+def _require_reviewed_cloud_version(project_id, body, snapshot_version=None):
+    """Fence explicit named cloud requests to the reviewed working version.
+
+    Legacy no-witness callers retain compatibility; a supplied version is
+    always enforced for explicit named cloud. Never use client data as the
+    authoritative snapshot. Call within the existing DATA boundary.
+    """
+    expected = body.expected_dataset_version
+    if (body.cloud_intent is not True or body.selected_provider not in ai_provider.PROVIDERS
+            or expected is None):
+        return
+    if ((snapshot_version is not None and snapshot_version != expected)
+            or not _insight_context_current(project_id, expected)):
+        raise HTTPException(status_code=409, detail='Dataset version changed; review and confirm a new cloud request',
+                            headers={"Cache-Control":"no-store"})
 
 
 @app.post('/api/projects/{project_id}/ai/insight')
 def ai_insight(project_id:str,body:AIInsightRequest,request:Request):
     _local_request(request)
+    # Bind observed saved consent before either composition prepares project
+    # data. Compare under the settings lock; never accept a client revision as
+    # authoritative. Older explicit API clients may omit the witness.
+    consent_revision=None
+    if body.cloud_intent is True and body.selected_provider in ai_provider.PROVIDERS:
+        consent_revision=ai_provider.resolve_cloud_consent_revision(body.cloud_consent_witness)
+        if consent_revision is None:
+            raise HTTPException(status_code=409,detail='Cloud permission changed; review saved settings and confirm a new request',
+                                headers={"Cache-Control":"no-store"})
+        if body.cloud_consent_witness is not None and body.expected_dataset_version is None:
+            raise HTTPException(status_code=422,detail='Reviewed dataset version required for witnessed cloud request',
+                                headers={"Cache-Control":"no-store"})
+    owned = request.scope.get('pilotodin.owned_session')
+    if owned is not None:
+        return _owned_ai_insight(project_id, body, owned, consent_revision)
     project_or_404(project_id)
     if body.context not in ai_context.TASKS:
         raise HTTPException(status_code=422,detail='Unsupported workspace context')
     try:
-        df,version=quality.current_data(project_id)
         question=body.question.strip() or ai_context.TASKS[body.context]
-        context=ai_context.build(project_id,body.context,question,body.target,body.experiment_id,body.prediction)
+        if body.context == 'assistant' and body.selected_provider == 'local':
+            df,version=quality.current_data(project_id)
+            previous = (verified_answers.FollowUp(**body.local_follow_up.model_dump())
+                        if body.local_follow_up and not body.continuation_text else None)
+            verified = verified_answers.answer(df, version, project_id, question, previous)
+            return {**ai_provider.local_rules_result(verified['answer'], reason='Verified local analytics selected'),
+                    **verified, 'dataset_version':version, 'privacy':'summary_only_no_rows',
+                    'scope':body.context, 'investigation':None, 'investigation_steps':[],
+                    'limitations':'Facts describe the current working dataset or saved experiment evidence.'}
+        _require_reviewed_cloud_version(project_id, body)
+        working_data = quality.current_data_with_findings(project_id)
+        df, version, _ = working_data
+        _require_reviewed_cloud_version(project_id, body, version)
+        context=ai_context.build(project_id,body.context,question,body.target,body.experiment_id,body.prediction,
+                                 working_data=working_data)
         local=analytics.answer(df,version,question[:350])['answer'] if body.context=='assistant' else ai_context.local_advice(context,body.context)
         plan=None if body.continuation_text else analytics.plan_investigation(df,version,question,body.context)
         if plan:
@@ -497,7 +1287,24 @@ def ai_insight(project_id:str,body:AIInsightRequest,request:Request):
             local=(f"Inspected {plan['local_report']['missing_rows']} missing values in {plan['column']}. "
                    f"Compared the available numeric and categorical groups; see the verified investigation below. "
                    "No treatment has been applied. Observed associations do not prove the missingness mechanism.")
-        result=ai_provider.respond(context,body.context,question,local,body.deep,body.selected_provider,body.continuation_text)
+        result=ai_provider.respond(context,body.context,question,local,body.deep,body.selected_provider,body.continuation_text,
+                                   cloud_intent=body.cloud_intent,
+                                   still_current=lambda:_insight_context_current(project_id,version),
+                                   expected_revision=consent_revision)
+        if body.context == 'assistant' and result.get('fallback') and plan is None and not body.continuation_text:
+            verified = verified_answers.answer(df, version, project_id, question)
+            if verified['analysis'] is not None:
+                result = {**result, 'answer': verified['answer'], 'facts': verified['facts'],
+                          'analysis': verified['analysis']}
+        if body.context == 'assistant' and body.selected_provider == 'ollama':
+            resource_policy.record_r03_event(
+                'insight_result', source=result.get('source'), provider=result.get('provider'),
+                fallback=result.get('fallback'), local_status=result.get('local_status'),
+            )
+        if result.get('source')=='cloud_llm' and (
+                not _insight_context_current(project_id,version)
+                or not ai_provider.cloud_consent_current(consent_revision)):
+            raise HTTPException(status_code=409,detail='Insight became stale; request a new result')
         return {**result,'dataset_version':version,'privacy':'summary_only_no_rows',
                 'scope':body.context,'investigation':plan['local_report'] if plan else None,
                 'investigation_steps':plan['steps'] if plan else [],
@@ -514,22 +1321,31 @@ def local_ai_status(request:Request):
 
 @app.post('/api/ai/verify-connected')
 def verify_ai_providers(request:Request):
-    """Bounded health check for opt-in configured providers, never dataset rows."""
+    """Passive cached status, never an external request."""
     _local_request(request)
-    return ai_provider.verify_connected()
+    return ai_provider.owned_provider_status()
 
 
 @app.post('/api/ai/test/{provider}')
-def test_ai_provider(provider:str,request:Request):
+def test_ai_provider(provider:str,request:Request,body:AIConnectionRequest|None=None):
     _local_request(request)
-    try:return ai_provider.test_connection(provider)
-    except ValueError as exc:raise HTTPException(status_code=422,detail=str(exc)) from exc
+    if provider not in ai_provider.PROVIDERS:
+        raise HTTPException(status_code=422,detail='Unknown AI provider')
+    if body is None or body.cloud_intent is not True:
+        return {'provider':provider,'status':'explicit_intent_required'}
+    revision=ai_provider.resolve_cloud_consent_revision(body.cloud_consent_witness)
+    if revision is None:
+        raise HTTPException(status_code=409,detail='Cloud permission changed; review saved settings and confirm a new request',
+                            headers={"Cache-Control":"no-store"})
+    return ai_provider.owned_test_connection(provider,expected_revision=revision)
 
 @app.get('/api/projects/{project_id}/live-profile')
 def live_profile(project_id:str):
     """Profile the CURRENT approved working version, not stale upload metadata."""
     p=project_or_404(project_id)
-    df,version=quality.current_data(project_id)
+    # Preserve the original source and versioned approvals on a broken path.
+    # QualityError carries a safe 409 message rather than an unhandled 500.
+    df,version=quality_response(quality.current_data,project_id)
     return {'version':version,'profile':engine.profile(df,p['filename'])}
 
 # Persistent investigation objects are a v1 design spike, separate from the
@@ -558,7 +1374,12 @@ def create_canvas_investigation(project_id: str,body:NewCanvasInvestigationReque
     objective = body.objective.strip()
     if len(objective) < 8:
         raise HTTPException(status_code=422,detail='Provide a meaningful investigation objective')
-    return investigations.create(project_id,objective)
+    try:
+        return investigations.create(project_id,objective)
+    except project_lifecycle.ProjectLifecycleError as exc:
+        raise HTTPException(status_code=exc.status,detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=409,detail=str(exc)) from exc
 
 @app.get('/api/investigations/{investigation_id}')
 def get_canvas_investigation(investigation_id: str):
@@ -574,6 +1395,8 @@ def run_canvas_tool(investigation_id: str,body:CanvasToolRunRequest):
         raise HTTPException(status_code=404,detail=str(e)) from e
     except RuntimeError as e:
         raise HTTPException(status_code=409,detail=str(e)) from e
+    except project_lifecycle.ProjectLifecycleError as e:
+        raise HTTPException(status_code=e.status,detail=str(e)) from e
     except ValueError as e:
         raise HTTPException(status_code=422,detail=str(e)) from e
 
@@ -595,7 +1418,15 @@ def get_autonomous_run(investigation_id: str):
     return autonomy.for_investigation(investigation_id)
 
 @app.post('/api/investigations/{investigation_id}/autonomy/start',status_code=202)
-def start_autonomous_run(investigation_id: str,body:AutonomousStartRequest):
+def start_autonomous_run(investigation_id: str,body:AutonomousStartRequest,request:Request=None):
+    owned = request.scope.get('pilotodin.owned_session') if request is not None else None
+    if owned is not None:
+        if not ai_provider.offline_inference_enabled():
+            raise HTTPException(status_code=403,detail='Enable local inference before starting autonomy')
+        try:
+            return owned.autonomy.start(investigation_id,max_steps=body.max_steps)
+        except RuntimeError as exc:
+            raise HTTPException(status_code=409,detail=str(exc)) from exc
     try:return autonomy.start(investigation_id,max_steps=body.max_steps)
     except KeyError as exc:raise HTTPException(status_code=404,detail=str(exc)) from exc
     except PermissionError as exc:raise HTTPException(status_code=403,detail=str(exc)) from exc
@@ -603,7 +1434,15 @@ def start_autonomous_run(investigation_id: str,body:AutonomousStartRequest):
     except ValueError as exc:raise HTTPException(status_code=422,detail=str(exc)) from exc
 
 @app.post('/api/investigations/{investigation_id}/autonomy/resume',status_code=202)
-def resume_autonomous_run(investigation_id: str):
+def resume_autonomous_run(investigation_id: str,request:Request=None):
+    owned = request.scope.get('pilotodin.owned_session') if request is not None else None
+    if owned is not None:
+        if not ai_provider.offline_inference_enabled():
+            raise HTTPException(status_code=403,detail='Enable local inference before resuming autonomy')
+        try:
+            return owned.autonomy.resume(investigation_id)
+        except RuntimeError as exc:
+            raise HTTPException(status_code=409,detail=str(exc)) from exc
     try:return autonomy.resume(investigation_id)
     except KeyError as exc:raise HTTPException(status_code=404,detail=str(exc)) from exc
     except RuntimeError as exc:raise HTTPException(status_code=409,detail=str(exc)) from exc
@@ -667,6 +1506,18 @@ def _report_call(operation):
 def list_available_report_evidence(project_id: str):
     return _report_call(lambda: reports.evidence_options(project_id))
 
+
+@app.get('/api/projects/{project_id}/report-evidence/{evidence_id}/preview')
+def preview_verified_report_evidence(project_id: str,evidence_id: str):
+    """Read-only bounded aggregates; never write a report or return raw rows."""
+    return _report_call(lambda: reports.evidence_preview(project_id,evidence_id))
+
+
+@app.post('/api/projects/{project_id}/report-quality',status_code=201)
+def capture_quality_report_evidence(project_id: str,body: QualityVersionRequest):
+    """Explicit, read-only capture; does not approve or apply any correction."""
+    return _report_call(lambda: reports.capture_quality(project_id,body.expected_version))
+
 @app.get('/api/projects/{project_id}/reports')
 def list_saved_reports(project_id: str):
     return _report_call(lambda: reports.listing(project_id))
@@ -680,16 +1531,20 @@ def read_saved_report(report_id: str,revision: int | None = Query(default=None,g
     return _report_call(lambda: reports.load(report_id,revision))
 
 @app.post('/api/reports/{report_id}/revisions',status_code=201)
-def revise_saved_report(report_id: str,body:ReportSaveRequest):
+def revise_saved_report(report_id: str,body:ReportSaveRequest,response:Response):
     current=_report_call(lambda: reports.load(report_id))
-    return _report_call(lambda: reports.save(current['project_id'],body.title,body.narrative,body.evidence_ids,report_id))
+    saved=_report_call(lambda: reports.save(current['project_id'],body.title,body.narrative,body.evidence_ids,report_id))
+    if saved.get('unchanged'):
+        response.status_code=200  # No new immutable revision was created.
+    return saved
 
 @app.get('/api/reports/{report_id}/export/{format}')
 def export_saved_report(report_id: str,format: str,revision: int | None = Query(default=None,ge=1)):
     if format not in ('html','pdf'):
         raise HTTPException(status_code=404,detail='Choose html or pdf')
     current=_report_call(lambda: reports.load(report_id,revision))
-    content=reports.render_html(current) if format=='html' else reports.render_pdf(current)
+    content=(reports.render_html(current) if format=='html' else
+             _report_call(lambda: reports.render_pdf_for_export(current)))
     mime='text/html; charset=utf-8' if format=='html' else 'application/pdf'
     fname=f"pilotodin_report_{report_id[:12]}_rev{current['revision']}.{format}"
     return Response(content=content,media_type=mime,headers={
@@ -697,3 +1552,112 @@ def export_saved_report(report_id: str,format: str,revision: int | None = Query(
         'X-Content-Type-Options':'nosniff',
         'Cache-Control':'no-store'
     })
+
+
+def _owned_ai_insight(project_id, body, owned, consent_revision):
+    """Actual direct insight path: DATA preparation, bounded host stage,
+    then version validation. No dataframe retained across inference."""
+    try:
+        from .resource_autonomy import ResourceDeferred, ContextLimit, bounded_context_bytes
+    except ImportError:
+        from resource_autonomy import ResourceDeferred, ContextLimit, bounded_context_bytes
+    stages = owned.autonomy.stages
+
+    def prepare():
+        try:
+            project_or_404(project_id)
+            if body.context not in ai_context.TASKS:
+                raise HTTPException(status_code=422,detail='Unsupported workspace context')
+            question = body.question.strip() or ai_context.TASKS[body.context]
+            if body.context == 'assistant' and body.selected_provider == 'local':
+                df, version = quality.current_data(project_id)
+                previous = (verified_answers.FollowUp(**body.local_follow_up.model_dump())
+                            if body.local_follow_up and not body.continuation_text else None)
+                verified = verified_answers.answer(df,version,project_id,question,previous)
+                return {"direct": {**ai_provider.local_rules_result(verified['answer'],
+                        reason='Verified local analytics selected'), **verified,
+                        'dataset_version':version, 'privacy':'summary_only_no_rows',
+                        'scope':body.context,'investigation':None,'investigation_steps':[],
+                        'limitations':'Facts describe the current working dataset or saved experiment evidence.'}}, None
+            _require_reviewed_cloud_version(project_id, body)
+            working = quality.current_data_with_findings(project_id)
+            df,version,_ = working
+            _require_reviewed_cloud_version(project_id, body, version)
+            context = ai_context.build(project_id,body.context,question,body.target,
+                        body.experiment_id,body.prediction,working_data=working)
+            local = (analytics.answer(df,version,question[:350])['answer']
+                     if body.context == 'assistant' else ai_context.local_advice(context,body.context))
+            plan = None if body.continuation_text else analytics.plan_investigation(df,version,question,body.context)
+            if plan:
+                context['verified_investigation'] = plan['safe_context']
+                local = (f"Inspected {plan['local_report']['missing_rows']} missing values in {plan['column']}. "
+                         "Compared available groups; no treatment applied. Associations do not prove mechanism.")
+            fallback = None
+            if body.context == 'assistant' and plan is None and not body.continuation_text:
+                verified = verified_answers.answer(df,version,project_id,question)
+                if verified['analysis'] is not None:
+                    fallback = {k:verified[k] for k in ('answer','facts','analysis')}
+            # Encode only verified structural context, not dataframe/rows.
+            payload = bounded_context_bytes({
+                "project_id":project_id,"dataset_version":version,"context":context,
+                "task":body.context,"question":question,"local":local,"deep":body.deep,
+                "selected_provider":body.selected_provider,"cloud_intent":body.cloud_intent,
+                "consent_revision":consent_revision,
+                "continuation_text":body.continuation_text})
+            # Roundtrip caps the retained evidence as well as the host context.
+            tail = json.loads(bounded_context_bytes({
+                "fallback":fallback,"investigation":plan['local_report'] if plan else None,
+                "investigation_steps":plan['steps'] if plan else []}))
+            return {"payload":payload,"version":version,"tail":tail},None
+        except HTTPException as exc:
+            return None,(exc.status_code,exc.detail)
+        except (ValueError,quality.QualityError,ContextLimit) as exc:
+            return None,(422,str(exc))
+
+    try:
+        prepared, refusal = stages.data(prepare)
+        if refusal is not None:
+            raise HTTPException(status_code=refusal[0],detail=refusal[1])
+        if "direct" in prepared:
+            return prepared["direct"]
+        version = prepared["version"]
+        if not _insight_context_current(project_id,version):
+            raise HTTPException(status_code=409,detail='Dataset version changed before inference')
+        if owned.coordinator.status()["stopping"]:
+            raise ResourceDeferred("shutting_down")
+        # Trusted, required adapter; never invoke legacy respond as fallback.
+        if consent_revision is not None and not ai_provider.cloud_consent_current(consent_revision):
+            result = ai_provider.local_rules_result(json.loads(prepared["payload"])["local"],
+                reason="Cloud consent changed; verified deterministic analysis used")
+        else:
+            result = owned.insight(prepared["payload"])
+        if type(result) is not dict:
+            raise RuntimeError("Owned insight returned an invalid result")
+        result = json.loads(bounded_context_bytes(result))
+        if owned.coordinator.status()["stopping"] or not _insight_context_current(project_id,version):
+            raise HTTPException(status_code=409,detail='Insight became stale; request a new result')
+        tail=prepared["tail"]
+        if result.get("fallback") and tail["fallback"] is not None:
+            result={**result,**tail["fallback"]}
+        if result.get("source")=="cloud_llm" and not ai_provider.cloud_consent_current(consent_revision):
+            raise HTTPException(status_code=409,detail='Insight became stale; request a new result')
+        return {**result,'dataset_version':version,'privacy':'summary_only_no_rows',
+                'scope':body.context,'investigation':tail["investigation"],
+                'investigation_steps':tail["investigation_steps"],
+                'limitations':'AI suggestions are advisory; verified local engines perform calculations and modifications.'}
+    except ResourceDeferred as exc:
+        raise HTTPException(status_code=503,detail={"code":str(exc),"operation":"local_inference",
+                             "retryable":True}) from exc
+    except ContextLimit as exc:
+        raise HTTPException(status_code=422,detail='Insight exceeds bounded context limit') from exc
+
+
+def build_owned_app(coordinator, autonomy_owner, owned_insight):
+    """Desktop composition target. Original app remains unchanged until
+    the native launch/control path is reviewed and activated together."""
+    try:
+        from .resource_session import bind_product_routes
+    except ImportError:
+        from resource_session import bind_product_routes
+    return bind_product_routes(app, coordinator, autonomy_owner, owned_insight,
+                               upload_endpoint=create_project, lifespan=_lifespan)

@@ -1,0 +1,26 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "pilotODIN-P4-Isolated-Native-Dev",
+  "identifier": "com.pilotodin.p4isolatednativedev",
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "PilotODIN P4 - ISOLATED NATIVE DEV (UNVERIFIED)",
+        "dragDropEnabled": false,
+        "width": 1380,
+        "height": 860,
+        "minWidth": 1010,
+        "minHeight": 680
+      }
+    ]
+  },
+  "bundle": {
+    "active": false,
+    "externalBin": [],
+    "resources": []
+  },
+  "build": {
+    "beforeDevCommand": "npm run dev"
+  }
+}

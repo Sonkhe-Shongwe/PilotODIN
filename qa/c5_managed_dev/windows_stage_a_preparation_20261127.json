@@ -1,0 +1,230 @@
+{
+  "schema": "C5_STANDALONE_WINDOWS_A_PREPARATION_V1",
+  "status": "DISARMED_NOT_EXECUTION_READY",
+  "owner_approval_scope": "PREPARATION_AND_SEQUENCING_ONLY",
+  "source_candidate": "0c1590f57c4d62d58dca482c03ac9948009e90a4",
+  "source_tree": "d0c1277d19534b10fc593521d23bc5d80f631699",
+  "historical_reduced_manifest_blob": "3e9d24a30bb5c98e30a927367953fb3d96da676f",
+  "source_pins": {
+    "qa/c5_managed_dev/python_stage.py": "7c7b31dcedfb43892c6117bfbc7f497241fd91c9",
+    "qa/c5_managed_dev/validation_coordinator.py": "db5c0a3720056a513d127e75841f92daeb433cf3",
+    "qa/c5_managed_dev/validation_witnesses.py": "1d09870057c62b9b3372da6e76ba617e8a85f70c",
+    "qa/c5_managed_dev/pytest_receipt.py": "99c4b02e1242dcccfa32f241deeb7a315c090c89",
+    "qa/c5_managed_dev/raster_rgb.py": "990c452069a42f3805a7ab40962efe2581224709",
+    "tests/__init__.py": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+    "tests/conftest.py": "72137a41fda857b6188946bdc000668d26775f9a",
+    "tests/test_c5_pdfium_inspection_equivalence.py": "60fd899c00d04a8dd434579fda3d9adf2b867a24",
+    "tests/c5_pdfium_fixture_helpers.py": "15b6e000fb182034fdf174da8d3070bd9bf6a522",
+    "tools/pdf_test_inspection.py": "f37d8569b0275351a661517e12e1e09a125ddade"
+  },
+  "profile": "windows-x64-cp311-source-test",
+  "runner": "windows-2022",
+  "python_required_abi": "cp311-win_amd64",
+  "python_prior_patch": "3.11.9",
+  "python_qualified_patch": null,
+  "bootstrap_lock": {
+    "path": "qa/c5_managed_dev/windows_stage_a_pip_20261127.txt",
+    "blob": "77d13cf4057910196c1fd326791dc50cc41666ca"
+  },
+  "stage_a_lock": {
+    "path": "qa/c5_managed_dev/windows_stage_a_smoke_20261127.txt",
+    "blob": "25a39e14e980fd93b64f4b2505a5dbc836eb45d0"
+  },
+  "inputs": [
+    {
+      "filename": "pip-26.3-py3-none-any.whl",
+      "bytes": 1950951,
+      "sha256": "f3b60b20ffaadd4415ed7957212a38ac63fa4c5fa375bd0f4a797777940fad13",
+      "url": "https://files.pythonhosted.org/packages/07/25/ee8c38ae72d66b844ce8eb9711ba905dba21ca1a8a0c960057c41cd23337/pip-26.3-py3-none-any.whl",
+      "version": "26.3",
+      "use_status": "PRIMARY_AND_VENDOR_NOTICE_CONFIRMATION_PENDING"
+    },
+    {
+      "name": "colorama",
+      "version": "0.4.6",
+      "filename": "colorama-0.4.6-py2.py3-none-any.whl",
+      "bytes": 25335,
+      "sha256": "4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6",
+      "metadata_sha256": "7baed29eb50c3b29bdb33ff84e3177bf1bc05784f7685ecdcaa4471c7dd810cc",
+      "url": "https://files.pythonhosted.org/packages/d1/d6/3965ed04c63042e047cb6a3e6ed1a63a35087b6a609aa3a15ed8ac56c221/colorama-0.4.6-py2.py3-none-any.whl",
+      "license_expression": null,
+      "license_files": [
+        "LICENSE.txt"
+      ],
+      "use_status": "PRIMARY_TERMS_REVIEWED_ACTUAL_NOTICE_AND_SECURITY_PENDING"
+    },
+    {
+      "name": "iniconfig",
+      "version": "2.3.1",
+      "filename": "iniconfig-2.3.1-py3-none-any.whl",
+      "bytes": 7552,
+      "sha256": "9121e2c1fdb355232495be3194c8dfe87ccc2d5dee45947b78e68f499790d7a7",
+      "metadata_sha256": "47c2c35d936f5c649d8074c6464719a42966a67b5cebad01e3e5784cf090cfb6",
+      "url": "https://files.pythonhosted.org/packages/56/43/4ca9e49d27a1fcf6bece6f6aec0ea46bb9112489b93d4b688fb415457bdb/iniconfig-2.3.1-py3-none-any.whl",
+      "license_expression": "MIT",
+      "license_files": [
+        "LICENSE"
+      ],
+      "use_status": "PRIMARY_TERMS_REVIEWED_ACTUAL_NOTICE_AND_SECURITY_PENDING"
+    },
+    {
+      "name": "packaging",
+      "version": "26.4",
+      "filename": "packaging-26.4-py3-none-any.whl",
+      "bytes": 140049,
+      "sha256": "81383611a09c1bc0b08b76e0fd5829d7c6824c65b27a6aee339da133f4233ea2",
+      "metadata_sha256": "f2fe7a3440ed0e67f703ec9cf0275c9f9b27be0eae3844258606caa7b0c56d62",
+      "url": "https://files.pythonhosted.org/packages/ba/7b/5504f91c9c2733f693d7759e50ede5d27119d4da7e5836c46d3b5ff81d56/packaging-26.4-py3-none-any.whl",
+      "license_expression": "Apache-2.0 OR BSD-2-Clause",
+      "license_files": [
+        "LICENSE",
+        "LICENSE.APACHE",
+        "LICENSE.BSD"
+      ],
+      "use_status": "PRIMARY_TERMS_REVIEWED_ACTUAL_NOTICE_AND_SECURITY_PENDING"
+    },
+    {
+      "name": "pluggy",
+      "version": "1.7.0",
+      "filename": "pluggy-1.7.0-py3-none-any.whl",
+      "bytes": 27082,
+      "sha256": "7dd7b0d8832ba3cb632c306926ded123429211b83641b35dc5c41ad2d34f9bec",
+      "metadata_sha256": "20ac8237e37f1d6e7e75500cd663015177ba80c1a1a595ff6bae18a539ff8a2c",
+      "url": "https://files.pythonhosted.org/packages/40/9e/2b38731e0fc536806f16490e1a12d7f0dc2a1235aa8cc07bcc75416a7daa/pluggy-1.7.0-py3-none-any.whl",
+      "license_expression": null,
+      "license_files": [
+        "LICENSE"
+      ],
+      "use_status": "PRIMARY_TERMS_REVIEWED_ACTUAL_NOTICE_AND_SECURITY_PENDING"
+    },
+    {
+      "name": "pygments",
+      "version": "2.21.0",
+      "filename": "pygments-2.21.0-py3-none-any.whl",
+      "bytes": 1250147,
+      "sha256": "2363c69b61c4a97c838da3b130dcd6468f4848992b21a82f2a63ec34377137d9",
+      "metadata_sha256": "1dde075570136774c706bf0009183a793fe0ee262e4a5590cc6eff8453eedd43",
+      "url": "https://files.pythonhosted.org/packages/71/46/17f022dd3e953bf20a04a028a21ec746d942f8d2af30fa0f124fa0e6a684/pygments-2.21.0-py3-none-any.whl",
+      "license_expression": "BSD-2-Clause",
+      "license_files": [
+        "AUTHORS",
+        "LICENSE"
+      ],
+      "use_status": "PRIMARY_TERMS_REVIEWED_ACTUAL_NOTICE_AND_SECURITY_PENDING"
+    },
+    {
+      "kind": "wheel",
+      "name": "pypdfium2",
+      "version": "5.15.2",
+      "filename": "pypdfium2-5.15.2-py3-none-win_amd64.whl",
+      "bytes": 4187589,
+      "sha256": "74d1bace34fb01c660d0b64344d5a4b7d276942b7c6623c88ab59ea21c5acfbd",
+      "metadata_sha256": "e0ce0a92c2cd69ceff1ef581fa19f83a59e9fbbc68b3f71463fabc0077e69650",
+      "url": "https://files.pythonhosted.org/packages/fe/7f/8aa446529fa14523e5c18f89e823afc95526689f76a75efe68a82a10d850/pypdfium2-5.15.2-py3-none-win_amd64.whl",
+      "stage": "A",
+      "license_expression": null,
+      "licence_status": "CONDITIONAL_TEST_ONLY_NATIVE_COMPONENT_REVIEW",
+      "native": [
+        {
+          "bytes": 7835648,
+          "path": "pypdfium2_raw/pdfium.dll",
+          "sha256": "42d87f68957d745ce9377dfb1d8d63691e19082a7ec29ff421d22779d3142b29"
+        }
+      ],
+      "use_status": "EXACT_WINDOWS_BUILD_LINKAGE_RIGHTS_SECURITY_PENDING",
+      "publisher_evidence": {
+        "release": "5.15.2",
+        "release_source": "a618c900bc03ab071e5ee8aea3c196a935cfa8a7",
+        "immutable": true,
+        "github_asset_id": 727985923,
+        "github_sha256": "74d1bace34fb01c660d0b64344d5a4b7d276942b7c6623c88ab59ea21c5acfbd",
+        "github_bytes": 4187589,
+        "build_strategy": "SBLD",
+        "status": "EXACT_RELEASE_STRATEGY_AND_ASSET_IDENTITY_METADATA_MATCH; ACTUAL_LINKAGE_RIGHTS_SECURITY_PENDING"
+      }
+    },
+    {
+      "name": "pytest",
+      "version": "9.2.0",
+      "filename": "pytest-9.2.0-py3-none-any.whl",
+      "bytes": 411776,
+      "sha256": "07acdcf88ec174f907dc01af70bf52d49b014bbab03faeeade31c96b18c2e588",
+      "metadata_sha256": "006823d1759e40b4546ff4296945eda3f0692e799f724bb235edd0512d42eead",
+      "url": "https://files.pythonhosted.org/packages/51/39/1f5d8c8877a0fa327db959c19341d4be61660de1ab6b7391f9eb805bcd67/pytest-9.2.0-py3-none-any.whl",
+      "license_expression": "MIT",
+      "license_files": [
+        "LICENSE"
+      ],
+      "use_status": "PRIMARY_TERMS_REVIEWED_ACTUAL_NOTICE_AND_SECURITY_PENDING"
+    }
+  ],
+  "limits": {
+    "unique_archives": 8,
+    "archive_body_bytes": 8000481,
+    "approved_application_archive_requests": 0,
+    "proposed_runtime_archive_body_bytes": 49096635,
+    "proposed_combined_archive_body_bytes": 57097116
+  },
+  "test_file": "tests/test_c5_pdfium_inspection_equivalence.py",
+  "expected_node_ids": [
+    "test_disarmed_gate_refuses_before_metadata_or_native_import",
+    "test_ordered_text_numbers_revision_and_raster",
+    "test_clipped_text_on_each_edge_is_not_hidden_by_bounded_extraction[-5-150]",
+    "test_clipped_text_on_each_edge_is_not_hidden_by_bounded_extraction[198-150]",
+    "test_clipped_text_on_each_edge_is_not_hidden_by_bounded_extraction[20--5]",
+    "test_clipped_text_on_each_edge_is_not_hidden_by_bounded_extraction[20-198]",
+    "test_nonzero_page_origin_mapping_and_rotation_refusal",
+    "test_changed_omitted_forbidden_and_reordered_content_controls",
+    "test_blank_wrong_size_and_page_count_malformed_truncated_controls",
+    "test_supplementary_unicode_map_and_same_engine_pixel_identity",
+    "test_bmp_unicode_map",
+    "test_sparse_continuation_retains_nonfooter_extent_predicate",
+    "test_fully_off_page_canary_cannot_be_silently_lost",
+    "test_distinct_crop_and_user_unit_refused",
+    "test_malformed_with_eof_requires_reader_refusal",
+    "test_generated_footer_does_not_hide_sparse_or_footer_only_page[False]",
+    "test_generated_footer_does_not_hide_sparse_or_footer_only_page[True]",
+    "test_ambiguous_footer_refuses_and_unrelated_bottom_text_counts",
+    "test_missing_continuation_geometry_refuses"
+  ],
+  "expected_count": 19,
+  "execution_enabled": false,
+  "required_before_execution": [
+    "security-supported reviewed Windows CP311 x64 runtime and compatible setup origin",
+    "applicable actual pre-use security/licence dispositions including pip vendor notices and exact PDFium Windows linkage",
+    "exact one-use execution candidate and source binding, owned process settlement and cleanup",
+    "fresh explicit execution approval"
+  ],
+  "excluded": [
+    "Pillow",
+    "Stage B",
+    "Linux",
+    "production migration",
+    "native D",
+    "owner data",
+    "installer",
+    "redistribution"
+  ],
+  "final_acceptance": "UNCHANGED; standalone Stage A only, no full-profile or C5 acceptance inferred",
+  "runtime_candidate": {
+    "status": "OWNER_APPROVED_PREPARATION_ONLY_NOT_QUALIFIED",
+    "provider": "astral-sh/python-build-standalone",
+    "version": "3.11.18",
+    "target": "x86_64-pc-windows-msvc",
+    "release": "20261124",
+    "release_source": "48d61fcd7d85d7013b95576f62f779008c316a63",
+    "release_immutable": true,
+    "asset_id": 788324736,
+    "filename": "cpython-3.11.18+20261124-x86_64-pc-windows-msvc-install_only.tar.gz",
+    "bytes": 49096635,
+    "sha256": "3e4a35e3c238e5090d36bf95c041d9052bc82d6e298cb912ba7f70f6c66cf81a",
+    "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20261124/cpython-3.11.18%2B20261124-x86_64-pc-windows-msvc-install_only.tar.gz",
+    "provenance": {
+      "publisher_release_workflow_blob": "a6f3e0d15d8ed7c814049b3e814ad7d63af59442",
+      "publisher_windows_workflow_blob": "b749e047712be15b0052354ebb39c92c89e54c03",
+      "attestation_action_commit": "4d101475d8b20a2381f78447822ac1eab6504dd8",
+      "asset_attestation_verified": false
+    },
+    "approved_runtime_archive_requests": 0
+  }
+}

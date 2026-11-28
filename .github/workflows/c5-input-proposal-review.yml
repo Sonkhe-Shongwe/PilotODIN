@@ -1,0 +1,174 @@
+name: C5 input verification proposals offline review
+on:
+  push:
+    branches: [feature/live-dev-workspace-20261023]
+    paths:
+      - .github/workflows/c5-input-proposal-review.yml
+      - qa/c5_wheel_metadata/review_input_proposals.py
+permissions:
+  contents: read
+jobs:
+  offline-proposals:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - run: python3 -I -B qa/c5_wheel_metadata/review_input_proposals.py --review
+      - name: Assert no live command
+        run: |
+          set +e
+          python3 -I -B qa/c5_wheel_metadata/review_input_proposals.py --collect
+          code=$?
+          set -e
+          test "$code" != 0
+      - name: Exact C-D09 manifest projection (data only)
+        shell: bash
+        run: |
+          /usr/bin/python3 -I -B - <<'PY'
+          import hashlib, json, os, platform, sys
+          from pathlib import Path
+          assert sys.version_info[:3] == (3, 12, 3) and sys.implementation.name == "cpython"
+          assert Path(sys.executable).resolve() == Path("/usr/bin/python3.12")
+          assert platform.machine() == "x86_64"
+          root = Path("qa/c5_managed_dev").resolve()
+          def pinned(name, expected):
+              path = root / name
+              assert path.is_file() and not path.is_symlink() and path.stat().st_size <= 2 * 1024**2
+              raw = path.read_bytes()
+              assert hashlib.sha1(b"blob " + str(len(raw)).encode() + b"\0" + raw).hexdigest() == expected
+              return raw
+          raw = pinned("pdfium_use_candidate_20261127.json", "7d89ba820429b2005f7a70cc1b5ed1415f7b1161")
+          pinned("inspection_core.py", "bb8a2d5b61d98bbff4bd4599e0a3762f2b01ecdf")
+          pinned("validation_witnesses.py", "23aa61aee49cecf154e41f859d81e290e15a0dfd")
+          sys.path.insert(0, str(root))
+          import inspection_core as core
+          import validation_witnesses as witnesses
+          assert witnesses.LIVE_ENABLED is False
+          rows = core.projection(raw)
+          plan = witnesses.read_plan(raw)
+          assert len(rows) == 42 and sum(r["bytes"] for r in rows) == 214328914
+          assert all(r["filename"] != "certifi-2026.11.20-py3-none-any.whl" for r in rows)
+          assert len(plan["source_overlay"]["paths"]) == 29
+          assert len(plan["stage_a"]["expected_node_ids"]) == 19
+          assert [p["application_bounds"]["archive_uses"] for p in plan["profiles"]] == [86, 86]
+          assert sum(p["application_bounds"]["body_bytes"] for p in plan["profiles"]) == 301884524
+          for check in (core.projection, witnesses.read_plan):
+              try:
+                  check(raw + b"\n")
+              except ValueError:
+                  pass
+              else:
+                  raise AssertionError("Modified manifest accepted")
+          print("C5_CD09_EXACT_MANIFEST " + json.dumps({
+              "status": "PASS", "manifest_blob": core.PIN, "manifest_bytes": len(raw),
+              "rows": len(rows), "body_bytes": sum(r["bytes"] for r in rows),
+              "projection_sha256": hashlib.sha256(json.dumps(rows, sort_keys=True, separators=(",", ":")).encode()).hexdigest(),
+              "profiles": len(plan["profiles"]), "application_uses": 172,
+              "application_body_bytes": 301884524, "tampered_pin_refusals": 2,
+              "python": platform.python_version(), "python_path": str(Path(sys.executable).resolve()),
+              "runner_image": os.environ.get("ImageVersion"), "source": os.environ.get("GITHUB_SHA"),
+              "live_requests": 0, "native_tool_invocations": 0, "dependency_installations": 0
+          }, sort_keys=True), flush=True)
+          PY
+      - name: Exact retained and C-D10 synthetic regression suite
+        shell: bash
+        run: |
+          /usr/bin/python3 -I -B - <<'PY'
+          import hashlib, json, os, sys, unittest
+          from pathlib import Path
+          root = Path("qa/c5_managed_dev").resolve()
+          pins = {"cd10_apt_plan.py":"68d480b5030fe3a2a4676176c5ae2fafc709bba9","inspection_adapter.py":"39f485c5241884443cd7dfdf76a60040f25b11f9","inspection_core.py":"bb8a2d5b61d98bbff4bd4599e0a3762f2b01ecdf","inspection_driver.py":"46e7a6386899434c79ed212c260f385b3f4c50d5","test_cd10_apt_plan.py":"6c4ffefb773285b25b5e60bf1efbbef124491919","test_cd10_process_settlement.py":"5855c16ba21807ff9b6819d51979811bda0591b4","test_inspection_adapter.py":"6346dee361b1d7c112929a983e1b587cfb32a8c9","test_inspection_core.py":"e15317496ad5f754cbd0f74b49bd484df0a541d0","test_inspection_driver.py":"c1cf84bffa8e12349e391fde90742b25586b9f4f","test_validation_witnesses.py":"427d8fd43c961e362d3f65e1fa470f41b05b946b","validation_witnesses.py":"23aa61aee49cecf154e41f859d81e290e15a0dfd"}
+          for name, expected in pins.items():
+              path = root / name
+              assert path.is_file() and not path.is_symlink() and path.stat().st_size < 2 * 1024**2
+              raw = path.read_bytes()
+              assert hashlib.sha1(b"blob " + str(len(raw)).encode() + b"\0" + raw).hexdigest() == expected
+          sys.path.insert(0, str(root))
+          import inspection_driver, validation_witnesses
+          assert inspection_driver.LIVE_ENABLED is False and inspection_driver.IMAGE is None
+          assert validation_witnesses.LIVE_ENABLED is False
+          modules = ["test_inspection_core", "test_inspection_adapter", "test_inspection_driver", "test_validation_witnesses", "test_cd10_apt_plan", "test_cd10_process_settlement"]
+          suite = unittest.defaultTestLoader.loadTestsFromNames(modules)
+          assert suite.countTestCases() == 46, suite.countTestCases()
+          result = unittest.TextTestRunner(verbosity=2).run(suite)
+          ok = result.wasSuccessful() and result.testsRun == 46 and not result.skipped and not result.expectedFailures and not result.unexpectedSuccesses
+          print("C5_CD10_REGRESSION " + json.dumps({"status":"PASS" if ok else "FAIL", "tests":result.testsRun, "failures":len(result.failures), "errors":len(result.errors), "skipped":len(result.skipped), "source":os.environ.get("GITHUB_SHA"), "image":os.environ.get("ImageVersion"), "pins":pins, "scope":"synthetic fixtures only; no archive acquisition or tool installation"}, sort_keys=True), flush=True)
+          sys.exit(0 if ok else 1)
+          PY
+      - name: Independent conditional validation coordinator synthetic contracts
+        shell: bash
+        run: |
+          /usr/bin/python3 -I -B - <<'PY'
+          import hashlib, json, os, sys, unittest
+          from pathlib import Path
+          pins = {"qa/c5_managed_dev/validation_coordinator.py":"e847920061d8ce3d7b696dc5c837ab93fe8a1db8","qa/c5_managed_dev/pytest_receipt.py":"99c4b02e1242dcccfa32f241deeb7a315c090c89","qa/c5_managed_dev/test_validation_coordinator.py":"9e9c00b63ef042be5542f023919cef7944f40183","qa/c5_managed_dev/validation_witnesses.py":"23aa61aee49cecf154e41f859d81e290e15a0dfd","qa/c5_managed_dev/pdfium_use_candidate_20261127.json":"7d89ba820429b2005f7a70cc1b5ed1415f7b1161"}
+          for name, expected in pins.items():
+              p = Path(name)
+              assert p.is_file() and not p.is_symlink() and p.stat().st_size < 2*1024**2
+              raw = p.read_bytes()
+              assert hashlib.sha1(b"blob " + str(len(raw)).encode() + b"\0" + raw).hexdigest() == expected
+          sys.path.insert(0, str(Path.cwd()))
+          from qa.c5_managed_dev import validation_coordinator, validation_witnesses
+          assert validation_coordinator.LIVE_ENABLED is False and validation_witnesses.LIVE_ENABLED is False
+          suite = unittest.defaultTestLoader.loadTestsFromName("qa.c5_managed_dev.test_validation_coordinator")
+          assert suite.countTestCases() == 6
+          result = unittest.TextTestRunner(verbosity=2).run(suite)
+          ok = result.wasSuccessful() and result.testsRun == 6 and not result.skipped and not result.expectedFailures and not result.unexpectedSuccesses
+          print("C5_COORDINATOR_REGRESSION "+json.dumps({"source":os.environ["GITHUB_SHA"],"image":os.environ.get("ImageVersion"),"tests":result.testsRun,"failures":len(result.failures),"errors":len(result.errors),"skipped":len(result.skipped),"status":"PASS" if ok else "FAIL","pins":pins},sort_keys=True),flush=True)
+          sys.exit(0 if ok else 1)
+          PY
+      - name: Independent Python staging and final witness source contracts
+        shell: bash
+        run: |
+          /usr/bin/python3 -I -B - <<'PY'
+          import hashlib, json, os, sys, unittest
+          from pathlib import Path
+          pins = {"qa/c5_managed_dev/python_stage.py":"7c7b31dcedfb43892c6117bfbc7f497241fd91c9","qa/c5_managed_dev/profile_operations.py":"1501e6ccff918c7ad907c903d03554d5b2a69f61","qa/c5_managed_dev/test_python_stage.py":"8fbd96221305da12acf157a84a79f1bfdb380088","qa/c5_managed_dev/final_witnesses.py":"68d5a2c723af728bc8bb296e3f50572126786e49","qa/c5_managed_dev/validation_coordinator.py":"e847920061d8ce3d7b696dc5c837ab93fe8a1db8","qa/c5_managed_dev/validation_witnesses.py":"23aa61aee49cecf154e41f859d81e290e15a0dfd","qa/c5_managed_dev/pdfium_use_candidate_20261127.json":"7d89ba820429b2005f7a70cc1b5ed1415f7b1161","frontend/src-tauri/src/storage_profile_tests.rs":"1f79beebbc2979d0d0f04e5726661c8aefcb5c12"}
+          for name, expected in pins.items():
+              p = Path(name)
+              assert p.is_file() and not p.is_symlink() and p.stat().st_size < 2*1024**2
+              raw = p.read_bytes()
+              assert hashlib.sha1(b"blob " + str(len(raw)).encode() + b"\0" + raw).hexdigest() == expected
+          sys.path.insert(0, str(Path.cwd()))
+          from qa.c5_managed_dev import python_stage, profile_operations, final_witnesses
+          assert not any(m.LIVE_ENABLED for m in (python_stage, profile_operations, final_witnesses))
+          assert profile_operations.SOURCE_PIN is None and profile_operations.DISPOSITION_PIN is None
+          root = Path.cwd()
+          rust = root/"frontend/src-tauri/src/storage_profile_tests.rs"
+          windows, obj = final_witnesses.rust_commands(Path("/synthetic/rustc"),"windows-x64-cp311-source-test",rust,Path("/synthetic/scratch"))
+          linux, binary = final_witnesses.rust_commands(Path("/synthetic/rustc"),"linux-x64-cp311-source-test",rust,Path("/synthetic/scratch"))
+          assert len(windows)==1 and "--emit=obj" in windows[0] and len(linux)==2 and linux[1]==(str(binary),)
+          browser = final_witnesses.browser_commands(Path("/synthetic/node"),root/"frontend")
+          assert len(browser)==5 and all("install" not in cmd for cmd in browser)
+          assert [cmd[-1] for cmd in browser[:4]]==list(final_witnesses.P1_SELECTORS) and browser[-1][-1]==final_witnesses.P4_EXCLUDED
+          suite = unittest.defaultTestLoader.loadTestsFromName("qa.c5_managed_dev.test_python_stage")
+          assert suite.countTestCases() == 6
+          result = unittest.TextTestRunner(verbosity=2).run(suite)
+          ok = result.wasSuccessful() and result.testsRun == 6 and not result.skipped and not result.expectedFailures and not result.unexpectedSuccesses
+          print("C5_PYTHON_STAGE_REGRESSION "+json.dumps({"source":os.environ["GITHUB_SHA"],"image":os.environ.get("ImageVersion"),"tests":result.testsRun,"failures":len(result.failures),"errors":len(result.errors),"skipped":len(result.skipped),"rust_command_projections":3,"browser_command_projections":5,"status":"PASS" if ok else "FAIL","pins":pins},sort_keys=True),flush=True)
+          sys.exit(0 if ok else 1)
+          PY
+      - name: Direct RGB conversion without Pillow or PDFium runtime
+        shell: bash
+        run: |
+          /usr/bin/python3 -I -B - <<'PY'
+          import hashlib, json, os, sys, unittest
+          from pathlib import Path
+          pins = {"qa/c5_managed_dev/raster_rgb.py":"990c452069a42f3805a7ab40962efe2581224709","qa/c5_managed_dev/test_raster_rgb.py":"a343276da2a645b23c0305b7910bd5c87d6a9b9b"}
+          for name, expected in pins.items():
+              p = Path(name)
+              assert p.is_file() and not p.is_symlink() and p.stat().st_size < 65536
+              raw = p.read_bytes()
+              assert hashlib.sha1(b"blob " + str(len(raw)).encode() + b"\0" + raw).hexdigest() == expected
+          sys.path.insert(0, str(Path.cwd()))
+          suite = unittest.defaultTestLoader.loadTestsFromName("qa.c5_managed_dev.test_raster_rgb")
+          assert suite.countTestCases() == 6
+          result = unittest.TextTestRunner(verbosity=2).run(suite)
+          assert not any(name.split(".")[0] in ("PIL","pypdfium2","pypdfium2_raw") for name in sys.modules)
+          ok = result.wasSuccessful() and result.testsRun == 6 and not result.skipped and not result.expectedFailures and not result.unexpectedSuccesses
+          print("C5_DIRECT_RGB_REGRESSION "+json.dumps({"source":os.environ["GITHUB_SHA"],"tests":result.testsRun,"failures":len(result.failures),"errors":len(result.errors),"skipped":len(result.skipped),"status":"PASS" if ok else "FAIL","pins":pins},sort_keys=True),flush=True)
+          sys.exit(0 if ok else 1)
+          PY

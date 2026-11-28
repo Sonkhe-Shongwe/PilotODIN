@@ -1,0 +1,38 @@
+name: C5 selected-wheel metadata one use
+
+on:
+  push:
+    branches: [feature/live-dev-workspace-20261023]
+    paths:
+      - qa/c5_wheel_metadata/APPROVAL_20261125.txt
+
+permissions:
+  contents: read
+
+jobs:
+  offline-preflight:
+    if: ${{ false }} # Historical preflight 45695518509.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - run: python3 -I -B qa/c5_wheel_metadata/collect.py --self-test
+  collect-once:
+    if: ${{ false }} # Approval issued to exact run 45695626291 attempt 1; never replay.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - run: python3 -I -B qa/c5_wheel_metadata/collect.py --self-test
+      - name: Verify exact preflight-tested collector
+        run: test "$(git hash-object qa/c5_wheel_metadata/collect.py)" = e617dcfa2fd5fadc2a75789e39d655bf4a770afa
+      - name: Collect only reviewed hash-advertised metadata
+        env:
+          C5_APPROVED_ONCE: C5-SELECTED-WHEEL-METADATA-ONCE-20261125
+        run: python3 -I -B qa/c5_wheel_metadata/collect.py --collect

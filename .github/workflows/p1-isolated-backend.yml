@@ -1,0 +1,321 @@
+name: P1 Isolated Backend Source Recovery
+
+# Trusted feature-branch commits only. Never run jobs from public fork PRs.
+on:
+  push:
+    branches:
+      - feature/live-dev-workspace-20261023
+    paths:
+      - .github/workflows/p1-isolated-backend.yml
+      - backend/main.py
+      - backend/resource_admission.py
+      - backend/resource_routes.py
+      - backend/resource_http.py
+      - backend/resource_upload.py
+      - backend/resource_training.py
+      - backend/resource_training_store.py
+      - backend/resource_autonomy.py
+      - backend/resource_host.py
+      - backend/resource_session.py
+      - backend/export_transfer.py
+      - tests/test_c1_product_integration.py
+      - tests/test_p2_pdf_export_route_integration.py
+      - tests/test_c1_resource_host.py
+      - backend/autonomy.py
+      - tests/test_c1_resource_autonomy.py
+      - tests/test_build_e_autonomous_investigations.py
+      - tests/test_c1_resource_training_store.py
+      - tests/test_c1_resource_training.py
+      - tests/test_c1_resource_upload.py
+      - tests/test_c1_resource_http.py
+      - tests/test_c1_resource_admission.py
+      - backend/quality.py
+      - backend/requirements.txt
+      - backend/requirements-test.txt
+      - tests/test_p1_source_location_recovery.py
+      - tests/test_p1_relink_original_source.py
+      - tools/p1_relink_original_source.py
+      - tests/test_p1_import_recovery.py
+      - tests/test_p1_upload_atomic_staging.py
+      - tests/test_p1_real_api_failed_switch.py
+      - tests/fixture_http.py
+      - tools/c3_source_caller_inventory.py
+      - tests/test_c3_source_caller_inventory.py
+      - tools/Run_P2_Legacy_PDF_Visual_Local.py
+      - desktop/verify_packaged_engine.py
+      - desktop/verify_live_bundled_inference.py
+      - backend/bundled_inference.py
+      - tests/test_c3_local_verifier_trust.py
+      - diagnostics/Check_Local_API.ps1
+      - diagnostics/check_local_api.py
+      - tests/test_p2_legacy_pdf_visual_source.py
+      - tests/test_build_d_unified_journey.py
+      - tests/test_canvas_investigations.py
+      - tests/test_end_to_end.py
+      - tests/test_hybrid_local_ai.py
+      - tests/test_macro_workspace.py
+      - tests/test_ml_a3_preparation_and_split_safety.py
+      - tests/test_multi_ai.py
+      - tests/test_non_ai_correctness_gates.py
+      - tests/test_p0_ml_persistence_version_journey.py
+      - tests/test_p5_training_cancellation.py
+      - tests/test_p5_training_progress.py
+      - tests/test_v05_release.py
+      - tests/test_v06_experience.py
+      - tests/test_v08_intelligence.py
+      - tests/test_desktop_foundation.py
+      - tests/test_cf01_upload_http.py
+      - tests/test_cf02_xlsx_identifier_parity.py
+      - tests/test_p2_mixed_report_devqa.py
+      - tests/test_p2_mixed_runner_contract.py
+      - tools/p2_mixed_report_devqa.py
+      - tools/Seed_P2_Native_Deliver_Consent_Local.py
+      - tools/Seed_P2_Native_Live_Chain_Local.py
+      - tools/Seed_P2_Native_Two_Window_Local.py
+      - tools/Seed_P3_Native_Quality_W5_Local.py
+      - tools/Seed_P3_Native_Semantic_Context_Local.py
+      - tests/test_c3_devqa_seeders.py
+      - tests/test_p1_resource_policy.py
+      - backend/settings_storage.py
+      - backend/settings_http.py
+      - tests/test_c4_settings_http.py
+      - tests/test_c4_cloud_intent.py
+      - backend/resource_policy.py
+      - backend/ai_provider.py
+      - tests/test_c4_ai_settings.py
+      - tests/settings_fixture.py
+      - tests/test_c4_settings_storage.py
+      - tools/c4_settings_inventory.py
+      - tests/test_c4_settings_inventory.py
+      - tests/test_p1_resource_admission.py
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pilotodin-p1-backend-feature-20261023
+  cancel-in-progress: true
+
+jobs:
+  source-recovery:
+    name: Temporary-store source and import recovery
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      CI: "true"
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - name: Checkout without stored credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Set up Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.11"
+      - name: Verify static C3 inventory against inert alias and launcher fixtures
+        run: python -B -m unittest -v tests.test_c3_source_caller_inventory
+      - name: Inventory committed C3 routes and caller candidates (read-only)
+        run: python -B tools/c3_source_caller_inventory.py
+      - name: Verify C4 settings inventory using inert fixtures
+        run: python -B -m unittest -v tests.test_c4_settings_inventory
+      - name: Inventory exact committed C4 settings candidates (read-only)
+        run: python -B -m tools.c4_settings_inventory
+      - name: Install existing test dependencies
+        run: python -m pip install -r backend/requirements-test.txt
+      - name: Compile backend modules
+        run: python -m compileall -q backend
+      - name: Run isolated missing-source and import safety regression
+        env:
+          PILOTODIN_HOME: ${{ runner.temp }}/pilotodin-p1-recovery-${{ github.run_id }}
+        run: >-
+          python -m pytest -q
+          tests/test_p1_source_location_recovery.py
+          tests/test_p1_relink_original_source.py
+          tests/test_p1_import_recovery.py
+          tests/test_p1_upload_atomic_staging.py
+          tests/test_p1_real_api_failed_switch.py
+          tests/test_p1_resource_policy.py
+          tests/test_p1_resource_admission.py
+
+      - name: Verify C4 bounded settings foundation on disposable files
+        run: python -m pytest -q tests/test_c4_settings_storage.py
+
+      - name: Verify C4 AI settings and credential boundary using inert adapters
+        env:
+          PILOTODIN_HOME: ${{ runner.temp }}/pilotodin-c4-ai-settings-${{ github.run_id }}
+        run: >-
+          python -m pytest -q
+          tests/test_c4_ai_settings.py
+          tests/test_c4_settings_http.py
+          tests/test_c4_cloud_intent.py
+          tests/test_multi_ai.py::test_disabled_by_default_and_no_credentials_leaked
+          tests/test_multi_ai.py::test_keys_stored_and_never_returned
+          tests/test_multi_ai.py::test_remove_key
+          tests/test_multi_ai.py::test_key_validation
+          tests/test_multi_ai.py::test_cloud_cannot_enable_without_opt_in
+          tests/test_multi_ai.py::test_settings_persist_without_creds
+          tests/test_multi_ai.py::test_invalid_orders_rejected
+          tests/test_multi_ai.py::test_invalid_timeouts_rejected
+          tests/test_hybrid_local_ai.py::test_default_is_hybrid_and_cloud_opt_in
+          tests/test_hybrid_local_ai.py::test_bad_model_settings_rejected
+          tests/test_v05_release.py::test_global_provider_validation_rejects_untrusted_selections
+          tests/test_multi_ai.py::test_primary_gemini_cloud_result
+          tests/test_multi_ai.py::test_deeper_model_route
+          tests/test_multi_ai.py::test_gemini_rate_limit_never_fails_over_to_groq
+          tests/test_multi_ai.py::test_selected_failure_with_three_saved_keys_is_local
+          tests/test_multi_ai.py::test_new_explicit_request_does_not_inherit_alternate_provider
+          tests/test_multi_ai.py::test_prompt_never_contains_secret
+          tests/test_multi_ai.py::test_real_gemini_wire_format_without_network
+          tests/test_multi_ai.py::test_openai_compatible_wire_format_without_network
+          tests/test_multi_ai.py::test_corrupt_response_triggers_safe_local_fallback
+          tests/test_hybrid_local_ai.py::test_local_model_before_cloud_even_when_cloud_enabled
+          tests/test_hybrid_local_ai.py::test_hybrid_local_failure_never_escalates_to_cloud
+          tests/test_hybrid_local_ai.py::test_hybrid_refuses_cloud_without_consent
+          tests/test_hybrid_local_ai.py::test_offline_mode_overrides_cloud_preference
+          tests/test_hybrid_local_ai.py::test_cloud_mode_without_explicit_intent_uses_deterministic_rules
+          tests/test_hybrid_local_ai.py::test_explicit_local_rules_bypasses_models
+          tests/test_hybrid_local_ai.py::test_explicit_ollama_does_not_escalate
+          tests/test_v05_release.py::test_explicit_handshake_requires_consent_and_redacts_key
+          tests/test_v05_release.py::test_handshake_bad_key_safely_reports_unavailable
+          tests/test_v05_release.py::test_manual_provider_requires_explicit_intent_and_no_fanout
+          tests/test_v05_release.py::test_local_preference_never_uses_cloud
+          tests/test_v05_release.py::test_saved_workspace_cloud_selection_never_authorizes_dispatch
+          tests/test_v06_experience.py::test_cloud_stays_opt_in_startup
+          tests/test_v06_experience.py::test_startup_never_probes_even_configured_keys
+          tests/test_v06_experience.py::test_passive_status_reuses_explicit_check_without_extra_calls
+          tests/test_v06_experience.py::test_new_key_invalidates_cached_explicit_status_without_probe
+          tests/test_v06_experience.py::test_gemini_503_does_not_retry_secondary_model
+          tests/test_v06_experience.py::test_gemini_failure_never_dispatches_to_saved_groq
+          tests/test_v06_experience.py::test_429_does_not_retry_same_provider
+          tests/test_v06_experience.py::test_cloud_status_contains_no_credentials
+          tests/test_v06_experience.py::test_reject_cross_site_health_checks
+          tests/test_v08_intelligence.py::test_output_finish_reason_openai_length_is_visible
+          tests/test_v08_intelligence.py::test_gemini_stop_reason_is_not_marked_truncated
+          tests/test_v08_intelligence.py::test_respond_propagates_completion_status_and_refuses_cloud_continuation
+          tests/test_v08_intelligence.py::test_cloud_investigation_uses_only_redacted_aggregates
+
+      - name: Exercise C1 pure coordinator and exact route inventory
+        run: python -m pytest -q tests/test_c1_resource_admission.py tests/test_c1_resource_http.py tests/test_c1_resource_upload.py tests/test_c1_resource_training.py
+
+      - name: Exercise C1 durable training and actual ASGI background ownership
+        env:
+          PILOTODIN_HOME: ${{ runner.temp }}/pilotodin-c1-training-${{ github.run_id }}
+        run: python -m pytest -q tests/test_c1_resource_training_store.py
+
+      - name: Exercise staged C1 autonomy and existing read-only investigation regression
+        env:
+          PILOTODIN_HOME: ${{ runner.temp }}/pilotodin-c1-autonomy-${{ github.run_id }}
+        run: python -m pytest -q tests/test_c1_resource_autonomy.py tests/test_build_e_autonomous_investigations.py
+
+      - name: Exercise staged C1 owned host protocol without native processes
+        run: python -m pytest -q tests/test_c1_resource_host.py
+
+      - name: Exercise actual product route composition with inert inference and synthetic data
+        env:
+          PILOTODIN_HOME: ${{ runner.temp }}/pilotodin-c1-product-${{ github.run_id }}
+        run: python -m pytest -q tests/test_c1_product_integration.py
+
+      - name: Verify five migrated DevQA seeders with disposable workspaces
+        run: >-
+          python -m pytest -q
+          tests/test_c3_devqa_seeders.py
+          tests/test_owned_server.py::OwnedServerTests::test_managed_report_chain_seed_and_owned_server_handoff
+          tests/test_p3_native_qa_source.py::test_disposable_seeder_imports_only_two_p3_fixtures
+          tests/test_p3_native_qa_source.py::test_disposable_seeder_fails_closed_when_workspace_not_empty
+          tests/test_p3_native_quality_w5_source.py::test_w5_seeder_exact_source_and_v0
+          tests/test_p3_native_quality_w5_source.py::test_w5_seeder_fails_closed_on_nonempty_workspace
+
+      - name: Verify local verifier trust boundaries without native execution
+        run: >-
+          python -m pytest -q
+          tests/test_c3_local_verifier_trust.py
+          tests/test_p2_legacy_pdf_pagination.py
+          tests/test_p2_legacy_pdf_visual_source.py
+
+      - name: Exercise existing mixed-report workers in a disposable synthetic allocation
+        run: |
+          python -B - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          import subprocess
+          import sys
+          from tempfile import TemporaryDirectory
+          from tools.qa_foundation import create_run
+          from tools.p2_mixed_report_devqa import EXPECTED, simple_status, worker_status_path
+          root = Path.cwd().resolve()
+          with TemporaryDirectory(prefix="pilotodin-p2-mixed-ci-") as temporary:
+              run, _ = create_run(Path(temporary) / "qa", "P2-MIXED-REPORT", repo=root)
+              env = {key: value for key, value in os.environ.items()
+                     if not key.upper().startswith(("PILOTODIN_", "VITE_PILOTODIN_"))}
+              env.update(PILOTODIN_HOME=str(run / "workspace"), PILOTODIN_DEVQA_RUN=str(run),
+                         PYTHONPATH=str(root), PYTHONDONTWRITEBYTECODE="1", RL_invariant="1")
+              for kind in ("contract", "mixed"):
+                  completed = subprocess.run(
+                      [sys.executable, "-B", str(root / "tools/p2_mixed_report_devqa.py"), "--worker", kind],
+                      cwd=root, env=env, capture_output=True, text=True, timeout=180, check=False)
+                  status = json.loads(worker_status_path(run, kind).read_text(encoding="utf-8"))
+                  assert completed.returncode == 0 and simple_status(status, EXPECTED[kind]) == "PASS", status
+                  print(f"Mixed-report {kind}: {status['tests_run']}/{EXPECTED[kind]} PASS")
+              assert not any((run / "workspace" / "models").iterdir())
+          PY
+
+      - name: Verify historical desktop trust and CSV/XLSX HTTP fixture compatibility
+        env:
+          PILOTODIN_HOME: ${{ runner.temp }}/pilotodin-c3-desktop-import-${{ github.run_id }}-${{ github.run_attempt }}
+        run: >-
+          python -m pytest -q
+          tests/test_desktop_foundation.py
+          tests/test_cf01_upload_http.py
+          tests/test_cf02_xlsx_identifier_parity.py
+
+      - name: Compile all migrated historical fixture modules without importing them
+        run: >-
+          python -m py_compile
+          tests/test_build_d_unified_journey.py
+          tests/test_canvas_investigations.py
+          tests/test_end_to_end.py
+          tests/test_hybrid_local_ai.py
+          tests/test_macro_workspace.py
+          tests/test_ml_a3_preparation_and_split_safety.py
+          tests/test_multi_ai.py
+          tests/test_non_ai_correctness_gates.py
+          tests/test_p0_ml_persistence_version_journey.py
+          tests/test_p5_training_cancellation.py
+          tests/test_p5_training_progress.py
+          tests/test_v05_release.py
+          tests/test_v06_experience.py
+          tests/test_v08_intelligence.py
+
+      - name: Verify selected historical HTTP cases without fitting or inference
+        run: |
+          set -euo pipefail
+          for case in \
+            tests/test_build_d_unified_journey.py \
+            tests/test_canvas_investigations.py \
+            tests/test_non_ai_correctness_gates.py::test_outlier_preview_shows_outliers_not_all_rows \
+            tests/test_end_to_end.py::test_reject_unrelated_file \
+            tests/test_hybrid_local_ai.py::test_local_api_is_fixed_loopback \
+            tests/test_p5_training_cancellation.py::test_queued_cancellation_is_immediate_idempotent_and_frees_slot \
+            tests/test_p5_training_progress.py::test_read_only_experiment_endpoint_exposes_persisted_progress \
+            tests/test_v08_intelligence.py::test_local_origin_development_ports_are_restricted; do
+            name="${case%%::*}"
+            name="${name##*/}"
+            PILOTODIN_HOME="${RUNNER_TEMP}/pilotodin-c3-historical-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-${name}" python -m pytest -q "$case"
+          done
+
+      - name: Exercise nine isolated authenticated P2 PDF export route cases
+        run: |
+          set -euo pipefail
+          home="$(mktemp -d)"
+          trap 'rm -rf -- "$home"' EXIT
+          printf '%s\n' SYNTHETIC_TEMP_ONLY > "$home/.pilotodin-p2-export-route-devqa"
+          PILOTODIN_HOME="$home" PILOTODIN_P2_EXPORT_ROUTE_DEVQA=1 python -B - <<'PY'
+          import unittest
+          suite = unittest.defaultTestLoader.loadTestsFromName("tests.test_p2_pdf_export_route_integration")
+          assert suite.countTestCases() == 9
+          result = unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful() and result.testsRun == 9 and not result.skipped
+          PY

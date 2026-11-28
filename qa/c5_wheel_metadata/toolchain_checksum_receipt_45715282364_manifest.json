@@ -1,0 +1,43 @@
+{
+  "attempt": 1,
+  "records": 4,
+  "run_id": "45715282364",
+  "sha256": "e66d99e864b57d69759aad2504923975f66c2b09e380610c1ed0c84672f5dd45",
+  "source_sha": "56d01294f4e6c66b9ae0fcfbdac7cd673ac1deb5",
+  "job_id": 139559651464,
+  "records_path": "qa/c5_wheel_metadata/toolchain_checksum_receipt_45715282364.jsonl",
+  "records_bytes": 2081,
+  "status": "BLOCKED",
+  "live_result": {
+    "artifact_requests": 0,
+    "failure": "DOCUMENT_OR_TRANSPORT_REFUSED",
+    "fixture": false,
+    "missing": [
+      "python-windows",
+      "python-linux",
+      "node",
+      "rust"
+    ],
+    "requests": 2,
+    "response_bytes": 991,
+    "status": "BLOCKED",
+    "verified": []
+  },
+  "independent_reconciliation": {
+    "canonical_sha256_verified": true,
+    "body_sha256_verified": true,
+    "observed_format": "uppercase hexadecimal with one ASCII space before filename; prior parser expects lowercase and two-character separator",
+    "manifest_bytes": 991,
+    "manifest_sha256": "7321adb71bddbc75ad5f22f6e28a20b698da330da6f57b209cbd2c73dc89c12f",
+    "unique_checksum_rows": 10,
+    "offline_publisher_hash_candidate": {
+      "filename": "python-3.11.9-win32-x64.zip",
+      "expected_sha256": "c92a530d9ac9539feea075bb033e7e03580412999d2e2833b7b62d948da60d03",
+      "expected_bytes": 25934523,
+      "actual_bytes_verified": false,
+      "signature_verified": false,
+      "production_selected": false
+    },
+    "limitations": "Offline independent interpretation of preserved body only; original live parser refused, no live verification success; remaining three documents not requested. No replay."
+  }
+}

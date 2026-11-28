@@ -1,0 +1,42 @@
+name: C5 toolchain checksums offline review
+on:
+  push:
+    branches: [feature/live-dev-workspace-20261023]
+    paths:
+      - qa/c5_wheel_metadata/APPROVAL_TOOLCHAIN_CHECKSUMS_20261125.txt
+permissions:
+  contents: read
+jobs:
+  offline-review:
+    if: ${{ false }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - run: python3 -I -B qa/c5_wheel_metadata/collect_toolchain_checksums.py --self-test
+      - name: Assert collection refusal
+        run: |
+          set +e
+          python3 -I -B qa/c5_wheel_metadata/collect_toolchain_checksums.py --collect
+          code=$?
+          set -e
+          test "$code" = 2
+  collect-once:
+    if: ${{ false }} # Consumed by run 45715282364; no replay.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - run: python3 -I -B qa/c5_wheel_metadata/collect_toolchain_checksums.py --self-test
+      - name: Verify exact activated collector blob
+        run: test "$(git hash-object qa/c5_wheel_metadata/collect_toolchain_checksums.py)" = 3ada2f9a23c5d828794f46dc97282e8267a10fc8
+      - run: python3 -I -B qa/c5_wheel_metadata/collect_toolchain_checksums.py --collect
+        env:
+          C5_APPROVED_ONCE: C5-TOOLCHAIN-CHECKSUMS-ONCE-20261125
+          C5_EXPECTED_SOURCE_SHA: ${{ github.sha }}

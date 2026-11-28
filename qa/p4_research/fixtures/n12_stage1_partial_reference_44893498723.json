@@ -1,0 +1,60 @@
+{
+  "schema": "pilotodin-p4-n12-stage1-partial-reference-v1",
+  "evidence_type": "REDACTED_DERIVATION_OF_APPROVED_NATIVE_OBSERVATION",
+  "approved_native_run": 44893498723,
+  "reviewed_source_sha": "41eaa3b240d621491ed0aec3a7a8ae227d92a626",
+  "one_use_activation_sha": "d55a956fd4f691f91549fb574507325fad506505",
+  "native_stage1_verdict": "BLOCKED",
+  "full_golden_stage1_reference": false,
+  "native_N12_acceptance": "NOT_EVALUATED",
+  "file_event_coverage": "NOT_EVALUATED",
+  "network_isolation": "NOT_EVALUATED",
+  "observations": {
+    "launcher": {
+      "original_handle_retained": true,
+      "handle_etw_birth_difference_ticks": 0,
+      "handle_etw_exit_difference_ticks": 0,
+      "etw_birth_minus_sysmon_birth_ticks": 6393,
+      "etw_exit_minus_sysmon_event5_ticks": 32932,
+      "sysmon_exit": "UNDISPUTED"
+    },
+    "app": {
+      "original_handle_retained": true,
+      "handle_etw_birth_difference_ticks": 0,
+      "handle_etw_exit_difference_ticks": 0,
+      "etw_birth_minus_sysmon_birth_ticks": 8582,
+      "etw_exit_minus_sysmon_event5_ticks": 77625,
+      "sysmon_exit": "UNDISPUTED"
+    }
+  },
+  "children": {
+    "observed_role_counts": {
+      "webview": 6,
+      "webview-network": 1
+    },
+    "original_handle_coverage": [
+      {
+        "role": "webview",
+        "observed": 6,
+        "retained_original_handles": 0,
+        "evidence": "MISSING"
+      },
+      {
+        "role": "webview-network",
+        "observed": 1,
+        "retained_original_handles": 0,
+        "evidence": "MISSING"
+      }
+    ],
+    "exact_original_child_handle_data": "NOT_COLLECTED"
+  },
+  "etw_counters": {
+    "events_lost": 0,
+    "log_buffers_lost": 0,
+    "realtime_buffers_lost": 0,
+    "buffers_written": 5
+  },
+  "protected_endpoint_comparison": "MATCH",
+  "strict_exit_clock_equality": "DISPUTED",
+  "interpretation": "App/launcher original-handle ETW parity only. Seven child originals are missing; observed Sysmon Event 5 timestamps differ from ETW. No native success or FileIO/network credit."
+}

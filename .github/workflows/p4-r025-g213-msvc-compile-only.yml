@@ -1,0 +1,80 @@
+name: P4 R02.5 Windows MSVC compile-only ABI check
+
+# Ordinary source-only Windows CI. Compile to a disposable object file, ONLY.
+# Never link, execute the PSS probe, launch PilotODIN/WebView2, use Sysmon/ETW,
+# touch owner files, alter workflow approvals, publish artifacts or build installer.
+on:
+  push:
+    branches:
+      - feature/live-dev-workspace-20261023
+    paths:
+      - .github/workflows/p4-r025-g213-msvc-compile-only.yml
+      - qa/p4_native/g213_generated_pss_probe.cpp
+      - tests/test_p4_n12_g2_13_source_contract.py
+      - qa/p4_research/n12_obtrace_win32_session.cpp
+      - tests/test_p4_n12_g2_25_obtrace_feasibility.py
+
+permissions:
+  contents: read
+
+jobs:
+  g213-msvc-abi-compile-only:
+    runs-on: windows-2022
+    timeout-minutes: 15
+    env:
+      CI: 'true'
+    steps:
+      - name: Checkout exact pushed source without retained credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Fail closed on wrong event, host or source
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:GITHUB_EVENT_NAME -cne 'push' -or
+              $env:GITHUB_REF_NAME -cne 'feature/live-dev-workspace-20261023' -or
+              $env:GITHUB_RUN_ATTEMPT -cne '1' -or
+              $env:RUNNER_ENVIRONMENT -cne 'github-hosted' -or
+              $env:RUNNER_OS -cne 'Windows' -or
+              (git rev-parse HEAD).Trim() -cne $env:GITHUB_SHA) {
+            throw 'Compile-only ABI source, hosted runner or first-attempt scope mismatch.'
+          }
+      - name: Compile G2.13 SDK source to a disposable OBJ, no linking or execution
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/Installer/vswhere.exe'
+          if (-not (Test-Path -LiteralPath $vswhere)) { throw 'MSVC toolchain unavailable' }
+          $vs = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          if (-not $vs) { throw 'x64 MSVC toolchain unavailable' }
+          $vcvars = Join-Path $vs 'VC/Auxiliary/Build/vcvars64.bat'
+          if (-not (Test-Path -LiteralPath $vcvars)) { throw 'x64 MSVC environment unavailable' }
+          $scratch = Join-Path $env:RUNNER_TEMP ('pilotodin-g213-msvc-only-' + $env:GITHUB_RUN_ID)
+          if (Test-Path -LiteralPath $scratch) { throw 'Compile scratch already exists' }
+          New-Item -ItemType Directory -Path $scratch -ErrorAction Stop | Out-Null
+          try {
+            $obj = Join-Path $scratch 'g213_pss_abi.obj'
+            $cpp = 'qa/p4_native/g213_generated_pss_probe.cpp'
+            # /c compiles only: no linker and no executable is produced or run.
+            $command = '"' + $vcvars + '" && cl /nologo /c /std:c++17 /W4 /WX /Fo:"' + $obj + '" "' + $cpp + '"'
+            cmd.exe /D /S /C $command
+            if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $obj -PathType Leaf)) {
+              throw 'PSS x64 Windows SDK compile-only ABI check failed'
+            }
+            '### G2.13 Windows SDK compile-only: PASS (object, no executable)' >> $env:GITHUB_STEP_SUMMARY
+            'No PSS snapshot executed, no WebView2 or product capture, no R02.5 acceptance credit.' >> $env:GITHUB_STEP_SUMMARY
+            $obj = Join-Path $scratch 'g225_obtrace_abi.obj'
+            $cpp = 'qa/p4_research/n12_obtrace_win32_session.cpp'
+            $command = '"' + $vcvars + '" && cl /nologo /c /std:c++17 /W4 /WX /Fo:"' + $obj + '" "' + $cpp + '"'
+            cmd.exe /D /S /C $command
+            if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $obj -PathType Leaf)) {
+              throw 'G2.25 ObTrace Windows SDK compile-only ABI check failed'
+            }
+            '### G2.25 Windows SDK compile-only: PASS (object, no executable)' >> $env:GITHUB_STEP_SUMMARY
+            'No object-manager session, ETW consumer, generated writer or app executed.' >> $env:GITHUB_STEP_SUMMARY
+          } finally {
+            Remove-Item -LiteralPath $scratch -Recurse -Force -ErrorAction Stop
+          }

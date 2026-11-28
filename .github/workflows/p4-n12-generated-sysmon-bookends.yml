@@ -1,0 +1,86 @@
+name: P4 N12 Generated Sysmon Bookends (DISARMED, one-use only)
+
+# Future generated fixture *only*, no PilotODIN build, app launch or WebView2.
+# Activation requires a separate owner-approved, source-pinned direct-child push.
+on:
+  push:
+    branches:
+      - feature/live-dev-workspace-20261023
+    paths:
+      - qa/p4_research/N12_GENERATED_BOOKENDS_OWNER_APPROVAL_G2_8_FRESH_ONE_USE.txt
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pilotodin-p4-n12-generated-bookends
+  cancel-in-progress: false
+
+jobs:
+  generated-bookends:
+    if: ${{ false }} # G2.6 one-use approval consumed by activation 9de17f04525186cd76e9f9e8d4e976e5ee5bab79; NEVER rerun.
+    runs-on: windows-2022
+    timeout-minutes: 20
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      CI: 'true'
+    steps:
+      - name: Check out exact reviewed activation
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Enforce separately granted one-use generated-only source approval
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $marker = 'qa/p4_research/N12_GENERATED_BOOKENDS_OWNER_APPROVAL_G2_8_FRESH_ONE_USE.txt'
+          $workflow = '.github/workflows/p4-n12-generated-sysmon-bookends.yml'
+          if ($env:GITHUB_EVENT_NAME -cne 'push' -or
+              $env:GITHUB_RUN_ATTEMPT -cne '1' -or
+              $env:GITHUB_REF_NAME -cne 'feature/live-dev-workspace-20261023' -or
+              $env:RUNNER_OS -cne 'Windows' -or
+              $env:RUNNER_ENVIRONMENT -cne 'github-hosted' -or
+              (git rev-parse HEAD) -cne $env:GITHUB_SHA -or
+              -not (Test-Path -LiteralPath $marker -PathType Leaf)) {
+            throw 'Generated Sysmon bookends require first-attempt hosted push consent.'
+          }
+          $approval = @(Get-Content -LiteralPath $marker)
+          if ($approval.Count -ne 2 -or
+              $approval[0] -cnotmatch '^reviewed_source=([0-9a-f]{40})$' -or
+              $approval[1] -cne 'scope=n12-generated-sysmon-bookends-one-use') {
+            throw 'Fresh one-use generated-only approval invalid.'
+          }
+          $source = $Matches[1]
+          $parents = (git rev-list --parents -n 1 HEAD) -split ' '
+          $changed = @(git diff --name-only $source HEAD)
+          $added = @(git diff --name-only --diff-filter=A $source HEAD -- $marker)
+          if ($parents.Count -ne 2 -or $parents[1] -cne $source -or
+              $changed.Count -ne 2 -or $workflow -cnotin $changed -or
+              $marker -cnotin $changed -or $added.Count -ne 1 -or
+              $added[0] -cne $marker) {
+            throw 'One-use activation may ONLY modify this workflow and ADD a fresh marker.'
+          }
+          git checkout --detach $source
+          'PILOTODIN_N12_GENERATED_BOOKENDS_SOURCE=' + $source >> $env:GITHUB_ENV
+          'PILOTODIN_N12_GENERATED_BOOKENDS_CONSENT=I_APPROVE_ONE_N12_GENERATED_SYSMON_BOOKENDS' >> $env:GITHUB_ENV
+      - name: Set up stdlib Python only
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.11'
+      - name: Capture two generated Sysmon TCP/UDP bookends, no product
+        id: bookends
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          ./qa/p4_native/Invoke_P4_N12_Live_Calibration.ps1 -WithEtw -GeneratedBookendsOnly
+      - name: Public fixed-label summary, never raw ETW or private paths
+        if: always()
+        shell: pwsh
+        run: |
+          if ('${{ steps.bookends.outcome }}' -ceq 'success') {
+            '### Generated Sysmon bookends: two fixtures corroborated (CALIBRATION ONLY)' >> $env:GITHUB_STEP_SUMMARY
+          } else {
+            '### Generated Sysmon bookends: BLOCKED or not executed (NO ACCEPTANCE)' >> $env:GITHUB_STEP_SUMMARY
+          }
+          'No PilotODIN launch, no installer, no raw trace upload, no actual WebView2 file handle proof.' >> $env:GITHUB_STEP_SUMMARY

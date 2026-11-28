@@ -1,0 +1,12 @@
+# Consumed one-use S2 static inspection; intentionally non-executable.
+name: C5 DEV-VM-01 S2 static inspection (consumed)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  consumed:
+    if: ${{ false }}
+    runs-on: ubuntu-24.04
+    steps:
+      - run: exit 1

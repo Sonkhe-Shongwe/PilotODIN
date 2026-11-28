@@ -1,38 +1,108 @@
 import {invoke} from '@tauri-apps/api/core';
+import {verifyDatasetDownload} from './datasetExportDownload';
+import type {DatasetExportRequest,VerifiedDatasetDownload} from './datasetExportDownload';
+import type {ProjectCloudRoute} from './cloudConsentSession';
 
-// Development remains on :8000; production uses an authenticated, per-launch
-// local port provided privately by the Rust desktop process supervisor.
-let desktopEndpoint: {port:number;token:string}|null = null;
-export function configureDesktopAPI(connection:{port:number;token:string}) {
-  if (!Number.isInteger(connection.port) || connection.port < 1024 || connection.port > 65535 || !connection.token) {
+// Every API client must first select an explicit connection. Desktop uses a
+// per-launch session; paired development uses its same-origin frontdoor.
+export type DesktopConnection = {port:number;token:string;backend_driven_inference?:boolean};
+let desktopEndpoint: DesktopConnection|null = null;
+let developmentOrigin:string|null = null;
+// Called only by the explicit Vite development bootstrap; never receives a secret.
+export function configureDevelopmentAPI(origin:string) {
+  if(!['http://127.0.0.1:5173','http://127.0.0.1:5174','http://127.0.0.1:5176','http://127.0.0.1:5177','http://127.0.0.1:5178'].includes(origin) || desktopEndpoint || (developmentOrigin!==null&&developmentOrigin!==origin)) {
+    throw new Error('Invalid Live Dev API configuration');
+  }
+  developmentOrigin=origin;
+}
+// Only the explicit DEV-only intercepted Playwright bootstrap calls this.
+// It has no backend destination or private capability.
+export function configureInterceptedFixtureAPI(origin:string) {
+  if(origin!=='http://127.0.0.1:5187'||desktopEndpoint||(developmentOrigin!==null&&developmentOrigin!==origin)){
+    throw new Error('Invalid intercepted browser fixture configuration');
+  }
+  developmentOrigin=origin;
+}
+export function configureDesktopAPI(connection:DesktopConnection) {
+  if (!connection || !Number.isInteger(connection.port) || connection.port < 1024 || connection.port > 65535 ||
+      typeof connection.token!=='string' || !/^[0-9a-f]{64}$/.test(connection.token)) {
     throw new Error('Invalid desktop API connection details');
   }
-  desktopEndpoint = connection;
+  if (connection.backend_driven_inference !== undefined && typeof connection.backend_driven_inference !== "boolean") {
+    throw new Error("Invalid desktop inference routing mode");
+  }
+  if(developmentOrigin)throw new Error('Mixed API configuration');
+  desktopEndpoint = {...connection};
 }
-export function apiBase():string {return `http://127.0.0.1:${desktopEndpoint?.port ?? 8000}/api`;}
+// Only the existing DEV-only intercepted fixture bootstrap can configure this
+// origin. Vite refuses every un-intercepted API call there; no real backend.
+export function usesInterceptedFixtureAPI():boolean{
+ return developmentOrigin==='http://127.0.0.1:5187'&&desktopEndpoint===null;
+}
+// Other dev origins can also be QA/hosted relays. Do not infer product
+// cloud eligibility from those origins. The intercepted fixture has no backend.
+export function usesProjectCloudAPI():boolean {
+ return desktopEndpoint!==null||usesInterceptedFixtureAPI();
+}
+export function usesOwnedInference():boolean {return desktopEndpoint?.backend_driven_inference===true;}
+export function apiBase():string {
+  if(developmentOrigin)return `${developmentOrigin}/api`;
+  if(desktopEndpoint)return `http://127.0.0.1:${desktopEndpoint.port}/api`;
+  throw new Error('PilotODIN API connection has not been configured.');
+}
 function authHeaders(): Record<string,string> {
-  return desktopEndpoint ? {'X-PilotODIN-Session': desktopEndpoint.token} : {};
+  if(desktopEndpoint)return {'X-PilotODIN-Session':desktopEndpoint.token};
+  if(developmentOrigin)return {'X-PilotODIN-Dev-Request':'1'};
+  throw new Error('PilotODIN API connection has not been configured.');
 }
 export type Col = {name:string;kind:'numeric'|'categorical';missing:number;missing_pct:number;unique:number;identifier_risk:boolean;leakage_risk:boolean;sample_values:(string|number|null)[]};
 export type Profile = {filename:string;rows:number;columns_count:number;missing_cells:number;duplicate_rows:number;columns:Col[];preview:Record<string,unknown>[];target_candidates:string[];warnings:string[];summary:string;summary_source:string;guidance:string[]};
-export type Prep = {task:'classification'|'regression';target:string;available_features:string[];recommend_exclude:{column:string;reason:string;requires_review:boolean}[];missing_targets:number;transformations:string[];warnings:string[]};
+export type FeatureAudit = {column:string;kind:'numeric'|'categorical';missing:number;missing_pct:number;distinct:number;risk:'high'|'review'|'low';reasons:string[];treatment:string;default_included:boolean;category_examples?:string[]};
+export type Prep = {quality_version:number;task:'classification'|'regression';target:string;resource_plan?:{labelled_rows:number;source_features:number;estimated_encoded_columns:number;estimated_dense_training_mb:number;row_limit:number;selected_model_row_limit:number;selected_model_guard:string;model_family_row_limits:Record<string,number>;estimated_dense_mb_limit:number;within_local_budget:boolean;note:string};resource_plan_scope?:string;available_features:string[];recommend_exclude:{column:string;reason:string;requires_review:boolean}[];feature_audit:FeatureAudit[];high_risk_features:string[];missing_targets:number;transformations:string[];warnings:string[]};
 export type ModelReport = {key:string;name:string;cv_metric?:number;cv_std?:number;status:'ready'|'failed';error?:string};
-export type Field = {name:string;kind:'number'|'select'|'text';min?:number;max?:number;options?:string[];required:boolean};
-export type Results = {task:string;target:string;features:string[];excluded_features:string[];labelled_rows:number;train_rows:number;test_rows:number;folds:number;primary_metric:string;baseline_cv:number;models:ModelReport[];input_schema:Field[];warning:string;beats_baseline?:boolean;split_strategy?:string;split_column?:string|null};
-export type Experiment = {id:string;project_id:string;status:string;config:{target:string;task:string;excluded:string[];models:string[];quality_version?:number;split_strategy?:string;split_column?:string|null};results:Results|null;error:string|null;selected_model:string|null;final_results:Record<string,unknown>|null;is_stale?:boolean;dataset_version?:number;current_version?:number};
+export type Field = {name:string;kind:'number'|'select'|'text';min?:number;max?:number;options?:string[];required:boolean;domain?:{min?:number;max?:number;integer?:boolean}|null};
+export type Results = {task:string;target:string;features:string[];excluded_features:string[];labelled_rows:number;train_rows:number;test_rows:number;folds:number;primary_metric:string;baseline_cv:number;models:ModelReport[];input_schema:Field[];warning:string;beats_baseline?:boolean;split_strategy?:string;split_column?:string|null;numeric_imputation?:'median'|'mean';categorical_imputation?:'most_frequent'|'constant'};
+export type ExperimentProgressEvent = {stage:string;label:string;detail:string;at:string};
+export type ExperimentProgress = {stage:string;label:string;detail:string;updated_at:string|null;history:ExperimentProgressEvent[];history_available:boolean};
+export type Experiment = {id:string;project_id:string;status:string;config:{target:string;task:string;excluded:string[];models:string[];quality_version?:number;split_strategy?:string;split_column?:string|null;numeric_imputation?:'median'|'mean';categorical_imputation?:'most_frequent'|'constant';max_duration_seconds?:number|null};results:Results|null;error:string|null;selected_model:string|null;final_results:Record<string,unknown>|null;is_stale?:boolean;dataset_version?:number;current_version?:number;progress?:ExperimentProgress;control?:{cancel_requested:boolean;deadline_at:string|null;interruption_is_cooperative:boolean}};
 export type Project = {id:string;name:string;filename:string;profile:Profile;experiments:{id:string;status:string;selected_model:string|null;created_at:string}[]};
 
 async function check(res:Response){
-  if(!res.ok){let detail = `Request failed (${res.status})`;try{const o=await res.json();detail=typeof o.detail==='string'?o.detail:JSON.stringify(o.detail)}catch{}throw new Error(detail)}
+  if(!res.ok){let detail = `Request failed (${res.status})`;try{const o=await res.json();const d=o?.detail;detail=typeof d==='string'?d:(d&&typeof d==='object'&&!Array.isArray(d)&&typeof d.message==='string'?d.message:JSON.stringify(d))}catch{}throw new Error(detail)}
   return res.json();
 }
+// Resolve only relative product API paths; do not allow URL normalization to
+// escape the admitted /api/ boundary or an invalid path to start native work.
+function localTarget(path:string):URL {
+ const base=apiBase();
+ if(typeof path!=='string'||!path.startsWith('/')||path.startsWith('//')||
+    /[\x00-\x1f\x7f\\#]/.test(path))throw new Error('Invalid local API destination');
+ const pathname=path.split('?')[0];
+ if(/(?:^|\/)(?:\.|%2e){1,2}(?:\/|$)/i.test(pathname)||
+    /%2f|%5c/i.test(pathname))throw new Error('Invalid local API destination');
+ const target=new URL(base+path);
+ if(target.origin!==new URL(base).origin||!target.pathname.startsWith('/api/')||
+    target.pathname==='/api/'||target.username||target.password||target.hash)
+    throw new Error('Invalid local API destination');
+ return target;
+}
 async function fetchLocal(path:string,options:RequestInit):Promise<Response>{
- try {return await fetch(`${apiBase()}${path}`,options);}
- catch(error){
+ const target=localTarget(path);
+ let response:Response;
+ try {
+  // Do not forward session headers or request bodies to a redirect destination.
+  response=await fetch(target.href,{...options,redirect:'error'});
+ } catch(error){
   if(error instanceof Error&&error.name==='AbortError')throw error;
-  const origin=new URL(apiBase()).origin;
-  throw new Error(`Could not connect to PilotODIN's local analytics service at ${origin} (request: ${path}). Check that the PilotODIN Backend window is running, then try again.`);
+  throw new Error("Could not connect to PilotODIN's local analytics service at "+target.origin+
+    ". Check that the PilotODIN Backend window is running, then try again.");
  }
+ // Defend in depth for intercepted or unexpected transport implementations.
+ if(response.redirected||(response.status>=300&&response.status<400)){
+  try{await response.body?.cancel()}catch{}
+  throw new Error('Local API redirect refused');
+ }
+ return response;
 }
 // Passive health checks must not allocate 1.5+ GB for a model on an 8 GB machine.
 // Only actions explicitly requesting AI reasoning can start the bundled worker.
@@ -58,12 +128,30 @@ function bundledStartIssue(error:unknown):string {
  return 'worker_launch_failed';
 }
 async function requestLocalAI(path:string,method:'GET'|'POST',body?:unknown):Promise<string|null>{
- if(!desktopEndpoint || !shouldLaunchBundledAI(path,method,body))return null;
+ if(!desktopEndpoint || desktopEndpoint.backend_driven_inference === true || !shouldLaunchBundledAI(path,method,body))return null;
+ // Owned mode posts first. Only the backend may request a native grant
+ // after DATA preparation; no preflight/launch IPC or implicit retry here.
+ // The Rust command can start a memory-hungry model BEFORE Python receives
+ // the AI request. Check offline AI settings and memory admission first.
+ let startupQuery = '&investigation_autonomy=true';
+ if(path.endsWith('/ai/insight')){
+  const insight = body as {context?:unknown;selected_provider?:unknown}|null|undefined;
+  const settings = new URLSearchParams({insight_context:typeof insight?.context==='string'?insight.context:'assistant'});
+  if(typeof insight?.selected_provider==='string')settings.set('selected_provider',insight.selected_provider);
+  startupQuery = `&${settings}`;
+ }
+ try {
+  const preflight=await check(await fetchLocal('/resource/preflight?operation=local_inference'+startupQuery,
+   {headers:authHeaders()})) as {decision:string};
+  if(preflight.decision==='skip')return null;
+  if(preflight.decision!=='allow')return 'resource_limited';
+ } catch {return 'resource_preflight_unavailable';}
  try {await invoke('launch_bundled_ai');return null;}
  catch (error) {return bundledStartIssue(error);}
 }
 export async function get<T>(path:string, options?:{signal?:AbortSignal}):Promise<T>{return check(await fetchLocal(path,{headers:authHeaders(),signal:options?.signal}));}
 export async function post<T>(path:string, body:unknown):Promise<T>{
+ localTarget(path);
  const startupIssue=await requestLocalAI(path,'POST',body);
  const result=await check(await fetchLocal(path,{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(body)}));
  // Preserve deterministic answers, but attach the verified desktop startup
@@ -73,31 +161,118 @@ export async function post<T>(path:string, body:unknown):Promise<T>{
  }
  return result as T;
 }
+type ConfirmedProjectCloudBody=ProjectCloudRoute&{context:string;question:string;target?:string|null;
+ experiment_id?:string|null;deep?:boolean;prediction?:null};
+// Dedicated local request boundary for confirmed cloud intent. Do not await
+// a model preflight or launch IPC before starting this exact authenticated POST.
+// Server consent and dataset-version fences still apply.
+export async function postConfirmedProjectCloud<T>(projectId:string,body:ConfirmedProjectCloudBody,current:()=>boolean):Promise<T>{
+ const allowed=['context','question','target','experiment_id','deep','prediction','selected_provider',
+  'cloud_intent','cloud_consent_witness','expected_dataset_version'];
+ if(!usesProjectCloudAPI()||typeof projectId!=='string'||!/^[a-zA-Z0-9_-]{1,128}$/.test(projectId)||
+    !body||typeof body!=='object'||Array.isArray(body)||Object.keys(body).some(key=>!allowed.includes(key))||
+    (body.selected_provider!=='gemini'&&body.selected_provider!=='groq')||body.cloud_intent!==true||
+    typeof body.cloud_consent_witness!=='string'||body.cloud_consent_witness.length>80||
+    !/^[0-9a-f]{32}:[0-9]+$/.test(body.cloud_consent_witness)||
+    !Number.isSafeInteger(body.expected_dataset_version)||body.expected_dataset_version<0||
+    typeof body.context!=='string'||!body.context||typeof body.question!=='string'||body.question.length>900||
+    (body.prediction!==undefined&&body.prediction!==null)||
+    (body.target!==undefined&&body.target!==null&&typeof body.target!=='string')||
+    (body.experiment_id!==undefined&&body.experiment_id!==null&&typeof body.experiment_id!=='string')||
+    (body.deep!==undefined&&typeof body.deep!=='boolean'))
+   throw new Error('Invalid confirmed project cloud request');
+ const path='/projects/'+projectId+'/ai/insight';
+ const options={method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(body)};
+ if(!current())throw new Error('Cloud request is no longer current');
+ return check(await fetchLocal(path,options));
+}
 export async function put<T>(path:string, body:unknown):Promise<T>{return check(await fetchLocal(path,{method:'PUT',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(body)}));}
 export async function upload(file:File):Promise<{id:string;name:string;profile:Profile}>{
  const form=new FormData();form.append('file',file);
- try{return await check(await fetch(`${apiBase()}/projects`,{method:'POST',headers:authHeaders(),body:form}));}
- catch(error){
-  if(error instanceof TypeError)throw new Error(`Could not connect to PilotODIN's local analytics service at ${new URL(apiBase()).origin} (request: /projects). Check that the PilotODIN Backend window is running, then try again.`);
-  throw error;
- }
+ return check(await fetchLocal('/projects',{method:'POST',headers:authHeaders(),body:form}));
 }
 
 /** Read-only download: authentication never appears in the URL. */
-export async function downloadCleanedData(path:string,body:unknown):Promise<{blob:Blob;filename:string}> {
+export async function downloadCleanedData(path:string,body:DatasetExportRequest):Promise<VerifiedDatasetDownload> {
+ const project=/^\/projects\/([a-f0-9]{32})\/quality\/export$/.exec(path)?.[1];
+ if(!project)throw new Error('Dataset export must identify an exact project.');
  const response=await fetchLocal(path,{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(body)});
  if(!response.ok){await check(response);throw new Error('Dataset export failed')}
- const disposition=response.headers.get('content-disposition')??'';
- const encoded=disposition.match(/filename\*=utf-8''([^;]+)/i)?.[1];
- const name=encoded?decodeURIComponent(encoded):disposition.match(/filename="?([^";]+)"?/i)?.[1]??'pilotodin_cleaned_data.csv';
- return {blob:await response.blob(),filename:name.replace(/[\\/]/g,'_')};
+ return verifyDatasetDownload(response,body,project);
 }
-
 /** Authenticated binary download. Never put desktop session credentials in URLs. */
 export async function downloadReportFile(path:string):Promise<{blob:Blob;filename:string}> {
+ // A report export filename is a cross-layer integrity contract, never a cosmetic fallback.
+ const identity=path.match(/^\/reports\/([a-f0-9]{32})\/export\/(html|pdf)\?revision=([1-9][0-9]*)$/i);
+ if(!identity)throw new Error('Report export URL must identify an exact saved report and revision.');
+ const [,reportId,format,revision]=identity;
+ const expectedFilename=`pilotodin_report_${reportId.slice(0,12).toLowerCase()}_rev${revision}.${format.toLowerCase()}`;
  const response=await fetchLocal(path,{method:'GET',headers:authHeaders()});
  if(!response.ok){await check(response);throw new Error('Report export failed')}
- const contentDisposition=response.headers.get('content-disposition')??'';
- const filename=contentDisposition.match(/filename="?([^";]+)"?/i)?.[1]??'pilotodin_report.pdf';
- return {blob:await response.blob(),filename:filename.replace(/[\\/]/g,'_')};
+ // Cross-origin WebView2 cannot read this non-safelisted header unless FastAPI
+ // explicitly provides Access-Control-Expose-Headers: Content-Disposition.
+ const contentDisposition=response.headers.get('content-disposition');
+ if(!contentDisposition)throw new Error('Report filename header is unavailable to the desktop webview. Check CORS exposed headers; Save As was not opened.');
+ const filename=contentDisposition.match(/filename="?([^";]+)"?/i)?.[1];
+ if(filename!==expectedFilename)throw new Error('Report export filename does not match the saved report revision. Save As was not opened.');
+ const contentType=response.headers.get('content-type')??'';
+ const validMime=format==='pdf'?/^application\/pdf(?:;|$)/i.test(contentType):/^text\/html(?:;|$)/i.test(contentType);
+ if(!validMime)throw new Error('Report export returned an unexpected file type. No Save As dialog was opened.');
+ const blob=await response.blob();
+ const signature=await blob.slice(0,24).text();
+ const validSignature=format==='pdf'?signature.startsWith('%PDF-'):signature.toLowerCase().startsWith('<!doctype html>');
+ if(!validSignature)throw new Error('Report export is incomplete or invalid. No Save As dialog was opened.');
+ return {blob,filename:expectedFilename};
+}
+
+
+/** Native Tauri-only Save As. Browser downloads remain a separate path. */
+export type NativeReportSaveStatus = {status:'saved'|'cancelled';filename:string|null};
+let nativeSaveActive=false;
+export async function saveReportNative(blob:Blob, filename:string, format:'html'|'pdf'):Promise<NativeReportSaveStatus> {
+ if(nativeSaveActive)throw new Error('Another native Save As is active.');
+ nativeSaveActive=true;
+ try {
+ if(!('__TAURI_INTERNALS__' in window))throw new Error('Native Save As is only available inside the PilotODIN desktop application.');
+ if(!filename.toLowerCase().endsWith('.'+format))throw new Error('Report filename does not match its file type.');
+ const maxBytes=12*1024*1024;
+ if(blob.size<=0||blob.size>maxBytes)throw new Error('Report is empty or exceeds the native Save As limit.');
+ const bytes=await blob.arrayBuffer();
+ const result=await invoke<NativeReportSaveStatus>('save_report_as',bytes,{
+  headers:{'x-pilotodin-report-format':format,'x-pilotodin-report-filename':encodeURIComponent(filename)},
+ });
+ if(result.status!=='saved'&&result.status!=='cancelled')throw new Error('Unexpected result from native Save As.');
+ return result;
+ } finally {nativeSaveActive=false;}
+}
+
+
+/** Verified binary IPC only. The host chooses the destination through Save As. */
+export async function saveDatasetNative(download:VerifiedDatasetDownload,isCurrent:()=>boolean):Promise<NativeReportSaveStatus>{
+ if(nativeSaveActive)throw new Error('Another native Save As is active.');
+ nativeSaveActive=true;
+ try {
+ if(!('__TAURI_INTERNALS__' in window)||!download.receipt)
+   throw new Error('Native dataset receipt unavailable. No Save As dialog was opened.');
+ if(!isCurrent())throw new Error('Dataset export is no longer current.');
+ if(download.blob.size!==download.expectedBytes||download.blob.size<1||download.blob.size>75*1024*1024)
+   throw new Error('Dataset bytes do not match the verified receipt.');
+ const bytes=await download.blob.arrayBuffer();
+ if(!isCurrent())throw new Error('Dataset export is no longer current.');
+ if(bytes.byteLength!==download.expectedBytes)throw new Error('Dataset bytes changed.');
+ const result=await invoke<NativeReportSaveStatus>('save_dataset_as',bytes,{headers:{
+   'x-pilotodin-export-project':download.receipt.project,
+   'x-pilotodin-export-operation':download.receipt.operation,
+   'x-pilotodin-export-mac':download.receipt.mac,
+   'x-pilotodin-dataset-format':download.format,
+   'x-pilotodin-dataset-filename':download.filename,
+   'x-pilotodin-dataset-version':String(download.version),
+   'x-pilotodin-export-size':String(download.expectedBytes),
+   'x-pilotodin-export-sha256':download.sha256,
+   'x-pilotodin-exported-rows':String(download.rows)
+ }});
+ if(result.status==='cancelled'&&result.filename===null)return result;
+ if(result.status==='saved'&&typeof result.filename==='string'&&result.filename.length>0)return result;
+ throw new Error('Unexpected native dataset Save As result.');
+ } finally {nativeSaveActive=false;}
 }

@@ -1,0 +1,39 @@
+name: C5 wheel diagnostic synthetic review
+on:
+  push:
+    branches: [feature/live-dev-workspace-20261023]
+    paths:
+      - qa/c5_wheel_metadata/wheel_diagnostic_offline.py
+      - qa/c5_wheel_metadata/test_wheel_diagnostic_offline.py
+      - qa/c5_wheel_metadata/wheel_missing_plan_20261126.json
+      - .github/workflows/c5-wheel-diagnostic-review.yml
+permissions:
+  contents: read
+jobs:
+  offline-review:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Diagnostic schema and remaining-only plan fixtures
+        shell: bash
+        run: |
+          python --version
+          python -I -B qa/c5_wheel_metadata/test_wheel_diagnostic_offline.py
+      - name: Direct acquisition refusal
+        shell: bash
+        run: |
+          set +e
+          result=$(python -I -B qa/c5_wheel_metadata/wheel_diagnostic_offline.py --collect 2>&1)
+          code=$?
+          set -e
+          test "$code" = 1
+          test "$result" = 'FRESH_APPROVAL_REQUIRED: diagnostic collection is fixture-only'
+          printf '%s\n' "$result"

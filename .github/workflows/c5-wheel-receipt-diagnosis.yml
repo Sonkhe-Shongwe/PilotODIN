@@ -1,0 +1,49 @@
+name: C5 wheel receipt diagnosis once
+on:
+  push:
+    branches: [feature/live-dev-workspace-20261023]
+    paths:
+      - qa/c5_wheel_metadata/wheel_receipt_diagnosis.py
+      - .github/workflows/c5-wheel-receipt-diagnosis.yml
+permissions:
+  contents: read
+jobs:
+  offline-review:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Offline historical receipt pins and synthetic diagnosis
+        run: |
+          test "$(git hash-object qa/c5_wheel_metadata/wheel_receipt_diagnosis.py)" = "4cb3a27f3879d64637a5c239cc253fb0de0e077b"
+          python3 -I -B qa/c5_wheel_metadata/wheel_receipt_diagnosis.py --self-test
+          set +e
+          result=$(python3 -I -B qa/c5_wheel_metadata/wheel_receipt_diagnosis.py --retrieve 2>&1)
+          code=$?
+          set -e
+          test "$code" = 2
+          test "$result" = 'C5_RECEIPT_DIAGNOSIS_REFUSAL FRESH_APPROVAL_REQUIRED'
+  retrieve-receipt:
+    if: ${{ false }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Exact existing receipt retrieval and diagnosis
+        run: |
+          test "$(git hash-object qa/c5_wheel_metadata/wheel_receipt_diagnosis.py)" = "4cb3a27f3879d64637a5c239cc253fb0de0e077b"
+          python3 -I -B qa/c5_wheel_metadata/wheel_receipt_diagnosis.py --retrieve
+        env:
+          C5_DRIVER_BLOB: 4cb3a27f3879d64637a5c239cc253fb0de0e077b
+          C5_APPROVED_ONCE: C5-WHEEL-RECEIPT-DIAGNOSIS-ONCE-20261126
+          GH_TOKEN: ${{ github.token }}

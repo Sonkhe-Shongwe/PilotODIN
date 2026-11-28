@@ -1,0 +1,350 @@
+param([switch]$PreflightOnly, [switch]$ValidateRuntime, [switch]$DockingOnly, [switch]$AcceptanceOnly, [switch]$FittedPrepareOnly)
+$ErrorActionPreference = 'Stop'
+Set-StrictMode -Version Latest
+$base = '124e2f2d34d63bce6e0db9905739bcd5259b63b0'
+$branch = 'feature/live-dev-workspace-20261023'
+$root = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
+$frontend = Join-Path $root 'frontend'
+function Fail([string]$message) { throw "P4-71 FAIL-CLOSED: $message" }
+if ($env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_ENVIRONMENT -ne 'github-hosted' -or
+    $env:RUNNER_OS -ne 'Windows' -or $env:GITHUB_EVENT_NAME -ne 'push' -or
+    $env:GITHUB_REF_NAME -ne $branch) { Fail 'Requires one trusted disposable GitHub-hosted Windows push run, never owner Windows' }
+$actual = (& git -C $root rev-parse HEAD).Trim()
+if ($LASTEXITCODE -ne 0 -or $actual -ne $env:GITHUB_SHA) { Fail 'Checked-out source differs from the workflow SHA' }
+$approvalMarker = 'qa/p4_native/P4_WINDOWS_DOCKING_RETEST_APPROVAL_20261113.txt'
+$allowed = @(
+ '.github/workflows/p4-native-docking-retest-20261113.yml',
+ $approvalMarker,
+ 'qa/p4_native/Run_P4_71_Disposable_Windows.ps1'
+)
+if ($FittedPrepareOnly) {
+ if ($DockingOnly -or $AcceptanceOnly) { Fail 'R05 cannot be combined with other native cases' }
+ $approvalMarker = 'qa/p4_native/P4_WINDOWS_R05_FITTED_PREPARE_APPROVAL.txt'
+ $approvalPath = Join-Path $root $approvalMarker
+ if (-not (Test-Path -LiteralPath $approvalPath -PathType Leaf)) { Fail 'R05 owner approval marker absent' }
+ $approval = @(Get-Content -LiteralPath $approvalPath)
+ if ($approval.Count -ne 2 -or $approval[0] -cnotmatch '^reviewed_source=([0-9a-f]{40})$') {
+   Fail 'R05 approval marker must pin one reviewed source commit'
+ }
+ $base = $Matches[1]
+ if ($approval[1] -cne 'scope=r05-one-build-one-synthetic-fit') { Fail 'R05 approval scope mismatch' }
+ $allowed = @('.github/workflows/p4-native-r05-fitted-prepare.yml', $approvalMarker)
+}
+$commitAndParents = (& git -C $root rev-list --parents -n 1 HEAD).Trim() -split ' '
+if ($LASTEXITCODE -ne 0 -or $commitAndParents.Count -ne 2 -or $commitAndParents[1] -ne $base) {
+ Fail 'One-shot run must be a direct child of the reviewed source'
+}
+if ($env:GITHUB_RUN_ATTEMPT -ne '1') { Fail 'One-shot approval excludes re-runs' }
+$changed = @(& git -C $root diff --name-only $base $actual)
+if ($LASTEXITCODE -ne 0 -or $changed.Count -ne $allowed.Count) { Fail 'One-shot launch must contain exactly the reviewed QA setup changes' }
+foreach ($path in $changed) { if ($path -cnotin $allowed) { Fail 'Unapproved path in the one-shot launch' } }
+if ($FittedPrepareOnly) {
+ $added = @(& git -C $root diff --name-only --diff-filter=A $base $actual -- $approvalMarker)
+ if ($LASTEXITCODE -ne 0 -or $added.Count -ne 1 -or $added[0] -cne $approvalMarker) { Fail 'R05 requires a newly added approval marker' }
+}
+$production = Get-Content (Join-Path $frontend 'src-tauri/tauri.conf.json') -Raw | ConvertFrom-Json
+$oldQA = Get-Content (Join-Path $frontend 'src-tauri/tauri.p4-native-qa.conf.json') -Raw | ConvertFrom-Json
+$isolated = Get-Content (Join-Path $frontend 'src-tauri/tauri.p4-isolated-native-dev.conf.json') -Raw | ConvertFrom-Json
+$package = Get-Content (Join-Path $frontend 'package.json') -Raw | ConvertFrom-Json
+if ($production.identifier -ne 'com.pilotodin.studio' -or
+    $oldQA.identifier -ne 'com.pilotodin.p4nativeqa' -or
+    $isolated.identifier -ne 'com.pilotodin.p4isolatednativedev' -or
+    (@($production.identifier,$oldQA.identifier,$isolated.identifier) | Sort-Object -Unique).Count -ne 3 -or
+    $isolated.bundle.active -ne $false -or
+    @($isolated.bundle.externalBin).Count -ne 0 -or
+    @($isolated.bundle.resources).Count -ne 0 -or
+    $null -ne $isolated.app.PSObject.Properties['appDirectoriesOverride'] -or
+    $null -ne $production.app.PSObject.Properties['appDirectoriesOverride'] -or
+    $package.scripts.'desktop:dev' -ne 'node scripts/p4-isolated-native-dev.mjs' -or
+    $package.scripts.'desktop:build' -ne 'node scripts/deny-intermediate-installer.mjs' -or
+    $production.build.beforeDevCommand -ne 'node scripts/deny-unsafe-default-tauri-dev.mjs' -or
+    $production.build.beforeBuildCommand -ne 'node scripts/deny-intermediate-installer.mjs') { Fail 'Production/QA/dev identities, bundles or default-deny hooks differ from reviewed source' }
+if (-not (Select-String -Path (Join-Path $frontend 'src-tauri/src/lib.rs') -Pattern 'app_local_data_dir' -SimpleMatch -Quiet)) { Fail 'Native backend storage derivation changed' }
+if (-not (Test-Path -LiteralPath (Join-Path $root $approvalMarker) -PathType Leaf)) { Fail 'One-shot owner approval marker absent' }
+if ($env:PILOTODIN_HOME) { Fail 'Inherited PILOTODIN_HOME is not permitted' }
+foreach ($name in @('PILOTODIN_SERVER_MODE','PILOTODIN_HOSTED_NATIVE_AUTH','PILOTODIN_DEV_CAPABILITY',
+  'PILOTODIN_DEV_PORT','PILOTODIN_DEV_ORIGIN','PILOTODIN_A4_RELAY','P1_REAL_HTTP_E2E','VITE_PILOTODIN_AUTH_DEV',
+  'PILOTODIN_P4_PRESTARTED_FRONTDOOR','VITE_PILOTODIN_P2_FULL_STACK',
+  'PILOTODIN_DESKTOP_SESSION','PILOTODIN_DESKTOP_PORT','PILOTODIN_DESKTOP_WATCH_STDIN',
+  'PILOTODIN_CONTROL_MODE','PILOTODIN_CONTROL_GENERATION','PILOTODIN_CONTROL_CAPABILITY')){
+ if([Environment]::GetEnvironmentVariable($name,'Process')){ Fail 'Inherited serving configuration is not permitted' }
+}
+if($env:PILOTODIN_DESKTOP_ALLOW_DEV -and $env:PILOTODIN_DESKTOP_ALLOW_DEV -ne '0'){ Fail 'Mixed desktop mode is not permitted' }
+foreach ($item in @('com.pilotodin.studio','com.pilotodin.p4nativeqa')) {
+ foreach($appdata in @($env:LOCALAPPDATA,$env:APPDATA)) {
+   if (Test-Path -LiteralPath (Join-Path $appdata $item)) { Fail 'Protected production or old-QA appdata unexpectedly present on disposable runner' }
+ }
+}
+$qaHome = Join-Path $env:RUNNER_TEMP ('P4-71-only-home-' + $env:GITHUB_RUN_ID)
+if (Test-Path -LiteralPath $qaHome) { Fail 'Disposable test home unexpectedly exists; refusing reuse' }
+if ($PreflightOnly -or $ValidateRuntime) {
+ Write-Host "P4-71 HOSTED WINDOWS PREFLIGHT + RUNTIME PATH PASS: exact HEAD=$actual approved_base=$base; distinct IDs; original roots absent; reserved variable avoided; bundle forbidden; no native compilation."
+ exit 0
+}
+if (-not ($FittedPrepareOnly -or $DockingOnly) -or $AcceptanceOnly) { Fail 'No matching one-shot native acceptance case' }
+New-Item -ItemType Directory -Path $qaHome | Out-Null
+$env:PILOTODIN_HOME = $qaHome
+$env:PILOTODIN_P4_UNPACKAGED_NATIVE_DEV_CONSENT = 'I_APPROVE_UNPACKAGED_P4_NATIVE_DEV'
+$env:VITE_PILOTODIN_NATIVE_SMOKE = '1'
+# Remote debugger applies to disposable hosted WebView2 only. No other host is exposed.
+$env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = '--remote-debugging-port=9331'
+. (Join-Path $PSScriptRoot 'Close_P4_Verified_Window.ps1')
+$isolatedRoot = Join-Path $env:LOCALAPPDATA 'com.pilotodin.p4isolatednativedev'
+$backend = $null
+$native = $null
+$reopened = $null
+$devServer = $null
+# Only these inputs carry the private service contract. Public smoke flags
+# and the disposable fixture root remain available to the probe.
+$privateServingNames = @('PILOTODIN_SERVER_MODE','PILOTODIN_DEV_CAPABILITY','PILOTODIN_DEV_PORT','PILOTODIN_DEV_ORIGIN')
+function Clear-PrivateServingInputs {
+ foreach($name in $privateServingNames){
+   [Environment]::SetEnvironmentVariable($name,$null,'Process')
+ }
+}
+function Assert-PublicNativeEnvironment {
+ foreach($name in $privateServingNames){
+   if([Environment]::GetEnvironmentVariable($name,'Process')){ Fail 'Private serving configuration must not reach native or driver process' }
+ }
+}
+function Test-OwnedLoopbackListener($process,[int]$port) {
+ if($null -eq $process -or $process.HasExited){return $false}
+ $listeners=@(Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue)
+ return ($listeners.Count -eq 1 -and $listeners[0].LocalAddress -ceq '127.0.0.1' -and
+         [int]$listeners[0].OwningProcess -eq $process.Id)
+}
+function Test-OwnedFrontdoor {
+ if(-not (Test-OwnedLoopbackListener $devServer 5173) -or
+    -not (Test-OwnedLoopbackListener $backend 8000)){return $false}
+ try {
+   $request=[Net.HttpWebRequest]::Create('http://127.0.0.1:5173/api/health')
+   $request.Proxy=$null
+   $request.AllowAutoRedirect=$false
+   $request.Timeout=2000
+   $request.ReadWriteTimeout=2000
+   $request.Headers.Add('X-PilotODIN-Dev-Request','1')
+   $request.Headers.Add('Origin','http://127.0.0.1:5173')
+   $reply=$request.GetResponse()
+   try {
+     if([int]$reply.StatusCode -ne 200){return $false}
+     $reader=[IO.StreamReader]::new($reply.GetResponseStream())
+     try {$status=($reader.ReadToEnd() | ConvertFrom-Json)} finally {$reader.Dispose()}
+     return ($status.status -ceq 'ok' -and (Test-OwnedLoopbackListener $devServer 5173) -and
+             (Test-OwnedLoopbackListener $backend 8000))
+   } finally {$reply.Dispose()}
+ } catch {return $false}
+}
+function Write-ScopedNetworkSnapshot([string]$stage) {
+ try {
+   $profileProcesses = @(Get-CimInstance Win32_Process -Filter "Name = 'msedgewebview2.exe'" |
+     Where-Object { $_.CommandLine -and $_.CommandLine.Contains('com.pilotodin.p4isolatednativedev') })
+   $roles = @{}
+   $roles[[int]$backend.Id] = 'backend'
+   $roles[[int]$env:P4_NATIVE_QA_APP_PID] = 'desktop'
+   foreach ($process in $profileProcesses) {
+     $role = 'webview'
+     if ($process.CommandLine -match '(?:^|\s)--utility-sub-type=network\.mojom\.NetworkService(?:\s|$)') {
+       $role = 'webview-network-service'
+     } elseif ($process.CommandLine -match '(?:^|\s)--type=(renderer|gpu-process|utility)(?:\s|$)') {
+       $role = "webview-$($Matches[1])"
+     }
+     $roles[[int]$process.ProcessId] = $role
+   }
+   $connections = @(Get-NetTCPConnection -State Established -ErrorAction Stop |
+     Where-Object { $roles.ContainsKey([int]$_.OwningProcess) })
+   $loopback = 0
+   $other = @(
+     foreach ($connection in $connections) {
+       $address = [System.Net.IPAddress]::Parse($connection.RemoteAddress)
+       if ($address.IsIPv4MappedToIPv6) { $address = $address.MapToIPv4() }
+       if ([System.Net.IPAddress]::IsLoopback($address)) { $loopback++; continue }
+       # Keep ownership and remote port in the evidence, without logging IPs or command lines.
+       [pscustomobject]@{
+         processId = $connection.OwningProcess
+         role = $roles[[int]$connection.OwningProcess]
+         remotePort = $connection.RemotePort
+         addressFamily = $address.AddressFamily.ToString()
+       }
+     }
+   )
+   Write-Host "N12 TCP snapshot ${stage}: processes=$($roles.Count) loopback=$loopback other=$($other.Count)"
+   Write-Host ("N12 non-loopback TCP owners ${stage}: " + (ConvertTo-Json -InputObject $other -Compress))
+ } catch {
+   Write-Host "N12 TCP snapshot ${stage}: unavailable"
+ }
+}
+try {
+ # Existing one-shot gate above remains the sole native execution authority.
+ $random=[Security.Cryptography.RandomNumberGenerator]::Create()
+ try {
+   $capabilityBytes=New-Object byte[] 32
+   $random.GetBytes($capabilityBytes)
+   $env:PILOTODIN_DEV_CAPABILITY=([BitConverter]::ToString($capabilityBytes)).Replace('-','').ToLowerInvariant()
+   [Array]::Clear($capabilityBytes,0,$capabilityBytes.Length)
+ } finally {$random.Dispose()}
+ $env:PILOTODIN_SERVER_MODE='hosted-fixture'
+ $env:PILOTODIN_HOSTED_NATIVE_AUTH='1'
+ $env:PILOTODIN_DEV_PORT='8000'
+ $env:PILOTODIN_DEV_ORIGIN='http://127.0.0.1:5173'
+ $env:VITE_PILOTODIN_AUTH_DEV='1'
+ $backend = Start-Process -FilePath 'python.exe' -ArgumentList @('-m','uvicorn','backend.server_entry:owned_app','--factory','--host','127.0.0.1','--port','8000','--no-access-log','--no-proxy-headers') -WorkingDirectory $root -PassThru
+ $ready = $false
+ for ($i=0; $i -lt 60; $i++) {
+   Start-Sleep -Seconds 2
+   if ($backend.HasExited) { Fail 'Disposable Python backend exited before health check' }
+   if (-not (Test-OwnedLoopbackListener $backend 8000)) { continue }
+   try {
+     $request=[Net.HttpWebRequest]::Create('http://127.0.0.1:8000/api/health')
+     $request.Proxy=$null
+     $request.AllowAutoRedirect=$false
+     $request.Timeout=2000
+     $request.ReadWriteTimeout=2000
+     $request.Headers.Add('X-PilotODIN-Dev-Capability',$env:PILOTODIN_DEV_CAPABILITY)
+     $reply=$request.GetResponse()
+     try {
+       if([int]$reply.StatusCode -ne 200){Fail 'Authenticated health refused'}
+       $reader=[IO.StreamReader]::new($reply.GetResponseStream())
+       try {$status=($reader.ReadToEnd() | ConvertFrom-Json)} finally {$reader.Dispose()}
+     } finally {$reply.Dispose()}
+     if ($status.status -eq 'ok' -and (Test-OwnedLoopbackListener $backend 8000)) { $ready = $true; break }
+   } catch { }
+ }
+ if (-not $ready) { Fail 'Disposable Python backend unavailable; compile NOT started' }
+ Write-Host 'DISPOSABLE LOOPBACK BACKEND READY: 127.0.0.1:8000 (no sidecar/Qwen).'
+ # Only the two owned service children inherit private serving inputs.
+ # Start Vite directly, not as a Tauri/npm child. Refuse any foreign port.
+ $devServer = Start-Process -FilePath 'node.exe' -ArgumentList @('node_modules/vite/bin/vite.js','--host','127.0.0.1','--port','5173','--strictPort') -WorkingDirectory $frontend -PassThru
+ Clear-PrivateServingInputs
+ Assert-PublicNativeEnvironment
+ $viteReady=$false
+ for($i=0; $i -lt 60; $i++){
+   if($devServer.HasExited){Fail 'Owned Vite exited before native compilation'}
+   if(Test-OwnedFrontdoor){$viteReady=$true;break}
+   Start-Sleep -Milliseconds 500
+ }
+ if(-not $viteReady){Fail 'Owned authenticated Vite unavailable; compile NOT started'}
+ $env:PILOTODIN_P4_PRESTARTED_FRONTDOOR='1'
+ # Exactly one approved Tauri dev compile; do NOT retry if it fails.
+ Write-Host 'STARTING ONE APPROVED NATIVE DEVELOPER BUILD.'
+ Assert-PublicNativeEnvironment
+ $native = Start-Process -FilePath 'cmd.exe' -ArgumentList @('/c','npm run desktop:dev') -WorkingDirectory $frontend -PassThru
+ $binary = Join-Path $frontend 'src-tauri/target/debug/pilotodin-desktop.exe'
+ $compiled = $false
+ for($i=0; $i -lt 540; $i++) {
+   Start-Sleep -Seconds 5
+   if ($native.HasExited) { Fail 'Native developer build/launcher exited; do not repeat this one-shot build' }
+   if ($backend.HasExited -or $devServer.HasExited) { Fail 'Owned service exited during the single native launch' }
+   if (Test-Path -LiteralPath $binary -PathType Leaf) {
+     $nativeProcess = @(Get-CimInstance Win32_Process -Filter "Name = 'pilotodin-desktop.exe'" -ErrorAction SilentlyContinue |
+       Where-Object { [string]::Equals($_.ExecutablePath, $binary, [StringComparison]::OrdinalIgnoreCase) })
+     if ($nativeProcess.Count -gt 1) { Fail 'More than one isolated QA desktop process was found' }
+     if ($nativeProcess.Count -eq 1) {
+       $env:P4_NATIVE_QA_APP_PID = [string]$nativeProcess[0].ProcessId
+       $compiled = $true
+       break
+     }
+   }
+ }
+ if (-not $compiled) { Fail 'Single native developer compilation/runtime failed to start inside time budget' }
+ $sha = (Get-FileHash -LiteralPath $binary -Algorithm SHA256).Hash.ToLowerInvariant()
+ $bytes = (Get-Item -LiteralPath $binary).Length
+ Write-Host "ONE NATIVE DEV COMPILATION: exact source $actual ; executable SHA256=$sha ; bytes=$bytes ; no installer."
+ $cdp = $false
+ for($i=0; $i -lt 20; $i++) {
+   Start-Sleep -Seconds 2
+   try { $v = Invoke-RestMethod -Uri 'http://127.0.0.1:9331/json/version' -TimeoutSec 2; if ($v.webSocketDebuggerUrl) { $cdp=$true; break } } catch { }
+ }
+ $webviews=@(Get-CimInstance Win32_Process -Filter "Name = 'msedgewebview2.exe'" -ErrorAction SilentlyContinue |
+  Where-Object {$_.CommandLine -and $_.CommandLine.Contains('com.pilotodin.p4isolatednativedev')})
+ Write-Host "NATIVE WEBVIEW SMOKE: isolated_app_root_present=$(Test-Path $isolatedRoot); isolated_WebView2_processes=$($webviews.Count); debugger_ready=$cdp"
+ if (-not (Test-Path $isolatedRoot) -or $webviews.Count -lt 1) { Fail 'Actual native WebView2 profile isolation/startup not proven' }
+ Write-ScopedNetworkSnapshot 'before interactions'
+ # Collect probe diagnostics even if the readiness poll found no debugger.
+ Assert-PublicNativeEnvironment
+ if(-not (Test-OwnedFrontdoor)){Fail 'Owned authenticated Vite unavailable before probe'}
+ Push-Location $frontend
+ try {
+   if ($FittedPrepareOnly) { node e2e/p4-71-native-webview-qa.mjs --verify-fitted-prepare }
+   elseif ($AcceptanceOnly) { node e2e/p4-71-native-webview-qa.mjs --verify-acceptance }
+   elseif ($DockingOnly) { node e2e/p4-71-native-webview-qa.mjs --verify-docking }
+   else { node e2e/p4-71-native-webview-qa.mjs }
+   if ($LASTEXITCODE -eq 2) { Fail 'Native startup verified; N2-N12 BLOCKED before fixture creation. See loopback diagnostics.' }
+   if ($LASTEXITCODE -eq 3) { Fail 'Native project switch BLOCKED at the Windows confirmation. See the per-case probe output.' }
+   if ($LASTEXITCODE -ne 0) {
+     if ($FittedPrepareOnly) { Fail 'R05 fitted Prepare probe failed. See the per-case results.' }
+     if ($AcceptanceOnly) { Fail 'Remaining Windows acceptance probe failed. See R04, R05 and N12 case results.' }
+     if ($DockingOnly) { Fail 'R04 WebView2 docking probe failed. See the per-step results and drag event counts.' }
+     Fail 'Native WebView2 synthetic QA failed: preserve failure evidence, no repeat compilation under this approval'
+   }
+ } finally {
+   Pop-Location
+   Write-ScopedNetworkSnapshot 'after interactions'
+ }
+ if ($FittedPrepareOnly -or $AcceptanceOnly -or $DockingOnly) { return }
+ $closedAppPid = [int]$env:P4_NATIVE_QA_APP_PID
+ Close-P4VerifiedWindow -AppProcessId $closedAppPid -ExpectedPath $binary -ExpectedTitle $isolated.app.windows[0].title
+ Write-Host 'N11 isolated app accepted its Windows close request and exited normally.'
+ if (-not $native.WaitForExit(10000)) {
+   & taskkill.exe /PID $native.Id /T /F | Out-Null
+   if (-not $native.WaitForExit(5000)) { Fail 'The original development launcher did not stop' }
+ }
+ # The independent Vite child must remain the same owned service. Never
+ # adopt a foreign listener or restart the private service for relaunch.
+ Assert-PublicNativeEnvironment
+ if(-not (Test-OwnedFrontdoor)){Fail 'Original authenticated Vite unavailable for relaunch'}
+ if ((Get-FileHash -LiteralPath $binary -Algorithm SHA256).Hash.ToLowerInvariant() -ne $sha) {
+   Fail 'The app binary changed after the first launch'
+ }
+ $oldDebuggerReady = $true
+ for ($i=0; $i -lt 12; $i++) {
+   try { $oldDebuggerReady = [bool](Invoke-RestMethod -Uri 'http://127.0.0.1:9331/json/version' -TimeoutSec 1).webSocketDebuggerUrl }
+   catch { $oldDebuggerReady = $false }
+   if (-not $oldDebuggerReady) { break }
+   Start-Sleep -Milliseconds 500
+ }
+ if ($oldDebuggerReady) { Fail 'The previous WebView debugger remained reachable after closing the app' }
+ if(-not (Test-OwnedFrontdoor)){Fail 'Original authenticated Vite unavailable immediately before relaunch'}
+ Assert-PublicNativeEnvironment
+ $reopened = Start-Process -FilePath $binary -WorkingDirectory (Split-Path $binary) -PassThru
+ if ($reopened.Id -eq $closedAppPid) { Fail 'Could not establish a distinct relaunched app process' }
+ $env:P4_NATIVE_QA_APP_PID = [string]$reopened.Id
+ Write-Host 'N11 started a new Windows app process from the same verified binary.'
+ $relaunchCdp = $false
+ for ($i=0; $i -lt 25; $i++) {
+   if ($reopened.HasExited) { Fail 'The relaunched QA app exited before the WebView was ready' }
+   try { $v = Invoke-RestMethod -Uri 'http://127.0.0.1:9331/json/version' -TimeoutSec 2; if ($v.webSocketDebuggerUrl) { $relaunchCdp = $true; break } } catch { }
+   Start-Sleep -Seconds 1
+ }
+ if (-not $relaunchCdp) { Fail 'The relaunched WebView debugger did not become ready' }
+ Assert-PublicNativeEnvironment
+ if(-not (Test-OwnedFrontdoor)){Fail 'Original authenticated Vite unavailable before relaunch probe'}
+ Push-Location $frontend
+ try {
+   node e2e/p4-71-native-webview-qa.mjs --verify-relaunch
+   if ($LASTEXITCODE -ne 0) { Fail 'Post-relaunch probe reported an incomplete or failed check. See individual N11, R04, R05 and N12 results.' }
+ } finally { Pop-Location }
+ # Do not count this hosted runner as a physical 8 GB/Qwen/offline acceptance.
+ Write-Host 'R03 PHYSICAL 8GB + QWEN OFFLINE: NOT TESTED. No model fitted. No original owner files touched.'
+} finally {
+ # Clear before starting any cleanup command, even if service startup failed.
+ Clear-PrivateServingInputs
+ if ($reopened -and -not $reopened.HasExited) { & taskkill.exe /PID $reopened.Id /T /F 2>$null | Out-Null }
+ if ($devServer -and -not $devServer.HasExited) { Stop-Process -Id $devServer.Id -Force -ErrorAction SilentlyContinue }
+ if ($native -and -not $native.HasExited) { & taskkill.exe /PID $native.Id /T /F 2>$null | Out-Null }
+ if ($backend -and -not $backend.HasExited) { Stop-Process -Id $backend.Id -Force -ErrorAction SilentlyContinue }
+ foreach($name in @('PILOTODIN_HOSTED_NATIVE_AUTH','VITE_PILOTODIN_AUTH_DEV','PILOTODIN_P4_PRESTARTED_FRONTDOOR')){
+   [Environment]::SetEnvironmentVariable($name,$null,'Process')
+ }
+ foreach($name in @('com.pilotodin.studio','com.pilotodin.p4nativeqa')) {
+  foreach($baseDir in @($env:LOCALAPPDATA,$env:APPDATA)) {
+   if (Test-Path -LiteralPath (Join-Path $baseDir $name)) { Fail 'Unexpected protected profile path created: STOP/FAIL' }
+  }
+ }
+ $qaFileCount = @(Get-ChildItem -LiteralPath $qaHome -File -Recurse -ErrorAction Stop).Count
+ $profileFileCount = 0
+ if (Test-Path -LiteralPath $isolatedRoot -PathType Container) {
+   $profileFileCount = @(Get-ChildItem -LiteralPath $isolatedRoot -File -Recurse -ErrorAction Stop).Count
+ }
+ Write-Host "N12 scoped file inventory: disposable QA home files=$qaFileCount; isolated WebView profile files=$profileFileCount"
+ Write-Host 'POSTRUN PROTECTED IDENTITIES ABSENT on disposable hosted runner. Historical owner R06 FAIL unchanged.'
+}
