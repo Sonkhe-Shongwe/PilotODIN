@@ -1,65 +1,12 @@
-# PROSPECTIVE ONLY. Publish only after explicit one-use execution approval and trigger audit.
-name: C5 cgroup feasibility once 20261128
+# Consumed or refused one-use cgroup observation. Do not replay.
+name: C5 cgroup feasibility once 20261128 (disarmed)
 on:
-  push:
-    branches: [feature/live-dev-workspace-20261023]
-    paths:
-      - qa/c5_managed_dev/APPROVAL_CGROUP_FEASIBILITY_20261128.txt
-permissions:
-  contents: read
-concurrency:
-  group: pilotodin-c5-cgroup-feasibility-once-20261128
-  cancel-in-progress: false
+  workflow_dispatch:
+permissions: {}
 jobs:
-  observe-once:
-    if: ${{ github.event_name == 'push' && github.run_attempt == 1 && github.ref == 'refs/heads/feature/live-dev-workspace-20261023' }}
+  disabled:
+    if: ${{ false }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - name: Checkout exact activation
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-        with:
-          ref: ${{ github.sha }}
-          persist-credentials: false
-          fetch-depth: 2
-          path: activation
-      - name: Verify activation marker and isolated activation diff
-        shell: bash
-        working-directory: activation
-        run: |
-          set -euo pipefail
-          test "$GITHUB_RUN_ATTEMPT" = 1
-          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
-          test "$(git rev-parse HEAD:qa/c5_managed_dev/APPROVAL_CGROUP_FEASIBILITY_20261128.txt)" = "8dc0b726ce2aaa62adaf4f20f57b3c52cfe25b83"
-          test "$(cat 'qa/c5_managed_dev/APPROVAL_CGROUP_FEASIBILITY_20261128.txt')" = 'C5-CGROUP-FEASIBILITY-OBSERVATION-ONCE-20261128'
-          test "$(git rev-list --count HEAD^..HEAD)" = 1
-          test "$(git diff --name-status HEAD^ HEAD -- 'qa/c5_managed_dev/APPROVAL_CGROUP_FEASIBILITY_20261128.txt')" = "$(printf 'A\t%s' 'qa/c5_managed_dev/APPROVAL_CGROUP_FEASIBILITY_20261128.txt')"
-          test "$(git diff --name-only HEAD^ HEAD | LC_ALL=C sort)" = "$(printf '%s\n' '.github/workflows/c5-cgroup-feasibility-once.yml' 'CONTINUATION_STATE.json' 'qa/c5_managed_dev/APPROVAL_CGROUP_FEASIBILITY_20261128.txt' | LC_ALL=C sort)"
-          echo 'C5_CGROUP_ACTIVATION_MARKER_VERIFIED'
-      - name: Checkout exact detached observation source
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-        with:
-          ref: '1389a07e5773442d603a5f771c401f8828f1daa5'
-          persist-credentials: false
-          fetch-depth: 1
-          path: observation
-      - name: Verify immutable source and run bounded observation only
-        shell: bash
-        working-directory: observation
-        env:
-          C5_OBSERVATION_ACTIVATION: 'C5-CGROUP-FEASIBILITY-OBSERVATION-ONCE-20261128'
-        run: |
-          set -euo pipefail
-          test "$GITHUB_RUN_ATTEMPT" = 1
-          test "$(git rev-parse HEAD)" = '1389a07e5773442d603a5f771c401f8828f1daa5'
-          test "$(git rev-parse 'HEAD^{tree}')" = 'fa5666f973a6cbe16ef72e3f8dc17a45334c7d9f'
-          test "$(git rev-parse HEAD:qa/c5_managed_dev/c5_cgroup_feasibility.py)" = '4fb60d8855d392f2d89aed24ade02ea005a245b1'
-          git diff --quiet HEAD --
-          test -z "$(git status --porcelain)"
-          test "$(id -u)" != 0
-          test "$(uname -m)" = x86_64
-          test "${ImageOS:-}" = ubuntu24
-          test "$(readlink -f /usr/bin/python3.12)" = /usr/bin/python3.12
-          /usr/bin/python3.12 -I -S -B -c 'import sys; assert sys.implementation.name == "cpython" and sys.version_info[:2] == (3,12)'
-          echo 'C5_CGROUP_SOURCE_VERIFIED'
-          /usr/bin/python3.12 -I -S -B 'qa/c5_managed_dev/c5_cgroup_feasibility.py' 'C5-CGROUP-FEASIBILITY-OBSERVATION-ONCE-20261128'
+      - run: exit 2
