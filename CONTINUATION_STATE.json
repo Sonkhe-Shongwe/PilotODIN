@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-DEV-VM-01-S2-PREUSE-AND-OVERLAY-20261128-PARTIAL",
-    "parent_sha": "bb186c8411ebcd06bac8f06c0978e9c0d9660bd7",
-    "previous_snapshot_sha": "bb186c8411ebcd06bac8f06c0978e9c0d9660bd7",
-    "scope": "S2 partial preparation: exact lock projections, mounted regression source and explicit use holds",
+    "operation_id": "C5-DEV-VM-01-S2-MOUNTED-VERSION-RACES-20261128",
+    "parent_sha": "895ca78521a6ce8fb31228403657d9bc1246c356",
+    "previous_snapshot_sha": "895ca78521a6ce8fb31228403657d9bc1246c356",
+    "scope": "S2 additional mounted dataset-version transition regression source",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "blob_sha": "de38145ce1f823a81bc6cb13fa6c70b3cb7ad200",
-      "anchor": "28-november--dev-vm-01-s2-exact-static-projections-and-mounted-test-source",
-      "start_line": 1289,
-      "end_line": 1297
+      "blob_sha": "6d157d1ec210a6eed43ac94047072cee926235d8",
+      "anchor": "28-november--dev-vm-01-mounted-dataset-version-transition-test-source",
+      "start_line": 1299,
+      "end_line": 1305
     }
   },
   "product": {
@@ -135,15 +135,22 @@
     "id": "C5-DEV-VM-01-S2-PREUSE-AND-OVERLAY-20261128",
     "status": "READY",
     "scope": "S2 review of actual S1 facts at exact receipt blob 02ce4c6d821bae913691d0a5501fe516df2fd908 and conditional dependency overlays targeting bb46e49; complete exact applicable pre-use and consolidated Windows/Linux regression preparation.",
-    "blocker": "Pre-use rights/security/native linkage and actual compatible environment remain held. Mounted synthetic test source prepared but unexecuted; actual dataset-version transition race, PDFium equivalence, font/preflight rebinding and exact final functional workflow outstanding. No installation or execution authority.",
+    "blocker": "Pre-use rights/security/native linkage and actual compatible environment remain held. Five mounted synthetic regression scenarios prepared but unexecuted; PDFium equivalence, font/preflight rebinding and exact final functional workflow outstanding. No installation or execution authority.",
     "next_action_kind": "PREPARATION",
-    "next_action": "Resume from detached 7aea354 exact S2 projection and ae3e9d7 test source. Review applicable rights/security/component/compatibility against pinned historic evidence (no repeated identical acquisition); complete actual mounted dataset-version transition regression, coordinated font/preflight rebinding and exact consolidated disarmed Windows/Linux workflow. Stop at genuine unresolved holds; request only exact bounded authority when viable.",
+    "next_action": "Resume detached 615c0f7 (includes 7aea354 and ae3e9d7). Complete finite applicable rights/security/component/compatibility review against pinned historic evidence, coordinated font/preflight rebinding and exact consolidated disarmed Windows/Linux workflow. Do not repeat completed identity inspections or mounted source preparation; stop at genuine unresolved holds, request exact bounded authority only when viable.",
     "after": [
       "Verify consolidated functional Windows/Linux synthetic stages only when applicable pre-use and exact authority satisfied; no auto-use or live merge.",
       "Close C5 and award only qualifying original evidence; all six P4 and native D/G2/E2/8GB/Gate C requirements preserved.",
       "DLA parked; P5/installer/release remain unauthorised."
     ],
     "read": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "6d157d1ec210a6eed43ac94047072cee926235d8",
+        "anchor": "28-november--dev-vm-01-mounted-dataset-version-transition-test-source",
+        "start_line": 1299,
+        "end_line": 1305
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "blob_sha": "de38145ce1f823a81bc6cb13fa6c70b3cb7ad200",
@@ -195,17 +202,17 @@
     ]
   },
   "operation": {
-    "id": "C5-DEV-VM-01-S2-PREUSE-AND-OVERLAY-20261128-PARTIAL",
+    "id": "C5-DEV-VM-01-S2-MOUNTED-VERSION-RACES-20261128",
     "state": "RECONCILED",
-    "starting_sha": "bb186c8411ebcd06bac8f06c0978e9c0d9660bd7",
-    "outcome": "Detached ae3e9d7 and 7aea354 verified; 24 receipt rows reconciled, 2 x 49 wheel lock rows matched, 2 x 86 exact archive profiles, 29 overlay base paths match. No functional execution or acceptance credit.",
+    "starting_sha": "895ca78521a6ce8fb31228403657d9bc1246c356",
+    "outcome": "Detached 615c0f7 exact source readback and single-file diff verified; two additional generated mounted dataset-version scenarios prepared, not executed. No acceptance delta.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "blob_sha": "de38145ce1f823a81bc6cb13fa6c70b3cb7ad200",
-      "anchor": "28-november--dev-vm-01-s2-exact-static-projections-and-mounted-test-source",
-      "start_line": 1289,
-      "end_line": 1297
+      "blob_sha": "6d157d1ec210a6eed43ac94047072cee926235d8",
+      "anchor": "28-november--dev-vm-01-mounted-dataset-version-transition-test-source",
+      "start_line": 1299,
+      "end_line": 1305
     }
   },
   "authority": {
@@ -719,6 +726,10 @@
       {
         "sha": "7aea3548f66460ee254e057dd9854a2303e30c79",
         "scope": "S2 inert exact dependency projections and 24 use holds; no lock cutover, execution or integration."
+      },
+      {
+        "sha": "615c0f74ee6de119e5e62c6fb966931cfc6400f8",
+        "scope": "Two additional mounted synthetic dataset-version transition races; exact source readback/diff verified, not compiled or executed."
       }
     ]
   },
@@ -746,7 +757,8 @@
     "DEV-VM-01 accepted limited disposable CI residual risk, not native settlement or zero egress. 0f454aa is data-only; actual pre-use security/rights, ReportLab/@playwright/test facts, conditional PDFium equivalence, compatible tool/browser, final overlay/workflow and exact activation approval still pending. Earlier independent hosted containment holds superseded only for reviewed synthetic DEV-VM-01; preserve all native/physical proof.",
     "DEV-VM-01 S1 exact inert binding 7ffef75: source tests and actual host/archives unexecuted; full trigger audit incomplete (15/130 read); strict parser/patch drift and receipt output may refuse, rights/security/linkage still held; S2-S4 not yet executable.",
     "S1 24/24 static facts PASS, not use clearance; ReportLab exact metadata and @playwright/test identity measured, applicable licence/security/native component review, exact overlays and functional tests remain. No independent wire/host settlement claim, no retained wheelhouse.",
-    "S2 7aea354 exact projections are inert; applicable rights/security/linkage and final managed tool compatibility, PDFium equivalence, font/preflight and final workflow still held. Mounted browser tests ae3e9d7 unexecuted; actual version-change race still needs coverage. No acceptance delta."
+    "S2 7aea354 exact projections are inert; applicable rights/security/linkage and final managed tool compatibility, PDFium equivalence, font/preflight and final workflow still held. Mounted browser tests ae3e9d7 unexecuted; actual version-change race still needs coverage. No acceptance delta.",
+    "Mounted version transition source 615c0f7 supersedes missing coverage risk of ae3e9d7, but five scenarios remain uncompiled/unexecuted; actual selector and renderer behaviour require authorised functional regression."
   ],
   "context": {
     "protocol": {
@@ -821,6 +833,13 @@
       }
     ],
     "evidence": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "6d157d1ec210a6eed43ac94047072cee926235d8",
+        "anchor": "28-november--dev-vm-01-mounted-dataset-version-transition-test-source",
+        "start_line": 1299,
+        "end_line": 1305
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "blob_sha": "de38145ce1f823a81bc6cb13fa6c70b3cb7ad200",
