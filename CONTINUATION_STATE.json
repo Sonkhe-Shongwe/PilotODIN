@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "P4-DLA-FINITE-REVIEW-AND-LOCAL-COVERAGE-20261128",
-    "parent_sha": "31b002060648734a62d3775931bd8a35e2de0642",
-    "previous_snapshot_sha": "31b002060648734a62d3775931bd8a35e2de0642",
-    "scope": "Finite DLA existing-input readiness disposition and detached Local analytics missingness coverage correction; live docs/state only",
+    "operation_id": "P4-LOCAL-INSIGHT-VERSION-BINDING-20261128",
+    "parent_sha": "6960a805533edccbdd1f65ab1fba6e129353acf6",
+    "previous_snapshot_sha": "6960a805533edccbdd1f65ab1fba6e129353acf6",
+    "scope": "Detached P4 Local ODIN explicit dataset-version binding and source readback; live continuity documentation only",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "blob_sha": "b4e4eb914188e91b5f61731ae25f9bc8a880d850",
-      "anchor": "28-november--finite-dla-build-readiness-hold-and-local-analytics-coverage-candidate",
-      "start_line": 1233,
-      "end_line": 1241
+      "blob_sha": "0aae4dad1cedd4f48e7f94e2c36c3c31125e8ceb",
+      "anchor": "28-november--local-odin-explicit-dataset-version-binding-candidate",
+      "start_line": 1243,
+      "end_line": 1251
     }
   },
   "product": {
@@ -134,16 +134,23 @@
   "task": {
     "id": "P4-CONSOLIDATED-FUNCTIONAL-REGRESSION-READINESS-20261128",
     "status": "BLOCKED",
-    "scope": "Existing independent Explore and Local analytics missingness candidates: preserve both, consolidate affected numerical/API and browser checks only after applicable C5 pre-use; no live integration or restricted execution.",
-    "blocker": "C5 use-specific dependency integrity/rights/compatible environment and exact functional regression execution authority remain missing; DLA additionally lacks immutable Granite identity, qualified Windows build inputs and positive settlement.",
+    "scope": "Existing independent Explore, Local analytics missingness and Local ODIN version-binding candidates; consolidate affected functional/API and real browser checks only after applicable C5 pre-use and reviewed execution authority.",
+    "blocker": "C5 use-specific dependency integrity/rights/compatible environment and exact functional execution authority remain missing; DLA separately parked for missing immutable Granite identity, qualified Windows build inputs and positive settlement.",
     "next_action_kind": "MISSING_EVIDENCE",
-    "next_action": "Resume only on material new C5 pre-use evidence or an exact viable owner-authorised consolidated functional scope; preserve e53ac8c and 541cbeb, do not rerun unchanged source suites. If blocked, choose an independently evidenced authorised P4 correctness defect, not speculative infrastructure. DLA parked until material new inputs or explicit owner decision.",
+    "next_action": "Resume on material new C5 pre-use evidence or exact viable owner-authorised consolidated functional scope; preserve 541cbeb, e53ac8c and 60d8c0d. No repeated source tests on unchanged code, no accumulation of untested increments without concrete material defect. If no such authorised work exists, surface C5 evidence/owner decision blocker. DLA parked until material new evidence or explicit owner decision.",
     "after": [
       "Verify exact functional numerical/API and React/browser regressions for retained candidates when safe; no live merge until applicable pre-use and trigger audit.",
       "Preserve early physical E2 R03.3/R03.4, original E-02/W07, R06 historical strict FAIL/UNKNOWN and prospective G2 hold.",
       "Retain C5 rows 5–8, D1/D2, all six P4 checks and Gate C; P5, installer and release remain unauthorised."
     ],
     "read": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "0aae4dad1cedd4f48e7f94e2c36c3c31125e8ceb",
+        "anchor": "28-november--local-odin-explicit-dataset-version-binding-candidate",
+        "start_line": 1243,
+        "end_line": 1251
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "blob_sha": "b4e4eb914188e91b5f61731ae25f9bc8a880d850",
@@ -173,21 +180,39 @@
       {
         "path": "tests/test_p4_r03_verified_answers.py",
         "blob_sha": "1a5bef990f4cac3bd8377da8562b087e3ac2f49a"
+      },
+      {
+        "path": "frontend/src/AssistantWorkspace.tsx",
+        "blob_sha": "bf879c09d4cc524b3561a5d003be7e9b70ad1891"
+      },
+      {
+        "path": "frontend/src/AIWorkspace.tsx",
+        "blob_sha": "7765e9b52932a324cbc17fba169c1951c185e3f4"
+      },
+      {
+        "path": "backend/main.py",
+        "blob_sha": "4990c06b7946d1215f30684e39788195e2d44ed8"
+      },
+      {
+        "path": "tests/test_c4_cloud_intent.py"
+      },
+      {
+        "path": "frontend/tests/desktop-ai-boundaries.test.cjs"
       }
     ]
   },
   "operation": {
-    "id": "P4-DLA-FINITE-REVIEW-AND-LOCAL-COVERAGE-20261128",
+    "id": "P4-LOCAL-INSIGHT-VERSION-BINDING-20261128",
     "state": "RECONCILED",
-    "starting_sha": "31b002060648734a62d3775931bd8a35e2de0642",
-    "outcome": "DLA parked after finite existing C5 input review; detached missingness coverage correction and two API regression methods prepared and read back; no tests run or live integration.",
+    "starting_sha": "6960a805533edccbdd1f65ab1fba6e129353acf6",
+    "outcome": "Prepared and read back detached Local ODIN version fence candidate covering both panels and both backend compositions; functional/CI/build/native tests not executed; no live product integration.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "blob_sha": "b4e4eb914188e91b5f61731ae25f9bc8a880d850",
-      "anchor": "28-november--finite-dla-build-readiness-hold-and-local-analytics-coverage-candidate",
-      "start_line": 1233,
-      "end_line": 1241
+      "blob_sha": "0aae4dad1cedd4f48e7f94e2c36c3c31125e8ceb",
+      "anchor": "28-november--local-odin-explicit-dataset-version-binding-candidate",
+      "start_line": 1243,
+      "end_line": 1251
     }
   },
   "authority": {
@@ -673,6 +698,10 @@
       {
         "sha": "e53ac8c1eb9f52d993b4d6b8feafcdbcf35acd14",
         "scope": "P4 Local analytics missingness overview bounded coverage disclosure and two API regression methods; detached source candidate, exact diff readback only; no tests, activation or integration."
+      },
+      {
+        "sha": "60d8c0d138dcdbdde395059e2ea5827fa952e2a1",
+        "scope": "P4 local insight explicit dataset-version request/response and continuation fences in two HTTP compositions and mounted panels; 20 parameterised HTTP cases and one frontend contract prepared, nine direct source assertions/readback only; not run or integrated."
       }
     ]
   },
@@ -694,7 +723,8 @@
     "Archive inspection exact disarmed binding 618128b prepared, actual service redirect/layout/member/notice receipt and rights review outstanding; 3 transport tests not run. Separate Windows MSVC/locked Cargo native validation inputs remain unresolved; Granite exact bytes/pointer held.",
     "DLA archive run 46169089369 terminal refused after 3/3 transport tests; zero inventory receipt, failure stage and actual GET/body counts unknown due generic exception handling. Both guards disarmed; grant consumed. No retry or rights/member acceptance. Granite size/pointer and native validation unresolved.",
     "Pinned b10344 Windows CPU upstream recipe copies libomp from debug_nonredist; applicable rights and actual archive contents unresolved. Old inspection parked; alternative pinned upstream standard CPU-only source build proposed not adopted, exact build/model input and settlement readiness absent. No automatic retries or pre-use waiver.",
-    "DLA finite existing-input review confirms unqualified Windows C++/SDK/redist build graph, unknown exact Granite size/pointer and no positive settlement; park route, no retry/acquisition/build. Local analytics missingness overview coverage candidate e53ac8c remains detached, functional API checks and C5 pre-use pending; no acceptance delta."
+    "DLA finite existing-input review confirms unqualified Windows C++/SDK/redist build graph, unknown exact Granite size/pointer and no positive settlement; park route, no retry/acquisition/build. Local analytics missingness overview coverage candidate e53ac8c remains detached, functional API checks and C5 pre-use pending; no acceptance delta.",
+    "Detached Local ODIN version-binding candidate 60d8c0d: actual API/browser/build regression and applicable C5 pre-use pending; legacy non-owned model prelaunch before HTTP and post-check freshness limits remain; not native or acceptance proof."
   ],
   "context": {
     "protocol": {
@@ -769,6 +799,13 @@
       }
     ],
     "evidence": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "0aae4dad1cedd4f48e7f94e2c36c3c31125e8ceb",
+        "anchor": "28-november--local-odin-explicit-dataset-version-binding-candidate",
+        "start_line": 1243,
+        "end_line": 1251
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "blob_sha": "b4e4eb914188e91b5f61731ae25f9bc8a880d850",
