@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-DEV-VM-01-S2-MOUNTED-VERSION-RACES-20261128",
-    "parent_sha": "895ca78521a6ce8fb31228403657d9bc1246c356",
-    "previous_snapshot_sha": "895ca78521a6ce8fb31228403657d9bc1246c356",
-    "scope": "S2 additional mounted dataset-version transition regression source",
+    "operation_id": "C5-DEV-VM-01-S2-FONT-REVIEW-20261128",
+    "parent_sha": "110ac9b0edc74ac39226c45e5daa3f8f172eb218",
+    "previous_snapshot_sha": "110ac9b0edc74ac39226c45e5daa3f8f172eb218",
+    "scope": "C5 closure focus: exact frontend font notice reuse and ReportLab candidate font witness rebind",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "blob_sha": "6d157d1ec210a6eed43ac94047072cee926235d8",
-      "anchor": "28-november--dev-vm-01-mounted-dataset-version-transition-test-source",
-      "start_line": 1299,
-      "end_line": 1305
+      "blob_sha": "5dd4d862f19f997206c1b972a48cf89415fd7d78",
+      "anchor": "28-november--dev-vm-01-c5-closure-focus-and-font-witness-rebind",
+      "start_line": 1307,
+      "end_line": 1313
     }
   },
   "product": {
@@ -135,15 +135,22 @@
     "id": "C5-DEV-VM-01-S2-PREUSE-AND-OVERLAY-20261128",
     "status": "READY",
     "scope": "S2 review of actual S1 facts at exact receipt blob 02ce4c6d821bae913691d0a5501fe516df2fd908 and conditional dependency overlays targeting bb46e49; complete exact applicable pre-use and consolidated Windows/Linux regression preparation.",
-    "blocker": "Pre-use rights/security/native linkage and actual compatible environment remain held. Five mounted synthetic regression scenarios prepared but unexecuted; PDFium equivalence, font/preflight rebinding and exact final functional workflow outstanding. No installation or execution authority.",
+    "blocker": "ReportLab source/cache security, applicable rights/native linkage and compatible actual environment held; two frontend font notices matched/reviewed, not full package use clearance. Five mounted regressions and ReportLab 5.1.2 font witness source unexecuted. Coordinated preflight/historical production-lock boundary, PDFium equivalence and exact final workflow outstanding.",
     "next_action_kind": "PREPARATION",
-    "next_action": "Resume detached 615c0f7 (includes 7aea354 and ae3e9d7). Complete finite applicable rights/security/component/compatibility review against pinned historic evidence, coordinated font/preflight rebinding and exact consolidated disarmed Windows/Linux workflow. Do not repeat completed identity inspections or mounted source preparation; stop at genuine unresolved holds, request exact bounded authority only when viable.",
+    "next_action": "Resume cb83bec including 615c0f7. Finish coherent disarmed overlay and preflight/historical graph boundary (production remains BLOCKED), bind font/profile/npm witness pins, review only actual applicable dependency security/rights/component evidence and complete one exact consolidated Windows/Linux functional batch. No repeat identity inspection, new features, model work or native diagnostics. Request exact bounded execution approval only once viable; no consumption before pre-use clearance.",
     "after": [
       "Verify consolidated functional Windows/Linux synthetic stages only when applicable pre-use and exact authority satisfied; no auto-use or live merge.",
       "Close C5 and award only qualifying original evidence; all six P4 and native D/G2/E2/8GB/Gate C requirements preserved.",
       "DLA parked; P5/installer/release remain unauthorised."
     ],
     "read": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "5dd4d862f19f997206c1b972a48cf89415fd7d78",
+        "anchor": "28-november--dev-vm-01-c5-closure-focus-and-font-witness-rebind",
+        "start_line": 1307,
+        "end_line": 1313
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "blob_sha": "6d157d1ec210a6eed43ac94047072cee926235d8",
@@ -202,17 +209,17 @@
     ]
   },
   "operation": {
-    "id": "C5-DEV-VM-01-S2-MOUNTED-VERSION-RACES-20261128",
+    "id": "C5-DEV-VM-01-S2-FONT-REVIEW-20261128",
     "state": "RECONCILED",
-    "starting_sha": "895ca78521a6ce8fb31228403657d9bc1246c356",
-    "outcome": "Detached 615c0f7 exact source readback and single-file diff verified; two additional generated mounted dataset-version scenarios prepared, not executed. No acceptance delta.",
+    "starting_sha": "110ac9b0edc74ac39226c45e5daa3f8f172eb218",
+    "outcome": "Two existing OFL exact notice matches reviewed; cb83bec two disarmed witness files verified, no execution. Historical production lock conflict identified; no acceptance change.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "blob_sha": "6d157d1ec210a6eed43ac94047072cee926235d8",
-      "anchor": "28-november--dev-vm-01-mounted-dataset-version-transition-test-source",
-      "start_line": 1299,
-      "end_line": 1305
+      "blob_sha": "5dd4d862f19f997206c1b972a48cf89415fd7d78",
+      "anchor": "28-november--dev-vm-01-c5-closure-focus-and-font-witness-rebind",
+      "start_line": 1307,
+      "end_line": 1313
     }
   },
   "authority": {
@@ -730,6 +737,10 @@
       {
         "sha": "615c0f74ee6de119e5e62c6fb966931cfc6400f8",
         "scope": "Two additional mounted synthetic dataset-version transition races; exact source readback/diff verified, not compiled or executed."
+      },
+      {
+        "sha": "cb83becc72fed6c0e273c93c8200a127729b9647",
+        "scope": "Disarmed ReportLab 5.1.2 exact font witness identity rebind and negative fixture cases, not executed."
       }
     ]
   },
@@ -758,7 +769,8 @@
     "DEV-VM-01 S1 exact inert binding 7ffef75: source tests and actual host/archives unexecuted; full trigger audit incomplete (15/130 read); strict parser/patch drift and receipt output may refuse, rights/security/linkage still held; S2-S4 not yet executable.",
     "S1 24/24 static facts PASS, not use clearance; ReportLab exact metadata and @playwright/test identity measured, applicable licence/security/native component review, exact overlays and functional tests remain. No independent wire/host settlement claim, no retained wheelhouse.",
     "S2 7aea354 exact projections are inert; applicable rights/security/linkage and final managed tool compatibility, PDFium equivalence, font/preflight and final workflow still held. Mounted browser tests ae3e9d7 unexecuted; actual version-change race still needs coverage. No acceptance delta.",
-    "Mounted version transition source 615c0f7 supersedes missing coverage risk of ae3e9d7, but five scenarios remain uncompiled/unexecuted; actual selector and renderer behaviour require authorised functional regression."
+    "Mounted version transition source 615c0f7 supersedes missing coverage risk of ae3e9d7, but five scenarios remain uncompiled/unexecuted; actual selector and renderer behaviour require authorised functional regression.",
+    "cb83bec binds candidate font version only; full profile/preflight graph rebind and functional test required. Root pin 5.1.2 conflicts with historical production 4.5.1, production remains BLOCKED. Exact Inter/Manrope OFL notice matches not full package or release clearance."
   ],
   "context": {
     "protocol": {
@@ -833,6 +845,13 @@
       }
     ],
     "evidence": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "5dd4d862f19f997206c1b972a48cf89415fd7d78",
+        "anchor": "28-november--dev-vm-01-c5-closure-focus-and-font-witness-rebind",
+        "start_line": 1307,
+        "end_line": 1313
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "blob_sha": "6d157d1ec210a6eed43ac94047072cee926235d8",
