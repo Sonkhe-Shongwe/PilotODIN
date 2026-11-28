@@ -557,6 +557,121 @@ impl InferenceGroup {
     }
 }
 
+// DLA Stage 1 QA-only composition seam. Not registered or callable from
+// production/IPC. A real listener provider is deliberately absent until
+// independent Windows process-lifetime and job-membership review.
+#[cfg(all(windows, test))]
+#[allow(dead_code)]
+mod dla_stage1 {
+    use super::*;
+
+    #[derive(Clone, Copy, PartialEq, Eq)]
+    struct Generation {
+        pid: u32,
+        creation_time: u64,
+        port: u16,
+    }
+
+    // The future private native provider must establish exact PID + creation
+    // time + membership in the original retained job, local endpoint ownership
+    // and a complete query, not a successful HTTP request or PID alone.
+    // No caller-supplied boolean or browser/worker report is evidence.
+    trait ListenerProbe {
+        fn verify_owned(&mut self, expected: Generation,
+                        job: &OwnedJob) -> Result<bool, &'static str>;
+        fn verify_absent(&mut self, expected: Generation)
+            -> Result<bool, &'static str>;
+    }
+
+    struct UnavailableProbe;
+    impl ListenerProbe for UnavailableProbe {
+        fn verify_owned(&mut self, _: Generation, _: &OwnedJob)
+            -> Result<bool, &'static str> { Err(JOB_FAULT) }
+        fn verify_absent(&mut self, _: Generation)
+            -> Result<bool, &'static str> { Err(JOB_FAULT) }
+    }
+
+    // Retain the actual InferenceGroup throughout cleanup or uncertainty.
+    // No spawn, launch, release, HTTP, handle export or model capability.
+    struct CandidateOwner<P: ListenerProbe> {
+        group: InferenceGroup,
+        expected: Generation,
+        listener: P,
+        listener_verified: bool,
+        faulted: bool,
+        settled: bool,
+    }
+
+    impl<P: ListenerProbe> CandidateOwner<P> {
+        fn new(group: InferenceGroup, expected: Generation, listener: P) -> Self {
+            Self { group, expected, listener, listener_verified: false,
+                   faulted: false, settled: false }
+        }
+
+        fn fault<T>(&mut self) -> Result<T, &'static str> {
+            self.faulted = true;
+            Err(JOB_FAULT)
+        }
+
+        // A future host must call before each request, after real startup join
+        // and exact model/auth readiness. This is not public readiness.
+        fn verify_listener(&mut self) -> Result<(), &'static str> {
+            self.group.poll_events();
+            if self.faulted || !self.group.admission_open() ||
+                self.expected.pid == 0 || self.expected.creation_time == 0 ||
+                self.expected.port < 1024 ||
+                self.group.child.as_ref().map(|child| child.pid()) != Some(self.expected.pid) {
+                return self.fault();
+            }
+            let result = match self.group.cleanup.job.as_ref() {
+                Some(job) => self.listener.verify_owned(self.expected, job),
+                None => Err(JOB_FAULT),
+            };
+            if result != Ok(true) { return self.fault(); }
+            self.listener_verified = true;
+            Ok(())
+        }
+
+        fn begin_cleanup(&mut self) -> Result<(), &'static str> {
+            // Cleanup is attempted even after failed listener verification.
+            // A fault cannot be promoted to a successful evaluation receipt.
+            if self.group.begin_owned_cleanup().is_err() { return self.fault(); }
+            Ok(())
+        }
+
+        fn poll_cleanup(&mut self, startup_joined: bool) -> Result<bool, &'static str> {
+            // startup_joined is derived only from the existing host's real
+            // joined startup generation, never from an IPC argument.
+            if self.settled { return Ok(true); }
+            let group_done = match self.group.poll_owned_cleanup(startup_joined) {
+                Ok(done) => done,
+                Err(_) => return self.fault(),
+            };
+            if !group_done { return Ok(false); }
+            let deadline = match self.group.cleanup.fence.deadline {
+                Some(value) => value,
+                None => return self.fault(),
+            };
+            if self.faulted || !self.listener_verified || Instant::now() >= deadline {
+                return self.fault();
+            }
+            let absent = self.listener.verify_absent(self.expected);
+            if absent != Ok(true) || Instant::now() >= deadline {
+                return self.fault();
+            }
+            self.settled = true;
+            Ok(true)
+        }
+    }
+
+    #[test]
+    fn no_unbound_listener_absence_witness() {
+        let mut probe = UnavailableProbe;
+        let expected = Generation { pid: 1, creation_time: 1, port: 1024 };
+        assert!(probe.verify_absent(expected).is_err());
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -95,7 +95,7 @@ def _central(raw, members):
     sig, disk, cd_disk, entries_disk, entries, size, offset, comment = _unpack(
         EOCD, raw, end, len(raw))
     require(sig == b"PK\x05\x06" and disk == cd_disk == comment == 0
-            and entries_disk == entries == len(members)
+            and entries_disk == entries and (members is None or entries == len(members))
             and 0 < entries <= MAX_ENTRIES and offset + size == end,
             "ZIP_END_LAYOUT")
     pos = offset
@@ -119,7 +119,7 @@ def _central(raw, members):
         require(pos <= end and local_offset < offset and packed <= offset
                 and expanded <= MAX_MEMBER, "ZIP_MEMBER_BOUNDS")
         name = _name(raw[start:pos])
-        require(name in members and expanded == members[name]["bytes"],
+        require(members is None or (name in members and expanded == members[name]["bytes"]),
                 "ZIP_MEMBER_NOT_EXPECTED")
         require(method != 0 or packed == expanded, "ZIP_STORED_SIZE")
         rows.append((name, needed, flags, method, time, date, crc, packed,
@@ -127,7 +127,8 @@ def _central(raw, members):
     require(pos == end, "ZIP_CENTRAL_LENGTH")
     names = [row[0] for row in rows]
     safe_inventory(names)
-    require(set(names) == set(members), "ZIP_MEMBER_INVENTORY")
+    require(members is None or set(names) == set(members), "ZIP_MEMBER_INVENTORY")
+    require(sum(row[8] for row in rows) <= MAX_EXPANDED, "ZIP_EXPANDED_LIMIT")
     return offset, rows
 
 
@@ -163,7 +164,39 @@ def _member_bytes(raw, start, packed, method, expanded, crc, expected_sha):
         require(stream.eof and not stream.unconsumed_tail and not stream.unused_data,
                 "ZIP_DEFLATE_INCOMPLETE")
     require(count == expanded and checksum & 0xffffffff == crc
-            and h.hexdigest() == expected_sha, "ZIP_MEMBER_DIGEST")
+            and (expected_sha is None or h.hexdigest() == expected_sha), "ZIP_MEMBER_DIGEST")
+    return h.hexdigest()
+
+
+def _snapshot_members(raw, members):
+    # None is used only by the disarmed independent archive review seam,
+    # never by the existing exact-inventory production-facing check.
+    cd_offset, rows = _central(raw, members)
+    # Strict contiguous local layout rejects overlapping, duplicate,
+    # hidden or orphan records, preambles and gaps.
+    next_offset = 0
+    observed = {}
+    for (name, needed, flags, method, time, date, crc, packed, expanded,
+         offset) in sorted(rows, key=lambda row: row[-1]):
+        require(offset == next_offset, "ZIP_LOCAL_LAYOUT")
+        (sig, n, f, m, t, d, c, p, e, name_len, extra_len) = _unpack(
+            LOCAL, raw, offset, cd_offset)
+        require(sig == b"PK\x03\x04" and
+                (n, f, m, t, d, c, p, e) ==
+                (needed, flags, method, time, date, crc, packed, expanded)
+                and extra_len == 0 and 0 < name_len <= 240,
+                "ZIP_LOCAL_CENTRAL_MISMATCH")
+        start = offset + LOCAL.size
+        data_start = start + name_len
+        next_offset = data_start + packed
+        require(next_offset <= cd_offset and _name(raw[start:data_start]) == name,
+                "ZIP_LOCAL_NAME_OR_BOUNDS")
+        digest = _member_bytes(raw, data_start, packed, method, expanded, crc,
+                               None if members is None else members[name]["sha256"])
+        observed[name] = {"bytes": expanded, "sha256": digest}
+    require(next_offset == cd_offset, "ZIP_LOCAL_LAYOUT")
+
+    return observed
 
 
 def verified_candidate_snapshot(path: Path, expected) -> bytes:
@@ -178,28 +211,7 @@ def verified_candidate_snapshot(path: Path, expected) -> bytes:
         digest, raw = read_exact(Path(path), size=expected["bytes"],
                                  collect=True, limit=MAX_ARCHIVE)
         require(digest == expected["sha256"], "ZIP_ARCHIVE_DIGEST")
-        cd_offset, rows = _central(raw, members)
-        # Strict contiguous local layout rejects overlapping, duplicate,
-        # hidden or orphan records, preambles and gaps.
-        next_offset = 0
-        for (name, needed, flags, method, time, date, crc, packed, expanded,
-             offset) in sorted(rows, key=lambda row: row[-1]):
-            require(offset == next_offset, "ZIP_LOCAL_LAYOUT")
-            (sig, n, f, m, t, d, c, p, e, name_len, extra_len) = _unpack(
-                LOCAL, raw, offset, cd_offset)
-            require(sig == b"PK\x03\x04" and
-                    (n, f, m, t, d, c, p, e) ==
-                    (needed, flags, method, time, date, crc, packed, expanded)
-                    and extra_len == 0 and 0 < name_len <= 240,
-                    "ZIP_LOCAL_CENTRAL_MISMATCH")
-            start = offset + LOCAL.size
-            data_start = start + name_len
-            next_offset = data_start + packed
-            require(next_offset <= cd_offset and _name(raw[start:data_start]) == name,
-                    "ZIP_LOCAL_NAME_OR_BOUNDS")
-            _member_bytes(raw, data_start, packed, method, expanded, crc,
-                          members[name]["sha256"])
-        require(next_offset == cd_offset, "ZIP_LOCAL_LAYOUT")
+        _snapshot_members(raw, members)
         return raw
     except (OSError, struct.error, zlib.error):
         raise Blocked("ZIP_UNREADABLE_OR_MALFORMED") from None
