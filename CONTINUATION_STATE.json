@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "PRODUCT-FIRST-V2-20261128",
-    "parent_sha": "bcbceb51dca20baf5b99d4beff5a94037d1abb5b",
-    "previous_snapshot_sha": "bcbceb51dca20baf5b99d4beff5a94037d1abb5b",
-    "scope": "Owner-approved PRODUCT-FIRST V2 architecture direction and documentation/continuation consolidation only. Existing acceptance methods, trust boundaries, all original product requirements and execution restrictions unchanged.",
+    "operation_id": "P4-V2-DISPOSITION-20261128",
+    "parent_sha": "5bb8ab88ce1c59d4b7ed8996251a9552f7d2c222",
+    "previous_snapshot_sha": "5bb8ab88ce1c59d4b7ed8996251a9552f7d2c222",
+    "scope": "Finite V2 C5/G2 design disposition and requirement-to-existing-test routing only; no execution, implementation, acceptance or method change.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "28-november--owner-approved-product-first-v2-architecture-and-continuation-consolidation",
-      "blob_sha": "b760c69dae88166d96038a19eb2806c6352057ee",
-      "start_line": 1111,
-      "end_line": 1115
+      "anchor": "28-november--product-first-v2-finite-design-disposition",
+      "blob_sha": "888ec807d732999b6ad29e2732c6ab70a9181a0f",
+      "start_line": 1117,
+      "end_line": 1119
     }
   },
   "product": {
@@ -134,12 +134,12 @@
     }
   },
   "task": {
-    "id": "P4-PRODUCT-FIRST-V2-DESIGN-20261128",
-    "status": "READY",
-    "scope": "Prepare finite simplified C5 development architecture and independent supported G2 evidence feasibility, plus requirement-oriented test coverage under PRODUCT-FIRST V2; no implementation or restricted execution.",
-    "blocker": "",
-    "next_action": "Produce one finite C5 design disposition: exact single-owner unprivileged staging and standard locked input pipeline against original containment, independently positive settlement, custody, security/rights, request/body limits and all eight rows. Specify supported alternative with exact requirement-to-control mapping or definitive no-go. In parallel compare supported Windows prevention/evidence options against all eleven G2 blockers and map existing tests to E-01–E-24/W01–W10 and six P4 checks. No new verifier, speculative diagnostics, implementation or execution; separately review any proposed replacement method before exact execution approval.",
-    "next_action_kind": "PREPARE",
+    "id": "P4-V2-OWNER-DISPOSITION-20261128",
+    "status": "BLOCKED",
+    "scope": "Owner decision after finite V2 no-go; retain all existing methods and holds.",
+    "blocker": "Neither assessed C5 single-owner nor G2 prevention design establishes independent mandatory evidence. Early E2/R06 require distinct authority; no concrete source defect established in this preparation.",
+    "next_action": "Owner reviews the finite disposition: park assessed unavailable methods; provide a distinct supported independent C5/G2 method for review, or separately scope early E2/R06 evidence within existing acceptance and approval boundaries. Do not repeat speculative diagnostics, acquire, execute, change method, advance phase or imply acceptance.",
+    "next_action_kind": "OWNER_DECISION",
     "after": [
       "Owner reviews exact proposed C5/G2 method(s), residual risk and finite acceptance contract; no silent waiver or adoption. If unsupported, park method and return product decision. Preserve Linux-first allocation and Windows-specific evidence before D1.",
       "Only after applicable exact method and execution approvals, fulfil C5 rows 5–8 via compatible verified inputs and full original regressions; then actual D1/D2 with production identity/bundled engine/positive settlement and independent security evidence. Independent concrete source work remains limited to existing authority; no new implementation under V2 direction alone.",
@@ -147,25 +147,25 @@
     ],
     "read": [
       {
+        "path": "docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md",
+        "anchor": "28-november--v2-finite-c5g2-design-disposition-and-requirement-coverage",
+        "blob_sha": "1fdab106b32f6a8447df9d588dd23f8ed5536351",
+        "start_line": 82,
+        "end_line": 178
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "28-november--product-first-v2-finite-design-disposition",
+        "blob_sha": "888ec807d732999b6ad29e2732c6ab70a9181a0f",
+        "start_line": 1117,
+        "end_line": 1119
+      },
+      {
         "path": "docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md",
         "anchor": "28-november-2026--owner-approved-product-first-v2-architecture-direction",
         "blob_sha": "3082f8cafd0b50c8e6e050cdc8d8e87e7557b18b",
         "start_line": 315,
         "end_line": 321
-      },
-      {
-        "path": "docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md",
-        "anchor": "0-product-first-v2-finite-delivery-plan",
-        "blob_sha": "2a8166a4156b6393d76490400c231caabd4f79b8",
-        "start_line": 7,
-        "end_line": 23
-      },
-      {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "28-november--owner-approved-product-first-v2-architecture-and-continuation-consolidation",
-        "blob_sha": "b760c69dae88166d96038a19eb2806c6352057ee",
-        "start_line": 1111,
-        "end_line": 1115
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
@@ -211,17 +211,17 @@
     ]
   },
   "operation": {
-    "id": "PRODUCT-FIRST-V2-20261128",
+    "id": "P4-V2-DISPOSITION-20261128",
     "state": "RECONCILED",
-    "starting_sha": "bcbceb51dca20baf5b99d4beff5a94037d1abb5b",
-    "outcome": "Architecture direction recorded; finite six-package preparation plan and documentation audit consolidated. No method adoption, execution, code, lock, workflow, acceptance or score change.",
+    "starting_sha": "5bb8ab88ce1c59d4b7ed8996251a9552f7d2c222",
+    "outcome": "C5 single-owner staging NO-GO under retained independent containment/settlement/custody; G2 prevention NO-GO as equivalent proof. All eight C5, eleven G2, E01–E24/W01–W10 and six P4 checks mapped. No new tests, authority or acceptance.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "28-november--owner-approved-product-first-v2-architecture-and-continuation-consolidation",
-      "blob_sha": "b760c69dae88166d96038a19eb2806c6352057ee",
-      "start_line": 1111,
-      "end_line": 1115
+      "anchor": "28-november--product-first-v2-finite-design-disposition",
+      "blob_sha": "888ec807d732999b6ad29e2732c6ab70a9181a0f",
+      "start_line": 1117,
+      "end_line": 1119
     }
   },
   "authority": {
@@ -744,6 +744,20 @@
       }
     ],
     "evidence": [
+      {
+        "path": "docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md",
+        "anchor": "28-november--v2-finite-c5g2-design-disposition-and-requirement-coverage",
+        "blob_sha": "1fdab106b32f6a8447df9d588dd23f8ed5536351",
+        "start_line": 82,
+        "end_line": 178
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "28-november--product-first-v2-finite-design-disposition",
+        "blob_sha": "888ec807d732999b6ad29e2732c6ab70a9181a0f",
+        "start_line": 1117,
+        "end_line": 1119
+      },
       {
         "path": "docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md"
       },
