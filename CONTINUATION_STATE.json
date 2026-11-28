@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "DLA-STAGE1-ISOLATED-SOURCE-20261128",
-    "parent_sha": "6fcfa10228f24eef1fef8ceca33254ddc02613a0",
-    "previous_snapshot_sha": "6fcfa10228f24eef1fef8ceca33254ddc02613a0",
-    "scope": "Owner-approved isolated DLA Stage 1 source preparation, partial disarmed candidate, no execution",
+    "operation_id": "DLA-STAGE1-LISTENER-AND-SOURCE-BINDING-20261128",
+    "parent_sha": "8144bcb945081a7340371bc9fdb3a51c4729a13b",
+    "previous_snapshot_sha": "8144bcb945081a7340371bc9fdb3a51c4729a13b",
+    "scope": "DLA Stage 1 private listener source and disarmed dependency-free regression binding; no restricted operation",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "blob_sha": "5dfaaa7681be51bf3816e56cc5d97aeecd1c4e53",
-      "anchor": "28-november--owner-approved-dla-stage-1-isolated-source-candidate",
-      "start_line": 1171,
-      "end_line": 1179
+      "blob_sha": "b0c904b29e2c878772f62d40bafcf60c841b6b20",
+      "anchor": "28-november--dla-stage-1-private-listener-source-and-disarmed-regression-binding",
+      "start_line": 1181,
+      "end_line": 1189
     }
   },
   "product": {
@@ -132,11 +132,11 @@
     }
   },
   "task": {
-    "id": "P4-DLA-STAGE1-SOURCE-REVIEW-20261128",
-    "status": "READY",
-    "scope": "Finish existing authorised DLA Stage 1 isolated source review and generated verification; no acquisition/native/model/owner access or production integration.",
-    "next_action": "Review exact detached candidate a35e92936c95cebf33e4062863944c3fd92b6b4f, execute only permitted dependency-free generated source assertions in a safe isolated route (no native or model), finish a supported private owned listener identity binding or record a finite no-go. Preserve the original exact inventory verification and all five analytics cases. Granite exact bytes/pinned metadata remain unavailable; do not repeat speculative probes. If Stage 1 source and independent review method are ready, present one separately scoped exact runtime archive acquisition/inspection transaction; do not acquire or execute automatically.",
-    "next_action_kind": "PREPARATION",
+    "id": "P4-DLA-STAGE1-SOURCE-EXECUTION-DECISION-20261128",
+    "status": "BLOCKED",
+    "scope": "One exact isolated dependency-free source-only verification of disarmed binding 388d5515e6845eb63f5211bc28fe693acb947af6; no native/model/acquisition/integration.",
+    "next_action": "Seek one exact isolated source-only execution approval for binding 388d5515e6845eb63f5211bc28fe693acb947af6 (feature/dla-stage1-source-20261128, five minutes, one Ubuntu 24.04 job, six in-memory syntax checks and seven generated Python tests, no installs/retries/native/model/owner access). On approval recheck exact triggers and branch, persist write-ahead, bind exact activation to before SHA, reconcile disarmed creation event, activate only source job, verify result, forward-disarm. Do not acquire runtime archive or perform Windows compile under this approval. No repeat of preparation.",
+    "next_action_kind": "OWNER_DECISION",
     "after": [
       "Explore source-only verification passed; preserve 541cbeb and isolated disarmed ref. Functional numerical parity, React/browser stale recovery and physical memory comparison still gated by C5 pre-use and exact execution scope; no live merge or unchanged source rerun.",
       "Retain critical early E2 physical R03.3/R03.4, original E-02/W07, R06 historical strict FAIL/UNKNOWN and prospective G2 hold. No automatic execution/fallback or owner-local access.",
@@ -145,10 +145,10 @@
     "read": [
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "blob_sha": "5dfaaa7681be51bf3816e56cc5d97aeecd1c4e53",
-        "anchor": "28-november--owner-approved-dla-stage-1-isolated-source-candidate",
-        "start_line": 1171,
-        "end_line": 1179
+        "blob_sha": "b0c904b29e2c878772f62d40bafcf60c841b6b20",
+        "anchor": "28-november--dla-stage-1-private-listener-source-and-disarmed-regression-binding",
+        "start_line": 1181,
+        "end_line": 1189
       },
       {
         "path": "docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md",
@@ -217,20 +217,21 @@
       {
         "path": "docs/PILOTODIN_PACKAGE_C_RESOURCE_TRUST_SPEC_2026-11-24.md"
       }
-    ]
+    ],
+    "blocker": "Distinct one-use source execution authority and exact new-ref trigger/branch reconciliation needed; Python tests not run, native compile and artifact pre-use prerequisites still held."
   },
   "operation": {
-    "id": "DLA-STAGE1-ISOLATED-SOURCE-20261128",
+    "id": "DLA-STAGE1-LISTENER-AND-SOURCE-BINDING-20261128",
     "state": "RECONCILED",
-    "starting_sha": "6fcfa10228f24eef1fef8ceca33254ddc02613a0",
-    "outcome": "Published detached four-file disarmed candidate; 12 static assertions pass, six Python and one Rust generated tests not executed. Granite size and actual independent native listener provider remain unresolved. No restricted activity.",
+    "starting_sha": "8144bcb945081a7340371bc9fdb3a51c4729a13b",
+    "outcome": "Three detached source/binding commits recorded, real private listener provider source prepared but uncompiled; 14 static checks pass, seven generated Python tests not run. Binding all jobs disarmed, zero CI.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "blob_sha": "5dfaaa7681be51bf3816e56cc5d97aeecd1c4e53",
-      "anchor": "28-november--owner-approved-dla-stage-1-isolated-source-candidate",
-      "start_line": 1171,
-      "end_line": 1179
+      "blob_sha": "b0c904b29e2c878772f62d40bafcf60c841b6b20",
+      "anchor": "28-november--dla-stage-1-private-listener-source-and-disarmed-regression-binding",
+      "start_line": 1181,
+      "end_line": 1189
     }
   },
   "authority": {
@@ -692,6 +693,18 @@
       {
         "sha": "a35e92936c95cebf33e4062863944c3fd92b6b4f",
         "scope": "DLA Stage 1 isolated four-file disarmed source candidate, 12 connector static assertions; Python/Rust generated tests not run, no complete listener provider or Granite size, no CI/native/model/acquisition/production integration."
+      },
+      {
+        "sha": "67a94c9bb4894b71aaee6b43733d8b334d8e1e44",
+        "scope": "DLA opt-in original-process-handle and TCP listener QA source intermediate, no compilation/execution."
+      },
+      {
+        "sha": "e57032165ad302d516dab2a2da4d616cb122c6d4",
+        "scope": "DLA private listener provider source + seventh exact ZIP test, QA-only optional feature, uncompiled/untested, not merged."
+      },
+      {
+        "sha": "388d5515e6845eb63f5211bc28fe693acb947af6",
+        "scope": "DLA existing dependency-free source-only regression binding, all five jobs literal false, no branch creation/activation/run. Six syntax and seven generated Python tests pending."
       }
     ]
   },
@@ -707,7 +720,8 @@
     "All prior 100 detached candidate records and exact authority history preserved; owner recovery archive delivered for 1d033ce only, not current HEAD/full Git history/detached backup or build proof. Root LICENSE, NOTICE and SECURITY.md absent; explicit owner decision required. Installer frozen, P5 unauthorized, release not certified.",
     "Universal Local AI proposed, not adopted: Granite/Liquid exact publisher GGUF identities, rights, runtime compatibility, independent member inventory and positive owned process/listener settlement not established. Qwen 0.6B prior hosted 2/4, no physical qualification; old Qwen prep parked. Original R03.3 wording requires explicit successor acceptance mapping before credit, R03.4 and 8 GB offline coexistence unchanged.",
     "DLA-A official publisher checksums identified; Liquid exact pointer confirmed; Granite exact bytes and pinned pointer unavailable. Existing runtime member/notice inventory and candidate evaluator/listener binding remain holds. Proposed independent pinned archive review and disarmed adapter not adopted; no acquisition or execution authority.",
-    "DLA Stage 1 source candidate prepared but partial: missing immutable Granite byte count, actual independent runtime member/notice inventory, applicable rights, real owned listener identity provider and generated source verification. No acquisition, run or integration authority."
+    "DLA Stage 1 source candidate prepared but partial: missing immutable Granite byte count, actual independent runtime member/notice inventory, applicable rights, real owned listener identity provider and generated source verification. No acquisition, run or integration authority.",
+    "DLA private listener source now prepared but uncompiled; opt-in Cargo feature and FFI/ABI require separate Windows validation. Seven Python generated tests awaiting exact isolated source-only execution. Runtime archive independent member/rights review and Granite immutable pointer/size still unresolved."
   ],
   "context": {
     "protocol": {
@@ -782,6 +796,13 @@
       }
     ],
     "evidence": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "b0c904b29e2c878772f62d40bafcf60c841b6b20",
+        "anchor": "28-november--dla-stage-1-private-listener-source-and-disarmed-regression-binding",
+        "start_line": 1181,
+        "end_line": 1189
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "blob_sha": "5dfaaa7681be51bf3816e56cc5d97aeecd1c4e53",
