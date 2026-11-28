@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-MHTA-RUN-NAMESPACE-A-DIAGNOSTIC-ONCE-20261128",
-    "parent_sha": "1bb03b707256473af1aea5a09adb26ab78294eba",
-    "previous_snapshot_sha": "1bb03b707256473af1aea5a09adb26ab78294eba",
-    "scope": "Reconcile actual original A namespace failure 226 and cleanup timeout, disarm exact consumed grant; no B or acceptance change.",
+    "operation_id": "C5-MHTA-NAMESPACE-A-CLEANUP-SEMANTICS-REVIEW-20261128",
+    "parent_sha": "71f7087218a75677a3cd979bc9b60bc69eee4144",
+    "previous_snapshot_sha": "71f7087218a75677a3cd979bc9b60bc69eee4144",
+    "scope": "Read-only upstream and exact A cleanup semantics review; record specific source defect and finite owner decision, no execution.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "28-november--namespace-a-diagnostic-confirmed-226-cleanup-timeout-and-one-use-disarm",
-      "blob_sha": "6c1e38f207686a3dad47445d696707bc93da415c",
-      "start_line": 963,
-      "end_line": 979
+      "anchor": "28-november--upstream-backed-failed-unit-cleanup-semantics-and-owner-decision",
+      "blob_sha": "bc826f4e9bb42114bd5d4323756890e2384bdaaf",
+      "start_line": 981,
+      "end_line": 985
     }
   },
   "product": {
@@ -137,138 +137,145 @@
     "id": "C5-LINUX-FIRST-20261127",
     "status": "BLOCKED",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "A actual attributed 226/NAMESPACE, command exit1, WITNESS_TIMEOUT and failure_cleanup=false; exact cleanup wait not distinguished, positive settlement unproved. B explicitly held.",
-    "next_action": "Read-only source/upstream review of cleanup wait semantics and finite disposition. Do not launch B, replay A or infer settlement. If safe positive cleanup cannot be established, park route per PRODUCT-FIRST; any changed method or additional restricted execution needs distinct exact owner decision. Retain all acceptance boundaries.",
-    "next_action_kind": "MISSING_EVIDENCE",
+    "blocker": "A 226/NAMESPACE confirmed, cleanup timeout remains unproved. Upstream confirms failed-state retention under default GC and stop success without state reset; likely first wait, not actual proof. Current route parked, B held.",
+    "next_action": "Seek explicit owner decision for narrow fresh A cleanup correction preparation only: bounded diagnostic before exact named reset-failed after repeated ownership/terminal/empty verification; positive pristine service/slice/path absence and distinct wait diagnostics, full generated regression; separate exact execution approval later. Old A settlement remains unproved; explicitly authorize any new clean A result as prospective B gate only, no historical waiver or automatic B. If declined or unsafe, park route and pursue concrete independent P4 work.",
+    "next_action_kind": "OWNER_DECISION",
     "after": [
-      "B blocked: actual A namespace failure confirmed but failure_cleanup=false. No automatic progression, no replay. Read-only analysis of cleanup semantics and finite decision only. Reduced archive inspection and custody held.",
+      "Current A route parked pending distinct owner decision. Old A cleanup failure retained; no B until fresh separately approved positive evidence and separate B equivalence review/approval; no replay, no historical waiver. Reduced archive inspection/custody held.",
       "Resolve actual Linux pre-use rights/security and custody, reuse Stage A 19/19, complete applicable functional/profile/frontend/browser and exact original full regressions; close C5 only on all eight rows. Verify Windows-specific inputs/compatibility before separately authorised production-equivalent D1; no installer. Independently actionable P4 source work remains permitted only under existing policy.",
       "Resolve D1/D2, G2 and original early E2 physical 8 GB offline bundled AI/coexistence, R06 and remaining P4 acceptance; Gate C before real prediction use. If feasibility fails, seek explicit owner product decision, not silent deferral. No phase advance without evidence and owner signoff."
     ],
     "read": [
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "28-november--upstream-backed-failed-unit-cleanup-semantics-and-owner-decision",
+        "blob_sha": "bc826f4e9bb42114bd5d4323756890e2384bdaaf",
+        "start_line": 981,
+        "end_line": 985
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--namespace-a-diagnostic-confirmed-226-cleanup-timeout-and-one-use-disarm",
-        "blob_sha": "6c1e38f207686a3dad47445d696707bc93da415c",
+        "blob_sha": "bc826f4e9bb42114bd5d4323756890e2384bdaaf",
         "start_line": 963,
         "end_line": 979
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--owner-authorised-original-namespace-a-diagnostic-once",
-        "blob_sha": "6c1e38f207686a3dad47445d696707bc93da415c",
+        "blob_sha": "bc826f4e9bb42114bd5d4323756890e2384bdaaf",
         "start_line": 959,
         "end_line": 961
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--integrated-a-only-namespace-diagnostic-and-fresh-inert-binding",
-        "blob_sha": "6c1e38f207686a3dad47445d696707bc93da415c",
+        "blob_sha": "bc826f4e9bb42114bd5d4323756890e2384bdaaf",
         "start_line": 951,
         "end_line": 957
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--disarmed-a-only-diagnostic-attempt-collector-and-cleanup-preparation",
-        "blob_sha": "6c1e38f207686a3dad47445d696707bc93da415c",
+        "blob_sha": "bc826f4e9bb42114bd5d4323756890e2384bdaaf",
         "start_line": 945,
         "end_line": 949
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--upstream-backed-namespace-ab-diagnostic-preparation",
-        "blob_sha": "6c1e38f207686a3dad47445d696707bc93da415c",
+        "blob_sha": "bc826f4e9bb42114bd5d4323756890e2384bdaaf",
         "start_line": 937,
         "end_line": 943
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--quiet-fixture-terminal-nonzero-manager-exit-and-one-use-disarm",
-        "blob_sha": "6c1e38f207686a3dad47445d696707bc93da415c",
+        "blob_sha": "bc826f4e9bb42114bd5d4323756890e2384bdaaf",
         "start_line": 919,
         "end_line": 935
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--owner-authorised-quiet-isolated-fixture-once",
-        "blob_sha": "6c1e38f207686a3dad47445d696707bc93da415c",
+        "blob_sha": "bc826f4e9bb42114bd5d4323756890e2384bdaaf",
         "start_line": 915,
         "end_line": 917
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--full-quiet-correction-regression-and-fresh-inert-execution-decision",
-        "blob_sha": "6c1e38f207686a3dad47445d696707bc93da415c",
+        "blob_sha": "bc826f4e9bb42114bd5d4323756890e2384bdaaf",
         "start_line": 909,
         "end_line": 913
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--manager-stderr-correction-preparation-and-scoped-generated-checks",
-        "blob_sha": "6c1e38f207686a3dad47445d696707bc93da415c",
+        "blob_sha": "bc826f4e9bb42114bd5d4323756890e2384bdaaf",
         "start_line": 901,
         "end_line": 907
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--pristine-fixture-terminal-manager-refusal-and-one-use-disarm",
-        "blob_sha": "6c1e38f207686a3dad47445d696707bc93da415c",
+        "blob_sha": "bc826f4e9bb42114bd5d4323756890e2384bdaaf",
         "start_line": 883,
         "end_line": 899
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--full-pristine-regression-and-fresh-inert-execution-decision",
-        "blob_sha": "6c1e38f207686a3dad47445d696707bc93da415c",
+        "blob_sha": "bc826f4e9bb42114bd5d4323756890e2384bdaaf",
         "start_line": 873,
         "end_line": 877
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--managed-hosted-assurance-terminal-refusal-and-one-use-disarm",
-        "blob_sha": "6c1e38f207686a3dad47445d696707bc93da415c",
+        "blob_sha": "bc826f4e9bb42114bd5d4323756890e2384bdaaf",
         "start_line": 845,
         "end_line": 861
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--upstream-backed-pristine-slice-admission-correction",
-        "blob_sha": "6c1e38f207686a3dad47445d696707bc93da415c",
+        "blob_sha": "bc826f4e9bb42114bd5d4323756890e2384bdaaf",
         "start_line": 863,
         "end_line": 871
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--owner-approved-managed-hosted-tool-assurance-and-disarmed-consolidated-candidate",
-        "blob_sha": "6c1e38f207686a3dad47445d696707bc93da415c",
+        "blob_sha": "bc826f4e9bb42114bd5d4323756890e2384bdaaf",
         "start_line": 809,
         "end_line": 829
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--owner-approved-reduced-static-receipt-and-custody-binding-preparation",
-        "blob_sha": "6c1e38f207686a3dad47445d696707bc93da415c",
+        "blob_sha": "bc826f4e9bb42114bd5d4323756890e2384bdaaf",
         "start_line": 725,
         "end_line": 733
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--retained-evidence-and-reduced-static-inspection-decision",
-        "blob_sha": "6c1e38f207686a3dad47445d696707bc93da415c",
+        "blob_sha": "bc826f4e9bb42114bd5d4323756890e2384bdaaf",
         "start_line": 717,
         "end_line": 723
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--owner-approved-linux-first-c5-allocation-and-exact-reduced-input-plan",
-        "blob_sha": "6c1e38f207686a3dad47445d696707bc93da415c",
+        "blob_sha": "bc826f4e9bb42114bd5d4323756890e2384bdaaf",
         "start_line": 211,
         "end_line": 219
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--linux-stage-a-actual-19-test-pass-and-one-use-disarm",
-        "blob_sha": "6c1e38f207686a3dad47445d696707bc93da415c",
+        "blob_sha": "bc826f4e9bb42114bd5d4323756890e2384bdaaf",
         "start_line": 317,
         "end_line": 323
       },
@@ -289,20 +296,18 @@
     ]
   },
   "operation": {
-    "id": "C5-MHTA-RUN-NAMESPACE-A-DIAGNOSTIC-ONCE-20261128",
+    "id": "C5-MHTA-NAMESPACE-A-CLEANUP-SEMANTICS-REVIEW-20261128",
     "state": "RECONCILED",
-    "starting_sha": "f89d4c41414da9649b1ec9ed9986fe381ff7f502",
-    "outcome": "TERMINAL_FAILURE_NAMESPACE_226_CONFIRMED_CLEANUP_TIMEOUT_RECONCILED_DISARMED; 58/58 tests, 8/8 packages, 7/7 tools, same-job match, 4/13 original facts; failure_cleanup=false, B blocked, no retry.",
+    "starting_sha": "71f7087218a75677a3cd979bc9b60bc69eee4144",
+    "outcome": "Upstream confirms stop of failed unit can report success without clearing failed state; default GC retains failed units. Specific source defect identified; actual prior cleanup unproved. No source change or execution. Proposed exact reset-failed preparation requires distinct owner decision.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "28-november--namespace-a-diagnostic-confirmed-226-cleanup-timeout-and-one-use-disarm",
-      "blob_sha": "6c1e38f207686a3dad47445d696707bc93da415c",
-      "start_line": 963,
-      "end_line": 979
-    },
-    "activation_sha": "1bb03b707256473af1aea5a09adb26ab78294eba",
-    "run_id": 46131676265
+      "anchor": "28-november--upstream-backed-failed-unit-cleanup-semantics-and-owner-decision",
+      "blob_sha": "bc826f4e9bb42114bd5d4323756890e2384bdaaf",
+      "start_line": 981,
+      "end_line": 985
+    }
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next. Owner-approved GitHub-only development installation and bounded technical autonomy amendment applies within exact approved batches; no broader authority.",
@@ -337,7 +342,7 @@
       "receipt": {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--namespace-a-diagnostic-confirmed-226-cleanup-timeout-and-one-use-disarm",
-        "blob_sha": "6c1e38f207686a3dad47445d696707bc93da415c",
+        "blob_sha": "bc826f4e9bb42114bd5d4323756890e2384bdaaf",
         "start_line": 963,
         "end_line": 979
       }
@@ -727,7 +732,7 @@
     ]
   },
   "remaining_risks": [
-    "A 46131676265 actual 226/NAMESPACE attributed, command exit1, empty stderr, WITNESS_TIMEOUT, failure_cleanup=false, 58/58 tests, 8/8 package, 7/7 tool, same_job_match true, 4/13 facts. Exact underlying namespace property and positive cleanup/settlement/custody not established. Prior 46129641931, 46127278663, 46120862249 retained. B held; no replay or additional restricted work.",
+    "A actual 226/NAMESPACE and WITNESS_TIMEOUT failure_cleanup=false; upstream failed-unit retention and stop-success semantics establish cleanup design defect, not actual first-wait proof. No recovery of prior runner settlement. Proposed narrow exact named reset-failed preparation requires owner decision, no B or restricted action. Historical failures retained.",
     "Reduced static inspection 596390f is held: 24 artifacts, proposed 24 direct GETs/104436509 bytes/30min/one attempt/no redirects or retries, preparation only. No archive acquisition, use, install, parser execution or custody inference; exact tests, staged metadata/notice/native facts, actual independent settlement and ownership handoff remain. 23/23 historical targeted release identities reviewed; 0/23 final pre-use dispositions. Security, actual compatible graph, applicable rights and independent hashes remain required; no blanket clearance.",
     "ReportLab 4.5.1 remains HOLD; 5.1.2 is a disarmed proposed alternative with coordinated range/lock/metadata/notice and offline graph review outstanding. Actual native/parser/library/loader applicability (PDFium/Brotli, numerical runtimes, LZMA, Tauri and relevant Python/npm components) remains open. Preserve all prior identities, notices and source evidence; no silent lock cutover, installation or release.",
     "Linux Stage A 19/19 exact generated fixtures previously passed; corrected Pillow static Brotli evidence and authenticated Chrome .88/Playwright 1.65.1 basic sandboxed smoke retained at their exact scopes, not durable current custody, full product compatibility, Windows or general security/rights clearance. Full Linux profile/frontend/browser/functional regression and all four machine profiles remain held; Windows-specific exact inputs, Astral runtime candidate if applicable, rights, security, owned settlement and browser-dev verification mandatory before D1. Reuse accepted evidence; no repeated broad identity probes.",
