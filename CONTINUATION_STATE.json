@@ -6,10 +6,10 @@
   },
   "checkpoint": {
     "operation_id": "C5-MHTA-QUIET-ISOLATED-FIXTURE-ONCE-20261128",
-    "parent_sha": "497aadf28920e7076f9428721a725b8e7e8390cd",
-    "previous_snapshot_sha": "497aadf28920e7076f9428721a725b8e7e8390cd",
+    "parent_sha": "ba80bc7c38ef0263212ca7cd455c4db32fc6ae7a",
+    "previous_snapshot_sha": "ba80bc7c38ef0263212ca7cd455c4db32fc6ae7a",
     "scope": "Exact one-use C5 quiet fixture: one disposable GitHub Ubuntu 24.04 job, five minutes, attempt 1, zero package downloads/installations/retries, two pinned checkouts, 32 generated tests, at most one conditional privileged generated fixture. No root worker/parser, direct cgroup writes, security weakening, owner data, other acquisition, native work or installer.",
-    "state": "PREPARED",
+    "state": "ISSUED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
       "anchor": "28-november--owner-authorised-quiet-isolated-fixture-once",
@@ -135,10 +135,10 @@
   },
   "task": {
     "id": "C5-LINUX-FIRST-20261127",
-    "status": "PREPARED",
+    "status": "IN_PROGRESS",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "Fresh exact owner approval recorded; not yet issued.",
-    "next_action": "Verify PREPARED write-ahead and exact three-path activation. Publish once non-force expected-HEAD, inspect exact run/attempt/job/receipt and disarm after reconciliation; no retry.",
+    "blocker": "Exact quiet one-use activation issued; reconcile actual outcome.",
+    "next_action": "Find exact activation commit and matching run, confirm attempt 1 and actual job/logs/receipt. Do not replay. Disarm exact owned workflow and marker after reconciliation.",
     "next_action_kind": "RECONCILE",
     "after": [
       "If separately approved, run only fresh exact quiet fixture once; reconcile and disarm. Review all 13 facts independently, qualification remains false until review. If fundamental limitation persists park route per PRODUCT-FIRST; no speculative expansion or retries. Reduced archive inspection/custody remain held.",
@@ -248,7 +248,7 @@
   },
   "operation": {
     "id": "C5-MHTA-QUIET-ISOLATED-FIXTURE-ONCE-20261128",
-    "state": "PREPARED",
+    "state": "ISSUED",
     "starting_sha": "497aadf28920e7076f9428721a725b8e7e8390cd",
     "scope": "Exact one-use C5 quiet fixture: one disposable GitHub Ubuntu 24.04 job, five minutes, attempt 1, zero package downloads/installations/retries, two pinned checkouts, 32 generated tests, at most one conditional privileged generated fixture. No root worker/parser, direct cgroup writes, security weakening, owner data, other acquisition, native work or installer.",
     "intended_paths": [
@@ -269,7 +269,8 @@
     "candidate_sha": "a28be41c0c74c91da0956f270c2f4f52c93ddf37",
     "source_sha": "88cdf6d761725a5b2695f2e7bbf4e542800e9917",
     "workflow_blob": "1c3cfa9af82500b24b5cf565e6dbb272d809c6d1",
-    "marker_blob": "88976251bbdc767f3aaa3b80500206c4c8d91e19"
+    "marker_blob": "88976251bbdc767f3aaa3b80500206c4c8d91e19",
+    "write_ahead_sha": "ba80bc7c38ef0263212ca7cd455c4db32fc6ae7a"
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next. Owner-approved GitHub-only development installation and bounded technical autonomy amendment applies within exact approved batches; no broader authority.",
@@ -277,7 +278,7 @@
     "restricted_active": [
       {
         "id": "C5-MHTA-QUIET-ISOLATED-FIXTURE-ONCE-20261128",
-        "state": "APPROVED",
+        "state": "ISSUED",
         "source_sha": "88cdf6d761725a5b2695f2e7bbf4e542800e9917",
         "scope": "Exact one-use C5 quiet fixture: one disposable GitHub Ubuntu 24.04 job, five minutes, attempt 1, zero package downloads/installations/retries, two pinned checkouts, 32 generated tests, at most one conditional privileged generated fixture. No root worker/parser, direct cgroup writes, security weakening, owner data, other acquisition, native work or installer.",
         "owner_authority_ref": {
@@ -309,7 +310,7 @@
       "release",
       "replay of consumed or uncertain approval"
     ],
-    "guards": "59 restricted grants consumed/disarmed; zero active/pending. Exact run 46127278663 terminal MANAGER_COMMAND refusal; 31/31 generated tests, 8/8 packages, 7/7 tools, same_job_match=true, 4/13 facts true, slice/service requested; cleanup and settlement unverified. Prior run 46120862249 terminal PREEXISTING retained/disarmed. No replay/retry, no inferred remaining budget. See prior immutable state and ledger for all batch caps and preparation conditions. C1/C2 and OWNED_RESOURCE_ENABLED remain false; no fallback. Full P2/P4 dependency-consuming regressions held, not waived. Reduced inspection and custody held; PRODUCT-FIRST finite-method stop applies. Codespace stop and three consumed-variable cleanup unverified. Owner-local work uninspected/preserved. Fresh exact quiet fixture grant PREPARED only, no replay, prior two grants consumed.",
+    "guards": "59 restricted grants consumed/disarmed; zero active/pending. Exact run 46127278663 terminal MANAGER_COMMAND refusal; 31/31 generated tests, 8/8 packages, 7/7 tools, same_job_match=true, 4/13 facts true, slice/service requested; cleanup and settlement unverified. Prior run 46120862249 terminal PREEXISTING retained/disarmed. No replay/retry, no inferred remaining budget. See prior immutable state and ledger for all batch caps and preparation conditions. C1/C2 and OWNED_RESOURCE_ENABLED remain false; no fallback. Full P2/P4 dependency-consuming regressions held, not waived. Reduced inspection and custody held; PRODUCT-FIRST finite-method stop applies. Codespace stop and three consumed-variable cleanup unverified. Owner-local work uninspected/preserved. Fresh exact quiet fixture grant PREPARED only, no replay, prior two grants consumed. Quiet one-use activation issued; reconcile before any action, no replay.",
     "last_consumed": {
       "id": "C5-MHTA-PRISTINE-ISOLATED-FIXTURE-ONCE-20261128",
       "source_sha": "7a5bebdca47f90f067ad6ed9591719cbbb8d5d11",
