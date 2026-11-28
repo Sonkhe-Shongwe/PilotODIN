@@ -6,16 +6,16 @@
   },
   "checkpoint": {
     "operation_id": "C5-MHTA-RUN-NAMESPACE-B-PRIVATE-RUN-ONCE-20261128",
-    "parent_sha": "f07092ce92f855a1fb63dc494ea25072cbcff5ef",
-    "previous_snapshot_sha": "f07092ce92f855a1fb63dc494ea25072cbcff5ef",
+    "parent_sha": "e0b758f91cede63807d67914127192fd8334b597",
+    "previous_snapshot_sha": "e0b758f91cede63807d67914127192fd8334b597",
     "scope": "One disposable Ubuntu 24.04 job, five minutes, attempt 1, two pinned checkouts, 72 generated tests, at most one conditional privileged B fixture and one exact owned failed-service reset; zero package downloads, installations, retries or A repetitions. Preserve limited host-runtime protection, original 13 and four additional B facts, all safeguards and historical failures. No automatic downstream execution or qualification, no direct cgroup writes, root worker/parser, owner data, native work, installer or phase advance.",
-    "state": "ISSUED",
+    "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "28-november--owner-authorised-exact-namespace-b-private-runtime-once",
-      "blob_sha": "c511bb2bd1c4c1fe435fc31aa199a26e6e1afb95",
-      "start_line": 1053,
-      "end_line": 1055
+      "anchor": "28-november--namespace-b-startup-observed-cgroup-mount-count-refusal-and-one-use-disarm",
+      "blob_sha": "ddeba3537520131f8c9f3a1e48d91186ae6090b2",
+      "start_line": 1057,
+      "end_line": 1073
     }
   },
   "product": {
@@ -135,17 +135,24 @@
   },
   "task": {
     "id": "C5-LINUX-FIRST-20261127",
-    "status": "PUBLISHED",
+    "status": "BLOCKED",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "",
-    "next_action": "Reconcile exact issued B activation, one run/job attempt and bounded diagnostic receipt; disarm exact owned marker/workflow after terminal or unknown reconciliation. No replay or automatic downstream execution.",
-    "next_action_kind": "RECONCILE",
+    "blocker": "B startup observed but CGROUP_MOUNT_COUNT worker evidence refusal; original 4/13, B 1/4, effective runtime protection/settlement and Dynamic UID custody unverified. Exact B grant consumed and disarmed. Route parked pending separate owner review.",
+    "next_action": "Owner decision: retain PRODUCT-FIRST parking of managed-host B execution route and continue only independently actionable authorised P4 source work, or separately authorise strictly read-only diagnosis of CGROUP_MOUNT_COUNT against exact original requirements. No retry, speculative variants, security weakening, acquisition, automatic downstream execution or qualification. Reduced inspection and custody held.",
+    "next_action_kind": "OWNER_DECISION",
     "after": [
-      "Separate exact B-only execution approval required. Fresh A cleanup gate met, combined 72 and inert binding verified; actual B protection/lifecycle and Dynamic UID custody unverified; reduced archive inspection held. No automatic B, replay, A repetition, or downstream authority.",
+      "B execution route parked after terminal CGROUP_MOUNT_COUNT refusal. Actual startup and effective properties observed; full protection/settlement/cleanup and Dynamic UID custody unverified. Separate owner review mandatory; no replay or automatic downstream work.",
       "Resolve actual Linux pre-use rights/security and custody, reuse Stage A 19/19, complete applicable functional/profile/frontend/browser and exact original full regressions; close C5 only on all eight rows. Verify Windows-specific inputs/compatibility before separately authorised production-equivalent D1; no installer. Independently actionable P4 source work remains permitted only under existing policy.",
       "Resolve D1/D2, G2 and original early E2 physical 8 GB offline bundled AI/coexistence, R06 and remaining P4 acceptance; Gate C before real prediction use. If feasibility fails, seek explicit owner product decision, not silent deferral. No phase advance without evidence and owner signoff."
     ],
     "read": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "28-november--namespace-b-startup-observed-cgroup-mount-count-refusal-and-one-use-disarm",
+        "blob_sha": "ddeba3537520131f8c9f3a1e48d91186ae6090b2",
+        "start_line": 1057,
+        "end_line": 1073
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--owner-authorised-exact-namespace-b-private-runtime-once",
@@ -346,50 +353,29 @@
   },
   "operation": {
     "id": "C5-MHTA-RUN-NAMESPACE-B-PRIVATE-RUN-ONCE-20261128",
-    "state": "ISSUED",
+    "state": "RECONCILED",
     "starting_sha": "f27f3f6cc559a1f57514b54aedecaee1cf1934a4",
-    "scope": "One disposable Ubuntu 24.04 job, five minutes, attempt 1, two pinned checkouts, 72 generated tests, at most one conditional privileged B fixture and one exact owned failed-service reset; zero package downloads, installations, retries or A repetitions. Preserve limited host-runtime protection, original 13 and four additional B facts, all safeguards and historical failures. No automatic downstream execution or qualification, no direct cgroup writes, root worker/parser, owner data, native work, installer or phase advance.",
-    "intended_paths": [
-      ".github/workflows/c5-managed-host-namespace-b-private-run-once.yml",
-      "CONTINUATION_STATE.json",
-      "qa/c5_managed_dev/APPROVAL_MANAGED_HOST_NAMESPACE_B_PRIVATE_RUN_20261128.txt"
-    ],
-    "authority_ref": {
+    "outcome": "Actual B run 46137431814 attempt 1: 72/72 generated tests pass; startup observed and properties true; CGROUP_MOUNT_COUNT refusal; original 4/13, B 1/4, cleanup unverified, qualification false; consumed/disarmed. No replay or downstream execution.",
+    "reconcile_before_retry": false,
+    "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "28-november--owner-authorised-exact-namespace-b-private-runtime-once",
-      "blob_sha": "c511bb2bd1c4c1fe435fc31aa199a26e6e1afb95",
-      "start_line": 1053,
-      "end_line": 1055
+      "anchor": "28-november--namespace-b-startup-observed-cgroup-mount-count-refusal-and-one-use-disarm",
+      "blob_sha": "ddeba3537520131f8c9f3a1e48d91186ae6090b2",
+      "start_line": 1057,
+      "end_line": 1073
     },
-    "expected_evidence": "Exact activation SHA; one observe-once job attempt 1; 72 generated tests; bounded attributed B diagnostic, original 13 and four additional B facts or refusal; exact reset/cleanup if terminal 226; one-use disarm; qualification false.",
-    "recovery": "Reconcile live Git, exact run/job/attempt/logs before any action. Never replay; disarm exact owned marker/workflow only after terminal or unknown reconciliation. No A repetition or automatic downstream work.",
-    "reconcile_before_retry": true,
-    "candidate_sha": "6e9c933eae5b205e26ea9898604dfa71313440ba",
     "source_sha": "a2fd5f54fea557c8f0794fecb63211e14e277160",
-    "workflow_blob": "cf85dc6da68a52d014b80914de262a8b1052dd9b",
-    "marker_blob": "8aa3a9d59ffb282c2428c70114db22d0dc995b35",
-    "write_ahead_sha": "f07092ce92f855a1fb63dc494ea25072cbcff5ef"
+    "candidate_sha": "6e9c933eae5b205e26ea9898604dfa71313440ba",
+    "write_ahead_sha": "f07092ce92f855a1fb63dc494ea25072cbcff5ef",
+    "activation_sha": "e0b758f91cede63807d67914127192fd8334b597",
+    "run_id": 46137431814,
+    "job_id": 140955764064
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next. Owner-approved GitHub-only development installation and bounded technical autonomy amendment applies within exact approved batches; no broader authority.",
     "preparation_only": "Owner approved consolidated shared-bundle disarmed acquisition-before-signature source and exact limited existing host bootstrap; owner approved proposed limited local Docker control-plane and host-derived rootfs trust/no-pull isolation method for preparation only. Authentication before extraction/use; no Docker invocation, acquisition, verification execution, installation or live cutover authorised. Owner approved bounded first-collision encoded public member-path diagnostic preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-bounded-first-collision-diagnostic-preparation-only. No restricted execution authority. Owner approved finite exact Linux data-only terminfo inventory policy and bounded receipt projection as proposed in 8cc1a696, preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-finite-exact-linux-terminfo-inventory-policy-and-bounded-receipt-preparation-only. Strict Windows/gh and other safeguards unchanged; no acquisition, extraction or restricted execution. Owner explicitly approved preparation and static/synthetic verification only of Approach C observation-only candidate (11 fixed roles, five minutes); no restricted execution, acquisition, Docker invocation or active policy change. Exact reference in C5 spec owner-approved-bounded-approach-c-observation-candidate-preparation-only. Owner approved Approach C metadata-only preparation/static/synthetic verification under 13 GET/10-minute proposed limits; no actual acquisition, package downloads, installation, Docker invocation, restricted execution or active trust policy change. Exact spec anchor owner-approved-bounded-approach-c-metadata-only-preparation-and-synthetic-core. Owner approved narrow metadata bootstrap preparation on existing two reviewed images including GnuPG/necessary existing dependencies, no acquisition/restricted execution/integrated verification/active policy change, original 13 GET/10 min bounds. Exact spec anchor owner-approved-narrow-metadata-bootstrap-preparation-and-finite-key-evidence-contract. Owner approved two-stage key/metadata sequence preparation including bounded public signing-key private repository retention proposal, combined 13 GET/600s/256 MiB; no actual acquisition, restricted execution or active policy change. Exact spec anchor owner-approved-two-stage-preparation-and-consolidated-custody-core. Owner approved exact C-D09 managed-development CI evidence rationalisation at proposal 2cbed51, recorded in C5 implementation spec; limited bootstrap trust and residual risk accepted, prepare concrete bounded validation candidate only, no acquisition, installation, restricted execution, migration, new expenditure or phase advancement. Owner approved one-time C5 proportionate publisher-first inspection method (okay lets try that), recorded at docs/C5_PROPORTIONATE_INSPECTION_DECISION_2026-11-27.md; no new restricted authority or acceptance waiver. Owner explicitly approved standalone Windows Stage A preparation preserving all security and acceptance requirements; see docs/C5_STANDALONE_WINDOWS_A_PREPARATION_2026-11-27.md. No restricted execution grant. Owner explicitly approved exact Astral CPython 3.11.18 Windows x64 candidate for standalone Stage A preparation only; docs/C5_WINDOWS_A_ASTRAL_PREPARATION_2026-11-27.md. No new restricted grant. Owner explicitly approved simplified C5 applicability-based development policy and preparation of consolidated Stage A transaction; see ENGINEERING_DECISIONS_CURRENT.md section 27-november--owner-approved-c5-applicability-policy-and-consolidated-stage-a-transaction. No restricted authority or acceptance waiver. Owner explicitly approved bounded G2 equivalent evidence feasibility assessment and design only; see ENGINEERING_DECISIONS_CURRENT.md section 27-november--g2-equivalent-evidence-feasibility-and-design-disposition. Assessment complete, no implementation, live method adoption or restricted execution authority. Owner adopted aggressive product-first framework (okay lets follow you new frame work); PRODUCT-FIRST-20261127 in phase policy. Independent concrete scoped P4 source work and narrowly rationalised standard C5 control metadata preparation, no new restricted execution grant. Owner approved preparation of bounded browser-only GitHub verification (okay do ti); detached 26ab490, no activation/acquisition/execution grant; exact receipt in engineering decisions. Owner approved proceeding with corrected Chrome .88 and Playwright 1.65.1 alternative (do it), exact candidate 920df39 prepared; no exact bounded activation grant yet; preserve original locks. Owner explicitly approved isolated ReportLab 5.1.2 evaluation and coordinated dependency-range and lock preparation, preserving all security, acceptance and execution boundaries; exact owner decision in ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-isolated-reportlab-512-projections-and-metadata-holds. Detached 4dd5525 data-only proposal; no acquisition, installation, execution or live adoption authority. Owner explicitly approved reduced 24-artifact static inspection scope and exact execution-binding preparation, 24 direct GETs/104436509 bytes/30 minutes/one attempt/no redirects or retries, preserving all boundaries; ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-reduced-static-receipt-and-custody-binding-preparation. Preparation only; no actual GET, dispatch or installation authority. Owner explicitly approved preparation of bounded read-only hosted cgroup v2 feasibility observation, five minutes, one attempt, zero package downloads, no privilege or security changes; ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-read-only-cgroup-feasibility-preparation. No actual observation/dispatch or acquisition authority. Owner approved isolated method evaluation/preparation, prioritising existing provider isolation or constrained cgroup subtree; no execution/privileged operations/security modification/package acquisition without distinct authority; ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-isolated-method-evaluation-and-system-manager-projection. Owner explicitly approved preparation of proportionate Managed Hosted Tool Assurance as narrow C-D09 extension: standard Ubuntu package checks, observed executable identities and same-job rechecks; no independent reconstructed managed executable manifests; preserve containment/settlement/trusted privileged startup/dependency integrity/rights/original data/acceptance. No privilege/acquisition/installation or active workflows until exact separate approval. See ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-managed-hosted-tool-assurance-and-disarmed-consolidated-candidate. Owner approved narrow systemd service quiet/diagnostic source correction and generated regression only (okay lets do that); exact detached 88cdf6d, no privileged run or evidence method change. Owner approved finite upstream-supported /run diagnostic/restructuring preparation (lets do it), detached 8bbfc5a; no exact restricted grant, no security weakening or live method adoption. Owner explicitly approved narrow exact named failed-unit reset correction preparation and generated regression only; fresh clean A may serve as prospective B gate, historical failure unchanged, separate exact execution/B authority mandatory; detached 9840f65/c6ed4df. Owner explicitly accepts limited host-runtime isolation objective rather than literal /run inaccessibility and approves narrow detached B observer/wrapper and targeted generated regression preparation only; a2fd5f54fea557c8f0794fecb63211e14e277160, receipt 28-november--owner-approved-detached-b-private-runtime-preparation-and-targeted-regression. No execution, activation, acquisition, installation or automatic B.",
-    "restricted_active": [
-      {
-        "id": "C5-MHTA-RUN-NAMESPACE-B-PRIVATE-RUN-ONCE-20261128",
-        "state": "ISSUED",
-        "source_sha": "a2fd5f54fea557c8f0794fecb63211e14e277160",
-        "scope": "One disposable Ubuntu 24.04 job, five minutes, attempt 1, two pinned checkouts, 72 generated tests, at most one conditional privileged B fixture and one exact owned failed-service reset; zero package downloads, installations, retries or A repetitions. Preserve limited host-runtime protection, original 13 and four additional B facts, all safeguards and historical failures. No automatic downstream execution or qualification, no direct cgroup writes, root worker/parser, owner data, native work, installer or phase advance.",
-        "owner_authority_ref": {
-          "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-          "anchor": "28-november--owner-authorised-exact-namespace-b-private-runtime-once",
-          "blob_sha": "c511bb2bd1c4c1fe435fc31aa199a26e6e1afb95",
-          "start_line": 1053,
-          "end_line": 1055
-        },
-        "reconcile_before_retry": true
-      }
-    ],
-    "consumed_disarmed_count": 62,
+    "restricted_active": [],
+    "consumed_disarmed_count": 63,
     "consumed_history": {
       "commit": "b9864b70fb9bb5a72d0f79c37f15b94100722192",
       "path": "docs/TAB_MIGRATION_HANDOFF_CURRENT.md",
@@ -408,19 +394,19 @@
       "release",
       "replay of consumed or uncertain approval"
     ],
-    "guards": "59 restricted grants consumed/disarmed; zero active/pending. Exact run 46127278663 terminal MANAGER_COMMAND refusal; 31/31 generated tests, 8/8 packages, 7/7 tools, same_job_match=true, 4/13 facts true, slice/service requested; cleanup and settlement unverified. Prior run 46120862249 terminal PREEXISTING retained/disarmed. No replay/retry, no inferred remaining budget. See prior immutable state and ledger for all batch caps and preparation conditions. C1/C2 and OWNED_RESOURCE_ENABLED remain false; no fallback. Full P2/P4 dependency-consuming regressions held, not waived. Reduced inspection and custody held; PRODUCT-FIRST finite-method stop applies. Codespace stop and three consumed-variable cleanup unverified. Owner-local work uninspected/preserved. Fresh exact quiet fixture grant PREPARED only, no replay, prior two grants consumed. Quiet one-use activation issued; reconcile before any action, no replay. 60 consumed/disarmed, zero active. Quiet grant consumed terminal MANAGER_EXIT_NONZERO; no replay, prior grants unchanged; current fixture route parked per PRODUCT-FIRST. No additional restricted work. Fresh exact A-only approval PREPARED; no B or replay. A-only activation issued; reconcile before any action, no B or replay. 61 consumed/disarmed; zero active. A terminal attributed namespace 226, cleanup timeout, no B, replay or qualification. All prior failures preserved. Fresh exact A cleanup grant PREPARED only; no B or replay. A cleanup one-use activation issued; reconcile before action, no replay or B. 62 consumed/disarmed, zero active. Fresh A terminal attributed 226 with bounded owned failure cleanup COMPLETE, no successful-worker acceptance. Prior failures unchanged; B separate equivalence review and exact owner approval, never automatic, no replay. B preparation completed, 8/8 exact targeted tests, combined 72 outstanding; 62 consumed/disarmed, zero active. No restricted execution or activation; A failures preserved. B combined 72/72 local generated regression passed, 24 source/plan pins verified, exact inert binding 6e9c933eae5b205e26ea9898604dfa71313440ba; 62 consumed/disarmed, zero active. Distinct exact owner approval required before B execution; no replay or automatic downstream activation. Fresh exact B-only approval PREPARED, no replay, 62 previous consumed/disarmed; no automatic downstream execution or qualification. B-only one-use activation issued; reconcile before any further action; no replay.",
+    "guards": "59 restricted grants consumed/disarmed; zero active/pending. Exact run 46127278663 terminal MANAGER_COMMAND refusal; 31/31 generated tests, 8/8 packages, 7/7 tools, same_job_match=true, 4/13 facts true, slice/service requested; cleanup and settlement unverified. Prior run 46120862249 terminal PREEXISTING retained/disarmed. No replay/retry, no inferred remaining budget. See prior immutable state and ledger for all batch caps and preparation conditions. C1/C2 and OWNED_RESOURCE_ENABLED remain false; no fallback. Full P2/P4 dependency-consuming regressions held, not waived. Reduced inspection and custody held; PRODUCT-FIRST finite-method stop applies. Codespace stop and three consumed-variable cleanup unverified. Owner-local work uninspected/preserved. Fresh exact quiet fixture grant PREPARED only, no replay, prior two grants consumed. Quiet one-use activation issued; reconcile before any action, no replay. 60 consumed/disarmed, zero active. Quiet grant consumed terminal MANAGER_EXIT_NONZERO; no replay, prior grants unchanged; current fixture route parked per PRODUCT-FIRST. No additional restricted work. Fresh exact A-only approval PREPARED; no B or replay. A-only activation issued; reconcile before any action, no B or replay. 61 consumed/disarmed; zero active. A terminal attributed namespace 226, cleanup timeout, no B, replay or qualification. All prior failures preserved. Fresh exact A cleanup grant PREPARED only; no B or replay. A cleanup one-use activation issued; reconcile before action, no replay or B. 62 consumed/disarmed, zero active. Fresh A terminal attributed 226 with bounded owned failure cleanup COMPLETE, no successful-worker acceptance. Prior failures unchanged; B separate equivalence review and exact owner approval, never automatic, no replay. B preparation completed, 8/8 exact targeted tests, combined 72 outstanding; 62 consumed/disarmed, zero active. No restricted execution or activation; A failures preserved. B combined 72/72 local generated regression passed, 24 source/plan pins verified, exact inert binding 6e9c933eae5b205e26ea9898604dfa71313440ba; 62 consumed/disarmed, zero active. Distinct exact owner approval required before B execution; no replay or automatic downstream activation. Fresh exact B-only approval PREPARED, no replay, 62 previous consumed/disarmed; no automatic downstream execution or qualification. B-only one-use activation issued; reconcile before any further action; no replay. B-only terminal refusal CGROUP_MOUNT_COUNT after startup; 63 consumed/disarmed, zero active; no replay, no new privileged work or automatic downstream execution; B route parked pending owner review.",
     "last_consumed": {
-      "id": "C5-MHTA-RUN-NAMESPACE-A-CLEANUP-ONCE-20261128",
-      "source_sha": "9840f65d3543534449303e7ebc695a134a0f398d",
-      "write_ahead_sha": "c06255f68b168c0baef386a7ebfc46f15ff25c36",
-      "outcome": "TERMINAL_FAILURE_NAMESPACE_226_CONFIRMED_OWNED_FAILURE_CLEANUP_COMPLETE_RECONCILED_DISARMED",
-      "run_id": 46134318998,
+      "id": "C5-MHTA-RUN-NAMESPACE-B-PRIVATE-RUN-ONCE-20261128",
+      "source_sha": "a2fd5f54fea557c8f0794fecb63211e14e277160",
+      "write_ahead_sha": "f07092ce92f855a1fb63dc494ea25072cbcff5ef",
+      "outcome": "TERMINAL_FAILURE_B_STARTUP_OBSERVED_CGROUP_MOUNT_COUNT_REFUSED_CLEANUP_UNVERIFIED_RECONCILED_DISARMED",
+      "run_id": 46137431814,
       "receipt": {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "28-november--namespace-a-cleanup-terminal-226-with-complete-owned-failure-cleanup-and-one-use-disarm",
-        "blob_sha": "51fe5fe9eea41774f6ee1d88093c29674b086698",
-        "start_line": 999,
-        "end_line": 1015
+        "anchor": "28-november--namespace-b-startup-observed-cgroup-mount-count-refusal-and-one-use-disarm",
+        "blob_sha": "ddeba3537520131f8c9f3a1e48d91186ae6090b2",
+        "start_line": 1057,
+        "end_line": 1073
       }
     }
   },
@@ -824,7 +810,7 @@
     ]
   },
   "remaining_risks": [
-    "Historic A 46131676265 cleanup timeout immutable; fresh A 46134318998 226 with COMPLETE owned failure cleanup meets prospective B review gate only. Detached B a2fd5f5 combined 72/72 local generated tests, 24 source/plan pins and inert binding 6e9c933 verified. Actual Ubuntu .19 mount/alias/IPC protection, startup/lifecycle and Dynamic UID custody unverified. Strict empty/no-submount gate may refuse ProtectHome /run/user. Separate exact B-only execution approval required; no replay, A repetition or automatic downstream activation.",
+    "Historic A 46131676265 cleanup timeout immutable; fresh A 46134318998 attributed 226 with complete failure cleanup. Actual B 46137431814 startup observed and 72/72 generated tests passed, but worker-side CGROUP_MOUNT_COUNT refused; original 4/13, B 1/4, no verified effective mount/IPC protection, lifecycle settlement or cleanup; Dynamic UID custody held. Exact grant consumed/disarmed; no replay, speculative variants or automatic downstream execution.",
     "Reduced static inspection 596390f is held: 24 artifacts, proposed 24 direct GETs/104436509 bytes/30min/one attempt/no redirects or retries, preparation only. No archive acquisition, use, install, parser execution or custody inference; exact tests, staged metadata/notice/native facts, actual independent settlement and ownership handoff remain. 23/23 historical targeted release identities reviewed; 0/23 final pre-use dispositions. Security, actual compatible graph, applicable rights and independent hashes remain required; no blanket clearance.",
     "ReportLab 4.5.1 remains HOLD; 5.1.2 is a disarmed proposed alternative with coordinated range/lock/metadata/notice and offline graph review outstanding. Actual native/parser/library/loader applicability (PDFium/Brotli, numerical runtimes, LZMA, Tauri and relevant Python/npm components) remains open. Preserve all prior identities, notices and source evidence; no silent lock cutover, installation or release.",
     "Linux Stage A 19/19 exact generated fixtures previously passed; corrected Pillow static Brotli evidence and authenticated Chrome .88/Playwright 1.65.1 basic sandboxed smoke retained at their exact scopes, not durable current custody, full product compatibility, Windows or general security/rights clearance. Full Linux profile/frontend/browser/functional regression and all four machine profiles remain held; Windows-specific exact inputs, Astral runtime candidate if applicable, rights, security, owned settlement and browser-dev verification mandatory before D1. Reuse accepted evidence; no repeated broad identity probes.",
