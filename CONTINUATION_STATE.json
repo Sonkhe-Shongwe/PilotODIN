@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "DLA-STAGE1-SOURCE-ONCE-20261128",
-    "parent_sha": "a561c53a70a47c977c645a58bb21daf7e10841c0",
-    "previous_snapshot_sha": "a561c53a70a47c977c645a58bb21daf7e10841c0",
-    "scope": "Reconcile one authorised DLA generated source-only execution and verified forward disarm",
+    "operation_id": "DLA-STAGE1-ARCHIVE-PREPARATION-20261128",
+    "parent_sha": "7489365b3f6488792c09989eec04c9fcd8f42c14",
+    "previous_snapshot_sha": "7489365b3f6488792c09989eec04c9fcd8f42c14",
+    "scope": "Prepare exact archive-only independent inspection driver/binding and separate native validation prerequisites; no acquisition or execution",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "blob_sha": "16ff53d3801d869026f7c3632478f5fd9e4ee6e3",
-      "anchor": "28-november--dla-stage-1-isolated-source-regression-passed-and-disarmed",
-      "start_line": 1195,
-      "end_line": 1199
+      "blob_sha": "7442de04203070463d6be998b368c4a0da836d87",
+      "anchor": "28-november--dla-independent-runtime-archive-inspection-preparation",
+      "start_line": 1201,
+      "end_line": 1211
     }
   },
   "product": {
@@ -132,11 +132,11 @@
     }
   },
   "task": {
-    "id": "P4-DLA-STAGE1-ARCHIVE-INSPECTION-PROPOSAL-20261128",
-    "status": "READY",
-    "scope": "Prepare finite independent pinned runtime archive inspection transaction and identify separate native provider compile/validation prerequisites; read-only/source preparation only.",
-    "next_action": "Prepare one exact separately authorised archive-only inspection transaction: fixed publisher b10344 Windows CPU archive 18406491 bytes, pinned SHA256, exact reviewed transport/redirect bounds, managed runner/tool identities, existing strict snapshot parser, new owned custody and cleanup, bounded independent inventory and rights-review receipt. No acquisition or execution under current authority. Confirm separate native compile/provider validation prerequisites and exact approved inputs without executing. Preserve Granite size/pointer hold, do not repeat unchanged generated tests, no model use or production integration.",
-    "next_action_kind": "PREPARATION",
+    "id": "P4-DLA-STAGE1-ARCHIVE-INSPECTION-DECISION-20261128",
+    "status": "BLOCKED",
+    "scope": "One exact independent publisher runtime archive inspection using binding 618128b9607e05e87e7db1fcf95cc7ed34ef9201; five-minute Linux source/inspection job, max two GETs/18406491 accepted artifact bytes, no retry, no model/native/owner/production.",
+    "next_action": "Seek one explicit approval for exact disarmed binding 618128b9607e05e87e7db1fcf95cc7ed34ef9201 and isolated branch feature/dla-stage1-archive-20261128, one five-minute Ubuntu24 managed Python job, three transport self-tests before network, one publisher archive and at most one constrained redirect (max two HTTPS GETs, 18406491 accepted body bytes, no retries), memory-only inspection and bounded receipt. On approval bind exact activation and write-ahead, audit exact ref/triggers, reconcile creation, activate once, verify and disarm both driver/workflow. No model/native/install/owner/production.",
+    "next_action_kind": "OWNER_DECISION",
     "after": [
       "Explore source-only verification passed; preserve 541cbeb and isolated disarmed ref. Functional numerical parity, React/browser stale recovery and physical memory comparison still gated by C5 pre-use and exact execution scope; no live merge or unchanged source rerun.",
       "Retain critical early E2 physical R03.3/R03.4, original E-02/W07, R06 historical strict FAIL/UNKNOWN and prospective G2 hold. No automatic execution/fallback or owner-local access.",
@@ -145,10 +145,10 @@
     "read": [
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "blob_sha": "16ff53d3801d869026f7c3632478f5fd9e4ee6e3",
-        "anchor": "28-november--dla-stage-1-isolated-source-regression-passed-and-disarmed",
-        "start_line": 1195,
-        "end_line": 1199
+        "blob_sha": "7442de04203070463d6be998b368c4a0da836d87",
+        "anchor": "28-november--dla-independent-runtime-archive-inspection-preparation",
+        "start_line": 1201,
+        "end_line": 1211
       },
       {
         "path": "docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md",
@@ -217,20 +217,21 @@
       {
         "path": "docs/PILOTODIN_PACKAGE_C_RESOURCE_TRUST_SPEC_2026-11-24.md"
       }
-    ]
+    ],
+    "blocker": "Distinct exact archive acquisition/inspection execution approval required; actual archive layout/member/notice evidence and rights review still absent; native compilation separately held."
   },
   "operation": {
-    "id": "DLA-STAGE1-SOURCE-ONCE-20261128",
+    "id": "DLA-STAGE1-ARCHIVE-PREPARATION-20261128",
     "state": "RECONCILED",
-    "starting_sha": "782f35af8e921f4a161050c3235f8b713200c591",
-    "outcome": "SUCCESS: 6/6 syntax, 7/7 generated Python tests; 1 executed job, 4 skipped; creation and forward-disarm all five skipped. No retries, native/model/acquisition/owner/production activity.",
+    "starting_sha": "7489365b3f6488792c09989eec04c9fcd8f42c14",
+    "outcome": "Two detached disarmed archive-inspection source/binding commits; 15 static checks, three new transport tests prepared not executed. Exact publisher archive metadata confirmed. No acquisition/execution.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "blob_sha": "16ff53d3801d869026f7c3632478f5fd9e4ee6e3",
-      "anchor": "28-november--dla-stage-1-isolated-source-regression-passed-and-disarmed",
-      "start_line": 1195,
-      "end_line": 1199
+      "blob_sha": "7442de04203070463d6be998b368c4a0da836d87",
+      "anchor": "28-november--dla-independent-runtime-archive-inspection-preparation",
+      "start_line": 1201,
+      "end_line": 1211
     }
   },
   "authority": {
@@ -704,6 +705,14 @@
       {
         "sha": "388d5515e6845eb63f5211bc28fe693acb947af6",
         "scope": "DLA existing dependency-free source-only regression binding, all five jobs literal false, no branch creation/activation/run. Six syntax and seven generated Python tests pending."
+      },
+      {
+        "sha": "dad4b36e6f26aa1a3816057b34851e7fdac8a601",
+        "scope": "Disarmed independent runtime archive inspection driver, exact publisher URL/size/digest and bounded TLS redirect, memory-only; 3 transport tests prepared not run, no acquisition."
+      },
+      {
+        "sha": "618128b9607e05e87e7db1fcf95cc7ed34ef9201",
+        "scope": "Disarmed DLA archive-only inspection binding; five false job guards, driver false, before/driver pins disarmed. No branch/run/acquisition."
       }
     ]
   },
@@ -721,7 +730,8 @@
     "DLA-A official publisher checksums identified; Liquid exact pointer confirmed; Granite exact bytes and pinned pointer unavailable. Existing runtime member/notice inventory and candidate evaluator/listener binding remain holds. Proposed independent pinned archive review and disarmed adapter not adopted; no acquisition or execution authority.",
     "DLA Stage 1 source candidate prepared but partial: missing immutable Granite byte count, actual independent runtime member/notice inventory, applicable rights, real owned listener identity provider and generated source verification. No acquisition, run or integration authority.",
     "DLA private listener source now prepared but uncompiled; opt-in Cargo feature and FFI/ABI require separate Windows validation. Seven Python generated tests awaiting exact isolated source-only execution. Runtime archive independent member/rights review and Granite immutable pointer/size still unresolved.",
-    "DLA Stage 1 generated Python tests passed 7/7 and syntax 6/6 at run 46167223621; no native compile/settlement, actual member/notice inventory, rights disposition, Granite immutable exact byte count or model qualification. Source run consumed/disarmed."
+    "DLA Stage 1 generated Python tests passed 7/7 and syntax 6/6 at run 46167223621; no native compile/settlement, actual member/notice inventory, rights disposition, Granite immutable exact byte count or model qualification. Source run consumed/disarmed.",
+    "Archive inspection exact disarmed binding 618128b prepared, actual service redirect/layout/member/notice receipt and rights review outstanding; 3 transport tests not run. Separate Windows MSVC/locked Cargo native validation inputs remain unresolved; Granite exact bytes/pointer held."
   ],
   "context": {
     "protocol": {
@@ -796,6 +806,13 @@
       }
     ],
     "evidence": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "7442de04203070463d6be998b368c4a0da836d87",
+        "anchor": "28-november--dla-independent-runtime-archive-inspection-preparation",
+        "start_line": 1201,
+        "end_line": 1211
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "blob_sha": "16ff53d3801d869026f7c3632478f5fd9e4ee6e3",
