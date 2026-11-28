@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "P4-LOCAL-INSIGHT-VERSION-BINDING-20261128",
-    "parent_sha": "6960a805533edccbdd1f65ab1fba6e129353acf6",
-    "previous_snapshot_sha": "6960a805533edccbdd1f65ab1fba6e129353acf6",
-    "scope": "Detached P4 Local ODIN explicit dataset-version binding and source readback; live continuity documentation only",
+    "operation_id": "P4-CONSOLIDATED-SOURCE-CANDIDATE-20261128",
+    "parent_sha": "5c490f1f7a7ea1ba77441b25113be37678fbe09c",
+    "previous_snapshot_sha": "5c490f1f7a7ea1ba77441b25113be37678fbe09c",
+    "scope": "Consolidated detached P4 product source/test candidate; no live integration or execution; C5 method decision hold",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "blob_sha": "0aae4dad1cedd4f48e7f94e2c36c3c31125e8ceb",
-      "anchor": "28-november--local-odin-explicit-dataset-version-binding-candidate",
-      "start_line": 1243,
-      "end_line": 1251
+      "blob_sha": "c7829029bc74f4c522148f741412749ccbff80c5",
+      "anchor": "28-november--consolidated-p4-product-candidate-and-directive-01-hold",
+      "start_line": 1253,
+      "end_line": 1261
     }
   },
   "product": {
@@ -134,16 +134,23 @@
   "task": {
     "id": "P4-CONSOLIDATED-FUNCTIONAL-REGRESSION-READINESS-20261128",
     "status": "BLOCKED",
-    "scope": "Existing independent Explore, Local analytics missingness and Local ODIN version-binding candidates; consolidate affected functional/API and real browser checks only after applicable C5 pre-use and reviewed execution authority.",
-    "blocker": "C5 use-specific dependency integrity/rights/compatible environment and exact functional execution authority remain missing; DLA separately parked for missing immutable Granite identity, qualified Windows build inputs and positive settlement.",
+    "scope": "Single immutable detached consolidated product candidate bb46e49035f3853e4b1a0045d45c3a984a232064; exact applicable functional regression and C5 pre-use/settlement remain held.",
+    "blocker": "Applicable dependency integrity, rights, compatible environment, independent containment/custody/positive settlement and exact reviewed execution authority remain absent. V3 and replacement evidence methods not adopted.",
     "next_action_kind": "MISSING_EVIDENCE",
-    "next_action": "Resume on material new C5 pre-use evidence or exact viable owner-authorised consolidated functional scope; preserve 541cbeb, e53ac8c and 60d8c0d. No repeated source tests on unchanged code, no accumulation of untested increments without concrete material defect. If no such authorised work exists, surface C5 evidence/owner decision blocker. DLA parked until material new evidence or explicit owner decision.",
+    "next_action": "Use bb46e49 as the sole consolidated P4 functional target; retain prior three candidates. Seek a concrete supported development-only alternative with exact controls and residual risk under current preparation authority, or surface precise method decision if unchanged requirements cannot be met. No repeat failed cgroup diagnostic, untested-feature accumulation, generic execution approval or live merge. DLA parked.",
     "after": [
       "Verify exact functional numerical/API and React/browser regressions for retained candidates when safe; no live merge until applicable pre-use and trigger audit.",
       "Preserve early physical E2 R03.3/R03.4, original E-02/W07, R06 historical strict FAIL/UNKNOWN and prospective G2 hold.",
       "Retain C5 rows 5–8, D1/D2, all six P4 checks and Gate C; P5, installer and release remain unauthorised."
     ],
     "read": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "c7829029bc74f4c522148f741412749ccbff80c5",
+        "anchor": "28-november--consolidated-p4-product-candidate-and-directive-01-hold",
+        "start_line": 1253,
+        "end_line": 1261
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "blob_sha": "0aae4dad1cedd4f48e7f94e2c36c3c31125e8ceb",
@@ -202,17 +209,17 @@
     ]
   },
   "operation": {
-    "id": "P4-LOCAL-INSIGHT-VERSION-BINDING-20261128",
+    "id": "P4-CONSOLIDATED-SOURCE-CANDIDATE-20261128",
     "state": "RECONCILED",
-    "starting_sha": "6960a805533edccbdd1f65ab1fba6e129353acf6",
-    "outcome": "Prepared and read back detached Local ODIN version fence candidate covering both panels and both backend compositions; functional/CI/build/native tests not executed; no live product integration.",
+    "starting_sha": "5c490f1f7a7ea1ba77441b25113be37678fbe09c",
+    "outcome": "Three preserved independent candidates combined at exact live parent; 11-path GitHub readback and workflow identities verified. No functional test, build, restricted operation or live product integration.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "blob_sha": "0aae4dad1cedd4f48e7f94e2c36c3c31125e8ceb",
-      "anchor": "28-november--local-odin-explicit-dataset-version-binding-candidate",
-      "start_line": 1243,
-      "end_line": 1251
+      "blob_sha": "c7829029bc74f4c522148f741412749ccbff80c5",
+      "anchor": "28-november--consolidated-p4-product-candidate-and-directive-01-hold",
+      "start_line": 1253,
+      "end_line": 1261
     }
   },
   "authority": {
@@ -702,6 +709,10 @@
       {
         "sha": "60d8c0d138dcdbdde395059e2ea5827fa952e2a1",
         "scope": "P4 local insight explicit dataset-version request/response and continuation fences in two HTTP compositions and mounted panels; 20 parameterised HTTP cases and one frontend contract prepared, nine direct source assertions/readback only; not run or integrated."
+      },
+      {
+        "sha": "bb46e49035f3853e4b1a0045d45c3a984a232064",
+        "scope": "Consolidated detached P4 Explore, missingness and Local ODIN version-bound source/test candidate; exact 12 base uses, 11 paths, 130 workflows preserved; no execution or live product integration."
       }
     ]
   },
@@ -724,7 +735,8 @@
     "DLA archive run 46169089369 terminal refused after 3/3 transport tests; zero inventory receipt, failure stage and actual GET/body counts unknown due generic exception handling. Both guards disarmed; grant consumed. No retry or rights/member acceptance. Granite size/pointer and native validation unresolved.",
     "Pinned b10344 Windows CPU upstream recipe copies libomp from debug_nonredist; applicable rights and actual archive contents unresolved. Old inspection parked; alternative pinned upstream standard CPU-only source build proposed not adopted, exact build/model input and settlement readiness absent. No automatic retries or pre-use waiver.",
     "DLA finite existing-input review confirms unqualified Windows C++/SDK/redist build graph, unknown exact Granite size/pointer and no positive settlement; park route, no retry/acquisition/build. Local analytics missingness overview coverage candidate e53ac8c remains detached, functional API checks and C5 pre-use pending; no acceptance delta.",
-    "Detached Local ODIN version-binding candidate 60d8c0d: actual API/browser/build regression and applicable C5 pre-use pending; legacy non-owned model prelaunch before HTTP and post-check freshness limits remain; not native or acceptance proof."
+    "Detached Local ODIN version-binding candidate 60d8c0d: actual API/browser/build regression and applicable C5 pre-use pending; legacy non-owned model prelaunch before HTTP and post-check freshness limits remain; not native or acceptance proof.",
+    "Combined candidate bb46e49 is source-only; all three functional regression families, mounted ODIN race, C5 use-specific pre-use and settlement, exact execution authority and trigger audit remain pending. V3 not adopted."
   ],
   "context": {
     "protocol": {
@@ -799,6 +811,13 @@
       }
     ],
     "evidence": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "c7829029bc74f4c522148f741412749ccbff80c5",
+        "anchor": "28-november--consolidated-p4-product-candidate-and-directive-01-hold",
+        "start_line": 1253,
+        "end_line": 1261
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "blob_sha": "0aae4dad1cedd4f48e7f94e2c36c3c31125e8ceb",
