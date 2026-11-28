@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-DEV-VM-01-S2-PDFIUM-NOTICE-RECONCILIATION-20261128",
-    "parent_sha": "51b059ccf9cd25b9f852293abe187dba6712c162",
-    "previous_snapshot_sha": "51b059ccf9cd25b9f852293abe187dba6712c162",
-    "scope": "C5 exact PDFium notice reconciliation and ReportLab actual security/rights hold narrowing",
+    "operation_id": "C5-DEV-VM-01-S2-PILLOW-SECURITY-RECONCILIATION-20261128",
+    "parent_sha": "c428fdbc36e16ef8a6d0bc61333d114a296814ba",
+    "previous_snapshot_sha": "c428fdbc36e16ef8a6d0bc61333d114a296814ba",
+    "scope": "C5 affected Pillow projection hold and exact targeted evidence decision",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "blob_sha": "0468e4353c1a0779b7cda867e972919e8a51ee5d",
-      "anchor": "28-november--dev-vm-01-pdfium-notice-discrepancy-resolved-and-remaining-actual-use-holds",
-      "start_line": 1331,
-      "end_line": 1379
+      "blob_sha": "75d9ffe463487f1278cf249710f8084594e52687",
+      "anchor": "28-november--dev-vm-01-affected-pillow-projection-hold-and-finite-evidence-decision",
+      "start_line": 1381,
+      "end_line": 1389
     }
   },
   "product": {
@@ -133,17 +133,24 @@
   },
   "task": {
     "id": "C5-DEV-VM-01-S2-PREUSE-AND-OVERLAY-20261128",
-    "status": "READY",
+    "status": "BLOCKED",
     "scope": "S2 review of actual S1 facts at exact receipt blob 02ce4c6d821bae913691d0a5501fe516df2fd908 and conditional dependency overlays targeting bb46e49; complete exact applicable pre-use and consolidated Windows/Linux regression preparation.",
-    "blocker": "PDFium notice discrepancies resolved (74/74) but native component/linkage/security and exact ReportLab flagged source/cache/font terms, other applicable per-profile use and managed tools remain held. Exact reviewed disposition and activation binding absent; consolidated candidate 2e7f10c unexecuted.",
-    "next_action_kind": "PREPARATION",
-    "next_action": "Reuse exact 74/74 PDFium notice reconciliation; finish finite applicable security/component/rights and managed tool/browser decisions with exact public source/provenance where possible. If actual missing facts cannot be resolved read-only, propose one bounded non-executing targeted inspection covering genuinely missing facts (ReportLab flagged source/cache/font terms; PDFium version/build/PE/ELF linkage; other necessary rows only), not repeated identity checks. Exact approval required before acquisition; then review final 2e7f10c candidate and activation patch, request exact bounded functional execution when viable. No unrelated preparation.",
+    "blocker": "Candidate 2e7f10c contains confirmed affected Linux Pillow 13.0.0 and held Windows stable pin. Corrected Linux candidate historical evidence exists but delivery unresolved; Windows corrected artifact 14984289920 not retrieved. ReportLab exact flagged source and Windows PDFium actual PE/build review missing; no acquisition authority.",
+    "next_action_kind": "OWNER_DECISION",
+    "next_action": "Await explicit targeted evidence decision recorded in latest receipt: one exact Windows Pillow publisher artifact retrieval (14984289920, 66081602 bytes) plus one static-only Ubuntu job (two fixed ReportLab/Windows PDFium wheel GETs, 6204856 bytes, max15 minutes, no retries). If approved, bind exact reviewed source/write-ahead before acquisition, reconcile and correct Pillow graph only on actual evidence. Reuse prior Linux PDFium and corrected Linux Pillow evidence; no repeat identity inspections. Functional execution remains held.",
     "after": [
       "Verify consolidated functional Windows/Linux synthetic stages only when applicable pre-use and exact authority satisfied; no auto-use or live merge.",
       "Close C5 and award only qualifying original evidence; all six P4 and native D/G2/E2/8GB/Gate C requirements preserved.",
       "DLA parked; P5/installer/release remain unauthorised."
     ],
     "read": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "75d9ffe463487f1278cf249710f8084594e52687",
+        "anchor": "28-november--dev-vm-01-affected-pillow-projection-hold-and-finite-evidence-decision",
+        "start_line": 1381,
+        "end_line": 1389
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "blob_sha": "0468e4353c1a0779b7cda867e972919e8a51ee5d",
@@ -230,17 +237,17 @@
     ]
   },
   "operation": {
-    "id": "C5-DEV-VM-01-S2-PDFIUM-NOTICE-RECONCILIATION-20261128",
+    "id": "C5-DEV-VM-01-S2-PILLOW-SECURITY-RECONCILIATION-20261128",
     "state": "RECONCILED",
-    "starting_sha": "51b059ccf9cd25b9f852293abe187dba6712c162",
-    "outcome": "74/74 historical PDFium notice Git identities reconciled against exact upstream LF/CRLF source, ReportLab exact flag narrowed. No new consumption, execution or acceptance credit.",
+    "starting_sha": "c428fdbc36e16ef8a6d0bc61333d114a296814ba",
+    "outcome": "Recovered known affected Linux Pillow pin in candidate, official corrected Windows publisher artifact metadata/logs, prior Linux PDFium actual evidence; explicit targeted decision proposed, no acquisition or authority.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "blob_sha": "0468e4353c1a0779b7cda867e972919e8a51ee5d",
-      "anchor": "28-november--dev-vm-01-pdfium-notice-discrepancy-resolved-and-remaining-actual-use-holds",
-      "start_line": 1331,
-      "end_line": 1379
+      "blob_sha": "75d9ffe463487f1278cf249710f8084594e52687",
+      "anchor": "28-november--dev-vm-01-affected-pillow-projection-hold-and-finite-evidence-decision",
+      "start_line": 1381,
+      "end_line": 1389
     }
   },
   "authority": {
@@ -822,7 +829,8 @@
     "cb83bec binds candidate font version only; full profile/preflight graph rebind and functional test required. Root pin 5.1.2 conflicts with historical production 4.5.1, production remains BLOCKED. Exact Inter/Manrope OFL notice matches not full package or release clearance.",
     "950678b candidate assembled but no compile, source regression or native/runtime verification; current production historical lock incompatible with proposed root. Exact functional runner/browser configs and pre-use security/rights/managed identity remain held.",
     "2e7f10c disarmed driver/workflow uncompiled and unexecuted, exact managed tool/disposition/activation absent; browser reporter semantics, full source-copy runtime and process/transport behavior need authorised validation. No native or physical evidence.",
-    "PDFium 74/74 notice identity discrepancy resolved by exact tagged source reconstruction; native build/component/licence/security applicability and ReportLab flagged exact source/cache/font terms still held. No new raw bytes or runtime evidence."
+    "PDFium 74/74 notice identity discrepancy resolved by exact tagged source reconstruction; native build/component/licence/security applicability and ReportLab flagged exact source/cache/font terms still held. No new raw bytes or runtime evidence.",
+    "Material candidate 2e7f10c projection error: exact Linux stable Pillow confirmed affected Brotli 1.2.0 (ledger 231); Windows stable held. Corrected nightly delivery/Windows actual artifact review and exact lock rebind mandatory before consumption. No activation as written."
   ],
   "context": {
     "protocol": {
@@ -897,6 +905,13 @@
       }
     ],
     "evidence": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "75d9ffe463487f1278cf249710f8084594e52687",
+        "anchor": "28-november--dev-vm-01-affected-pillow-projection-hold-and-finite-evidence-decision",
+        "start_line": 1381,
+        "end_line": 1389
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "blob_sha": "0468e4353c1a0779b7cda867e972919e8a51ee5d",
