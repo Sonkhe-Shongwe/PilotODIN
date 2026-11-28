@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-DEV-VM-01-S2-TWO-GET-STATIC-20261128",
-    "parent_sha": "42c34e609c9fd51049a2f60124caf8c2598ba81c",
-    "previous_snapshot_sha": "ae884bb1b6721b60bafe60ff31b331eeb3708e44",
-    "scope": "Reconcile terminal one-use static inspection refusal and disarm exact workflow/marker",
+    "operation_id": "C5-DEV-VM-01-S2-FONT-DIAGNOSTIC-PREP-20261128",
+    "parent_sha": "7d87e232e8b8a8444b5f8f626296cc27c4d84711",
+    "previous_snapshot_sha": "7d87e232e8b8a8444b5f8f626296cc27c4d84711",
+    "scope": "Reproduce exact font cap refusal, preserve partial font evidence, prepare disarmed correction",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "blob_sha": "f961c24823224e603388cf2e57fd8c13c3fdec0f",
-      "anchor": "28-november--dev-vm-01-s2-targeted-inspection-terminal-refusal-and-disarm",
-      "start_line": 1409,
-      "end_line": 1419
+      "blob_sha": "9d13d2cbe7fb3e04617bc60caa054f9fe2df96b4",
+      "anchor": "28-november--dev-vm-01-s2-font-refusal-reproduced-and-disarmed-correction",
+      "start_line": 1421,
+      "end_line": 1457
     }
   },
   "product": {
@@ -133,17 +133,24 @@
   },
   "task": {
     "id": "C5-DEV-VM-01-S2-PREUSE-AND-OVERLAY-20261128",
-    "status": "READY",
+    "status": "BLOCKED",
     "scope": "S2 review of actual S1 facts at exact receipt blob 02ce4c6d821bae913691d0a5501fe516df2fd908 and conditional dependency overlays targeting bb46e49; complete exact applicable pre-use and consolidated Windows/Linux regression preparation.",
-    "blocker": "ReportLab detailed source/cache/font terms unresolved after S2_FONT_STRING; Windows PDFium PE/build not attempted. Corrected Pillow delivery, graph and applicable rights/security/use disposition still held.",
-    "next_action_kind": "PREPARATION",
-    "next_action": "Review S2_FONT_STRING guard and exact receipt; prepare bounded source-only correction separating name-string range from length cap with member context and synthetic positive/negative tests, preserving all guards and partial facts. Seek existing retained or exact public source evidence first. Any new acquisition or execution requires distinct exact owner authority; no reuse of consumed grant or unused GET budget. No downstream package use.",
+    "blocker": "Fresh restricted scope required for exact ReportLab source/cache/remaining AFM terms and Windows PDFium PE/build. Existing matched font terms do not clear actual use; corrected Pillow delivery/graph held.",
+    "next_action_kind": "OWNER_DECISION",
+    "next_action": "Obtain exact owner approval of finite fresh two-wheel static-only proposal in latest receipt (two GETs, 6204856 bytes, one Ubuntu24.04 job, max 15 minutes, zero retries/redirects/install/import). If approved, review integrated driver and generated pre-transfer tests, bind new exact source/workflow/marker, write ahead, execute once and reconcile. No automatic replay or package use.",
     "after": [
       "Verify consolidated functional Windows/Linux synthetic stages only when applicable pre-use and exact authority satisfied; no auto-use or live merge.",
       "Close C5 and award only qualifying original evidence; all six P4 and native D/G2/E2/8GB/Gate C requirements preserved.",
       "DLA parked; P5/installer/release remain unauthorised."
     ],
     "read": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "9d13d2cbe7fb3e04617bc60caa054f9fe2df96b4",
+        "anchor": "28-november--dev-vm-01-s2-font-refusal-reproduced-and-disarmed-correction",
+        "start_line": 1421,
+        "end_line": 1457
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "blob_sha": "f961c24823224e603388cf2e57fd8c13c3fdec0f",
@@ -265,17 +272,17 @@
     ]
   },
   "operation": {
-    "id": "C5-DEV-VM-01-S2-TWO-GET-STATIC-20261128",
+    "id": "C5-DEV-VM-01-S2-FONT-DIAGNOSTIC-PREP-20261128",
     "state": "RECONCILED",
-    "starting_sha": "2829c71d8b52f62fef02f9fc9c850a4318f0f860",
-    "outcome": "Terminal failure S2_FONT_STRING; 4/4 generated tests, exact pins/preflight and 2017267-byte ReportLab transfer verified; one reserved GET, Windows PDFium unattempted. No retry, package consumption or acceptance credit.",
+    "starting_sha": "7d87e232e8b8a8444b5f8f626296cc27c4d84711",
+    "outcome": "25/41 exact font members matched; four Vera duplicate records reproduced, 7/7 generated and 4/4 exact member checks passed, driver prepared disarmed, no new acquisitions or acceptance.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "blob_sha": "f961c24823224e603388cf2e57fd8c13c3fdec0f",
-      "anchor": "28-november--dev-vm-01-s2-targeted-inspection-terminal-refusal-and-disarm",
-      "start_line": 1409,
-      "end_line": 1419
+      "blob_sha": "9d13d2cbe7fb3e04617bc60caa054f9fe2df96b4",
+      "anchor": "28-november--dev-vm-01-s2-font-refusal-reproduced-and-disarmed-correction",
+      "start_line": 1421,
+      "end_line": 1457
     }
   },
   "authority": {
@@ -839,6 +846,10 @@
       {
         "sha": "868c56ebaba1a92fb96d2ce65e0aa5aa8c3e0ccc",
         "scope": "Exact inert S2 static-only one-job binding, seven source pins, marker and workflow; no live activation at this commit."
+      },
+      {
+        "sha": "efedd8b4a00b0a376e735b22063c6fcce1835770",
+        "scope": "Disarmed S2 font diagnostics and partial receipt correction; helper/tests locally verified by exact Git blob, integrated driver not run."
       }
     ]
   },
@@ -873,7 +884,8 @@
     "2e7f10c disarmed driver/workflow uncompiled and unexecuted, exact managed tool/disposition/activation absent; browser reporter semantics, full source-copy runtime and process/transport behavior need authorised validation. No native or physical evidence.",
     "PDFium 74/74 notice identity discrepancy resolved by exact tagged source reconstruction; native build/component/licence/security applicability and ReportLab flagged exact source/cache/font terms still held. No new raw bytes or runtime evidence.",
     "Material candidate 2e7f10c projection error: exact Linux stable Pillow confirmed affected Brotli 1.2.0 (ledger 231); Windows stable held. Corrected nightly delivery/Windows actual artifact review and exact lock rebind mandatory before consumption. No activation as written.",
-    "S2 run 46185751142 terminal S2_FONT_STRING after one exact ReportLab transfer (2017267 bytes), 4/4 generated tests passed; no Windows PDFium GET. Font range vs length-cap cause and member not distinguished, detailed evidence unresolved, one-use scope consumed/disarmed; no retry or unused-budget transfer."
+    "S2 run 46185751142 terminal S2_FONT_STRING after one exact ReportLab transfer (2017267 bytes), 4/4 generated tests passed; no Windows PDFium GET. Font range vs length-cap cause and member not distinguished, detailed evidence unresolved, one-use scope consumed/disarmed; no retry or unused-budget transfer.",
+    "Exact Vera duplicate cap refusal reproduced with 25/41 locally hash-matched font members; integrated correction efedd8b untested/disarmed, commercial Type1/Noto and remaining AFM terms plus ReportLab source/cache and Windows PDFium linkage held; new two-wheel proposal awaits fresh authority."
   ],
   "context": {
     "protocol": {
@@ -948,6 +960,13 @@
       }
     ],
     "evidence": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "9d13d2cbe7fb3e04617bc60caa054f9fe2df96b4",
+        "anchor": "28-november--dev-vm-01-s2-font-refusal-reproduced-and-disarmed-correction",
+        "start_line": 1421,
+        "end_line": 1457
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "blob_sha": "f961c24823224e603388cf2e57fd8c13c3fdec0f",

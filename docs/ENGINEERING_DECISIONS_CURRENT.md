@@ -1417,3 +1417,41 @@ Next: finite historical applicable dependency rights/security/native component r
 ```
 
 **Disposition:** consume the exact one-use scope (70 total), replace only its workflow with dispatch-only false and remove its marker; no retry or transfer of unused budget. Preserve verified prior Pillow and PDFium notice evidence, all original gates and detached work; no release/graph/lock change. Next routine preparation only: distinguish font range from length refusal with bounded member context and generated synthetic positive/negative tests, retain all guards and partial completed facts; determine whether exact missing evidence is available from prior retained or exact public source without acquisition. Any fresh acquisition/CI attempt requires a distinct exact owner approval and write-ahead; no automatic replay. C5 4/8, source14/17, P4 14/20, D0/2, G2/E2/8GB/R06/Gate C, installer freeze and P5 prohibition unchanged. Owner-local uninspected.
+
+## 28 November | DEV-VM-01 S2 font refusal reproduced and disarmed correction
+
+**C5-DEV-VM-01-S2-FONT-DIAGNOSTIC-PREP-20261128.** Live parent 7d87e232e8b8a8444b5f8f626296cc27c4d84711 verified; zero pending operations/runs/active grants, five nonterminal branch statuses zero; consumed 70 unchanged. Prior run 46185751142 preserved. Existing disposable assistant sandbox ReportLab 4.4.9 files read as bytes only, no package import/load, installation, network acquisition or owner device. Exact S1 receipt 02ce4c6d821bae913691d0a5501fe516df2fd908 independently matched 25/41 font member SHA256 identities: all 5 TTF, all 18 PFB, 2 AFM. Remaining 16 AFM not locally present. Local utils.py and rl_safe_eval.py hashes differ from 5.1.2; not substituted. S1/S2 runs have zero retained GitHub artifacts; exact source/cache evidence and actual Windows PDFium PE/build unresolved. Exact font matches (filename SHA256):
+
+```
+DarkGardenMK.afm 932bb1acc08358d87f326e891b78cde9e7ef60bfd4fb749cfb48ab9e2a2fe6eb
+DarkGardenMK.pfb 3633d5aed5c0fc3ec9302ee6995d0bb87a2926793ede5bb654287d9cb896ec95
+Vera.ttf c4c45690b345435b2cba52ecabe275f05e49b389b39fe68ad03afbb551288d3d
+VeraBI.ttf fca0d4eeac1ced7e75e1b2274c869a351d2d83b5ed1f61d249e7bcc477c33ebe
+VeraBd.ttf cc037385e4d55bfde89b13e03091ee93bf40c0c52ddd391ff031ab276f13b8e9
+VeraIt.ttf 2adc684d518f45232c4ad1f56522f5a82a6904c31940373e1b7030beee20fb3a
+_a______.pfb 612e88946ff22cecdd6e345a50ab1d6c25a32ef4bf6e78f011aa4de2d7548f4d
+_ab_____.pfb 6e82ebb42171beb805fbd4449232e426c477456df8b24105211e6199fbc6ba3b
+_abi____.pfb a97afdf8376caa6b16030e8a6d1a3f67e60073590e9f360a3b1f2d754ab9d5ff
+_ai_____.pfb 74e2be79b1fd7a30f0ea90ed9ab89c33ade49e3265d50a09a6e87d51c5ba1583
+_eb_____.pfb adb1bfed9e866577583d93735cf16ca8d3357c2a71784ee13b4d9287299bb258
+_ebi____.pfb 04e6345bec4bd6fb2c64b31565dc14a77f0e4cd8b2fdca16b9f8f4fc29582cd1
+_ei_____.pfb 33aba9a62aae5b96d3e78255e1b0652dc16ae30686044bd7fe801b624346a7b6
+_er_____.pfb d9cbbcd211300fdfac5317450832d6ece542afbda1015fef9df40e8a350a5029
+callig15.afm bff9f4e37fa1688586e79c35097d68a5f638c29b27c6f0d4ac1c8eb859668a17
+callig15.pfb 8d36db66b2f0ded4f84cb3cd9d5d4c7ca4b692648c80539bf9bd83af14ee1a22
+cob_____.pfb fd5b34ad7c63d10278b25a6e763968fb0fde969985419f404205fa267a27c68c
+cobo____.pfb d128fc4ac784bb28383e169f9638629b06078a90adbc1b8d7e4e9f44d893f6f1
+com_____.pfb 1de587f0ca79deef99a738f9f7875d062f85ef5103b6526ceda53a47961aea13
+coo_____.pfb 676de5e6e1c302875218c733c33ba9a9b8283b0deafb92b5f94c5f0be24d4f77
+hb-test.ttf 4df8840ec8382efa2c06bda01e31e1a5a975cd46e13f7c0b0be696a8542f1ba0
+sy______.pfb b0480c6f9cee6bb87c1ae159a89a8a9d1ffa46e0ab70461fdf2fc291e2c94b4a
+zd______.pfb d9710cadd1fd895563601dbfd339291eeff72199eb5e93f654dcc7235269790b
+zx______.pfb ba8f3996fad32c042bf1f474a08b7452f252060882dc4de5a97ec389209e2301
+zy______.pfb 1182fcc2fb887713fb954a804f83fae3417c27b6929ecb07c5034dac24586e8b
+```
+
+**Root cause:** four exact Vera fonts have format 0 name tables with 22 records, storage offset 270, table lengths 7647/7704/7659/7677 (Vera/VeraBI/VeraBd/VeraIt); record 21 Windows platform 3 encoding 1 language 1033 name ID 13, byte length 4646, offsets 2683/2740/2695/2713 respectively. Each range fits exactly; UTF16BE record SHA256 2f5c456577abd7db8e389414aec11cd5ba2507bc99b8e5138e193f21e3e833a7, text identical to record 10 platform 1 length 2323 SHA256 3920ea252f0a77fd17d1fdef42a0ab54506fd0d29a4c0ac3febd77c8f14aa5cc in all four. Old 4096 cap reproduced on exact member bytes; no proof of malicious or malformed font. Exact triggering member in original receipt still unspecified. Vera embedded grant permits use/distribution with copyright/permission notice retention, rename restrictions on modified versions, no standalone font sale and advertising restrictions. DarkGarden exact AFM/PFB GPL-2.0-or-later with document embedding exception confirmed in AFM; exception not blanket redistribution clearance. CALLIG15 exact AFM/PFB permit use/modification/distribution with retained copyright. hb-test exact TTF identifies Noto Sans Khmer, no applicable licence text in selected name records; terms held. Remaining 16 commercial Type1 PFB header identities: Arial MT (4), Times New Roman PS (4), Courier (4), Symbol, ITC Zapf Dingbats, Adobe Sans MM and Adobe Serif MM; Adobe/Monotype copyright assertions, no positive redistribution grant established by bounded headers. All applicability/actual product use and packaging dispositions remain held. No raw fonts or entire package body retained in repo.
+
+**Correction:** detached efedd8b4a00b0a376e735b22063c6fcce1835770 tree 5e6bc05732e7cf0c9a00f6df0b1e84bacfbb9890; helper blob 42bc9d3f4de6934decd935dca4331b732dbfd039 and generated tests 346083924ef692bdccfac85b3473c51dd0cdc22d match exact locally tested Git blobs; 7/7 generated tests passed and 4/4 actual matched Vera duplicate projections passed, standard library only, no font loading. Range before cap; unchanged 4096 maximum decoded string, unknown long records fail, only exact four member identities + record tuple + short counterpart hash + long record SHA256 represented hash-only in <=4096-byte chunks. Diagnostic context bounded path/hash/record/range/length. Driver blob 609976e7e6a0996b74f97666ac15b9a2e69e6a95 read back, source/cache first, incremental bounded observations retained on refusal; hard LIVE_ENABLED=false and new proposed operation ID. Integrated driver not executed/tested; prospective tests and exact new workflow/marker binding needed before any fresh restricted job. No alteration of prior activation or consumed grant.
+
+**Finite next decision:** existing exact fonts resolve length defect but not ReportLab flagged exact source/cache and remaining AFM/notice terms, nor Windows PDFium actual PE/build linkage. Propose one fresh nonroot disposable Ubuntu24.04 static-only job, same exact ReportLab and Windows PDFium identities/URLs at b444f29 (2017267+4187589=6204856 bytes max accepted application bodies, two GETs, one attempt, max 15 minutes, no retries/redirects/replacement/installation/import/native execution/raw uploads). No Pillow or Linux PDFium reacquisition. Integrate reviewed source and pre-transfer tests, preserve partial bounded receipts and original guards; fresh exact owner approval, new write-ahead and full trigger verification mandatory before acquisition. This is a new proposal, not transfer of unused prior budget or execution authority. No graph, lock, release or acceptance credit; C5 4/8, P4 14/20, source14/17, D0/2, P5/installer freeze, all original G2/E2/8GB/R06/Gate C and owner data boundaries preserved.
