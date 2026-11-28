@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "PERF-O1-20261128",
-    "parent_sha": "65da9d02a9bc5a68fc4282e27758a47db4602435",
-    "previous_snapshot_sha": "65da9d02a9bc5a68fc4282e27758a47db4602435",
-    "scope": "O1 read-only source audit, selected Explore bootstrap correction contract; no live product source or execution.",
+    "operation_id": "PERF-EXPLORE-RECONCILE-20261128",
+    "parent_sha": "7f81b37ce07a3d151c12870eb969cf4926e9a692",
+    "previous_snapshot_sha": "7f81b37ce07a3d151c12870eb969cf4926e9a692",
+    "scope": "Reconcile detached Explore candidate and finite existing source-only regression proposal, no new authority.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "28-november--o1-audit-selects-one-version-bound-explore-snapshot",
-      "blob_sha": "9a6d09bedc301832826dec2770af6b1fbd521fe1",
-      "start_line": 1133,
-      "end_line": 1135
+      "anchor": "28-november--explore-detached-implementation-recovered-and-regression-route-bounded",
+      "blob_sha": "a03428f01fdb9d99faf306b0ec995ac051977c7c",
+      "start_line": 1137,
+      "end_line": 1139
     }
   },
   "product": {
@@ -134,31 +134,40 @@
     }
   },
   "task": {
-    "id": "P4-PERF-EXPLORE-BOOTSTRAP-01",
-    "status": "READY",
-    "scope": "Finite independent P4 Explore bootstrap source preparation, exact parity/stale tests and complete trigger/job audit. No live code publication without confirmed permitted workflow scope; no restricted execution.",
-    "blocker": null,
-    "next_action": "Read selected O1 contract; complete workflow path/branch/actual job-scope audit in bounded groups, then prepare one smallest source correction and synthetic regression assertions using existing four candidate paths. Preserve existing endpoints and numerical/version/auth/ownership invariants. If live trigger eligibility uncertain, keep detached inert candidate and report exact next decision. No dependency-consuming CI under C5 hold, native/model/owner operations, new dependency, threshold change or phase advance.",
-    "next_action_kind": "PREPARE",
+    "id": "P4-PERF-EXPLORE-REGRESSION-ROUTE-DECISION-20261128",
+    "status": "BLOCKED",
+    "scope": "Owner decision on finite preparation-only existing P4 dependency-free regression binding on isolated non-live ref; no activation or integration.",
+    "blocker": "Eight matching workflows would install dependencies outside current C5 scope; current dependency-free P4 job does not test Explore. No approved exact isolated source-test binding or functional regression route.",
+    "next_action": "Request explicit preparation-only approval for existing P4 dependency-free job extension on isolated non-live ref, five-minute Ubuntu source syntax/built-in Node tests, exact C-D09 managed provider identity, full trigger/ref/dispatch review; preserve held jobs and no installs/native/model/owner access. Stop NO-GO if unsupported. Separate exact activation required. No live integration until applicable workflow/C5/functional gates. Maintain early E2 readiness hold.",
+    "next_action_kind": "OWNER_DECISION",
     "after": [
-      "Only after exact authority, trigger audit and required write-ahead, publish and verify permitted source-only evidence; retain full functional/browser/native/physical regression obligations. Measure RAM/latency only on separately approved comparable workload.",
-      "Critical early E2 candidate identity/rights/fifth-case/positive settlement remains unresolved; do not indefinitely defer or lower admission floor. R06 historical FAIL/writer UNKNOWN, prospective G2 hold.",
-      "Retain C5 rows 5–8, D1/D2, R02.5/R02.6 and Gate C; no P5, installer or release until qualifying acceptance and owner signoff."
+      "If approved, prepare only exact disarmed source binding using existing job; then separate exact execution approval, no dependency use. Functional Python/browser parity, stale/ref recovery and physical measurements remain separately gated.",
+      "Return to critical E2 candidate independent identities, five-case evaluation and positive settlement preparation decision; no native/model run, threshold change or indefinite deferral. Retain R06 historical FAIL/UNKNOWN and prospective G2 hold.",
+      "Retain all C5 rows 5–8, D1/D2, six P4 acceptance checks and Gate C; no P5, installer or release without qualifying evidence and owner signoff."
     ],
     "read": [
       {
         "path": "docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md",
-        "anchor": "28-november--o1-source-audit-and-selected-explore-snapshot-optimisation",
-        "blob_sha": "c193056d87b1feb41b1fa012cc9fa8e4b000e51d",
-        "start_line": 306,
-        "end_line": 335
+        "anchor": "28-november--explore-candidate-reconciliation-and-bounded-regression-route",
+        "blob_sha": "2433ae60a49dbff2143d3dd71b5c52733d2c8070",
+        "start_line": 337,
+        "end_line": 357
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "28-november--o1-audit-selects-one-version-bound-explore-snapshot",
-        "blob_sha": "9a6d09bedc301832826dec2770af6b1fbd521fe1",
-        "start_line": 1133,
-        "end_line": 1135
+        "anchor": "28-november--explore-detached-implementation-recovered-and-regression-route-bounded",
+        "blob_sha": "a03428f01fdb9d99faf306b0ec995ac051977c7c",
+        "start_line": 1137,
+        "end_line": 1139
+      },
+      {
+        "path": ".github/workflows/p4-target-ranking.yml",
+        "blob_sha": "f85ed8f723d63100840bc2cc44f6855bea1b6363",
+        "start_line": 626,
+        "end_line": 640
+      },
+      {
+        "path": ".github/workflows/r1r2-source-only-windows.yml"
       },
       {
         "path": "backend/main.py"
@@ -255,17 +264,17 @@
     ]
   },
   "operation": {
-    "id": "PERF-O1-20261128",
+    "id": "PERF-EXPLORE-RECONCILE-20261128",
     "state": "RECONCILED",
-    "starting_sha": "65da9d02a9bc5a68fc4282e27758a47db4602435",
-    "outcome": "O1 complete source review. Four initial Explore full materialisations confirmed; one version-bound bootstrap selected. Candidate trigger audit preliminary only; next finite source prep and complete trigger/job audit. No acceptance delta.",
+    "starting_sha": "7f81b37ce07a3d151c12870eb969cf4926e9a692",
+    "outcome": "Exact candidate recovered; five changed blobs, no runs, prior source checks preserved. Nine matching active branch workflows, eight dependency installs; existing P4 source job unrelated. Candidate retained detached and added to state. No acceptance delta.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "28-november--o1-audit-selects-one-version-bound-explore-snapshot",
-      "blob_sha": "9a6d09bedc301832826dec2770af6b1fbd521fe1",
-      "start_line": 1133,
-      "end_line": 1135
+      "anchor": "28-november--explore-detached-implementation-recovered-and-regression-route-bounded",
+      "blob_sha": "a03428f01fdb9d99faf306b0ec995ac051977c7c",
+      "start_line": 1137,
+      "end_line": 1139
     }
   },
   "authority": {
@@ -711,6 +720,10 @@
       {
         "sha": "a734fefb9f147d0095190d816e11df95eaecf604",
         "scope": "Exact inert topology-only B execution binding; 28 pins and static syntax checks verified; authority false."
+      },
+      {
+        "sha": "541cbeb18777c4ba7600076631f2760f4705f282",
+        "scope": "PERF-EXPLORE-BOOTSTRAP-01 detached five-file source candidate, 7/7 prior direct JS static groups; no functional/runtime/CI or live integration. Exact pins and trigger audit in PERF-EXPLORE-RECONCILE-20261128."
       }
     ]
   },
@@ -788,6 +801,20 @@
       }
     ],
     "evidence": [
+      {
+        "path": "docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md",
+        "anchor": "28-november--explore-candidate-reconciliation-and-bounded-regression-route",
+        "blob_sha": "2433ae60a49dbff2143d3dd71b5c52733d2c8070",
+        "start_line": 337,
+        "end_line": 357
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "28-november--explore-detached-implementation-recovered-and-regression-route-bounded",
+        "blob_sha": "a03428f01fdb9d99faf306b0ec995ac051977c7c",
+        "start_line": 1137,
+        "end_line": 1139
+      },
       {
         "path": "docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md",
         "anchor": "28-november--o1-source-audit-and-selected-explore-snapshot-optimisation",
