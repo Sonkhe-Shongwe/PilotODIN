@@ -6,10 +6,10 @@
   },
   "checkpoint": {
     "operation_id": "C5-MHTA-ISOLATED-FIXTURE-ONCE-20261128",
-    "parent_sha": "f7a248d1f88905cc54e0a56e3658eca67786926c",
-    "previous_snapshot_sha": "f7a248d1f88905cc54e0a56e3658eca67786926c",
+    "parent_sha": "b0a86e47dabd1ad450b0a315224da65b907efef7",
+    "previous_snapshot_sha": "b0a86e47dabd1ad450b0a315224da65b907efef7",
     "scope": "Exact one-use MHTA generated isolated fixture: one disposable GitHub Ubuntu 24.04 job, 5 minutes, 1 attempt, 0 package GETs/installations/retries, 2 pinned checkouts, 27 generated tests, same-job admission before 1 conditional privileged fixture; no security weakening, direct cgroup writes, root worker/parser, owner data, acquisition or native work.",
-    "state": "PREPARED",
+    "state": "ISSUED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
       "anchor": "28-november--owner-authorised-one-use-managed-hosted-assurance-fixture",
@@ -135,10 +135,10 @@
   },
   "task": {
     "id": "C5-LINUX-FIRST-20261127",
-    "status": "PREPARED",
+    "status": "IN_PROGRESS",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "Exact owner grant recorded; verify write-ahead and unchanged trigger inventory before sole approved activation.",
-    "next_action": "Verify exact PREPARED checkpoint; publish approved three-path activation with exact workflow/marker/source and expected-HEAD. Reconcile actual job and disarm; no retry.",
+    "blocker": "One exact activation issued; terminal/unknown run evidence and owned disarm outstanding.",
+    "next_action": "Reconcile exact issued activation SHA and actual run, attempt, job, test and receipt; never repeat. Remove exact marker and literal-false disarm after terminal reconciliation.",
     "next_action_kind": "OWNER_DECISION",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
@@ -675,7 +675,7 @@
   },
   "operation": {
     "id": "C5-MHTA-ISOLATED-FIXTURE-ONCE-20261128",
-    "state": "PREPARED",
+    "state": "ISSUED",
     "starting_sha": "f7a248d1f88905cc54e0a56e3658eca67786926c",
     "scope": "Exact one-use MHTA generated isolated fixture: one disposable GitHub Ubuntu 24.04 job, 5 minutes, 1 attempt, 0 package GETs/installations/retries, 2 pinned checkouts, 27 generated tests, same-job admission before 1 conditional privileged fixture; no security weakening, direct cgroup writes, root worker/parser, owner data, acquisition or native work.",
     "intended_paths": [
@@ -692,7 +692,8 @@
     },
     "expected_evidence": "Exact activation SHA, one observe-once job attempt 1, test results and bounded receipt or refusal, then exact marker removal and literal-false disarm.",
     "recovery": "Reconcile exact live SHA, run/attempt/jobs/logs and terminal/unknown outcome; never replay, retry or infer settlement. Disarm exact owned workflow and marker after reconciliation.",
-    "reconcile_before_retry": true
+    "reconcile_before_retry": true,
+    "activation_parent": "b0a86e47dabd1ad450b0a315224da65b907efef7"
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next. Owner-approved GitHub-only development installation and bounded technical autonomy amendment applies within exact approved batches; no broader authority.",
@@ -700,7 +701,7 @@
     "restricted_active": [
       {
         "id": "C5-MHTA-ISOLATED-FIXTURE-ONCE-20261128",
-        "state": "APPROVED",
+        "state": "ISSUED",
         "source_sha": "1ab5546198137e66c2b45eee69a24a2cf4fcc175",
         "scope": "Exact one-use MHTA generated isolated fixture: one disposable GitHub Ubuntu 24.04 job, 5 minutes, 1 attempt, 0 package GETs/installations/retries, 2 pinned checkouts, 27 generated tests, same-job admission before 1 conditional privileged fixture; no security weakening, direct cgroup writes, root worker/parser, owner data, acquisition or native work.",
         "owner_authority_ref": {
