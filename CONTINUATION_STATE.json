@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "PERF-V2-20261128",
-    "parent_sha": "3ccd947630e2877e2520ac7be838810227f672de",
-    "previous_snapshot_sha": "3ccd947630e2877e2520ac7be838810227f672de",
-    "scope": "Owner-requested documentation and implementation readiness; consolidate performance and footprint direction, no expanded execution authority.",
+    "operation_id": "PERF-O1-20261128",
+    "parent_sha": "65da9d02a9bc5a68fc4282e27758a47db4602435",
+    "previous_snapshot_sha": "65da9d02a9bc5a68fc4282e27758a47db4602435",
+    "scope": "O1 read-only source audit, selected Explore bootstrap correction contract; no live product source or execution.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "28-november--product-first-v2-performance-and-footprint-directive-consolidated",
-      "blob_sha": "b8cda837b014dea9477ebf0c6ab48cc30ad0719e",
-      "start_line": 1129,
-      "end_line": 1131
+      "anchor": "28-november--o1-audit-selects-one-version-bound-explore-snapshot",
+      "blob_sha": "9a6d09bedc301832826dec2770af6b1fbd521fe1",
+      "start_line": 1133,
+      "end_line": 1135
     }
   },
   "product": {
@@ -134,31 +134,49 @@
     }
   },
   "task": {
-    "id": "P4-PERF-O1-BASELINE-HOTPATH-AUDIT-20261128",
+    "id": "P4-PERF-EXPLORE-BOOTSTRAP-01",
     "status": "READY",
-    "scope": "Finite read-only source/evidence audit of existing P4 performance and footprint seams; one actionable defect or no-go, no implementation or execution inferred.",
+    "scope": "Finite independent P4 Explore bootstrap source preparation, exact parity/stale tests and complete trigger/job audit. No live code publication without confirmed permitted workflow scope; no restricted execution.",
     "blocker": null,
-    "next_action": "Perform O1 at live verified HEAD: reuse recorded physical/worker/installer baseline, inspect exact dataset materialisation/import/previews, workspace/cache, ML parallelism, coordinator/supervisor and historical packaging seams. Rank by evidence; return one smallest independently actionable scoped P4 correction with exact paths/tests/triggers and rollback contract, or finite no-go. No new tests/CI, acquisition, install, native/model run, local access, dependency/threshold change, or new framework during audit. Do not repeat completed historical diagnostics.",
+    "next_action": "Read selected O1 contract; complete workflow path/branch/actual job-scope audit in bounded groups, then prepare one smallest source correction and synthetic regression assertions using existing four candidate paths. Preserve existing endpoints and numerical/version/auth/ownership invariants. If live trigger eligibility uncertain, keep detached inert candidate and report exact next decision. No dependency-consuming CI under C5 hold, native/model/owner operations, new dependency, threshold change or phase advance.",
     "next_action_kind": "PREPARE",
     "after": [
-      "If actual independently actionable P4 source defect is established, proceed only under existing scoped authority after exact trigger review and write-ahead as applicable; separately scope candidate-specific E2 preparation where required, with independent runtime inventory/rights, five quality cases and positive settlement. No bypass of production verifier or automatic model run.",
-      "Retain early E2 R03.3/R03.4 mandatory physical gates, historical R06.1 strict failure/unknown writer and R06.2 prospective G2 hold; no silent model/threshold/acceptance adoption, no P5 or installer.",
-      "Sequence O4–O10 only when supported by actual measurements and applicable phase/authority; C5 rows 5–8, D1/D2, R02.5/R02.6 and Gate C before qualifying closure/use."
+      "Only after exact authority, trigger audit and required write-ahead, publish and verify permitted source-only evidence; retain full functional/browser/native/physical regression obligations. Measure RAM/latency only on separately approved comparable workload.",
+      "Critical early E2 candidate identity/rights/fifth-case/positive settlement remains unresolved; do not indefinitely defer or lower admission floor. R06 historical FAIL/writer UNKNOWN, prospective G2 hold.",
+      "Retain C5 rows 5–8, D1/D2, R02.5/R02.6 and Gate C; no P5, installer or release until qualifying acceptance and owner signoff."
     ],
     "read": [
       {
         "path": "docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md",
-        "anchor": "28-november--product-first-v2-performance-resource-efficiency-and-footprint-directive",
-        "blob_sha": "b135f1d8f09300f6ef492f1ba27b7a07d7326872",
-        "start_line": 247,
-        "end_line": 304
+        "anchor": "28-november--o1-source-audit-and-selected-explore-snapshot-optimisation",
+        "blob_sha": "c193056d87b1feb41b1fa012cc9fa8e4b000e51d",
+        "start_line": 306,
+        "end_line": 335
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "28-november--product-first-v2-performance-and-footprint-directive-consolidated",
-        "blob_sha": "b8cda837b014dea9477ebf0c6ab48cc30ad0719e",
-        "start_line": 1129,
-        "end_line": 1131
+        "anchor": "28-november--o1-audit-selects-one-version-bound-explore-snapshot",
+        "blob_sha": "9a6d09bedc301832826dec2770af6b1fbd521fe1",
+        "start_line": 1133,
+        "end_line": 1135
+      },
+      {
+        "path": "backend/main.py"
+      },
+      {
+        "path": "backend/quality.py"
+      },
+      {
+        "path": "frontend/src/ExploreWorkspace.tsx"
+      },
+      {
+        "path": "frontend/src/api.ts"
+      },
+      {
+        "path": "tests/test_explore_linked_filters.py"
+      },
+      {
+        "path": "frontend/tests/linked-analytics-filters.test.cjs"
       },
       {
         "path": "docs/RESOURCE_AWARE_MODE_DESIGN.md",
@@ -172,9 +190,6 @@
       },
       {
         "path": "frontend/src/UnifiedShell.tsx"
-      },
-      {
-        "path": "backend/quality.py"
       },
       {
         "path": "backend/import_preflight.py"
@@ -240,17 +255,17 @@
     ]
   },
   "operation": {
-    "id": "PERF-V2-20261128",
+    "id": "PERF-O1-20261128",
     "state": "RECONCILED",
-    "starting_sha": "3ccd947630e2877e2520ac7be838810227f672de",
-    "outcome": "Performance architecture and O1–O10 backlog consolidated against owner blueprint, existing V2 and verified historical measurements; O1 finite read-only audit READY. No product change or acceptance delta.",
+    "starting_sha": "65da9d02a9bc5a68fc4282e27758a47db4602435",
+    "outcome": "O1 complete source review. Four initial Explore full materialisations confirmed; one version-bound bootstrap selected. Candidate trigger audit preliminary only; next finite source prep and complete trigger/job audit. No acceptance delta.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "28-november--product-first-v2-performance-and-footprint-directive-consolidated",
-      "blob_sha": "b8cda837b014dea9477ebf0c6ab48cc30ad0719e",
-      "start_line": 1129,
-      "end_line": 1131
+      "anchor": "28-november--o1-audit-selects-one-version-bound-explore-snapshot",
+      "blob_sha": "9a6d09bedc301832826dec2770af6b1fbd521fe1",
+      "start_line": 1133,
+      "end_line": 1135
     }
   },
   "authority": {
@@ -773,6 +788,20 @@
       }
     ],
     "evidence": [
+      {
+        "path": "docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md",
+        "anchor": "28-november--o1-source-audit-and-selected-explore-snapshot-optimisation",
+        "blob_sha": "c193056d87b1feb41b1fa012cc9fa8e4b000e51d",
+        "start_line": 306,
+        "end_line": 335
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "28-november--o1-audit-selects-one-version-bound-explore-snapshot",
+        "blob_sha": "9a6d09bedc301832826dec2770af6b1fbd521fe1",
+        "start_line": 1133,
+        "end_line": 1135
+      },
       {
         "path": "docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md",
         "anchor": "28-november--product-first-v2-performance-resource-efficiency-and-footprint-directive",
