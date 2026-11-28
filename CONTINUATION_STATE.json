@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-DISARMED-SYSTEM-MANAGER-FIXTURE-LAUNCHER-PREPARATION-20261128",
-    "parent_sha": "a764c99226c7d4aaffb1785c6d5e7f0cfcfbf0f5",
-    "previous_snapshot_sha": "a764c99226c7d4aaffb1785c6d5e7f0cfcfbf0f5",
-    "scope": "Disarmed concrete system-manager fixture launcher, upstream transient property correction and generated-only validation.",
+    "operation_id": "C5-GENERATED-OBSERVER-LIFECYCLE-AND-ROOT-STARTUP-PREPARATION-20261128",
+    "parent_sha": "c2a0dbdf84db0d2da77f3d036eea82818126493d",
+    "previous_snapshot_sha": "c2a0dbdf84db0d2da77f3d036eea82818126493d",
+    "scope": "Generated-only exact observer lifecycle witness, detached root startup projection, retained hosted image identity and approval hold.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "28-november--disarmed-system-manager-launcher-and-upstream-transient-property-correction",
-      "blob_sha": "05fab9a90df58a900c241bc4a49b3f453f3fe85f",
-      "start_line": 789,
-      "end_line": 797
+      "anchor": "28-november--generated-observer-lifecycle-witness-and-exact-hosted-identity-hold",
+      "blob_sha": "91d193ecbe8cb14298f691900eaaf162e1a1c9e0",
+      "start_line": 799,
+      "end_line": 807
     }
   },
   "product": {
@@ -137,15 +137,22 @@
     "id": "C5-LINUX-FIRST-20261127",
     "status": "BLOCKED",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "42e5a3f disarmed launcher/observer implemented and source-grounded transient property corrected; 18 static/7 local exact-excerpt tests pass. Actual Noble package/tool identities, full synthetic lifecycle, root-owned launch binding, manager realization and containment remain unproved. No privilege or execution authority. Dynamic UID custody unresolved; reduced 596390f held.",
-    "next_action": "Complete focused generated-only lifecycle verification of exact 42e5a3f launcher body and safe root-owned source startup projection; obtain exact independently reviewed Noble tool/package/file identities and bind without host mutation or acquisition. Use retained/publisher evidence where possible; if exact identities remain unavailable present one bounded read-only identity observation decision, not privileged fixture activation. Only after exact reviewed binding seek explicit one-use privileged zero-package fixture execution authority. No repeated generic probes, no cgroup writes/delegation, no full install or package transfer; preserve settlement, custody, security and acceptance.",
-    "next_action_kind": "MISSING_EVIDENCE",
+    "blocker": "Exact 42e5a3f observe orchestration generated-only success + 13 refusal cases pass; detached af44431 root startup projection disarmed. Retained image 20261122.23.1 and inventory versions known; actual independently reviewed installed tool/package/file identities and full runtime/containment/custody remain unproved. No execution or privilege authority; reduced 596390f held.",
+    "next_action": "OWNER DECISION: approve one bounded read-only identity observation (one disposable Ubuntu-24.04 job, five minutes, one attempt, zero package GETs/retries, no privilege, manager calls, fixture, security/host mutations or owner data), limited to six fixed launcher tool roles: image, package/version/arch, resolved executable SHA256/owner/mode and installed package verification facts. Prepare exact reviewed source/one-use binding and write-ahead only within approval; independently reconcile publisher/actual patch/rights/security facts before binding, no repeated probes or automatic qualification. Then complete exact trusted root startup chain and remaining full module synthetic checks; only after exact reviewed binding seek separate one-use privileged zero-package fixture approval. Dynamic UID custody and reduced static archive inspection held; no phase or acceptance changes.",
+    "next_action_kind": "OWNER_DECISION",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
       "Windows-specific verified input and compatibility prerequisites before actual production-equivalent D1, separately authorised; no installer.",
       "D2, G2 and remaining physical E2/P4 acceptance; no phase advance without evidence and owner signoff."
     ],
     "read": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "28-november--generated-observer-lifecycle-witness-and-exact-hosted-identity-hold",
+        "blob_sha": "91d193ecbe8cb14298f691900eaaf162e1a1c9e0",
+        "start_line": 799,
+        "end_line": 807
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--disarmed-system-manager-launcher-and-upstream-transient-property-correction",
@@ -646,17 +653,17 @@
     ]
   },
   "operation": {
-    "id": "C5-DISARMED-SYSTEM-MANAGER-FIXTURE-LAUNCHER-PREPARATION-20261128",
+    "id": "C5-GENERATED-OBSERVER-LIFECYCLE-AND-ROOT-STARTUP-PREPARATION-20261128",
     "state": "RECONCILED",
-    "starting_sha": "a764c99226c7d4aaffb1785c6d5e7f0cfcfbf0f5",
-    "outcome": "Detached 42e5a3f three paths; v255.4 transient allow-list correction, 18 static and 7 exact-excerpt generated tests pass. Full module/lifecycle and actual host unexecuted; tool pins/privileged authority remain absent.",
+    "starting_sha": "c2a0dbdf84db0d2da77f3d036eea82818126493d",
+    "outcome": "Detached af44431: exact observe body 2 unittest methods pass (1 positive, 13 negative subcases); mock-only. Root startup data projection and tagged image inventory bound; actual package/executable pins, installed security, full module, root startup and real containment unproved. Identity observation decision required, no privilege or activation.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "28-november--disarmed-system-manager-launcher-and-upstream-transient-property-correction",
-      "blob_sha": "05fab9a90df58a900c241bc4a49b3f453f3fe85f",
-      "start_line": 789,
-      "end_line": 797
+      "anchor": "28-november--generated-observer-lifecycle-witness-and-exact-hosted-identity-hold",
+      "blob_sha": "91d193ecbe8cb14298f691900eaaf162e1a1c9e0",
+      "start_line": 799,
+      "end_line": 807
     }
   },
   "authority": {
@@ -684,17 +691,17 @@
     ],
     "guards": "52 historical restricted grants consumed/closed/disarmed, zero active; never replay. Codespace preflight refused and stop requested but not confirmed; three consumed variables owner cleanup unverified; existing exact false workflows restored, C1/C2 workflows and OWNED_RESOURCE_ENABLED false, no fallback. Bounded technical retry only for proven terminal zero-job pre-execution failure and new exact write-ahead, no automatic second replacement. Linux Stage A exact 304b24d run 46031011314 success consumed/disarmed, dispatch-only false and marker removed. Pillow one-use artifact retrieval/inspection consumed; no broader use or retry. Preserve earlier exact grant chronology in reviewed parent dac2149 and ledger. Browser smoke run 46054007845 started, failed at duplicate npm config, consumed/disarmed; no replay. Corrected browser run 46054682735 consumed/disarmed after user namespace refusal; no replay. GitHub-only amendment permits up to two fresh bounded technical replacements in approved development batches, never replay; cumulative limits, security/rights/host holds retained. Standard Chrome run 46057698579 consumed/disarmed; aggregate 4 GETs/152764710 bytes, 0/2 replacements; no additional acquisition authority. Specific embedded-credits browser batch has owner-approved per-attempt cap, maximum three attempts, total 18 GETs/490860288 bytes; other scopes unchanged. Browser run 46058183125 success, six GETs/156907312 bytes, zero replacements; entire batch closed/disarmed. Public Pillow run 46058890965 consumed/disarmed on missing index digest, one GET/20129 bytes; no wheel acquisition or technical retry. Direct Pillow run 46059207493 consumed/disarmed after one GET and refused redirect; zero body bytes; no replay. Pillow storage run 46059721700 consumed/disarmed on combined URL hold, one GET/zero bytes; no replay. Standard Pillow run 46062661845 acquired exact matching wheel, two GETs/7577621 wheel bytes; inventory assertion hold, batch consumed/disarmed; no replay. Consolidated GitHub-only C5 preparation policy approved; future exact single execution batch only after finite scope binding; max two qualifying technical replacements within explicit caps; zero new GETs authorised.",
     "last_consumed": {
-      "id": "C5-PILLOW-STANDARD-PACKAGE-20261127",
-      "source_sha": "b1836a87f3a79d06bae47c8c7ab51ee327d8af71",
-      "write_ahead_sha": "2124dfdf24645db895e631ebd24169b359b8633c",
-      "outcome": "EXACT_PILLOW_PUBLIC_ACQUISITION_PASS_INVENTORY_ASSERTION_HOLD_RECONCILED_DISARMED",
-      "run_id": 46062661845,
+      "id": "C5-CGROUP-FEASIBILITY-ONCE-20261128",
+      "source_sha": "878d4e85adaaa2cbf4686de6cc60611767506a64",
+      "write_ahead_sha": "64ef72b35c4b6c0a0a578f7da9787502f55bc2c1",
+      "outcome": "TERMINAL_SUCCESS_EVIDENCE_ONLY_NOT_FEASIBLE_OR_UNPROVED_RECONCILED_DISARMED",
+      "run_id": 46085466531,
       "receipt": {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "27-november--exact-corrected-pillow-public-acquisition-pass-archive-inventory-assertion-hold",
-        "blob_sha": "520f42446c7c93324c5dea828da28ce35c2eac65",
-        "start_line": 537,
-        "end_line": 541
+        "anchor": "28-november--one-use-cgroup-observation-terminal-receipt-and-disarm",
+        "blob_sha": "40f116120b618b3d2d1b69032b889359510b70e5",
+        "start_line": 771,
+        "end_line": 777
       }
     }
   },
@@ -1022,6 +1029,10 @@
       {
         "sha": "42e5a3f9b2709388024673188a0dfb66e25d23fb",
         "scope": "Disarmed concrete manager fixture launcher/observer and exact v255.4 transient allow-list correction, three paths via 9c2985a from 12d9b04. 18 static/7 generated excerpt tests pass, full lifecycle and actual host unexecuted; exact tool pins null and privilege approval absent."
+      },
+      {
+        "sha": "af444316e44385d97674602d3ece5c1714d00be9",
+        "scope": "Detached two-path generated-only observer lifecycle witness and disarmed data-only root startup projection. Exact observe excerpt 1 positive/13 negative subcases pass with mocks; full module and actual host unexecuted, no tool pins or authority. Readback exact; preserve separately from live tree."
       }
     ]
   },
@@ -1066,7 +1077,8 @@
     "Cgroup trigger audit and fixture gate/YAML checks pass; actual provider boundary, ownership, migration prevention, hosted execution and checkout not verified. Explicit one-use observation execution approval still required.",
     "Run 46085466531 same-group observation NOT_FEASIBLE_OR_UNPROVED; provider-exclusive command boundary not established; distinct method decision required, no replay.",
     "12d9b04 preferred conditional isolation method; manager/tool availability, realized retained empty slice, actual effective restrictions and positive settlement unproved. Dynamic UID vs runner-owned archive custody remains unresolved; no privilege/transfer authority.",
-    "42e5a3f launcher strict upstream v255.4 assumptions not verified against actual Noble package, root startup and synthetic full lifecycle pending; no actual isolation or acquisition authority."
+    "42e5a3f launcher strict upstream v255.4 assumptions not verified against actual Noble package, root startup and synthetic full lifecycle pending; no actual isolation or acquisition authority.",
+    "af44431: retained image and published package versions narrowed; independently reviewed exact executable/package facts still unavailable. Generated observer body passes mocked lifecycle only; root startup is inert data, not executable binding. One bounded identity-only decision required; no privileged activation, acquisition, product or acceptance change."
   ],
   "context": {
     "protocol": {
