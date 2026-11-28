@@ -6,10 +6,10 @@
   },
   "checkpoint": {
     "operation_id": "C5-MHTA-PRISTINE-ISOLATED-FIXTURE-ONCE-20261128",
-    "parent_sha": "a228737bb4ad7098a25dbf583da0925c511ec119",
-    "previous_snapshot_sha": "a228737bb4ad7098a25dbf583da0925c511ec119",
+    "parent_sha": "62c4c787e33684a339a80ff1be2cb67587bd9547",
+    "previous_snapshot_sha": "62c4c787e33684a339a80ff1be2cb67587bd9547",
     "scope": "Exact one-use C5 pristine fixture: one disposable GitHub Ubuntu 24.04 job, five minutes, attempt 1, zero package downloads/installations/retries, two pinned checkouts, 31 generated tests, one conditional privileged generated fixture. No root worker/parser, direct cgroup writes, security weakening, owner data, other acquisition, native work or installer.",
-    "state": "PREPARED",
+    "state": "ISSUED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
       "anchor": "28-november--owner-authorised-pristine-isolated-fixture-once",
@@ -135,10 +135,10 @@
   },
   "task": {
     "id": "C5-LINUX-FIRST-20261127",
-    "status": "PREPARED",
+    "status": "IN_PROGRESS",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "Exact owner approval received; activation not yet issued. Reconcile before any retry.",
-    "next_action": "Verify PREPARED checkpoint and publish exact three-path activation via non-force expected-HEAD. Reconcile actual attempt/job/receipt and disarm. No retry.",
+    "blocker": "Exact one-use activation issued; actual hosted result not yet reconciled.",
+    "next_action": "Find exact activation commit and one matching run, confirm attempt 1, reconcile actual jobs/logs/receipt. Do not replay; disarm exact workflow and marker after reconciliation.",
     "next_action_kind": "RECONCILE",
     "after": [
       "Evaluate the exact fresh fixture once only if separately approved. Reconcile all 13 facts and disarm; qualification remains false until review. If fundamentally blocked, use the existing PRODUCT-FIRST finite-method stopping rule: park the route or present a concrete supported alternative under existing authority, not generic verifier expansion. Reduced inspection/custody remain separate holds.",
@@ -220,7 +220,7 @@
   },
   "operation": {
     "id": "C5-MHTA-PRISTINE-ISOLATED-FIXTURE-ONCE-20261128",
-    "state": "PREPARED",
+    "state": "ISSUED",
     "starting_sha": "a228737bb4ad7098a25dbf583da0925c511ec119",
     "scope": "Exact one-use C5 pristine fixture: one disposable GitHub Ubuntu 24.04 job, five minutes, attempt 1, zero package downloads/installations/retries, two pinned checkouts, 31 generated tests, one conditional privileged generated fixture. No root worker/parser, direct cgroup writes, security weakening, owner data, other acquisition, native work or installer.",
     "intended_paths": [
@@ -241,7 +241,8 @@
     "candidate_sha": "02b694ddea655dff7d3b822b1cb3ead1c4ce9a19",
     "source_sha": "7a5bebdca47f90f067ad6ed9591719cbbb8d5d11",
     "workflow_blob": "ee38012d671124894976b2c76fc7d0ef4055e3cf",
-    "marker_blob": "efed64326e9bea58997219cb660a0616120bf5a4"
+    "marker_blob": "efed64326e9bea58997219cb660a0616120bf5a4",
+    "write_ahead_sha": "62c4c787e33684a339a80ff1be2cb67587bd9547"
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next. Owner-approved GitHub-only development installation and bounded technical autonomy amendment applies within exact approved batches; no broader authority.",
@@ -249,7 +250,7 @@
     "restricted_active": [
       {
         "id": "C5-MHTA-PRISTINE-ISOLATED-FIXTURE-ONCE-20261128",
-        "state": "APPROVED",
+        "state": "ISSUED",
         "source_sha": "7a5bebdca47f90f067ad6ed9591719cbbb8d5d11",
         "scope": "Exact one-use C5 pristine fixture: one disposable GitHub Ubuntu 24.04 job, five minutes, attempt 1, zero package downloads/installations/retries, two pinned checkouts, 31 generated tests, one conditional privileged generated fixture. No root worker/parser, direct cgroup writes, security weakening, owner data, other acquisition, native work or installer.",
         "owner_authority_ref": {
@@ -281,7 +282,7 @@
       "release",
       "replay of consumed or uncertain approval"
     ],
-    "guards": "58 restricted grants recorded consumed/disarmed; zero active/pending. Never replay a consumed or uncertain grant. Latest run 46120862249 terminal refusal before slice/service requests, marker removed and workflow literal-false; prior 46085466531 feasibility route unproved, consumed. All earlier exact outcomes, batch caps (including browser and Pillow), preparation conditions and recovery details preserved in immutable state at 68406f8e35a0357a972a932afbf5d95ece731950 and ledger; consult them before any scope reuse. No active acquisition or execution authority, no inferred remaining budget. C1/C2 and OWNED_RESOURCE_ENABLED remain false; no fallback. Full P2/P4 dependency-consuming regressions remain held, not waived. Separate fresh exact grant and trigger audit required; technical replacements only under the applicable explicit bounded amendment, never replay; current fixture has zero retries. Codespace stop and three consumed-variable cleanup remain unverified. Owner-local work uninspected/preserved. Fresh exact pristine operation approved and PREPARED only; one attempt, zero retries. Prior consumed operation remains disarmed.",
+    "guards": "58 restricted grants recorded consumed/disarmed; zero active/pending. Never replay a consumed or uncertain grant. Latest run 46120862249 terminal refusal before slice/service requests, marker removed and workflow literal-false; prior 46085466531 feasibility route unproved, consumed. All earlier exact outcomes, batch caps (including browser and Pillow), preparation conditions and recovery details preserved in immutable state at 68406f8e35a0357a972a932afbf5d95ece731950 and ledger; consult them before any scope reuse. No active acquisition or execution authority, no inferred remaining budget. C1/C2 and OWNED_RESOURCE_ENABLED remain false; no fallback. Full P2/P4 dependency-consuming regressions remain held, not waived. Separate fresh exact grant and trigger audit required; technical replacements only under the applicable explicit bounded amendment, never replay; current fixture has zero retries. Codespace stop and three consumed-variable cleanup remain unverified. Owner-local work uninspected/preserved. Fresh exact pristine operation approved and PREPARED only; one attempt, zero retries. Prior consumed operation remains disarmed. Exact one-use activation issued; approval unavailable for replay; actual outcome must be reconciled.",
     "last_consumed": {
       "id": "C5-MHTA-ISOLATED-FIXTURE-ONCE-20261128",
       "source_sha": "2ba12676671b12fb38db5990c6c8691cf502bcf3",
