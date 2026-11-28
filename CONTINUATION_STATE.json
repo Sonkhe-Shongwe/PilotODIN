@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-DEV-VM-01-ADOPTION-AND-BATCH-PREP-20261128",
-    "parent_sha": "793bcf06e7660470acf57f24a2ac6bb4886ff938",
-    "previous_snapshot_sha": "793bcf06e7660470acf57f24a2ac6bb4886ff938",
-    "scope": "Owner-approved DEV-VM-01 development policy and one disarmed consolidated C5 batch manifest; no activation",
+    "operation_id": "C5-DEV-VM-01-S1-BINDING-PREPARATION-20261128",
+    "parent_sha": "480a43d153e2aff3bf3d9e5a491ff302e29924a0",
+    "previous_snapshot_sha": "480a43d153e2aff3bf3d9e5a491ff302e29924a0",
+    "scope": "DEV-VM-01 exact S1 static inspection source and inert one-use binding; compile/YAML/Bash static checks; no activation",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "blob_sha": "9a711b1bdae286e08a7e3e02ae6fc86bf7468bc7",
-      "anchor": "28-november--dev-vm-01-owner-adoption-and-consolidated-batch-preparation",
-      "start_line": 1263,
-      "end_line": 1269
+      "blob_sha": "4f698f7f6a13984734bda211b7b035db1c2e4e9f",
+      "anchor": "28-november--dev-vm-01-s1-exact-static-inspection-binding",
+      "start_line": 1271,
+      "end_line": 1277
     }
   },
   "product": {
@@ -132,24 +132,24 @@
     }
   },
   "task": {
-    "id": "C5-DEV-VM-01-FINALISE-CONSOLIDATED-EXECUTION-BINDING-20261128",
-    "status": "READY",
-    "scope": "DEV-VM-01 authorised development-only preparation; finalise exact disarmed execution binding for 0f454aa / product bb46e49, first static-only stage and subsequent hard pre-use conditional stages.",
-    "blocker": "Actual execution remains held: exact pre-use rights/security/compatibility, final dependency overlay and exact executable workflow/activation binding and separate bounded execution grant absent; prior custom cgroup/independent host-wide settlement prerequisites superseded only in approved synthetic DEV-VM-01 scope.",
-    "next_action_kind": "PREPARATION",
-    "next_action": "Prepare exact runnable-but-disarmed standard-supervision inspection stage using 24-row pinned inventory and existing source, bind bounded acquisition/receipt, explicit pre-use holds and final conditional Windows/Linux functional job scope; reconcile actual overlay projections and add focused mounted ODIN browser regressions without touching live product/locks. No repeat cgroup experiments. Request one exact bounded approval only when activation and hard controls reviewed; no execution from preparation authority.",
+    "id": "C5-DEV-VM-01-S1-STATIC-ONCE-20261128",
+    "status": "BLOCKED",
+    "scope": "First static-only stage of 0f454aa consolidated C5 batch targeting bb46e49. Exact inert binding 7ffef75c9c6025d41c7e62e9a054414cff70c3ed, source 57c9f8dfc0057901f23a5b264123077bd8dad3d9.",
+    "blocker": "Distinct explicit owner approval of exact S1 24 direct GET/104436509 body byte/30 min/one attempt scope absent; full activation trigger audit and exact pre-use host review must finish before write-ahead and dispatch. Later S2-S4 remain independently held for actual facts, final overlays/rights/security/compatibility and executable functional scope.",
+    "next_action_kind": "OWNER_DECISION",
+    "next_action": "On exact S1 owner approval, complete all 130 live trigger checks in <=15-call groups (first 15 checked at prior HEAD, reuse exact immutable identities), verify actual scope and managed host preflight, write ahead, activate once using exact two paths and non-force expected HEAD, reconcile and disarm. No automatic subsequent stage, retries or package use. If generic next without explicit approval, surface exact decision; do not re-run diagnostics or create redundant checkpoints.",
     "after": [
-      "Verify exact functional numerical/API and React/browser regressions for retained candidates when safe; no live merge until applicable pre-use and trigger audit.",
-      "Preserve early physical E2 R03.3/R03.4, original E-02/W07, R06 historical strict FAIL/UNKNOWN and prospective G2 hold.",
-      "Retain C5 rows 5–8, D1/D2, all six P4 checks and Gate C; P5, installer and release remain unauthorised."
+      "Review actual S1 facts; reconcile ReportLab/PDFium/Playwright overlay and complete use-specific rights/security/compatibility, mounted ODIN browser test and exact final Windows/Linux functional scope, no automatic package consumption.",
+      "Execute consolidated functional stages only on reviewed exact authority; preserve all original C5 eight-row conditions and six P4 checks.",
+      "Preserve early physical E2, R06 historical FAIL/UNKNOWN, G2 and Gate C; DLA parked, P5/installer/release unauthorised."
     ],
     "read": [
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "blob_sha": "9a711b1bdae286e08a7e3e02ae6fc86bf7468bc7",
-        "anchor": "28-november--dev-vm-01-owner-adoption-and-consolidated-batch-preparation",
-        "start_line": 1263,
-        "end_line": 1269
+        "blob_sha": "4f698f7f6a13984734bda211b7b035db1c2e4e9f",
+        "anchor": "28-november--dev-vm-01-s1-exact-static-inspection-binding",
+        "start_line": 1271,
+        "end_line": 1277
       },
       {
         "path": "docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md",
@@ -180,17 +180,17 @@
     ]
   },
   "operation": {
-    "id": "C5-DEV-VM-01-ADOPTION-AND-BATCH-PREP-20261128",
+    "id": "C5-DEV-VM-01-S1-BINDING-PREPARATION-20261128",
     "state": "RECONCILED",
-    "starting_sha": "793bcf06e7660470acf57f24a2ac6bb4886ff938",
-    "outcome": "DEV-VM-01 adopted in policy/directive; exact data-only consolidated C5 batch prepared/read back; no execution, lock migration or live product integration.",
+    "starting_sha": "480a43d153e2aff3bf3d9e5a491ff302e29924a0",
+    "outcome": "Exact S1 static-only code and inert workflow/marker prepared; verified source pins, two Python compile and YAML/four Bash syntax checks; full tests and trigger audit pending. No acquisition or execution.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "blob_sha": "9a711b1bdae286e08a7e3e02ae6fc86bf7468bc7",
-      "anchor": "28-november--dev-vm-01-owner-adoption-and-consolidated-batch-preparation",
-      "start_line": 1263,
-      "end_line": 1269
+      "blob_sha": "4f698f7f6a13984734bda211b7b035db1c2e4e9f",
+      "anchor": "28-november--dev-vm-01-s1-exact-static-inspection-binding",
+      "start_line": 1271,
+      "end_line": 1277
     }
   },
   "authority": {
@@ -688,6 +688,14 @@
       {
         "sha": "0f454aa0a452733494f843b539fe456ceb713a9a",
         "scope": "DEV-VM-01 disarmed consolidated C5 data-only staged batch; target bb46e49, exact 25 source pins, conditional 86 inputs per profile, 24 static-only inspection rows, proposed 3 initial/5 max jobs. No actual execution, final dependency overlay or lock migration."
+      },
+      {
+        "sha": "57c9f8dfc0057901f23a5b264123077bd8dad3d9",
+        "scope": "DEV-VM-01 S1 static inspection source; exact retained reduced parser and transfer, standard supervision, four new pure contracts; Python compile exact new blobs only; no execution."
+      },
+      {
+        "sha": "7ffef75c9c6025d41c7e62e9a054414cff70c3ed",
+        "scope": "Exact inert S1 source/tree/nine blob pins, proposed workflow and marker, 24 GETs/104436509 body cap/one Ubuntu job/30 minutes/no retries or installs; YAML/Bash syntax verified, no activation."
       }
     ]
   },
@@ -712,7 +720,8 @@
     "DLA finite existing-input review confirms unqualified Windows C++/SDK/redist build graph, unknown exact Granite size/pointer and no positive settlement; park route, no retry/acquisition/build. Local analytics missingness overview coverage candidate e53ac8c remains detached, functional API checks and C5 pre-use pending; no acceptance delta.",
     "Detached Local ODIN version-binding candidate 60d8c0d: actual API/browser/build regression and applicable C5 pre-use pending; legacy non-owned model prelaunch before HTTP and post-check freshness limits remain; not native or acceptance proof.",
     "Combined candidate bb46e49 is source-only; all three functional regression families, mounted ODIN race, C5 use-specific pre-use and settlement, exact execution authority and trigger audit remain pending. V3 not adopted.",
-    "DEV-VM-01 accepted limited disposable CI residual risk, not native settlement or zero egress. 0f454aa is data-only; actual pre-use security/rights, ReportLab/@playwright/test facts, conditional PDFium equivalence, compatible tool/browser, final overlay/workflow and exact activation approval still pending. Earlier independent hosted containment holds superseded only for reviewed synthetic DEV-VM-01; preserve all native/physical proof."
+    "DEV-VM-01 accepted limited disposable CI residual risk, not native settlement or zero egress. 0f454aa is data-only; actual pre-use security/rights, ReportLab/@playwright/test facts, conditional PDFium equivalence, compatible tool/browser, final overlay/workflow and exact activation approval still pending. Earlier independent hosted containment holds superseded only for reviewed synthetic DEV-VM-01; preserve all native/physical proof.",
+    "DEV-VM-01 S1 exact inert binding 7ffef75: source tests and actual host/archives unexecuted; full trigger audit incomplete (15/130 read); strict parser/patch drift and receipt output may refuse, rights/security/linkage still held; S2-S4 not yet executable."
   ],
   "context": {
     "protocol": {
@@ -787,6 +796,13 @@
       }
     ],
     "evidence": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "4f698f7f6a13984734bda211b7b035db1c2e4e9f",
+        "anchor": "28-november--dev-vm-01-s1-exact-static-inspection-binding",
+        "start_line": 1271,
+        "end_line": 1277
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "blob_sha": "9a711b1bdae286e08a7e3e02ae6fc86bf7468bc7",
