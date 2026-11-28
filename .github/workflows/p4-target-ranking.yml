@@ -2,216 +2,11 @@ name: P4 Target Review Queue and Transparent Ranking
 
 # Synthetic data and local test services only. Run the fitted BE-024 browser
 # case through its separately approved, one-use Windows workflow.
+# Detached preparation only: never publish this variant to the live branch.
 on:
   push:
     branches:
-      - feature/live-dev-workspace-20261023
-    paths:
-      - .github/workflows/p4-target-ranking.yml
-      - tools/live_dev.py
-      - tools/build_input_preflight.py
-      - tools/c5_archive_preflight.py
-      - qa/c5_metadata/synthetic_staging.py
-      - qa/c5_metadata/input_inventory.py
-      - qa/c5_metadata/input_provenance_20261125.json
-      - contracts/build_input_policy_v1.json
-      - contracts/build_inputs_v1.schema.json
-      - contracts/c5_observed_python_wheels_2026-11-25.json
-      - qa/c5_metadata/graph_review.py
-      - qa/c5_metadata/release_metadata_receipt_20261125.jsonl
-      - desktop/Build_Windows_Installer.ps1
-      - desktop/Build_Python_Sidecar.ps1
-      - desktop/Stage_Pinned_Offline_AI.ps1
-      - desktop/Stage_Bundled_Inference.ps1
-      - desktop/verify_inference_assets.py
-      - tests/test_build_e_offline_inference.py
-      - desktop/Verify_Frontend_Windows.ps1
-      - Self_Test_PilotODIN.bat
-      - frontend/scripts/verify-npm-lock.mjs
-      - frontend/tests/c5-npm-lock.test.cjs
-      - tests/test_c5_build_input_preflight.py
-      - tools/Verify_P2_Native_Export_Local.ps1
-      - Run_PilotODIN_P2_Native_Export.bat
-      - desktop/Verify_Installed_PilotODIN.ps1
-      - Run_PilotODIN_P2_Prepare_Freezer_Tooling_DevQA.bat
-      - tools/p2_pdf_pyinstaller_tooling_devqa.py
-      - Run_PilotODIN_P2_Prepare_Full_Sidecar_Builder_DevQA.bat
-      - tools/p2_pdf_prepare_full_sidecar_builder.py
-      - Run_PilotODIN_P2_Font_Candidates_DevQA.bat
-      - tools/p2_pdf_font_stage_candidates.py
-      - Run_PilotODIN_P2_Font_Build_Stage_DevQA.bat
-      - tools/p2_pdf_font_build_preflight.py
-      - Run_PilotODIN_P2_Frozen_Font_OneFile_DevQA.bat
-      - tools/p2_pdf_frozen_font_onefile_devqa.py
-      - Run_PilotODIN_P2_Real_Sidecar_Font_DevQA.bat
-      - tools/p2_pdf_real_sidecar_font_devqa.py
-      - Run_PilotODIN_P2_Recheck_Existing_Sidecar_DevQA.bat
-      - tools/p2_pdf_recheck_real_sidecar_devqa.py
-      - .github/workflows/frontend-compile.yml
-      - .github/workflows/build-e-verification.yml
-      - .github/workflows/p4-r03-qwen-idle-release.yml
-      - desktop/verify_live_bundled_inference.py
-      - frontend/src-tauri/src/lib.rs
-      - backend/desktop_runner.py
-      - backend/workspace_boundary.py
-      - backend/server_entry.py
-      - backend/request_auth.py
-      - qa/p4_research/n12_backend_bytecode.py
-      - tools/Verify_P2_Real_API_Integration_Local.py
-      - tools/Verify_Local_Analytics_Windows_Native.py
-      - tests/test_owned_server.py
-      - tests/fixture_http.py
-      - tests/test_build_e_autonomous_investigations.py
-      - tests/test_workspace_boundary.py
-      - frontend/src-tauri/src/storage_boundary.rs
-      - frontend/src-tauri/src/desktop_profile.rs
-      - frontend/src-tauri/src/storage_profile_tests.rs
-      - desktop/verify_packaged_engine.py
-      - tests/test_packaged_engine_smoke.py
-      - tests/test_desktop_runner_process_smoke.py
-      - tests/test_p4_r03_worker_comparison.py
-      - backend/target_opportunities.py
-      - backend/main.py
-      - backend/analytics.py
-      - backend/ai_provider.py
-      - backend/storage.py
-      - backend/verified_answers.py
-      - frontend/src/AssistantWorkspace.tsx
-      - tests/test_p4_r03_verified_answers.py
-      - qa/p4_research/measure_local_answers.py
-      - backend/engine.py
-      - backend/target_timing_review.py
-      - frontend/src/TargetOpportunities.tsx
-      - frontend/src/App.tsx
-      - frontend/src/api.ts
-      - frontend/src/selectedFeatureBudget.ts
-      - frontend/tests/ml-a3-feature-preparation.test.cjs
-      - frontend/tests/p4-75-selected-feature-budget.test.cjs
-      - frontend/tests/p1-primary-button-edit-markers.test.cjs
-      - frontend/tests/p4-review-queue-contracts.test.cjs
-      - frontend/tests/desktop-ai-boundaries.test.cjs
-      - tests/test_p4_target_opportunities.py
-      - tests/test_p4_bike_public_import.py
-      - tests/test_p4_bike_time_readiness.py
-      - tests/test_p4_bike_categorical_readiness.py
-      - tests/fixtures/public_bike_daily_categorical_preday_731.csv
-      - tests/fixtures/public_bike_daily_preday_731.csv
-      - tests/test_p4_target_business_context.py
-      - tests/test_p4_prediction_timing_review.py
-      - tests/test_p4_two_axis_evidence.py
-      - frontend/tests/p4-business-context-contracts.test.cjs
-      - frontend/tests/p4-prediction-timing-contracts.test.cjs
-      - frontend/tests/p4-two-axis-contracts.test.cjs
-      - tests/test_p4_review_queue.py
-      - tests/test_p4_manual_target_inspection.py
-      - tests/test_p4_queue_resource_bounds.py
-      - tests/test_p4_consolidated_acceptance.py
-      - tests/test_p4_phase_exit_matrix.py
-      - tests/test_p4_native_acceptance_kit.py
-      - frontend/src-tauri/src/lib.rs
-      - tests/test_p4_n12_worker_scratch_source.py
-      - tests/test_p4_n12_app_build.py
-      - qa/p4_research/n12_mutation_triage.py
-      - tests/test_p4_n12_mutation_triage.py
-      - qa/p4_research/n12_ambient_local_candidate.py
-      - tests/test_p4_n12_ambient_local_candidate.py
-      - tests/test_p4_n12_app_journey.py
-      - tests/test_p4_n12_app_lifetime.py
-      - qa/p4_research/n12_no_cdp_fileio_review.py
-      - tests/test_p4_n12_no_cdp_fileio_review.py
-      - tests/test_p4_n12_lifetime_control.py
-      - tests/test_p4_n12_lifetime_etw.py
-      - tests/test_p4_n12_exit_corroboration.py
-      - tests/test_p4_n12_egress.py
-      - tests/test_p4_n12_journey_diagnostics.py
-      - tests/test_p4_n12_webview_storage.py
-      - qa/p4_research/n12_no_cdp_native_path.py
-      - tests/test_p4_n12_no_cdp_native_path.py
-      - tests/test_p4_n12_no_cdp_lifecycle.py
-      - qa/p4_research/n12_no_cdp_lifecycle.py
-      - tests/test_p4_n12_no_cdp_main_window.py
-      - qa/p4_research/n12_no_cdp_main_window.py
-      - tests/test_p4_n12_no_cdp_browser_identity.py
-      - qa/p4_research/n12_no_cdp_child_handles.py
-      - tests/test_p4_n12_no_cdp_child_handles.py
-      - qa/p4_research/n12_private_child_pipe.py
-      - tests/test_p4_n12_private_child_pipe.py
-      - tests/test_p4_n12_private_child_pipe_windows.py
-      - tests/test_p4_n12_source_evidence_map.py
-      - docs/P4_N12_STAGE1_SOURCE_EVIDENCE_MAP_2026-11-21.json
-      - docs/P4_N12_STAGE1_SOURCE_EVIDENCE_WORKSHEET_2026-11-21.md
-      - qa/p4_research/n12_no_cdp_browser_identity.py
-      - tests/test_p4_n12_no_cdp_log_witness.py
-      - qa/p4_research/n12_no_cdp_log_witness.py
-      - tests/test_p4_n12_calibration_socket_pair.py
-      - tests/test_p4_n12_protected_fixture_contract.py
-      - tests/test_p4_n12_token_capability_preflight.py
-      - qa/p4_research/n12_token_capability_preflight.py
-      - qa/p4_research/n12_protected_fixture_contract.py
-      - qa/p4_research/n12_product_tree_isolation_review.py
-      - tests/test_p4_n12_product_tree_isolation_review.py
-      - qa/p4_research/n12_webview_storage_mechanism_map.py
-      - tests/test_p4_n12_webview_storage_mechanism_map.py
-      - qa/p4_research/n12_fileio_identity_join.py
-      - tests/test_p4_n12_fileio_identity_join.py
-      - tests/test_p4_n12_tmp_debugger_fixture.py
-      - tests/test_p4_n12_procmon_environment_control.py
-      - tests/test_p4_n12_trace.py
-      - tests/test_p4_n12_same_capture_restore.py
-      - tests/test_p4_n12_webview_replay.py
-      - tests/test_p4_r06_prospective_fingerprint.py
-      - tests/test_p4_installer_provenance.py
-      - qa/p4_native/**
-      - '!qa/p4_native/N12_TRACE.md'
-      - tools/Start_P4_Everyday_RAM_Baseline.ps1
-      - qa/p4_research/n12_app_build.py
-      - qa/p4_research/n12_app_journey.py
-      - qa/p4_research/n12_backend_wakeup.py
-      - qa/p4_research/n12_tmp_debugger_fixture.py
-      - qa/p4_research/n12_procmon_environment_control.py
-      - qa/p4_research/n12_procmon_timing_control.py
-      - qa/p4_research/n12_project_switch.py
-      - qa/p4_research/n12_egress.py
-      - qa/p4_research/n12_app_lifetime.py
-      - frontend/e2e/p4-n12-app-lifetime-ready.mjs
-      - frontend/e2e/p4-n12-app-lifetime-ready.test.mjs
-      - frontend/e2e/p4-n12-native-close-readiness.mjs
-      - frontend/e2e/p4-n12-native-close-readiness.test.mjs
-      - .github/workflows/p4-n12-app-lifetime.yml
-      - .github/workflows/p4-n12-webview-storage.yml
-      - qa/p4_research/n12_webview_storage_probe.py
-      - .github/workflows/p4-n12-app-journey.yml
-      - .github/workflows/p4-n12-egress-preflight.yml
-      - .github/workflows/p4-n12-lifetime-control.yml
-      - qa/p4_research/n12_journey_diagnostics.py
-      - qa/p4_research/Invoke_N12_Journey_Evidence.ps1
-      - frontend/tests/p4-target-opportunities-contracts.test.cjs
-      - frontend/package.json
-      - frontend/scripts/p4-isolated-native-dev.mjs
-      - frontend/scripts/native-dev-plan.mjs
-      - frontend/scripts/verify-hosted-native-frontdoor.mjs
-      - frontend/src-tauri/tauri.p4-hosted-prestarted.conf.json
-      - frontend/tests/a4-native-smoke-runner.test.cjs
-      - tools/Verify_A4_Native_Windows.ps1
-      - frontend/scripts/deny-unsafe-default-tauri-dev.mjs
-      - frontend/src-tauri/tauri.conf.json
-      - frontend/scripts/deny-intermediate-installer.mjs
-      - frontend/src-tauri/tauri.p4-isolated-native-dev.conf.json
-      - frontend/tests/p4-native-dev-isolation.test.cjs
-      - frontend/e2e/p4-real-http-review-queue.spec.ts
-      - frontend/e2e/p4-prepare-fitted-acceptance.mjs
-      - frontend/e2e/p4-preparation-request.mjs
-      - frontend/e2e/p4-quality-version-transition.mjs
-      - frontend/e2e/p4-71-native-webview-qa.mjs
-      - frontend/e2e/p4-native-project-switch-command.mjs
-      - frontend/e2e/p4-n12-native-cases.mjs
-      - frontend/e2e/p4-n12-native-cases.test.mjs
-      - frontend/e2e/p4-72-cdp-target-classifier.mjs
-      - frontend/e2e/p4-72-cdp-target-classifier.test.mjs
-      - frontend/e2e/p4-73-cdp-target-discovery.mjs
-      - frontend/e2e/p4-73-cdp-target-discovery.test.mjs
-      - frontend/playwright.p4-real-http.config.ts
-  workflow_dispatch:
+      - feature/dla-stage1-source-20261128
 
 permissions:
   contents: read
@@ -624,7 +419,8 @@ jobs:
         run: ./qa/p4_native/Test_P4_N12_ETW_Fixture.ps1 -PreopenedControl -Rundown
 
   p4-dependency-free-source:
-    name: P4 lifecycle source contracts only (full regression deferred)
+    name: DLA Stage 1 generated source contracts (DISARMED)
+    if: ${{ false }} # Preparation only; separate exact owner activation required.
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     env:
@@ -634,12 +430,43 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           ref: ${{ github.sha }}
+          fetch-depth: 3
           persist-credentials: false
-      - name: Run standard-library lifecycle source contracts
+      - name: Verify one-use branch, source and managed Python identity
         shell: bash
         run: |
           set -euo pipefail
+          test "$GITHUB_EVENT_NAME" = push
+          test "$GITHUB_REF" = refs/heads/feature/dla-stage1-source-20261128
+          test "$GITHUB_RUN_ATTEMPT" = 1
+          test "$RUNNER_OS" = Linux
+          test "$RUNNER_ARCH" = X64
+          test "$(id -u)" -ne 0
+          test "${ImageOS:-}" = ubuntu24
+          test "${ImageVersion:-}" = 20261122.23.1
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
-          python3 --version
-          python3 -I -B -m unittest discover -s tests -p test_p4_n12_worker_scratch_source.py -v
-          echo "P4_SOURCE_ONLY_PASS_FULL_REGRESSION_DEFERRED"
+          git merge-base --is-ancestor e57032165ad302d516dab2a2da4d616cb122c6d4 HEAD
+          test "$(git diff --name-only e57032165ad302d516dab2a2da4d616cb122c6d4 HEAD)" = .github/workflows/p4-target-ranking.yml
+          test "$(git rev-parse HEAD:qa/p4_research/dla_stage1_contract.py)" = 3ddd48e82355975c7344119c4cd3e0692e1b2805
+          test "$(git rev-parse HEAD:tests/test_dla_stage1_contract.py)" = c07a001f58c933c79686a221c666993acc72a0ae
+          test "$(git rev-parse HEAD:tools/c5_archive_preflight.py)" = 59442eebd4721e00719d3eb392fc5420bccae873
+          test "$(git rev-parse HEAD:tools/build_input_preflight.py)" = 144c451658058f932b0aede55cf9afa9c2d1adfe
+          test "$(git rev-parse HEAD:desktop/offline_analytics_cases.py)" = 4b2e3e7a2733b60506df5f2d252506e9eafd400f
+          test "$(git rev-parse HEAD:desktop/verify_inference_assets.py)" = ca74928616b07bd3e603713983b8f6a666536333
+          test "$(git status --porcelain)" = ""
+          python=/usr/bin/python3.12
+          test -f "$python" && test -x "$python"
+          printf '%s  %s\n' e50d468e8b0adfb05733f5b87b3cff34829c4a8c1aea50c865aa8bdfe4bb150f "$python" | sha256sum --check
+          test "$("$python" -I -B --version)" = 'Python 3.12.3'
+          printf 'DLA_STAGE1_HOST %s %s %s\n' "$ImageOS" "$ImageVersion" "$RUNNER_ARCH"
+          printf 'DLA_STAGE1_TREE %s\n' "$(git rev-parse HEAD^{tree})"
+      - name: Compile and execute seven dependency-free generated Python contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python=/usr/bin/python3.12
+          printf '%s  %s\n' e50d468e8b0adfb05733f5b87b3cff34829c4a8c1aea50c865aa8bdfe4bb150f "$python" | sha256sum --check
+          "$python" -I -B -c 'from pathlib import Path; paths=["qa/p4_research/dla_stage1_contract.py","tests/test_dla_stage1_contract.py","tools/c5_archive_preflight.py","tools/build_input_preflight.py","desktop/offline_analytics_cases.py","desktop/verify_inference_assets.py"]; [(compile(Path(p).read_bytes(),p,"exec"),print("DLA_SYNTAX_OK",p)) for p in paths]'
+          "$python" -I -B -c 'import sys, unittest, runpy; from pathlib import Path; sys.path.insert(0,str(Path.cwd())); suite=unittest.defaultTestLoader.loadTestsFromTestCase(runpy.run_path("tests/test_dla_stage1_contract.py")["Stage1"]); assert suite.countTestCases()==7; result=unittest.TextTestRunner(verbosity=2).run(suite); sys.exit(0 if result.wasSuccessful() and result.testsRun==7 else 1)'
+          test "$(git status --porcelain)" = ""
+          echo "DLA_STAGE1_GENERATED_SOURCE_ONLY_PASS_NATIVE_DEFERRED"
