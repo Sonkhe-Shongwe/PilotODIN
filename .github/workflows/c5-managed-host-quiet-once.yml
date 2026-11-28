@@ -1,127 +1,13 @@
-# INERT REVIEW TEMPLATE. Publish at the intended workflow path ONLY after exact separate owner approval.
+# Consumed one-use approval; never replay.
 name: C5 managed hosted quiet fixture once 20261128
 on:
-  push:
-    branches: [feature/live-dev-workspace-20261023]
-    paths:
-      - qa/c5_managed_dev/APPROVAL_MANAGED_HOST_QUIET_20261128.txt
+  workflow_dispatch:
 permissions:
   contents: read
-concurrency:
-  group: pilotodin-c5-managed-host-quiet-once-20261128
-  cancel-in-progress: false
 jobs:
   observe-once:
-    if: ${{ github.event_name == 'push' && github.run_attempt == 1 && github.ref == 'refs/heads/feature/live-dev-workspace-20261023' }}
+    if: ${{ false }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - name: Checkout exact activation
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-        with:
-          ref: ${{ github.sha }}
-          persist-credentials: false
-          fetch-depth: 2
-          path: activation
-      - name: Verify exact one-use activation and isolated diff
-        shell: bash
-        working-directory: activation
-        run: |
-          set -euo pipefail
-          test "$GITHUB_RUN_ATTEMPT" = 1
-          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
-          test "$(git rev-parse 'HEAD:qa/c5_managed_dev/APPROVAL_MANAGED_HOST_QUIET_20261128.txt')" = '88976251bbdc767f3aaa3b80500206c4c8d91e19'
-          test "$(cat 'qa/c5_managed_dev/APPROVAL_MANAGED_HOST_QUIET_20261128.txt')" = 'C5-MHTA-QUIET-ISOLATED-FIXTURE-ONCE-20261128'
-          test "$(git diff --name-status HEAD^ HEAD -- 'qa/c5_managed_dev/APPROVAL_MANAGED_HOST_QUIET_20261128.txt')" = "$(printf 'A\t%s' 'qa/c5_managed_dev/APPROVAL_MANAGED_HOST_QUIET_20261128.txt')"
-          test "$(git diff --name-only HEAD^ HEAD | LC_ALL=C sort)" = "$(printf '%s\n' '.github/workflows/c5-managed-host-quiet-once.yml' 'CONTINUATION_STATE.json' 'qa/c5_managed_dev/APPROVAL_MANAGED_HOST_QUIET_20261128.txt' | LC_ALL=C sort)"
-          echo 'C5_MHTA_ACTIVATION_MARKER_VERIFIED'
-      - name: Checkout exact detached source
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-        with:
-          ref: '88cdf6d761725a5b2695f2e7bbf4e542800e9917'
-          persist-credentials: false
-          fetch-depth: 1
-          path: candidate
-      - name: Verify source and run generated tests
-        shell: bash
-        working-directory: candidate
-        run: |
-          set -euo pipefail
-          test "$GITHUB_RUN_ATTEMPT" = 1
-          test "$(git rev-parse HEAD)" = '88cdf6d761725a5b2695f2e7bbf4e542800e9917'
-          test "$(git rev-parse 'HEAD^{tree}')" = '818e69138bd46ded12a4ae06c3a2b1d51c6f3e7c'
-          test "$(git rev-parse 'HEAD:qa/c5_managed_dev/c5_managed_host_assurance.py')" = '0e950a8681034ff23fd5d226ee48d3b3d8069c37'
-          test "$(git rev-parse 'HEAD:qa/c5_managed_dev/c5_managed_host_once.py')" = '35d796d983bde016f1223ea7c06311f043aa0166'
-          test "$(git rev-parse 'HEAD:qa/c5_managed_dev/test_c5_managed_host_assurance.py')" = 'd538d6825e9505f98e5fe351fefb90dc67aeef5d'
-          test "$(git rev-parse 'HEAD:qa/c5_managed_dev/test_c5_managed_host_once.py')" = 'adf458c115d777732c4a81522697673a091f96a3'
-          test "$(git rev-parse 'HEAD:qa/c5_managed_dev/test_c5_managed_host_bounded.py')" = '7fc10b303a5a25626f7e3c7e2a590c3e11d61642'
-          test "$(git rev-parse 'HEAD:qa/c5_managed_dev/test_c5_managed_host_startup.py')" = '8c9fe1e8b8a45e31b1fb6d9f4dbc6740eb595927'
-          test "$(git rev-parse 'HEAD:qa/c5_managed_dev/c5_systemd_fixture_launcher.py')" = '34f89b319a2e486d3d41188c872a884fee4eb9da'
-          test "$(git rev-parse 'HEAD:qa/c5_managed_dev/test_c5_systemd_fixture_launcher.py')" = '765c53efc42358d33a2153abf8753f7f9cfa1857'
-          test "$(git rev-parse 'HEAD:qa/c5_managed_dev/test_c5_systemd_observe_generated.py')" = 'b7726ea2c979b0399e6fa9de3f9162d1c352c855'
-          test "$(git rev-parse 'HEAD:qa/c5_managed_dev/c5_managed_host_assurance_20261128.PROPOSED.json')" = '5515bea46eabbd1aa5ecf14d5df8939108eb3ffa'
-          test "$(git rev-parse 'HEAD:qa/c5_managed_dev/test_c5_systemd_pristine_generated.py')" = 'f2f81b8de78e877ce559e0dd4a565d0861539892'
-          git diff --quiet HEAD --
-          test -z "$(git status --porcelain)"
-          test "$(id -u)" != 0
-          test "$(uname -m)" = x86_64
-          test "${ImageOS:-}" = ubuntu24
-          test "${RUNNER_ENVIRONMENT:-}" = github-hosted
-          test "$(readlink -f /usr/bin/python3.12)" = /usr/bin/python3.12
-          /usr/bin/python3.12 -I -S -B -c 'import sys; assert sys.implementation.name == "cpython" and sys.version_info[:3] == (3,12,3)'
-          /usr/bin/python3.12 -I -S -B - <<'PY'
-          import sys, unittest
-          from pathlib import Path
-          sys.path.insert(0, str(Path.cwd()))
-          names = ['qa.c5_managed_dev.' + x for x in (
-              'test_c5_managed_host_assurance','test_c5_managed_host_once',
-              'test_c5_managed_host_bounded','test_c5_managed_host_startup',
-              'test_c5_systemd_fixture_launcher','test_c5_systemd_observe_generated',
-              'test_c5_systemd_pristine_generated')]
-          suite = unittest.defaultTestLoader.loadTestsFromNames(names)
-          if suite.countTestCases() != 32:
-              raise SystemExit('C5_MHTA_TEST_COUNT')
-          result = unittest.TextTestRunner(verbosity=2).run(suite)
-          if not result.wasSuccessful() or result.skipped or result.expectedFailures or result.unexpectedSuccesses:
-              raise SystemExit('C5_MHTA_GENERATED_TESTS_REFUSED')
-          PY
-          git diff --quiet HEAD --
-          test -z "$(git status --porcelain)"
-      - name: Same-job preflight and one conditional generated fixture
-        shell: bash
-        working-directory: candidate
-        env:
-          C5_MANAGED_ACTIVATION: 'C5-MHTA-QUIET-ISOLATED-FIXTURE-ONCE-20261128'
-        run: |
-          set -euo pipefail
-          /usr/bin/python3.12 -I -S -B - <<'PY'
-          import hashlib, json
-          from pathlib import Path
-          try:
-              path = Path('qa/c5_managed_dev/c5_managed_host_once.py').resolve(strict=True)
-              with path.open('rb') as f:
-                  raw = f.read(262145)
-              if not 0 < len(raw) <= 262144 or hashlib.sha256(raw).hexdigest() != '42c18336acf4067f637615d7547588f2b8481f2548a69a148543a13bafe225ea':
-                  raise ValueError('WRAPPER_PIN')
-              ns = {'__name__':'c5_reviewed_once', '__file__':str(path)}
-              exec(compile(raw, '<reviewed-once-wrapper>', 'exec'), ns)
-              if ns['ENABLED'] is not False or ns['REVIEWED'] is not None or ns['ACTIVATION'] is not None:
-                  raise ValueError('WRAPPER_CONTRACT')
-              ns['REVIEWED'] = {'coreutils':'9.4-3ubuntu6.3',
-                  'libpython3.12-minimal':'3.12.3-1ubuntu0.17',
-                  'libpython3.12-stdlib':'3.12.3-1ubuntu0.17',
-                  'libsystemd-shared':'255.4-1ubuntu8.19','libsystemd0':'255.4-1ubuntu8.19',
-                  'python3.12-minimal':'3.12.3-1ubuntu0.17',
-                  'sudo':'1.9.15p5-3ubuntu5.24.04.4','systemd':'255.4-1ubuntu8.19'}
-              ns['ACTIVATION'] = 'C5-MHTA-QUIET-ISOLATED-FIXTURE-ONCE-20261128'
-              ns['ENABLED'] = True
-          except Exception:
-              print(json.dumps({'status':'ACTIVATION_REFUSED','qualification':False}), flush=True)
-              raise SystemExit(2)
-          try:
-              code = ns['main']()
-          except Exception:
-              print(json.dumps({'status':'PREFLIGHT_REFUSED','qualification':False}), flush=True)
-              raise SystemExit(2)
-          raise SystemExit(code)
-          PY
+      - run: echo 'Consumed run 46129641931; disabled. No retry.'
