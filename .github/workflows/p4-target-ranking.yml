@@ -420,13 +420,13 @@ jobs:
 
   p4-dependency-free-source:
     name: DLA independent runtime archive inspection (DISARMED)
-    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/feature/dla-stage1-archive-20261128' && github.event.before == '618128b9607e05e87e7db1fcf95cc7ed34ef9201' && github.run_attempt == 1 }}
+    if: ${{ false }} # DLA archive one-use activation closed; no replay.
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     env:
       PYTHONDONTWRITEBYTECODE: "1"
-      DLA_EXPECTED_BEFORE: "618128b9607e05e87e7db1fcf95cc7ed34ef9201"
-      DLA_EXPECTED_DRIVER: "3b28ed09ba35458f00529c6ae04f6b8c2248946f"
+      DLA_EXPECTED_BEFORE: "DISARMED"
+      DLA_EXPECTED_DRIVER: "DISARMED"
     steps:
       - name: Checkout exact source without persisted credentials
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
