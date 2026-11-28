@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-DEV-VM-01-S2-CORRECTED-TWO-GET-20261128",
-    "parent_sha": "adccaabe92ca488bb6c1d03d53608351898d048c",
-    "previous_snapshot_sha": "ed6858789ce7c7354407fc184ecc9f20a5e9cbb6",
-    "scope": "Reconcile successful corrected two-wheel static inspection and disarm exact one-use activation",
+    "operation_id": "C5-DEV-VM-01-S2-APPLICABILITY-AND-LOCK-PREP-20261128",
+    "parent_sha": "daf0fc445ee42901ca7e03bdaec3591905a987cb",
+    "previous_snapshot_sha": "daf0fc445ee42901ca7e03bdaec3591905a987cb",
+    "scope": "Review targeted static facts against scoped actual product/QA sources; prepare inert corrected Pillow lock projections",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "blob_sha": "8c68635c76a34f0c82c081c2a39b6a1940e0f836",
-      "anchor": "28-november--dev-vm-01-corrected-s2-static-inspection-pass-and-disarm",
-      "start_line": 1463,
-      "end_line": 1471
+      "blob_sha": "83bac3ff13e94550753ba899a95704e6d2259d42",
+      "anchor": "28-november--dev-vm-01-s2-applicability-review-and-corrected-pillow-lock-projections",
+      "start_line": 1473,
+      "end_line": 1485
     }
   },
   "product": {
@@ -135,15 +135,27 @@
     "id": "C5-DEV-VM-01-S2-PREUSE-AND-OVERLAY-20261128",
     "status": "READY",
     "scope": "S2 review of actual S1 facts at exact receipt blob 02ce4c6d821bae913691d0a5501fe516df2fd908 and conditional dependency overlays targeting bb46e49; complete exact applicable pre-use and consolidated Windows/Linux regression preparation.",
-    "blocker": "Static targeted facts complete; applicability/security/rights and corrected Pillow delivery/graph remain unresolved. Consolidated functional run not authorised.",
+    "blocker": "Corrected inert locks prepared; no durable corrected Pillow delivery route or actual resolver, exact ReportLab internal cache/eval reachability and rights, Windows PDFium publisher build applicability and other per-profile security/rights/tool/browser dispositions remain held.",
     "next_action_kind": "PREPARATION",
-    "next_action": "Review exact S2 receipt and prior evidence against actual product and generated-fixture call paths, ReportLab builtins/cache reachability and font rights, PDFium component/build applicability, corrected Pillow delivery and compatible graph; prepare use-specific dispositions and conditional overlay with existing exact evidence. No repeat measured archive acquisition; no execution or use without applicable clearance and exact authority.",
+    "next_action": "Complete finite use-specific applicability review using retained source/publisher evidence (ReportLab direct cache/loader/control-flow and rights, Windows PDFium publisher build/compiled-component scope, other per-profile holds), determine feasible corrected Pillow authenticated delivery route, prepare coordinated exact graph/guard rebind and distinct owner decision where required. No repeat identity acquisition or live lock cutover; no restricted execution without fresh exact authority.",
     "after": [
       "Verify consolidated functional Windows/Linux synthetic stages only when applicable pre-use and exact authority satisfied; no auto-use or live merge.",
       "Close C5 and award only qualifying original evidence; all six P4 and native D/G2/E2/8GB/Gate C requirements preserved.",
       "DLA parked; P5/installer/release remain unauthorised."
     ],
     "read": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "83bac3ff13e94550753ba899a95704e6d2259d42",
+        "anchor": "28-november--dev-vm-01-s2-applicability-review-and-corrected-pillow-lock-projections",
+        "start_line": 1473,
+        "end_line": 1485
+      },
+      {
+        "path": "qa/c5_managed_dev/dev_vm_01_s2_corrected_pillow_projection.PROPOSED.json",
+        "blob_sha": "524c9c9608b6d7e0d39adefd952beca4c9518cc2",
+        "commit": "2131f6503c98688a5159073597e18b9c724d612b"
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "blob_sha": "8c68635c76a34f0c82c081c2a39b6a1940e0f836",
@@ -290,17 +302,17 @@
     ]
   },
   "operation": {
-    "id": "C5-DEV-VM-01-S2-CORRECTED-TWO-GET-20261128",
+    "id": "C5-DEV-VM-01-S2-APPLICABILITY-AND-LOCK-PREP-20261128",
     "state": "RECONCILED",
-    "starting_sha": "a1b6e4ea1beef8a471a1744d24563b65c9771cf5",
-    "outcome": "13/13 generated tests; 2/2 exact static facts accepted, ReportLab 41 fonts and seven source files, Windows PDFium native/build measured; 6204856 body bytes; no use clearance or acceptance credit.",
+    "starting_sha": "daf0fc445ee42901ca7e03bdaec3591905a987cb",
+    "outcome": "Scoped ReportLab/PDFium applicability reviewed; residual internal-use rights/security and delivery held. Two exact 49-row proposed locks, 48 unchanged per profile; no active change, no new acquisition or acceptance.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "blob_sha": "8c68635c76a34f0c82c081c2a39b6a1940e0f836",
-      "anchor": "28-november--dev-vm-01-corrected-s2-static-inspection-pass-and-disarm",
-      "start_line": 1463,
-      "end_line": 1471
+      "blob_sha": "83bac3ff13e94550753ba899a95704e6d2259d42",
+      "anchor": "28-november--dev-vm-01-s2-applicability-review-and-corrected-pillow-lock-projections",
+      "start_line": 1473,
+      "end_line": 1485
     }
   },
   "authority": {
@@ -876,6 +888,10 @@
       {
         "sha": "866e502292526dd08b5a2670ec394d73475dd04f",
         "scope": "Inert exact fresh corrected S2 one-use job and marker binding; no live activation."
+      },
+      {
+        "sha": "2131f6503c98688a5159073597e18b9c724d612b",
+        "scope": "Data-only corrected Pillow source-test lock projections and delivery holds; no manifest activation, offline resolver or use."
       }
     ]
   },
@@ -912,7 +928,8 @@
     "Material candidate 2e7f10c projection error: exact Linux stable Pillow confirmed affected Brotli 1.2.0 (ledger 231); Windows stable held. Corrected nightly delivery/Windows actual artifact review and exact lock rebind mandatory before consumption. No activation as written.",
     "S2 run 46185751142 terminal S2_FONT_STRING after one exact ReportLab transfer (2017267 bytes), 4/4 generated tests passed; no Windows PDFium GET. Font range vs length-cap cause and member not distinguished, detailed evidence unresolved, one-use scope consumed/disarmed; no retry or unused-budget transfer.",
     "Exact Vera duplicate cap refusal reproduced with 25/41 locally hash-matched font members; integrated correction efedd8b untested/disarmed, commercial Type1/Noto and remaining AFM terms plus ReportLab source/cache and Windows PDFium linkage held; new two-wheel proposal awaits fresh authority.",
-    "Corrected S2 run 46186791961 passed 13/13 generated tests and 2/2 static inspection rows; exact receipt retained. ReportLab actual use/cache reachability and font terms, PDFium compiled component applicability and corrected Pillow delivery/graph remain held; no general use or acceptance clearance."
+    "Corrected S2 run 46186791961 passed 13/13 generated tests and 2/2 static inspection rows; exact receipt retained. ReportLab actual use/cache reachability and font terms, PDFium compiled component applicability and corrected Pillow delivery/graph remain held; no general use or acceptance clearance.",
+    "Corrected Pillow inert lock projection 2131f65; 49 rows each, no actual resolver or durable authenticated delivery. ReportLab direct render guards and PDFium generated-only test controls reviewed, not proof of dependency-internal cache/compiled component safety or rights. All use gates retained."
   ],
   "context": {
     "protocol": {
@@ -987,6 +1004,13 @@
       }
     ],
     "evidence": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "83bac3ff13e94550753ba899a95704e6d2259d42",
+        "anchor": "28-november--dev-vm-01-s2-applicability-review-and-corrected-pillow-lock-projections",
+        "start_line": 1473,
+        "end_line": 1485
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "blob_sha": "8c68635c76a34f0c82c081c2a39b6a1940e0f836",
