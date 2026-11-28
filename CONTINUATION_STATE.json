@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-DEV-VM-01-S2-FONT-REVIEW-20261128",
-    "parent_sha": "110ac9b0edc74ac39226c45e5daa3f8f172eb218",
-    "previous_snapshot_sha": "110ac9b0edc74ac39226c45e5daa3f8f172eb218",
-    "scope": "C5 closure focus: exact frontend font notice reuse and ReportLab candidate font witness rebind",
+    "operation_id": "C5-DEV-VM-01-S2-CONSOLIDATED-OVERLAY-20261128",
+    "parent_sha": "434142a15aeec6dad9931598591853f5bca2e683",
+    "previous_snapshot_sha": "434142a15aeec6dad9931598591853f5bca2e683",
+    "scope": "C5 held consolidated source overlay and exact functional input binding",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "blob_sha": "5dd4d862f19f997206c1b972a48cf89415fd7d78",
-      "anchor": "28-november--dev-vm-01-c5-closure-focus-and-font-witness-rebind",
-      "start_line": 1307,
-      "end_line": 1313
+      "blob_sha": "fb198aa09b6fbfc05f0bd4a99d87604f4032409b",
+      "anchor": "28-november--dev-vm-01-consolidated-held-source-overlay-and-input-binding",
+      "start_line": 1315,
+      "end_line": 1321
     }
   },
   "product": {
@@ -135,15 +135,22 @@
     "id": "C5-DEV-VM-01-S2-PREUSE-AND-OVERLAY-20261128",
     "status": "READY",
     "scope": "S2 review of actual S1 facts at exact receipt blob 02ce4c6d821bae913691d0a5501fe516df2fd908 and conditional dependency overlays targeting bb46e49; complete exact applicable pre-use and consolidated Windows/Linux regression preparation.",
-    "blocker": "ReportLab source/cache security, applicable rights/native linkage and compatible actual environment held; two frontend font notices matched/reviewed, not full package use clearance. Five mounted regressions and ReportLab 5.1.2 font witness source unexecuted. Coordinated preflight/historical production-lock boundary, PDFium equivalence and exact final workflow outstanding.",
+    "blocker": "Consolidated candidate assembled and exact input/lock/witness pins bound, still uncompiled/unexecuted; applicable security/rights/native linkage and managed environment holds remain. Exact functional runner/browser configs and activation binding outstanding. Production remains BLOCKED historical incompatible lock.",
     "next_action_kind": "PREPARATION",
-    "next_action": "Resume cb83bec including 615c0f7. Finish coherent disarmed overlay and preflight/historical graph boundary (production remains BLOCKED), bind font/profile/npm witness pins, review only actual applicable dependency security/rights/component evidence and complete one exact consolidated Windows/Linux functional batch. No repeat identity inspection, new features, model work or native diagnostics. Request exact bounded execution approval only once viable; no consumption before pre-use clearance.",
+    "next_action": "Resume consolidated detached 950678b (includes b8dd9c5 and 5c9e67d). Complete exact disarmed Windows-first/Linux-second functional workflow and browser configurations (standard sandbox, no automatic downloads or fallback); resolve finite applicable pre-use security/rights/component and exact tool/browser holds. Preserve original test predicates; only then request exact bounded execution approval. No repeat identity inspections or unrelated work.",
     "after": [
       "Verify consolidated functional Windows/Linux synthetic stages only when applicable pre-use and exact authority satisfied; no auto-use or live merge.",
       "Close C5 and award only qualifying original evidence; all six P4 and native D/G2/E2/8GB/Gate C requirements preserved.",
       "DLA parked; P5/installer/release remain unauthorised."
     ],
     "read": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "fb198aa09b6fbfc05f0bd4a99d87604f4032409b",
+        "anchor": "28-november--dev-vm-01-consolidated-held-source-overlay-and-input-binding",
+        "start_line": 1315,
+        "end_line": 1321
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "blob_sha": "5dd4d862f19f997206c1b972a48cf89415fd7d78",
@@ -209,17 +216,17 @@
     ]
   },
   "operation": {
-    "id": "C5-DEV-VM-01-S2-FONT-REVIEW-20261128",
+    "id": "C5-DEV-VM-01-S2-CONSOLIDATED-OVERLAY-20261128",
     "state": "RECONCILED",
-    "starting_sha": "110ac9b0edc74ac39226c45e5daa3f8f172eb218",
-    "outcome": "Two existing OFL exact notice matches reviewed; cb83bec two disarmed witness files verified, no execution. Historical production lock conflict identified; no acceptance change.",
+    "starting_sha": "434142a15aeec6dad9931598591853f5bca2e683",
+    "outcome": "b8dd9c5/5c9e67d/950678b detached source and input binding exact trees verified; no runtime or acceptance evidence.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "blob_sha": "5dd4d862f19f997206c1b972a48cf89415fd7d78",
-      "anchor": "28-november--dev-vm-01-c5-closure-focus-and-font-witness-rebind",
-      "start_line": 1307,
-      "end_line": 1313
+      "blob_sha": "fb198aa09b6fbfc05f0bd4a99d87604f4032409b",
+      "anchor": "28-november--dev-vm-01-consolidated-held-source-overlay-and-input-binding",
+      "start_line": 1315,
+      "end_line": 1321
     }
   },
   "authority": {
@@ -741,6 +748,18 @@
       {
         "sha": "cb83becc72fed6c0e273c93c8200a127729b9647",
         "scope": "Disarmed ReportLab 5.1.2 exact font witness identity rebind and negative fixture cases, not executed."
+      },
+      {
+        "sha": "b8dd9c5d9533f91764476fe308bce0c7ba5a07ba",
+        "scope": "36-path held coordinated source overlay and historical graph/preflight separation; exact tree verified, no execution."
+      },
+      {
+        "sha": "5c9e67d5442699e75fbd83eaeaf59fb38b721152",
+        "scope": "Exact S1 receipt and functional input/npm witness pin rebinding, disarmed."
+      },
+      {
+        "sha": "950678b94525cc694c5690dd1d7b0bbd5b495920",
+        "scope": "Final held browser/S1 provenance and proposed exact functional input ceilings; no execution."
       }
     ]
   },
@@ -770,7 +789,8 @@
     "S1 24/24 static facts PASS, not use clearance; ReportLab exact metadata and @playwright/test identity measured, applicable licence/security/native component review, exact overlays and functional tests remain. No independent wire/host settlement claim, no retained wheelhouse.",
     "S2 7aea354 exact projections are inert; applicable rights/security/linkage and final managed tool compatibility, PDFium equivalence, font/preflight and final workflow still held. Mounted browser tests ae3e9d7 unexecuted; actual version-change race still needs coverage. No acceptance delta.",
     "Mounted version transition source 615c0f7 supersedes missing coverage risk of ae3e9d7, but five scenarios remain uncompiled/unexecuted; actual selector and renderer behaviour require authorised functional regression.",
-    "cb83bec binds candidate font version only; full profile/preflight graph rebind and functional test required. Root pin 5.1.2 conflicts with historical production 4.5.1, production remains BLOCKED. Exact Inter/Manrope OFL notice matches not full package or release clearance."
+    "cb83bec binds candidate font version only; full profile/preflight graph rebind and functional test required. Root pin 5.1.2 conflicts with historical production 4.5.1, production remains BLOCKED. Exact Inter/Manrope OFL notice matches not full package or release clearance.",
+    "950678b candidate assembled but no compile, source regression or native/runtime verification; current production historical lock incompatible with proposed root. Exact functional runner/browser configs and pre-use security/rights/managed identity remain held."
   ],
   "context": {
     "protocol": {
@@ -845,6 +865,13 @@
       }
     ],
     "evidence": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "fb198aa09b6fbfc05f0bd4a99d87604f4032409b",
+        "anchor": "28-november--dev-vm-01-consolidated-held-source-overlay-and-input-binding",
+        "start_line": 1315,
+        "end_line": 1321
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "blob_sha": "5dd4d862f19f997206c1b972a48cf89415fd7d78",
