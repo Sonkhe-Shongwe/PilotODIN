@@ -6,10 +6,10 @@
   },
   "checkpoint": {
     "operation_id": "C5-MHTA-RUN-NAMESPACE-B-PRIVATE-RUN-ONCE-20261128",
-    "parent_sha": "f27f3f6cc559a1f57514b54aedecaee1cf1934a4",
-    "previous_snapshot_sha": "f27f3f6cc559a1f57514b54aedecaee1cf1934a4",
+    "parent_sha": "f07092ce92f855a1fb63dc494ea25072cbcff5ef",
+    "previous_snapshot_sha": "f07092ce92f855a1fb63dc494ea25072cbcff5ef",
     "scope": "One disposable Ubuntu 24.04 job, five minutes, attempt 1, two pinned checkouts, 72 generated tests, at most one conditional privileged B fixture and one exact owned failed-service reset; zero package downloads, installations, retries or A repetitions. Preserve limited host-runtime protection, original 13 and four additional B facts, all safeguards and historical failures. No automatic downstream execution or qualification, no direct cgroup writes, root worker/parser, owner data, native work, installer or phase advance.",
-    "state": "PREPARED",
+    "state": "ISSUED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
       "anchor": "28-november--owner-authorised-exact-namespace-b-private-runtime-once",
@@ -135,10 +135,10 @@
   },
   "task": {
     "id": "C5-LINUX-FIRST-20261127",
-    "status": "PREPARED",
+    "status": "PUBLISHED",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
     "blocker": "",
-    "next_action": "Verify PREPARED checkpoint and exact three-path B activation; publish once with non-force expected HEAD; reconcile exact run/job/attempt/diagnostic and disarm. No replay, A repetition or automatic downstream work.",
+    "next_action": "Reconcile exact issued B activation, one run/job attempt and bounded diagnostic receipt; disarm exact owned marker/workflow after terminal or unknown reconciliation. No replay or automatic downstream execution.",
     "next_action_kind": "RECONCILE",
     "after": [
       "Separate exact B-only execution approval required. Fresh A cleanup gate met, combined 72 and inert binding verified; actual B protection/lifecycle and Dynamic UID custody unverified; reduced archive inspection held. No automatic B, replay, A repetition, or downstream authority.",
@@ -346,7 +346,7 @@
   },
   "operation": {
     "id": "C5-MHTA-RUN-NAMESPACE-B-PRIVATE-RUN-ONCE-20261128",
-    "state": "PREPARED",
+    "state": "ISSUED",
     "starting_sha": "f27f3f6cc559a1f57514b54aedecaee1cf1934a4",
     "scope": "One disposable Ubuntu 24.04 job, five minutes, attempt 1, two pinned checkouts, 72 generated tests, at most one conditional privileged B fixture and one exact owned failed-service reset; zero package downloads, installations, retries or A repetitions. Preserve limited host-runtime protection, original 13 and four additional B facts, all safeguards and historical failures. No automatic downstream execution or qualification, no direct cgroup writes, root worker/parser, owner data, native work, installer or phase advance.",
     "intended_paths": [
@@ -367,7 +367,8 @@
     "candidate_sha": "6e9c933eae5b205e26ea9898604dfa71313440ba",
     "source_sha": "a2fd5f54fea557c8f0794fecb63211e14e277160",
     "workflow_blob": "cf85dc6da68a52d014b80914de262a8b1052dd9b",
-    "marker_blob": "8aa3a9d59ffb282c2428c70114db22d0dc995b35"
+    "marker_blob": "8aa3a9d59ffb282c2428c70114db22d0dc995b35",
+    "write_ahead_sha": "f07092ce92f855a1fb63dc494ea25072cbcff5ef"
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next. Owner-approved GitHub-only development installation and bounded technical autonomy amendment applies within exact approved batches; no broader authority.",
@@ -375,7 +376,7 @@
     "restricted_active": [
       {
         "id": "C5-MHTA-RUN-NAMESPACE-B-PRIVATE-RUN-ONCE-20261128",
-        "state": "APPROVED",
+        "state": "ISSUED",
         "source_sha": "a2fd5f54fea557c8f0794fecb63211e14e277160",
         "scope": "One disposable Ubuntu 24.04 job, five minutes, attempt 1, two pinned checkouts, 72 generated tests, at most one conditional privileged B fixture and one exact owned failed-service reset; zero package downloads, installations, retries or A repetitions. Preserve limited host-runtime protection, original 13 and four additional B facts, all safeguards and historical failures. No automatic downstream execution or qualification, no direct cgroup writes, root worker/parser, owner data, native work, installer or phase advance.",
         "owner_authority_ref": {
@@ -407,7 +408,7 @@
       "release",
       "replay of consumed or uncertain approval"
     ],
-    "guards": "59 restricted grants consumed/disarmed; zero active/pending. Exact run 46127278663 terminal MANAGER_COMMAND refusal; 31/31 generated tests, 8/8 packages, 7/7 tools, same_job_match=true, 4/13 facts true, slice/service requested; cleanup and settlement unverified. Prior run 46120862249 terminal PREEXISTING retained/disarmed. No replay/retry, no inferred remaining budget. See prior immutable state and ledger for all batch caps and preparation conditions. C1/C2 and OWNED_RESOURCE_ENABLED remain false; no fallback. Full P2/P4 dependency-consuming regressions held, not waived. Reduced inspection and custody held; PRODUCT-FIRST finite-method stop applies. Codespace stop and three consumed-variable cleanup unverified. Owner-local work uninspected/preserved. Fresh exact quiet fixture grant PREPARED only, no replay, prior two grants consumed. Quiet one-use activation issued; reconcile before any action, no replay. 60 consumed/disarmed, zero active. Quiet grant consumed terminal MANAGER_EXIT_NONZERO; no replay, prior grants unchanged; current fixture route parked per PRODUCT-FIRST. No additional restricted work. Fresh exact A-only approval PREPARED; no B or replay. A-only activation issued; reconcile before any action, no B or replay. 61 consumed/disarmed; zero active. A terminal attributed namespace 226, cleanup timeout, no B, replay or qualification. All prior failures preserved. Fresh exact A cleanup grant PREPARED only; no B or replay. A cleanup one-use activation issued; reconcile before action, no replay or B. 62 consumed/disarmed, zero active. Fresh A terminal attributed 226 with bounded owned failure cleanup COMPLETE, no successful-worker acceptance. Prior failures unchanged; B separate equivalence review and exact owner approval, never automatic, no replay. B preparation completed, 8/8 exact targeted tests, combined 72 outstanding; 62 consumed/disarmed, zero active. No restricted execution or activation; A failures preserved. B combined 72/72 local generated regression passed, 24 source/plan pins verified, exact inert binding 6e9c933eae5b205e26ea9898604dfa71313440ba; 62 consumed/disarmed, zero active. Distinct exact owner approval required before B execution; no replay or automatic downstream activation. Fresh exact B-only approval PREPARED, no replay, 62 previous consumed/disarmed; no automatic downstream execution or qualification.",
+    "guards": "59 restricted grants consumed/disarmed; zero active/pending. Exact run 46127278663 terminal MANAGER_COMMAND refusal; 31/31 generated tests, 8/8 packages, 7/7 tools, same_job_match=true, 4/13 facts true, slice/service requested; cleanup and settlement unverified. Prior run 46120862249 terminal PREEXISTING retained/disarmed. No replay/retry, no inferred remaining budget. See prior immutable state and ledger for all batch caps and preparation conditions. C1/C2 and OWNED_RESOURCE_ENABLED remain false; no fallback. Full P2/P4 dependency-consuming regressions held, not waived. Reduced inspection and custody held; PRODUCT-FIRST finite-method stop applies. Codespace stop and three consumed-variable cleanup unverified. Owner-local work uninspected/preserved. Fresh exact quiet fixture grant PREPARED only, no replay, prior two grants consumed. Quiet one-use activation issued; reconcile before any action, no replay. 60 consumed/disarmed, zero active. Quiet grant consumed terminal MANAGER_EXIT_NONZERO; no replay, prior grants unchanged; current fixture route parked per PRODUCT-FIRST. No additional restricted work. Fresh exact A-only approval PREPARED; no B or replay. A-only activation issued; reconcile before any action, no B or replay. 61 consumed/disarmed; zero active. A terminal attributed namespace 226, cleanup timeout, no B, replay or qualification. All prior failures preserved. Fresh exact A cleanup grant PREPARED only; no B or replay. A cleanup one-use activation issued; reconcile before action, no replay or B. 62 consumed/disarmed, zero active. Fresh A terminal attributed 226 with bounded owned failure cleanup COMPLETE, no successful-worker acceptance. Prior failures unchanged; B separate equivalence review and exact owner approval, never automatic, no replay. B preparation completed, 8/8 exact targeted tests, combined 72 outstanding; 62 consumed/disarmed, zero active. No restricted execution or activation; A failures preserved. B combined 72/72 local generated regression passed, 24 source/plan pins verified, exact inert binding 6e9c933eae5b205e26ea9898604dfa71313440ba; 62 consumed/disarmed, zero active. Distinct exact owner approval required before B execution; no replay or automatic downstream activation. Fresh exact B-only approval PREPARED, no replay, 62 previous consumed/disarmed; no automatic downstream execution or qualification. B-only one-use activation issued; reconcile before any further action; no replay.",
     "last_consumed": {
       "id": "C5-MHTA-RUN-NAMESPACE-A-CLEANUP-ONCE-20261128",
       "source_sha": "9840f65d3543534449303e7ebc695a134a0f398d",
