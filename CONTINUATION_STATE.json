@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-DEV-VM-01-S2-WINDOWS-PILLOW-ONCE-20261128",
-    "parent_sha": "8a646a619063a9dc808d5fb07db9507c7c84cfe4",
-    "previous_snapshot_sha": "8a646a619063a9dc808d5fb07db9507c7c84cfe4",
-    "scope": "Exact Windows Pillow corrected artifact static inspection and one-use reconciliation",
+    "operation_id": "C5-DEV-VM-01-S2-TWO-GET-SOURCE-PREP-20261128",
+    "parent_sha": "7302d8885827e09340aca851170b16607b511b9a",
+    "previous_snapshot_sha": "7302d8885827e09340aca851170b16607b511b9a",
+    "scope": "Detached targeted two-wheel static inspection source preparation; no activation or acquisition",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "blob_sha": "be38a5615cf59d2214a8f2d150bc0a7fa0bdd29b",
-      "anchor": "28-november--dev-vm-01-corrected-windows-pillow-artifact-inspected",
-      "start_line": 1391,
-      "end_line": 1397
+      "blob_sha": "9a25c202e37b64be90e5046b40b9303ecc467d68",
+      "anchor": "28-november--dev-vm-01-s2-two-wheel-static-source-prepared",
+      "start_line": 1399,
+      "end_line": 1403
     }
   },
   "product": {
@@ -133,17 +133,24 @@
   },
   "task": {
     "id": "C5-DEV-VM-01-S2-PREUSE-AND-OVERLAY-20261128",
-    "status": "READY",
+    "status": "PREPARED",
     "scope": "S2 review of actual S1 facts at exact receipt blob 02ce4c6d821bae913691d0a5501fe516df2fd908 and conditional dependency overlays targeting bb46e49; complete exact applicable pre-use and consolidated Windows/Linux regression preparation.",
     "blocker": "Remaining exact ReportLab source/cache/font and Windows PDFium static native facts; corrected Pillow Windows and Linux delivery/graph and use dispositions held.",
     "next_action_kind": "PREPARATION",
-    "next_action": "Under exact owner approval retained in pending_operations, prepare and review one static-only Ubuntu job, two fixed GETs totaling 6204856 bytes, 15 minutes, no retries/redirects/installs. Bind exact source and activation, full trigger audit, write ahead; execute once then reconcile and disarm. No repeat Pillow acquisition, no package consumption. Correct graph only after measured evidence and applicable decisions.",
+    "next_action": "Resume detached 8b1107f85b59e8d48b13f66572282071d3305ef8; finish exact source review, generated pre-transfer test and workflow/marker binding, audit remaining 116 of 131 unchanged live workflow trigger definitions (recheck drift), write ahead and activate once under exact retained owner approval. Reconcile and disarm; no retry, package consumption, repeat Pillow acquisition or lock change.",
     "after": [
       "Verify consolidated functional Windows/Linux synthetic stages only when applicable pre-use and exact authority satisfied; no auto-use or live merge.",
       "Close C5 and award only qualifying original evidence; all six P4 and native D/G2/E2/8GB/Gate C requirements preserved.",
       "DLA parked; P5/installer/release remain unauthorised."
     ],
     "read": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "9a25c202e37b64be90e5046b40b9303ecc467d68",
+        "anchor": "28-november--dev-vm-01-s2-two-wheel-static-source-prepared",
+        "start_line": 1399,
+        "end_line": 1403
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "blob_sha": "be38a5615cf59d2214a8f2d150bc0a7fa0bdd29b",
@@ -244,17 +251,17 @@
     ]
   },
   "operation": {
-    "id": "C5-DEV-VM-01-S2-WINDOWS-PILLOW-ONCE-20261128",
+    "id": "C5-DEV-VM-01-S2-TWO-GET-SOURCE-PREP-20261128",
     "state": "RECONCILED",
-    "starting_sha": "b444f29cd974c6bb9add3a6df66dce91ebb476f2",
-    "outcome": "One approved artifact retrieved, outer and final wheel identities verified, 119 RECORD rows, eight PE import tables and SBOM/notices inspected. No consumption or acceptance credit; static component/use holds remain.",
+    "starting_sha": "7302d8885827e09340aca851170b16607b511b9a",
+    "outcome": "Detached source prepared and exact files read back; first 15/131 workflow trigger blocks checked. Full source verification/activation binding and audit remain pending; zero additional acquisitions.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "blob_sha": "be38a5615cf59d2214a8f2d150bc0a7fa0bdd29b",
-      "anchor": "28-november--dev-vm-01-corrected-windows-pillow-artifact-inspected",
-      "start_line": 1391,
-      "end_line": 1397
+      "blob_sha": "9a25c202e37b64be90e5046b40b9303ecc467d68",
+      "anchor": "28-november--dev-vm-01-s2-two-wheel-static-source-prepared",
+      "start_line": 1399,
+      "end_line": 1403
     }
   },
   "authority": {
@@ -301,7 +308,7 @@
       "id": "C5-DEV-VM-01-S2-TWO-GET-STATIC-20261128",
       "state": "PREPARED",
       "starting_sha": "b444f29cd974c6bb9add3a6df66dce91ebb476f2",
-      "scope": "Owner-approved but not source-bound or issued: one nonroot Ubuntu24.04 static-only job, exact ReportLab 5.1.2 and Windows PDFium 5.15.2 wheel direct GETs only, max 6204856 bytes/15 minutes, no retries/redirects/installation or execution.",
+      "scope": "Owner-approved one nonroot Ubuntu24.04 static-only job; detached source prepared at 8b1107f85b59e8d48b13f66572282071d3305ef8, activation unbound/unissued, exact ReportLab/PDFium direct GETs only, 6204856 bytes/15 minutes, zero retries/redirects/installs/package execution.",
       "intended_paths": [
         "qa/c5_managed_dev/",
         "CONTINUATION_STATE.json",
@@ -320,7 +327,7 @@
         "proposal_commit": "b444f29cd974c6bb9add3a6df66dce91ebb476f2"
       },
       "expected_evidence": "Exact source/activation binding, full trigger audit, write-ahead before acquisition; bounded ReportLab source/cache/font and PDFium PE/build/notice facts or precise refusal.",
-      "recovery": "Not issued; bind and verify reviewed source and workflow before any acquisition. No replay or expansion.",
+      "recovery": "Not issued; preserve exact detached source, finish full trigger audit and activation binding before write-ahead and acquisition. No replay or expansion.",
       "reconcile_before_retry": false
     }
   ],
@@ -830,6 +837,14 @@
       {
         "sha": "2e7f10c6d23b14cebc76051c80b71eee0b17db57",
         "scope": "Exact reviewed managed tool and browser checks, bounded count/identifier evidence; candidate final tree checked, no execution."
+      },
+      {
+        "sha": "571914e8420b3b2aa335bf777e5490d59c969874",
+        "scope": "Two-wheel bounded targeted static inspection source and generated tests, unexecuted."
+      },
+      {
+        "sha": "8b1107f85b59e8d48b13f66572282071d3305ef8",
+        "scope": "Refined exact member identity and Type1 font header inspection; read-back verified, no activation."
       }
     ]
   },
@@ -938,6 +953,13 @@
       }
     ],
     "evidence": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "9a25c202e37b64be90e5046b40b9303ecc467d68",
+        "anchor": "28-november--dev-vm-01-s2-two-wheel-static-source-prepared",
+        "start_line": 1399,
+        "end_line": 1403
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "blob_sha": "be38a5615cf59d2214a8f2d150bc0a7fa0bdd29b",
