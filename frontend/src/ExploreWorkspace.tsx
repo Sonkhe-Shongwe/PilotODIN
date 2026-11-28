@@ -29,6 +29,8 @@ function filterFor(column:FilterColumn):FilterClause{
   :{column:column.name,op:'eq',value:column.options?.[0]??''};
 }
 type ChartSuggestion={title:string;x:string;y:string|null;kind:string;aggregation:string;reason:string};
+type ExploreBootstrap={project_id:string;version:number;overview:Overview;insights:{version:number;findings:Finding[]};recommended:{version:number;recommendations:ChartSuggestion[]};filter_catalog:FilterCatalog};
+type BootstrapLoad={projectId:string;versionToken:number;retry:number;data:ExploreBootstrap|null;error:string};
 type ExplorePreferences={x:string;y:string;kind:string;aggregation:string};
 const allowedKinds=new Set(['auto','bar','histogram','scatter','line','box']);
 const allowedAggregations=new Set(['mean','sum','median','count']);
@@ -74,9 +76,15 @@ function Viz({plot,onSelect}:{plot:Plot;onSelect:(choice:ChartSelection)=>void})
 }
 
 export function ExploreWorkspace({projectId,versionToken,onReviewQuality,onSendToDeliver}:{projectId:string;versionToken:number;onReviewQuality?:(focus:QualityFocus)=>void;onSendToDeliver?:(id:string)=>void}){
-  const [overview,setOverview]=useState<Overview|null>(null);
-  const [findings,setFindings]=useState<Finding[]>([]);
-  const [suggestions,setSuggestions]=useState<ChartSuggestion[]>([]);
+  const [retryBootstrap,setRetryBootstrap]=useState(0);
+  const [bootstrapLoad,setBootstrapLoad]=useState<BootstrapLoad|null>(null);
+  // Never expose a completed response from another project, version or retry.
+  const currentBootstrap=bootstrapLoad?.projectId===projectId&&bootstrapLoad.versionToken===versionToken&&bootstrapLoad.retry===retryBootstrap?bootstrapLoad:null;
+  const bootstrap=currentBootstrap?.data??null;
+  const overview=bootstrap?.overview??null;
+  const findings=bootstrap?.insights.findings??[];
+  const suggestions=bootstrap?.recommended.recommendations??[];
+  const filterCatalog=bootstrap?.filter_catalog??null;
   const [x,setX]=useState(()=>readPreferences(projectId).x);
   const [y,setY]=useState(()=>readPreferences(projectId).y);
   const [kind,setKind]=useState(()=>readPreferences(projectId).kind);
@@ -85,9 +93,7 @@ export function ExploreWorkspace({projectId,versionToken,onReviewQuality,onSendT
   const [colorBy,setColorBy]=useState('');
   const [corrMethod,setCorrMethod]=useState<'pearson'|'spearman'>('pearson');
   const [correlation,setCorrelation]=useState<Correlation|null>(null);
-  const [filterCatalog,setFilterCatalog]=useState<FilterCatalog|null>(null);
   const [filters,setFilters]=useState<FilterClause[]>([]);
-  const [filterError,setFilterError]=useState('');
   const [filteredOverview,setFilteredOverview]=useState<Overview|null>(null);
   const [chartMessage,setChartMessage]=useState('');
   const [filteredRows,setFilteredRows]=useState<number|null>(null);
@@ -100,7 +106,26 @@ export function ExploreWorkspace({projectId,versionToken,onReviewQuality,onSendT
   const [corrError,setCorrError]=useState('');
   useEffect(()=>{if(!overview)return;try{localStorage.setItem(preferencesKey(projectId),JSON.stringify({x,y,kind,aggregation}))}catch{/* Project evidence is stored in the backend, not here. */}},[projectId,x,y,kind,aggregation,overview]);
   const [plot,setPlot]=useState<Plot|null>(null);const [error,setError]=useState('');const [loading,setLoading]=useState(false);
-  useEffect(()=>{let active=true;Promise.all([get<Overview>(`/projects/${projectId}/explore/overview`),get<{findings:Finding[]}>(`/projects/${projectId}/explore/insights`),get<{recommendations:ChartSuggestion[]}>(`/projects/${projectId}/explore/recommended`)]).then(([d,f,recommended])=>{if(!active)return;setOverview(d);setFindings(f.findings);setSuggestions(recommended.recommendations);const goodCategory=d.columns.find(c=>c.kind==='categorical'&&!/(?:id|key|code|number)$/i.test(c.name)&&c.unique<=Math.min(100,Math.max(2,d.rows*.5)));
+  useEffect(()=>{
+    let active=true;
+    const controller=new AbortController();
+    const scope={projectId,versionToken,retry:retryBootstrap};
+    setBootstrapLoad(null);setFilters([]);
+    setPlot(null);setCorrelation(null);setFilteredOverview(null);setFilteredRows(null);
+    setSelection(null);setInspection(null);setInspectOffset(0);setInspectError('');
+    setLoading(false);setInspectLoading(false);setError('');setCorrError('');setChartMessage('');
+    get<ExploreBootstrap>(`/projects/${projectId}/explore/bootstrap?expected_version=${versionToken}`,{signal:controller.signal})
+      .then(value=>{
+        if(!active||controller.signal.aborted)return;
+        if(!value||value.project_id!==projectId||value.version!==versionToken||
+          value.overview?.version!==value.version||value.insights?.version!==value.version||
+          value.recommended?.version!==value.version||value.filter_catalog?.version!==value.version||
+          !Array.isArray(value.overview.columns)||!Array.isArray(value.insights.findings)||
+          !Array.isArray(value.recommended.recommendations)||!Array.isArray(value.filter_catalog.columns)){
+          throw new Error('Explore received an incomplete or mismatched dataset snapshot. Refresh the project.');
+        }
+        const d=value.overview,recommended=value.recommended;
+        const goodCategory=d.columns.find(c=>c.kind==='categorical'&&!/(?:id|key|code|number)$/i.test(c.name)&&c.unique<=Math.min(100,Math.max(2,d.rows*.5)));
         const chosen=recommended.recommendations[0]?.x??goodCategory?.name??d.columns.find(c=>c.kind==='numeric'&&!/(?:id|key|code|number)$/i.test(c.name))?.name??d.columns[0]?.name??'';
         if(y&&!d.columns.some(c=>c.name===y))setY('');
         if(!x||!d.columns.some(c=>c.name===x)){
@@ -109,14 +134,13 @@ export function ExploreWorkspace({projectId,versionToken,onReviewQuality,onSendT
           const measure=d.columns.find(c=>c.kind==='numeric'&&c.name!==chosen&&/(sales|amount|revenue|profit|price|cost|quantity)/i.test(c.name));
           if(goodCategory&&measure)setY(measure.name);
           if(measure&&measure.mean!==undefined&&measure.median!==undefined&&Math.abs(measure.mean-measure.median)>Math.max(Math.abs(measure.median)*.4,1))setAggregation('median');
-        }}).catch(e=>{if(active)setError(e.message)});return()=>{active=false}},[projectId,versionToken]);
-  useEffect(()=>{
-    let active=true;setFilterCatalog(null);setFilters([]);setFilterError('');
-    get<FilterCatalog>(`/projects/${projectId}/explore/filter-options`)
-      .then(value=>{if(active)setFilterCatalog(value)})
-      .catch(e=>{if(active)setFilterError((e as Error).message)});
-    return()=>{active=false};
-  },[projectId,versionToken]);
+        }
+        setBootstrapLoad({...scope,data:value,error:''});
+      }).catch(e=>{
+        if(active&&!controller.signal.aborted)setBootstrapLoad({...scope,data:null,error:(e as Error).message||'Explore could not load the working dataset.'});
+      });
+    return()=>{active=false;controller.abort()};
+  },[projectId,versionToken,retryBootstrap]);
   useEffect(()=>{
     if(!x||!overview||!filterCatalog)return;
     if(overview.version!==filterCatalog.version){
@@ -210,6 +234,12 @@ export function ExploreWorkspace({projectId,versionToken,onReviewQuality,onSendT
   function changeX(next:string){setX(next);if(kind==='scatter'&&cols.find(c=>c.name===next)?.kind!=='numeric')setKind('bar');
     if((kind==='histogram'||kind==='box')&&cols.find(c=>c.name===next)?.kind!=='numeric')setKind('auto')}
 
+  if(!bootstrap)return <div className="explore-page">
+    <section className="panel" aria-label="Explore dataset loading">
+      {currentBootstrap?.error?<><p className="alert-error" role="alert">{currentBootstrap.error}</p><button type="button" className="btn" onClick={()=>setRetryBootstrap(n=>n+1)}><RefreshCw size={15}/> Retry Explore</button></>:<p role="status">Loading verified Explore snapshot…</p>}
+    </section>
+  </div>;
+
   return <div className="explore-page">
     <section className="quality-banner"><div><div className="eyebrow">EXPLORATION STUDIO</div><h2>Find the story in your data</h2><p>Explore distributions and relationships directly from the current, approved working dataset. No model training needed.</p></div><span className="pill">VERSION {overview?.version??'—'}</span></section>
     <div className="quality-stats"><div><small>{filters.length?'FILTERED RECORDS':'RECORDS'}</small><strong>{statOverview?format(statOverview.rows):'—'}</strong></div><div><small>FIELDS</small><strong>{statOverview?format(statOverview.columns.length):'—'}</strong></div><div><small>MISSING CELLS</small><strong>{statOverview?format(statOverview.missing_cells):'—'}</strong></div><div><small>EXACT DUPLICATES</small><strong>{statOverview?format(statOverview.exact_duplicates):'—'}</strong></div></div>
@@ -217,7 +247,6 @@ export function ExploreWorkspace({projectId,versionToken,onReviewQuality,onSendT
       <div className="panel-title"><BarChart3 size={18}/><h2>Linked analytical filters</h2><span className="pill muted">DATASET v{filterCatalog?.version??'—'}</span></div>
       <p className="body-muted">Combine up to four filters. Chart, statistics and correlation recalculate together from one approved data snapshot. No corrections are applied.</p>
       <div className="po-filter-toolbar"><button type="button" className="btn" onClick={addFilter} disabled={!filterColumns.some(c=>!filters.some(f=>f.column===c.name))||filters.length>=4}><Plus size={15}/> Add filter</button><button type="button" className="btn" disabled={!filters.length} onClick={()=>setFilters([])}>Clear filters</button><span role="status">{filteredRows===null&&loading?'Calculating linked results…':filteredRows===null?'':`${format(filteredRows)} of ${format(overview?.rows??0)} records`}</span></div>
-      {filterError&&<p className="alert-error" role="alert">{filterError}</p>}
       <div className="po-filter-rows">{filters.map((clause,i)=>{const column=filterColumns.find(c=>c.name===clause.column);return <div className="po-filter-row" key={clause.column}>
         <label>Filter field<select className="input" value={clause.column} onChange={e=>{const next=filterColumns.find(c=>c.name===e.target.value);if(next)changeFilter(i,filterFor(next))}}>{filterColumns.filter(c=>c.name===clause.column||!filters.some(f=>f.column===c.name)).map(c=><option key={c.name} value={c.name}>{c.name}</option>)}</select></label>
         {column?.kind==='categorical'?<label>Equals<select className="input" value={clause.value??''} onChange={e=>changeFilter(i,{...clause,value:e.target.value})}>{column.options?.map(value=><option key={value} value={value}>{value}</option>)}</select></label>

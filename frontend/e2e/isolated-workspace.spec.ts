@@ -323,6 +323,18 @@ async function installIsolatedAPI(context:BrowserContext,withProject:boolean,wit
         missing_targets:0,transformations:[],warnings:[]};
     // The Explore UI mounts multiple read-only panels, even for history-only
     // navigation. Match the local backend's response shapes and data version.
+    }else if(withProject&&pathname===`/projects/${TEST_PROJECT}/explore/bootstrap`
+      &&url.search==='?expected_version=0'){
+      result={project_id:TEST_PROJECT,version:0,
+        overview:{version:0,rows:2,missing_cells:0,exact_duplicates:0,source:'synthetic_test_fixture',
+          columns:[{name:'fraud_reported',kind:'categorical',unique:2,missing:0,missing_pct:0},
+            {name:'amount',kind:'numeric',unique:2,missing:0,missing_pct:0,min:10,max:20,mean:15,median:15}]},
+        insights:{version:0,findings:[],method:'deterministic_descriptive_rules'},
+        recommended:{version:0,recommendations:[]},
+        filter_catalog:{version:0,max_filters:4,
+          columns:[{name:'fraud_reported',kind:'categorical',options:['N','Y'],missing:0},
+            {name:'amount',kind:'numeric',min:10,max:20,missing:0}],
+          note:'Test-owned filter catalogue; no data changes.'}};
     }else if(withProject&&pathname===`/projects/${TEST_PROJECT}/explore/overview`){
       result={version:0,rows:2,missing_cells:0,exact_duplicates:0,source:'synthetic_test_fixture',
         columns:[{name:'fraud_reported',kind:'categorical',unique:2,missing:0,missing_pct:0},

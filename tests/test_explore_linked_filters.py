@@ -83,3 +83,67 @@ def test_workbench_is_version_pinned_and_returns_linked_counts(monkeypatch):
     with pytest.raises(HTTPException) as exc:
         main.explore_workbench("demo", request.model_copy(update={"expected_version": 6}))
     assert exc.value.status_code == 409
+
+@pytest.mark.parametrize("empty", [False, True])
+def test_explore_bootstrap_materializes_once_and_matches_legacy_results(monkeypatch, empty):
+    frame = fixture_frame()
+    if empty:
+        frame = frame.iloc[:0]
+    before = frame.copy(deep=True)
+    reads = []
+    monkeypatch.setattr(main, "project_or_404", lambda pid: {"id": pid})
+
+    def current_data(pid):
+        reads.append(pid)
+        return frame, 7
+
+    monkeypatch.setattr(main.quality, "current_data", current_data)
+    result = main.explore_bootstrap("demo", 7)
+    assert reads == ["demo"]
+    assert set(result) == {"project_id", "version", "overview", "insights", "recommended", "filter_catalog"}
+    assert result["project_id"] == "demo" and result["version"] == 7
+    assert result["overview"] == main.explore_overview("demo")
+    assert result["insights"] == main.explore_insights("demo")
+    assert result["recommended"] == main.recommended_exploration("demo")
+    assert result["filter_catalog"] == main.explore_filter_options("demo")
+    assert all(result[name]["version"] == 7 for name in
+               ("overview", "insights", "recommended", "filter_catalog"))
+    pd.testing.assert_frame_equal(frame, before)
+
+
+def test_explore_bootstrap_refuses_stale_before_calculation(monkeypatch):
+    from fastapi import HTTPException
+    monkeypatch.setattr(main, "project_or_404", lambda pid: {"id": pid})
+    monkeypatch.setattr(main.quality, "current_data", lambda _: (fixture_frame(), 8))
+    def forbidden(*args):
+        pytest.fail("stale snapshot must not calculate")
+    monkeypatch.setattr(main.analytics, "describe", forbidden)
+    with pytest.raises(HTTPException) as exc:
+        main.explore_bootstrap("demo", 7)
+    assert exc.value.status_code == 409
+
+
+@pytest.mark.parametrize("error", [
+    main.quality.QualityError("Original source changed", 409),
+    main.quality.QualityArchivedError("Project archived", 409),
+])
+def test_explore_bootstrap_preserves_snapshot_refusal(monkeypatch, error):
+    from fastapi import HTTPException
+    monkeypatch.setattr(main, "project_or_404", lambda pid: {"id": pid})
+    def refuse(pid):
+        raise error
+    monkeypatch.setattr(main.quality, "current_data", refuse)
+    with pytest.raises(HTTPException) as exc:
+        main.explore_bootstrap("demo", 7)
+    assert exc.value.status_code == error.status and exc.value.detail == str(error)
+
+
+def test_explore_bootstrap_missing_project_does_not_materialize(monkeypatch):
+    from fastapi import HTTPException
+    monkeypatch.setattr(main.storage, "get_project", lambda _: None)
+    def forbidden(*args):
+        pytest.fail("missing project must not materialize")
+    monkeypatch.setattr(main.quality, "current_data", forbidden)
+    with pytest.raises(HTTPException) as exc:
+        main.explore_bootstrap("missing", 7)
+    assert exc.value.status_code == 404

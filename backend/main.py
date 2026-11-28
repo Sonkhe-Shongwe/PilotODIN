@@ -857,6 +857,20 @@ def column_investigation_detail(
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
+@app.get("/api/projects/{project_id}/explore/bootstrap")
+def explore_bootstrap(project_id: str, expected_version: int = Query(ge=0)):
+    """Build all initial Explore summaries from one verified working snapshot."""
+    project_or_404(project_id)
+    frame, version = quality_response(quality.current_data, project_id)
+    if version != expected_version:
+        raise HTTPException(status_code=409, detail="Working dataset version changed. Refresh the project before opening Explore.")
+    return {"project_id": project_id, "version": version,
+            "overview": analytics.describe(frame, version),
+            "insights": analytics.insights(frame, version),
+            "recommended": analytics.recommended_charts(frame, version),
+            "filter_catalog": explore_filters.catalog(frame, version)}
+
+
 @app.get("/api/projects/{project_id}/explore/overview")
 def explore_overview(project_id: str):
     project_or_404(project_id)
