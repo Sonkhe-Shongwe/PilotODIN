@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-OWNER-APPROVED-MANAGED-HOSTED-TOOL-ASSURANCE-PREPARATION-20261128",
-    "parent_sha": "a06d753a23b89a7feab07bd9ed876b1c63453f87",
-    "previous_snapshot_sha": "a06d753a23b89a7feab07bd9ed876b1c63453f87",
-    "scope": "Owner-approved C-D09 managed hosted tool assurance preparation; disarmed same-job adapter/root binding and one-use wrapper, generated-only tests.",
+    "operation_id": "C5-MHTA-EXACT-INERT-ONE-USE-DECISION-20261128",
+    "parent_sha": "edbff7699699196c5d57ccbcb0d3c25cd9314f81",
+    "previous_snapshot_sha": "edbff7699699196c5d57ccbcb0d3c25cd9314f81",
+    "scope": "Finite managed package applicability/rights review, bounded streaming client, exact 27/27 local generated tests, inert one-use activation decision; no execution authority.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "28-november--owner-approved-managed-hosted-tool-assurance-and-disarmed-consolidated-candidate",
-      "blob_sha": "99cc7cd1850c7d9da853feed04b87a1539926e0a",
-      "start_line": 809,
-      "end_line": 829
+      "anchor": "28-november--managed-hosted-assurance-exact-bounded-activation-decision",
+      "blob_sha": "544c82d2932e367551aeb2a59f426cabfd3a12e4",
+      "start_line": 831,
+      "end_line": 839
     }
   },
   "product": {
@@ -137,15 +137,22 @@
     "id": "C5-LINUX-FIRST-20261127",
     "status": "BLOCKED",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "Managed Hosted Tool Assurance preparation approved; 0d5afc9 disarmed adapter/wrapper, same-job checks and exact 10/10 generated methods pass. Exact reviewed package suitability/version map including .19 publication/patch applicability, outer output/timeout and startup/full observer checks, exact one-use activation and separate execution authority remain. No actual host or containment/custody proof. Reduced 596390f held.",
-    "next_action": "Complete one finite source/publisher applicability and rights review for proposed Ubuntu Noble systemd .18/.19, Python 3.12.3-1ubuntu0.17, coreutils .3, sudo .4 and matching support families; reconcile .19 discrepancy without new hosted identity probe or independent binary manifests. Bind exact reviewed versions, review/fix bounded output/timeout, run remaining generated startup/full observer tests, prepare exact inert one-use activation from 0d5afc9 using prior 878d4e85 pattern and exact source pins; then seek one separately explicit bounded same-job execution approval (one Ubuntu job/5min/one attempt/zero package GETs/retries; same-job admission before one privileged zero-package fixture, no manager call on mismatch; no security changes, root worker/parser, direct cgroup writes or owner data). No phase/acceptance increase; Dynamic UID custody and reduced archive inspection separately held. No repeated generic probes.",
-    "next_action_kind": "MISSING_EVIDENCE",
+    "blocker": "Exact managed hosted assurance candidate 4cb3271/source 1ab5546 prepared and 27/27 local methods passed. Await separate explicit one-use execution approval and full live trigger audit; actual hosted package identity, root startup, manager behaviour, containment, settlement and custody not proved. Reduced 596390f held.",
+    "next_action": "Seek exact owner approval for C5-MHTA-ISOLATED-FIXTURE-ONCE-20261128, detached 4cb3271/source 1ab5546, one disposable Ubuntu 24.04 job/5min/1 attempt/zero package GETs or retries/two pinned checkouts; 27 generated tests then exact same-job admission and one conditional privileged generated manager fixture. No root worker/parser, direct cgroup writes, security weakening, owner data, other acquisition/install. After separate approval audit all live triggers for exact three activation paths, verify HEAD/source/tree/marker, record write-ahead and non-force expected-HEAD activation, reconcile actual job and disarm owned workflow/marker. Unknown is not settlement or replay. No acceptance/phase change; no repeated generic probes.",
+    "next_action_kind": "OWNER_DECISION",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
       "Windows-specific verified input and compatibility prerequisites before actual production-equivalent D1, separately authorised; no installer.",
       "D2, G2 and remaining physical E2/P4 acceptance; no phase advance without evidence and owner signoff."
     ],
     "read": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "28-november--managed-hosted-assurance-exact-bounded-activation-decision",
+        "blob_sha": "544c82d2932e367551aeb2a59f426cabfd3a12e4",
+        "start_line": 831,
+        "end_line": 839
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--owner-approved-managed-hosted-tool-assurance-and-disarmed-consolidated-candidate",
@@ -660,17 +667,17 @@
     ]
   },
   "operation": {
-    "id": "C5-OWNER-APPROVED-MANAGED-HOSTED-TOOL-ASSURANCE-PREPARATION-20261128",
+    "id": "C5-MHTA-EXACT-INERT-ONE-USE-DECISION-20261128",
     "state": "RECONCILED",
-    "starting_sha": "a06d753a23b89a7feab07bd9ed876b1c63453f87",
-    "outcome": "Owner approved preparation only. Detached 6ef95bc -> 0d5afc9 five QA paths, exact 10/10 generated unittest methods PASS. Same-job managed trust/standard local metadata checks and in-memory root startup binding prepared; exact reviewed version map (.19 publication/patch applicability hold), complete activation/output/startup/observer verification and execution approval remain. No actual host/privilege/workflow or acquisition.",
+    "starting_sha": "edbff7699699196c5d57ccbcb0d3c25cd9314f81",
+    "outcome": "Prepared detached 4edc4c4 -> 1ab5546 -> 4cb3271; conditional exact eight-package map; 27/27 generated local methods PASS; inert workflow/marker, syntax checks PASS. No hosted, privilege, acquisition, installation or active workflow. Separate exact bounded owner execution decision and full trigger audit remain.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "28-november--owner-approved-managed-hosted-tool-assurance-and-disarmed-consolidated-candidate",
-      "blob_sha": "99cc7cd1850c7d9da853feed04b87a1539926e0a",
-      "start_line": 809,
-      "end_line": 829
+      "anchor": "28-november--managed-hosted-assurance-exact-bounded-activation-decision",
+      "blob_sha": "544c82d2932e367551aeb2a59f426cabfd3a12e4",
+      "start_line": 831,
+      "end_line": 839
     }
   },
   "authority": {
@@ -1048,6 +1055,18 @@
       {
         "sha": "0d5afc9dfc3a3b0c8eb813874c05f95a638e69ff",
         "scope": "Disarmed consolidated same-job wrapper and exact pins, five new QA paths vs af44431; 10 exact generated unittest methods PASS; reviewed versions and activation null; no actual host/privilege/workflow. Preserve separately from live."
+      },
+      {
+        "sha": "4edc4c4964e30e4c1e986bbfbacdaf46082e7853",
+        "scope": "Disarmed streaming bounded client/adapter/wrapper and generated subprocess tests; 14/14 local pass, no actual host."
+      },
+      {
+        "sha": "1ab5546198137e66c2b45eee69a24a2cf4fcc175",
+        "scope": "Exact conditional eight-package reviewed map and startup tests; 27/27 generated local methods pass, no hosted or privilege."
+      },
+      {
+        "sha": "4cb3271b96b98eaba467d31a3b038270be27f536",
+        "scope": "Inert exact one-use workflow text and JSON/marker binding; no active workflow or execution. Preserve detached 122-workflow history separately."
       }
     ]
   },
@@ -1094,7 +1113,8 @@
     "12d9b04 preferred conditional isolation method; manager/tool availability, realized retained empty slice, actual effective restrictions and positive settlement unproved. Dynamic UID vs runner-owned archive custody remains unresolved; no privilege/transfer authority.",
     "42e5a3f launcher strict upstream v255.4 assumptions not verified against actual Noble package, root startup and synthetic full lifecycle pending; no actual isolation or acquisition authority.",
     "af44431: retained image and published package versions narrowed; independently reviewed exact executable/package facts still unavailable. Generated observer body passes mocked lifecycle only; root startup is inert data, not executable binding. One bounded identity-only decision required; no privileged activation, acquisition, product or acceptance change.",
-    "0d5afc9 managed hosted assurance preparation: no independently reconstructed managed executable manifests required; exact reviewed eligible versions and applicability/rights remain; systemd .19 retained/provider and proposed publisher record but official listing .18, actual publication/patch review incomplete. Same-job identity, trusted root startup and full real containment/custody unproved; no execution or acceptance credit."
+    "0d5afc9 managed hosted assurance preparation: no independently reconstructed managed executable manifests required; exact reviewed eligible versions and applicability/rights remain; systemd .19 retained/provider and proposed publisher record but official listing .18, actual publication/patch review incomplete. Same-job identity, trusted root startup and full real containment/custody unproved; no execution or acceptance credit.",
+    "4cb3271: .19 conditional managed fixture eligibility based on source changelog, secondary updates and retained provider image; primary archive publication unavailable and actual hosted versions, root startup, containment, process settlement and dynamic UID custody unproved. Full trigger audit and separate exact bounded execution approval required. No C5 credit."
   ],
   "context": {
     "protocol": {
