@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-MHTA-QUIET-FULL-REGRESSION-AND-INERT-BINDING-20261128",
-    "parent_sha": "9411b9c93562ec9cf11394c6755d47c4a9846635",
-    "previous_snapshot_sha": "9411b9c93562ec9cf11394c6755d47c4a9846635",
-    "scope": "Full exact generated-only regression and fresh inert quiet fixture candidate; no restricted execution or acceptance change.",
-    "state": "RECONCILED",
+    "operation_id": "C5-MHTA-QUIET-ISOLATED-FIXTURE-ONCE-20261128",
+    "parent_sha": "497aadf28920e7076f9428721a725b8e7e8390cd",
+    "previous_snapshot_sha": "497aadf28920e7076f9428721a725b8e7e8390cd",
+    "scope": "Exact one-use C5 quiet fixture: one disposable GitHub Ubuntu 24.04 job, five minutes, attempt 1, zero package downloads/installations/retries, two pinned checkouts, 32 generated tests, at most one conditional privileged generated fixture. No root worker/parser, direct cgroup writes, security weakening, owner data, other acquisition, native work or installer.",
+    "state": "PREPARED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "28-november--full-quiet-correction-regression-and-fresh-inert-execution-decision",
-      "blob_sha": "cd43c4078241d1dc8ccca03a8f54b9fd43856fe2",
-      "start_line": 909,
-      "end_line": 913
+      "anchor": "28-november--owner-authorised-quiet-isolated-fixture-once",
+      "blob_sha": "0c76c0a52ed32a64c4c7595c351a290166744efb",
+      "start_line": 915,
+      "end_line": 917
     }
   },
   "product": {
@@ -135,11 +135,11 @@
   },
   "task": {
     "id": "C5-LINUX-FIRST-20261127",
-    "status": "BLOCKED",
+    "status": "PREPARED",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "Corrected source 88cdf6d full exact 32/32 generated tests PASS; fresh inert a28be41 ready for separate explicit owner decision. Prior two grants consumed; actual manager/settlement/custody unproved. Reduced inspection held.",
-    "next_action": "Seek fresh exact owner approval of C5-MHTA-QUIET-ISOLATED-FIXTURE-ONCE-20261128, candidate a28be41/source 88cdf6d, one Ubuntu 24.04 job/5min/1 attempt/zero package downloads or installs/retries/two pinned checkouts/32 generated tests/one conditional privileged fixture. After explicit approval, audit all 125 live workflow triggers, bind exact source/tree/workflow/marker, record write-ahead, publish exact three-path activation non-force expected-HEAD, reconcile terminal outcome and disarm. No replay, qualification/settlement inference or expanded scope.",
-    "next_action_kind": "OWNER_DECISION",
+    "blocker": "Fresh exact owner approval recorded; not yet issued.",
+    "next_action": "Verify PREPARED write-ahead and exact three-path activation. Publish once non-force expected-HEAD, inspect exact run/attempt/job/receipt and disarm after reconciliation; no retry.",
+    "next_action_kind": "RECONCILE",
     "after": [
       "If separately approved, run only fresh exact quiet fixture once; reconcile and disarm. Review all 13 facts independently, qualification remains false until review. If fundamental limitation persists park route per PRODUCT-FIRST; no speculative expansion or retries. Reduced archive inspection/custody remain held.",
       "Resolve actual Linux pre-use rights/security and custody, reuse Stage A 19/19, complete applicable functional/profile/frontend/browser and exact original full regressions; close C5 only on all eight rows. Verify Windows-specific inputs/compatibility before separately authorised production-equivalent D1; no installer. Independently actionable P4 source work remains permitted only under existing policy.",
@@ -148,78 +148,85 @@
     "read": [
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "28-november--owner-authorised-quiet-isolated-fixture-once",
+        "blob_sha": "0c76c0a52ed32a64c4c7595c351a290166744efb",
+        "start_line": 915,
+        "end_line": 917
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--full-quiet-correction-regression-and-fresh-inert-execution-decision",
-        "blob_sha": "cd43c4078241d1dc8ccca03a8f54b9fd43856fe2",
+        "blob_sha": "0c76c0a52ed32a64c4c7595c351a290166744efb",
         "start_line": 909,
         "end_line": 913
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--manager-stderr-correction-preparation-and-scoped-generated-checks",
-        "blob_sha": "cd43c4078241d1dc8ccca03a8f54b9fd43856fe2",
+        "blob_sha": "0c76c0a52ed32a64c4c7595c351a290166744efb",
         "start_line": 901,
         "end_line": 907
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--pristine-fixture-terminal-manager-refusal-and-one-use-disarm",
-        "blob_sha": "cd43c4078241d1dc8ccca03a8f54b9fd43856fe2",
+        "blob_sha": "0c76c0a52ed32a64c4c7595c351a290166744efb",
         "start_line": 883,
         "end_line": 899
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--full-pristine-regression-and-fresh-inert-execution-decision",
-        "blob_sha": "cd43c4078241d1dc8ccca03a8f54b9fd43856fe2",
+        "blob_sha": "0c76c0a52ed32a64c4c7595c351a290166744efb",
         "start_line": 873,
         "end_line": 877
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--managed-hosted-assurance-terminal-refusal-and-one-use-disarm",
-        "blob_sha": "cd43c4078241d1dc8ccca03a8f54b9fd43856fe2",
+        "blob_sha": "0c76c0a52ed32a64c4c7595c351a290166744efb",
         "start_line": 845,
         "end_line": 861
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--upstream-backed-pristine-slice-admission-correction",
-        "blob_sha": "cd43c4078241d1dc8ccca03a8f54b9fd43856fe2",
+        "blob_sha": "0c76c0a52ed32a64c4c7595c351a290166744efb",
         "start_line": 863,
         "end_line": 871
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--owner-approved-managed-hosted-tool-assurance-and-disarmed-consolidated-candidate",
-        "blob_sha": "cd43c4078241d1dc8ccca03a8f54b9fd43856fe2",
+        "blob_sha": "0c76c0a52ed32a64c4c7595c351a290166744efb",
         "start_line": 809,
         "end_line": 829
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--owner-approved-reduced-static-receipt-and-custody-binding-preparation",
-        "blob_sha": "cd43c4078241d1dc8ccca03a8f54b9fd43856fe2",
+        "blob_sha": "0c76c0a52ed32a64c4c7595c351a290166744efb",
         "start_line": 725,
         "end_line": 733
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--retained-evidence-and-reduced-static-inspection-decision",
-        "blob_sha": "cd43c4078241d1dc8ccca03a8f54b9fd43856fe2",
+        "blob_sha": "0c76c0a52ed32a64c4c7595c351a290166744efb",
         "start_line": 717,
         "end_line": 723
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--owner-approved-linux-first-c5-allocation-and-exact-reduced-input-plan",
-        "blob_sha": "cd43c4078241d1dc8ccca03a8f54b9fd43856fe2",
+        "blob_sha": "0c76c0a52ed32a64c4c7595c351a290166744efb",
         "start_line": 211,
         "end_line": 219
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "27-november--linux-stage-a-actual-19-test-pass-and-one-use-disarm",
-        "blob_sha": "cd43c4078241d1dc8ccca03a8f54b9fd43856fe2",
+        "blob_sha": "0c76c0a52ed32a64c4c7595c351a290166744efb",
         "start_line": 317,
         "end_line": 323
       },
@@ -240,23 +247,49 @@
     ]
   },
   "operation": {
-    "id": "C5-MHTA-QUIET-FULL-REGRESSION-AND-INERT-BINDING-20261128",
-    "state": "RECONCILED",
-    "starting_sha": "9411b9c93562ec9cf11394c6755d47c4a9846635",
-    "outcome": "32/32 exact local generated tests PASS, ten independent Git blob matches before and after, fresh inert a28be41 with 11 source pins and syntax checks PASS; no activation or restricted execution.",
-    "reconcile_before_retry": false,
-    "receipt": {
+    "id": "C5-MHTA-QUIET-ISOLATED-FIXTURE-ONCE-20261128",
+    "state": "PREPARED",
+    "starting_sha": "497aadf28920e7076f9428721a725b8e7e8390cd",
+    "scope": "Exact one-use C5 quiet fixture: one disposable GitHub Ubuntu 24.04 job, five minutes, attempt 1, zero package downloads/installations/retries, two pinned checkouts, 32 generated tests, at most one conditional privileged generated fixture. No root worker/parser, direct cgroup writes, security weakening, owner data, other acquisition, native work or installer.",
+    "intended_paths": [
+      ".github/workflows/c5-managed-host-quiet-once.yml",
+      "CONTINUATION_STATE.json",
+      "qa/c5_managed_dev/APPROVAL_MANAGED_HOST_QUIET_20261128.txt"
+    ],
+    "authority_ref": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "28-november--full-quiet-correction-regression-and-fresh-inert-execution-decision",
-      "blob_sha": "cd43c4078241d1dc8ccca03a8f54b9fd43856fe2",
-      "start_line": 909,
-      "end_line": 913
-    }
+      "anchor": "28-november--owner-authorised-quiet-isolated-fixture-once",
+      "blob_sha": "0c76c0a52ed32a64c4c7595c351a290166744efb",
+      "start_line": 915,
+      "end_line": 917
+    },
+    "expected_evidence": "Exact activation SHA; one observe-once job attempt 1; 32 generated test methods and bounded observer receipt or refusal; marker removal and literal-false disarm.",
+    "recovery": "Reconcile live Git and actual run/job/logs before any retry; never replay or infer settlement. Disarm exact owned marker/workflow after terminal or unknown reconciliation.",
+    "reconcile_before_retry": true,
+    "candidate_sha": "a28be41c0c74c91da0956f270c2f4f52c93ddf37",
+    "source_sha": "88cdf6d761725a5b2695f2e7bbf4e542800e9917",
+    "workflow_blob": "1c3cfa9af82500b24b5cf565e6dbb272d809c6d1",
+    "marker_blob": "88976251bbdc767f3aaa3b80500206c4c8d91e19"
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next. Owner-approved GitHub-only development installation and bounded technical autonomy amendment applies within exact approved batches; no broader authority.",
     "preparation_only": "Owner approved consolidated shared-bundle disarmed acquisition-before-signature source and exact limited existing host bootstrap; owner approved proposed limited local Docker control-plane and host-derived rootfs trust/no-pull isolation method for preparation only. Authentication before extraction/use; no Docker invocation, acquisition, verification execution, installation or live cutover authorised. Owner approved bounded first-collision encoded public member-path diagnostic preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-bounded-first-collision-diagnostic-preparation-only. No restricted execution authority. Owner approved finite exact Linux data-only terminfo inventory policy and bounded receipt projection as proposed in 8cc1a696, preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-finite-exact-linux-terminfo-inventory-policy-and-bounded-receipt-preparation-only. Strict Windows/gh and other safeguards unchanged; no acquisition, extraction or restricted execution. Owner explicitly approved preparation and static/synthetic verification only of Approach C observation-only candidate (11 fixed roles, five minutes); no restricted execution, acquisition, Docker invocation or active policy change. Exact reference in C5 spec owner-approved-bounded-approach-c-observation-candidate-preparation-only. Owner approved Approach C metadata-only preparation/static/synthetic verification under 13 GET/10-minute proposed limits; no actual acquisition, package downloads, installation, Docker invocation, restricted execution or active trust policy change. Exact spec anchor owner-approved-bounded-approach-c-metadata-only-preparation-and-synthetic-core. Owner approved narrow metadata bootstrap preparation on existing two reviewed images including GnuPG/necessary existing dependencies, no acquisition/restricted execution/integrated verification/active policy change, original 13 GET/10 min bounds. Exact spec anchor owner-approved-narrow-metadata-bootstrap-preparation-and-finite-key-evidence-contract. Owner approved two-stage key/metadata sequence preparation including bounded public signing-key private repository retention proposal, combined 13 GET/600s/256 MiB; no actual acquisition, restricted execution or active policy change. Exact spec anchor owner-approved-two-stage-preparation-and-consolidated-custody-core. Owner approved exact C-D09 managed-development CI evidence rationalisation at proposal 2cbed51, recorded in C5 implementation spec; limited bootstrap trust and residual risk accepted, prepare concrete bounded validation candidate only, no acquisition, installation, restricted execution, migration, new expenditure or phase advancement. Owner approved one-time C5 proportionate publisher-first inspection method (okay lets try that), recorded at docs/C5_PROPORTIONATE_INSPECTION_DECISION_2026-11-27.md; no new restricted authority or acceptance waiver. Owner explicitly approved standalone Windows Stage A preparation preserving all security and acceptance requirements; see docs/C5_STANDALONE_WINDOWS_A_PREPARATION_2026-11-27.md. No restricted execution grant. Owner explicitly approved exact Astral CPython 3.11.18 Windows x64 candidate for standalone Stage A preparation only; docs/C5_WINDOWS_A_ASTRAL_PREPARATION_2026-11-27.md. No new restricted grant. Owner explicitly approved simplified C5 applicability-based development policy and preparation of consolidated Stage A transaction; see ENGINEERING_DECISIONS_CURRENT.md section 27-november--owner-approved-c5-applicability-policy-and-consolidated-stage-a-transaction. No restricted authority or acceptance waiver. Owner explicitly approved bounded G2 equivalent evidence feasibility assessment and design only; see ENGINEERING_DECISIONS_CURRENT.md section 27-november--g2-equivalent-evidence-feasibility-and-design-disposition. Assessment complete, no implementation, live method adoption or restricted execution authority. Owner adopted aggressive product-first framework (okay lets follow you new frame work); PRODUCT-FIRST-20261127 in phase policy. Independent concrete scoped P4 source work and narrowly rationalised standard C5 control metadata preparation, no new restricted execution grant. Owner approved preparation of bounded browser-only GitHub verification (okay do ti); detached 26ab490, no activation/acquisition/execution grant; exact receipt in engineering decisions. Owner approved proceeding with corrected Chrome .88 and Playwright 1.65.1 alternative (do it), exact candidate 920df39 prepared; no exact bounded activation grant yet; preserve original locks. Owner explicitly approved isolated ReportLab 5.1.2 evaluation and coordinated dependency-range and lock preparation, preserving all security, acceptance and execution boundaries; exact owner decision in ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-isolated-reportlab-512-projections-and-metadata-holds. Detached 4dd5525 data-only proposal; no acquisition, installation, execution or live adoption authority. Owner explicitly approved reduced 24-artifact static inspection scope and exact execution-binding preparation, 24 direct GETs/104436509 bytes/30 minutes/one attempt/no redirects or retries, preserving all boundaries; ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-reduced-static-receipt-and-custody-binding-preparation. Preparation only; no actual GET, dispatch or installation authority. Owner explicitly approved preparation of bounded read-only hosted cgroup v2 feasibility observation, five minutes, one attempt, zero package downloads, no privilege or security changes; ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-read-only-cgroup-feasibility-preparation. No actual observation/dispatch or acquisition authority. Owner approved isolated method evaluation/preparation, prioritising existing provider isolation or constrained cgroup subtree; no execution/privileged operations/security modification/package acquisition without distinct authority; ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-isolated-method-evaluation-and-system-manager-projection. Owner explicitly approved preparation of proportionate Managed Hosted Tool Assurance as narrow C-D09 extension: standard Ubuntu package checks, observed executable identities and same-job rechecks; no independent reconstructed managed executable manifests; preserve containment/settlement/trusted privileged startup/dependency integrity/rights/original data/acceptance. No privilege/acquisition/installation or active workflows until exact separate approval. See ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-managed-hosted-tool-assurance-and-disarmed-consolidated-candidate. Owner approved narrow systemd service quiet/diagnostic source correction and generated regression only (okay lets do that); exact detached 88cdf6d, no privileged run or evidence method change.",
-    "restricted_active": [],
+    "restricted_active": [
+      {
+        "id": "C5-MHTA-QUIET-ISOLATED-FIXTURE-ONCE-20261128",
+        "state": "APPROVED",
+        "source_sha": "88cdf6d761725a5b2695f2e7bbf4e542800e9917",
+        "scope": "Exact one-use C5 quiet fixture: one disposable GitHub Ubuntu 24.04 job, five minutes, attempt 1, zero package downloads/installations/retries, two pinned checkouts, 32 generated tests, at most one conditional privileged generated fixture. No root worker/parser, direct cgroup writes, security weakening, owner data, other acquisition, native work or installer.",
+        "owner_authority_ref": {
+          "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+          "anchor": "28-november--owner-authorised-quiet-isolated-fixture-once",
+          "blob_sha": "0c76c0a52ed32a64c4c7595c351a290166744efb",
+          "start_line": 915,
+          "end_line": 917
+        },
+        "reconcile_before_retry": true
+      }
+    ],
     "consumed_disarmed_count": 59,
     "consumed_history": {
       "commit": "b9864b70fb9bb5a72d0f79c37f15b94100722192",
@@ -276,7 +309,7 @@
       "release",
       "replay of consumed or uncertain approval"
     ],
-    "guards": "59 restricted grants consumed/disarmed; zero active/pending. Exact run 46127278663 terminal MANAGER_COMMAND refusal; 31/31 generated tests, 8/8 packages, 7/7 tools, same_job_match=true, 4/13 facts true, slice/service requested; cleanup and settlement unverified. Prior run 46120862249 terminal PREEXISTING retained/disarmed. No replay/retry, no inferred remaining budget. See prior immutable state and ledger for all batch caps and preparation conditions. C1/C2 and OWNED_RESOURCE_ENABLED remain false; no fallback. Full P2/P4 dependency-consuming regressions held, not waived. Reduced inspection and custody held; PRODUCT-FIRST finite-method stop applies. Codespace stop and three consumed-variable cleanup unverified. Owner-local work uninspected/preserved.",
+    "guards": "59 restricted grants consumed/disarmed; zero active/pending. Exact run 46127278663 terminal MANAGER_COMMAND refusal; 31/31 generated tests, 8/8 packages, 7/7 tools, same_job_match=true, 4/13 facts true, slice/service requested; cleanup and settlement unverified. Prior run 46120862249 terminal PREEXISTING retained/disarmed. No replay/retry, no inferred remaining budget. See prior immutable state and ledger for all batch caps and preparation conditions. C1/C2 and OWNED_RESOURCE_ENABLED remain false; no fallback. Full P2/P4 dependency-consuming regressions held, not waived. Reduced inspection and custody held; PRODUCT-FIRST finite-method stop applies. Codespace stop and three consumed-variable cleanup unverified. Owner-local work uninspected/preserved. Fresh exact quiet fixture grant PREPARED only, no replay, prior two grants consumed.",
     "last_consumed": {
       "id": "C5-MHTA-PRISTINE-ISOLATED-FIXTURE-ONCE-20261128",
       "source_sha": "7a5bebdca47f90f067ad6ed9591719cbbb8d5d11",
@@ -286,7 +319,7 @@
       "receipt": {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--pristine-fixture-terminal-manager-refusal-and-one-use-disarm",
-        "blob_sha": "cd43c4078241d1dc8ccca03a8f54b9fd43856fe2",
+        "blob_sha": "0c76c0a52ed32a64c4c7595c351a290166744efb",
         "start_line": 883,
         "end_line": 899
       }
