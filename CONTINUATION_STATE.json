@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "P4-E2-R06-PREP-20261128",
-    "parent_sha": "108b38a09177c41fc9fdbfcfa6c1936e9ecad635",
-    "previous_snapshot_sha": "108b38a09177c41fc9fdbfcfa6c1936e9ecad635",
-    "scope": "Explicit owner-approved E2/R06 preparation only, finite evidence and source-readiness assessment; no execution or method adoption.",
+    "operation_id": "P4-E2-R06-AVAILABILITY-20261128",
+    "parent_sha": "04db95d6731dc12def7c4f418138cd7f0ba26176",
+    "previous_snapshot_sha": "04db95d6731dc12def7c4f418138cd7f0ba26176",
+    "scope": "Owner resource availability intake and exact existing-source E2-B readiness review only; no expanded authority.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "28-november--owner-approved-e2-and-r06-preparation-and-readiness-holds",
-      "blob_sha": "48e3f35f1cab74c6a5d305d91117e41971507314",
-      "start_line": 1121,
-      "end_line": 1123
+      "anchor": "28-november--owner-held-e2-assets-confirmed-and-r06-evidence-unavailable",
+      "blob_sha": "0313875ed7c2be5dcab2dbfc5a62a6279cc9fb5f",
+      "start_line": 1125,
+      "end_line": 1127
     }
   },
   "product": {
@@ -134,31 +134,31 @@
     }
   },
   "task": {
-    "id": "P4-E2-R06-READINESS-20261128",
+    "id": "P4-E2-CANDIDATE-PREP-DECISION-20261128",
     "status": "BLOCKED",
-    "scope": "Owner availability/evidence intake following approved preparation; no execution or fresh inspection.",
-    "blocker": "Existing hosted artifact listings empty; actual owner-held QA kit, compatible verified runtime and 0.6B candidate unknown, exact quality/positive settlement gaps and rights unresolved; historical writer evidence not supplied, prospective G2 proof blocked.",
-    "next_action": "Ask owner only whether previously held QA kit/pinned runtime/0.6B candidate and independent incident-time writer evidence already exist (yes/no/unknown; no raw paths, logs, scans or commands). Then review exact feasible candidate/readiness or separate explicit bounded preparation decision; preserve G2/R06 holds and all product requirements. No acquisition, native/model execution, owner-device operations, retries or phase advance.",
+    "scope": "Owner decision on finite disarmed candidate-specific source preparation; no execution or owner data access.",
+    "blocker": "Owner-held assets reported available but exact identity/independent runtime inventory and rights not verified; existing production verifier refuses, alternate CLI misses fifth quality case and positive settlement. R06 historical incident-time evidence unavailable.",
+    "next_action": "Request explicit narrow approval for finite disarmed candidate contract preparation using existing verifier/evaluator/owned supervision seams, independently reviewed expected identities and notices, all five quality cases and positive settlement. Stop with no-go if unsupported; no bypass, acquisition, installation, native/model run or local access. Retain R06 historical strict failure/writer unknown and open disposition, prospective G2 hold.",
     "next_action_kind": "OWNER_DECISION",
     "after": [
-      "Resolve existing artifact availability and independent pre-use rights/identity/settlement; one finite candidate assessment contract, no threshold reduction or repeat of 1.7B experiment; separate exact preparation/execution authority before E2-B/C/D/E.",
-      "Retain R06.1 strict historical failure/writer unknown; only already-existing incident-time evidence or explicit owner disposition with no waiver. R06.2 full endpoint plus independently attributable interval proof only after supported G2 method and separately approved native scope.",
-      "Resolve C5 rows 5–8, D1/D2, G2, R02.5/R02.6 and original E2/R06 checks; Gate C before real prediction; P4 closure only on all governing evidence and owner signoff."
+      "If explicitly approved, review independently sourced existing provenance and supervision seams; prepare only minimal detached candidate-specific source/assertions if supported, without production gate change. Separate exact owner-file verification and execution approvals remain mandatory.",
+      "R06.1 no further speculative attribution; explicit owner disposition preserving historical failure/unknown writer; R06.2 full independent interval proof remains G2 and exact owner-device approval dependent.",
+      "Retain C5 rows 5–8, D1/D2, G2, R02.5/R02.6, E2 and R06 requirements; no phase advance or installer until qualifying evidence and signoff."
     ],
     "read": [
       {
         "path": "docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md",
-        "anchor": "28-november--e2-and-r06-consolidated-preparation-and-finite-readiness-decision",
-        "blob_sha": "1f3c53887954b0abc8c46ff38720744796b33d87",
-        "start_line": 180,
-        "end_line": 220
+        "anchor": "28-november--owner-held-asset-availability-and-exact-e2-readiness-boundary",
+        "blob_sha": "d0d8384ecfd2b2d68aef0119808bc4442e96e980",
+        "start_line": 222,
+        "end_line": 245
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "28-november--owner-approved-e2-and-r06-preparation-and-readiness-holds",
-        "blob_sha": "48e3f35f1cab74c6a5d305d91117e41971507314",
-        "start_line": 1121,
-        "end_line": 1123
+        "anchor": "28-november--owner-held-e2-assets-confirmed-and-r06-evidence-unavailable",
+        "blob_sha": "0313875ed7c2be5dcab2dbfc5a62a6279cc9fb5f",
+        "start_line": 1125,
+        "end_line": 1127
       },
       {
         "path": "docs/P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md",
@@ -218,17 +218,17 @@
     ]
   },
   "operation": {
-    "id": "P4-E2-R06-PREP-20261128",
+    "id": "P4-E2-R06-AVAILABILITY-20261128",
     "state": "RECONCILED",
-    "starting_sha": "108b38a09177c41fc9fdbfcfa6c1936e9ecad635",
-    "outcome": "Preparation completed. Existing pinned 0.6B candidate recommended for finite assessment only; source and artifact availability/rights/settlement gaps preclude execution. R06 historical writer unknown, prospective G2 proof blocked. No acceptance delta.",
+    "starting_sha": "04db95d6731dc12def7c4f418138cd7f0ba26176",
+    "outcome": "Owner confirms prior QA builds, 1.7B/runtime and 0.6B available, no incident-time evidence. E2-A intake complete; E2-B source review finds production refusal and independent inventory/rights/quality/settlement holds. R06 writer unknown; no further speculative intake. No acceptance delta.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "28-november--owner-approved-e2-and-r06-preparation-and-readiness-holds",
-      "blob_sha": "48e3f35f1cab74c6a5d305d91117e41971507314",
-      "start_line": 1121,
-      "end_line": 1123
+      "anchor": "28-november--owner-held-e2-assets-confirmed-and-r06-evidence-unavailable",
+      "blob_sha": "0313875ed7c2be5dcab2dbfc5a62a6279cc9fb5f",
+      "start_line": 1125,
+      "end_line": 1127
     }
   },
   "authority": {
@@ -751,6 +751,20 @@
       }
     ],
     "evidence": [
+      {
+        "path": "docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md",
+        "anchor": "28-november--owner-held-asset-availability-and-exact-e2-readiness-boundary",
+        "blob_sha": "d0d8384ecfd2b2d68aef0119808bc4442e96e980",
+        "start_line": 222,
+        "end_line": 245
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "28-november--owner-held-e2-assets-confirmed-and-r06-evidence-unavailable",
+        "blob_sha": "0313875ed7c2be5dcab2dbfc5a62a6279cc9fb5f",
+        "start_line": 1125,
+        "end_line": 1127
+      },
       {
         "path": "docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md",
         "anchor": "28-november--e2-and-r06-consolidated-preparation-and-finite-readiness-decision",
