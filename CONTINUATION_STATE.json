@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "DLA-PRODUCT-FIRST-COURSE-CORRECTION-20261128",
-    "parent_sha": "e45568a70fbe781b4717b4204c8ed65cea220910",
-    "previous_snapshot_sha": "e45568a70fbe781b4717b4204c8ed65cea220910",
-    "scope": "Finite refusal diagnosis, concrete upstream Windows runtime rights concern and product-first consolidated alternative route; documentation only",
+    "operation_id": "P4-DLA-FINITE-REVIEW-AND-LOCAL-COVERAGE-20261128",
+    "parent_sha": "31b002060648734a62d3775931bd8a35e2de0642",
+    "previous_snapshot_sha": "31b002060648734a62d3775931bd8a35e2de0642",
+    "scope": "Finite DLA existing-input readiness disposition and detached Local analytics missingness coverage correction; live docs/state only",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "blob_sha": "0f7ba7c0cddc1db92301393cebb1a885b89b9a2e",
-      "anchor": "28-november--product-first-dla-course-correction-and-pinned-windows-runtime-rights-concern",
-      "start_line": 1223,
-      "end_line": 1231
+      "blob_sha": "b4e4eb914188e91b5f61731ae25f9bc8a880d850",
+      "anchor": "28-november--finite-dla-build-readiness-hold-and-local-analytics-coverage-candidate",
+      "start_line": 1233,
+      "end_line": 1241
     }
   },
   "product": {
@@ -132,23 +132,24 @@
     }
   },
   "task": {
-    "id": "P4-DLA-CONSOLIDATED-BUILD-EVALUATE-READINESS-20261128",
-    "status": "READY",
-    "scope": "One finite existing-input review for a concrete standard pinned upstream CPU-only build-and-model-evaluation scope; no new collector, acquisition, native execution or method adoption.",
-    "next_action": "Use existing C5 input evidence to determine whether one supported exact pinned upstream CPU-only llama-server build (OpenMP/dynamic backends/UI off) and Granite-first evaluation can be proposed with verified inputs/rights, exact model identity and actual safe settlement, original cases and limits. No repeat archive inspection, metadata polling, speculative tooling or unchanged tests. If unavailable, park DLA and choose independent concrete authorised P4 closure work; no execution until one exact consolidated approval and any necessary explicit method decision.",
-    "next_action_kind": "PREPARATION",
+    "id": "P4-CONSOLIDATED-FUNCTIONAL-REGRESSION-READINESS-20261128",
+    "status": "BLOCKED",
+    "scope": "Existing independent Explore and Local analytics missingness candidates: preserve both, consolidate affected numerical/API and browser checks only after applicable C5 pre-use; no live integration or restricted execution.",
+    "blocker": "C5 use-specific dependency integrity/rights/compatible environment and exact functional regression execution authority remain missing; DLA additionally lacks immutable Granite identity, qualified Windows build inputs and positive settlement.",
+    "next_action_kind": "MISSING_EVIDENCE",
+    "next_action": "Resume only on material new C5 pre-use evidence or an exact viable owner-authorised consolidated functional scope; preserve e53ac8c and 541cbeb, do not rerun unchanged source suites. If blocked, choose an independently evidenced authorised P4 correctness defect, not speculative infrastructure. DLA parked until material new inputs or explicit owner decision.",
     "after": [
-      "Explore source-only verification passed; preserve 541cbeb and isolated disarmed ref. Functional numerical parity, React/browser stale recovery and physical memory comparison still gated by C5 pre-use and exact execution scope; no live merge or unchanged source rerun.",
-      "Retain critical early E2 physical R03.3/R03.4, original E-02/W07, R06 historical strict FAIL/UNKNOWN and prospective G2 hold. No automatic execution/fallback or owner-local access.",
-      "Retain C5 rows 5–8, D1/D2, all six P4 checks, Gate C; P5, installer and release remain unauthorised."
+      "Verify exact functional numerical/API and React/browser regressions for retained candidates when safe; no live merge until applicable pre-use and trigger audit.",
+      "Preserve early physical E2 R03.3/R03.4, original E-02/W07, R06 historical strict FAIL/UNKNOWN and prospective G2 hold.",
+      "Retain C5 rows 5–8, D1/D2, all six P4 checks and Gate C; P5, installer and release remain unauthorised."
     ],
     "read": [
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "blob_sha": "0f7ba7c0cddc1db92301393cebb1a885b89b9a2e",
-        "anchor": "28-november--product-first-dla-course-correction-and-pinned-windows-runtime-rights-concern",
-        "start_line": 1223,
-        "end_line": 1231
+        "blob_sha": "b4e4eb914188e91b5f61731ae25f9bc8a880d850",
+        "anchor": "28-november--finite-dla-build-readiness-hold-and-local-analytics-coverage-candidate",
+        "start_line": 1233,
+        "end_line": 1241
       },
       {
         "path": "docs/C5_CONSOLIDATED_COMPLETION_PLAN_2026-11-27.md"
@@ -157,80 +158,36 @@
         "path": "docs/PILOTODIN_PACKAGE_C_RESOURCE_TRUST_SPEC_2026-11-24.md"
       },
       {
-        "path": "docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md",
-        "blob_sha": "f4e16dd309adb7ec21a55faa24e628ad257dfe11",
-        "anchor": "28-november--dla-a-exact-candidate-metadata-and-bounded-evaluation-proposal",
-        "start_line": 428,
-        "end_line": 450
+        "path": "docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md"
       },
       {
-        "path": "docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md",
-        "blob_sha": "f4e16dd309adb7ec21a55faa24e628ad257dfe11",
-        "anchor": "28-november--universal-local-ai-directive"
+        "path": "docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md"
       },
       {
-        "path": "docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md",
-        "blob_sha": "581b9a6e040b698cd5d048804f8a67cc093132a9",
-        "anchor": "28-november-2026--owner-directed-universal-local-ai-architecture"
+        "path": "docs/PROJECT_STATUS_CURRENT.md"
       },
       {
-        "path": "docs/DOCUMENTATION_AUDIT_C5_D1_MIGRATION_2026-11-27.md",
-        "blob_sha": "1bbbd87b04dfd052c93b7bca1ae921daab444a10",
-        "anchor": "11-universal-local-ai-direction-and-documentation-audit-28-november-2026"
+        "path": "backend/verified_answers.py",
+        "blob_sha": "f19878b8289d77f780dd895b524964389d37e549"
       },
       {
-        "path": "docs/PROJECT_STATUS_CURRENT.md",
-        "blob_sha": "3a1560f1b0f89460b843b1edf6f88692b9edf239",
-        "anchor": "p4-engineering-scorecard"
-      },
-      {
-        "path": "docs/P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md"
-      },
-      {
-        "path": "docs/RESOURCE_AWARE_MODE_DESIGN.md"
-      },
-      {
-        "path": "desktop/offline_analytics_cases.py",
-        "blob_sha": "4b2e3e7a2733b60506df5f2d252506e9eafd400f"
-      },
-      {
-        "path": "desktop/verify_inference_assets.py",
-        "blob_sha": "ca74928616b07bd3e603713983b8f6a666536333"
-      },
-      {
-        "path": "desktop/verify_live_bundled_inference.py",
-        "blob_sha": "89ff96073a099cb01d961e8e074bf296685fe119"
-      },
-      {
-        "path": "backend/bundled_inference.py",
-        "blob_sha": "58c522cd6a529f060e4b39778174e4762b97f790"
-      },
-      {
-        "path": "backend/resource_admission.py",
-        "blob_sha": "8b8ebf06e4e530bad18799124e1020281c37d3d1"
-      },
-      {
-        "path": "frontend/src-tauri/src/resource_supervisor.rs",
-        "blob_sha": "1bb9adf7509f98ebe247a8b1dab247df478bba4f"
-      },
-      {
-        "path": "frontend/src-tauri/src/resource_shell.rs",
-        "blob_sha": "e95dabec912f979b025110b30b7e8f2ba67a91aa"
+        "path": "tests/test_p4_r03_verified_answers.py",
+        "blob_sha": "1a5bef990f4cac3bd8377da8562b087e3ac2f49a"
       }
     ]
   },
   "operation": {
-    "id": "DLA-PRODUCT-FIRST-COURSE-CORRECTION-20261128",
+    "id": "P4-DLA-FINITE-REVIEW-AND-LOCAL-COVERAGE-20261128",
     "state": "RECONCILED",
-    "starting_sha": "e45568a70fbe781b4717b4204c8ed65cea220910",
-    "outcome": "Old archive route parked, exact upstream debug_nonredist OpenMP rights concern identified; standard pinned CPU-only source-build option proposed, not adopted or executed. No acquisition or acceptance change.",
+    "starting_sha": "31b002060648734a62d3775931bd8a35e2de0642",
+    "outcome": "DLA parked after finite existing C5 input review; detached missingness coverage correction and two API regression methods prepared and read back; no tests run or live integration.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "blob_sha": "0f7ba7c0cddc1db92301393cebb1a885b89b9a2e",
-      "anchor": "28-november--product-first-dla-course-correction-and-pinned-windows-runtime-rights-concern",
-      "start_line": 1223,
-      "end_line": 1231
+      "blob_sha": "b4e4eb914188e91b5f61731ae25f9bc8a880d850",
+      "anchor": "28-november--finite-dla-build-readiness-hold-and-local-analytics-coverage-candidate",
+      "start_line": 1233,
+      "end_line": 1241
     }
   },
   "authority": {
@@ -712,6 +669,10 @@
       {
         "sha": "618128b9607e05e87e7db1fcf95cc7ed34ef9201",
         "scope": "Disarmed DLA archive-only inspection binding; five false job guards, driver false, before/driver pins disarmed. No branch/run/acquisition."
+      },
+      {
+        "sha": "e53ac8c1eb9f52d993b4d6b8feafcdbcf35acd14",
+        "scope": "P4 Local analytics missingness overview bounded coverage disclosure and two API regression methods; detached source candidate, exact diff readback only; no tests, activation or integration."
       }
     ]
   },
@@ -732,7 +693,8 @@
     "DLA Stage 1 generated Python tests passed 7/7 and syntax 6/6 at run 46167223621; no native compile/settlement, actual member/notice inventory, rights disposition, Granite immutable exact byte count or model qualification. Source run consumed/disarmed.",
     "Archive inspection exact disarmed binding 618128b prepared, actual service redirect/layout/member/notice receipt and rights review outstanding; 3 transport tests not run. Separate Windows MSVC/locked Cargo native validation inputs remain unresolved; Granite exact bytes/pointer held.",
     "DLA archive run 46169089369 terminal refused after 3/3 transport tests; zero inventory receipt, failure stage and actual GET/body counts unknown due generic exception handling. Both guards disarmed; grant consumed. No retry or rights/member acceptance. Granite size/pointer and native validation unresolved.",
-    "Pinned b10344 Windows CPU upstream recipe copies libomp from debug_nonredist; applicable rights and actual archive contents unresolved. Old inspection parked; alternative pinned upstream standard CPU-only source build proposed not adopted, exact build/model input and settlement readiness absent. No automatic retries or pre-use waiver."
+    "Pinned b10344 Windows CPU upstream recipe copies libomp from debug_nonredist; applicable rights and actual archive contents unresolved. Old inspection parked; alternative pinned upstream standard CPU-only source build proposed not adopted, exact build/model input and settlement readiness absent. No automatic retries or pre-use waiver.",
+    "DLA finite existing-input review confirms unqualified Windows C++/SDK/redist build graph, unknown exact Granite size/pointer and no positive settlement; park route, no retry/acquisition/build. Local analytics missingness overview coverage candidate e53ac8c remains detached, functional API checks and C5 pre-use pending; no acceptance delta."
   ],
   "context": {
     "protocol": {
@@ -807,6 +769,13 @@
       }
     ],
     "evidence": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "b4e4eb914188e91b5f61731ae25f9bc8a880d850",
+        "anchor": "28-november--finite-dla-build-readiness-hold-and-local-analytics-coverage-candidate",
+        "start_line": 1233,
+        "end_line": 1241
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "blob_sha": "0f7ba7c0cddc1db92301393cebb1a885b89b9a2e",
