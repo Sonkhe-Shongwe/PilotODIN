@@ -1,0 +1,11 @@
+{
+  "operation": "C5-DEV-VM-01-S1-STATIC-ONCE-20261128",
+  "source": "57c9f8dfc0057901f23a5b264123077bd8dad3d9",
+  "plan_blob": "b6494e0055c118019bd053a93ff9baebdae13c45",
+  "stage": "S1",
+  "attempt": 1,
+  "max_gets": 24,
+  "max_body_bytes": 104436509,
+  "minutes": 30,
+  "use_authorised": false
+}
