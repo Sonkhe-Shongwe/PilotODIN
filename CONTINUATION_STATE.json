@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "P4-E2-R06-AVAILABILITY-20261128",
-    "parent_sha": "04db95d6731dc12def7c4f418138cd7f0ba26176",
-    "previous_snapshot_sha": "04db95d6731dc12def7c4f418138cd7f0ba26176",
-    "scope": "Owner resource availability intake and exact existing-source E2-B readiness review only; no expanded authority.",
+    "operation_id": "PERF-V2-20261128",
+    "parent_sha": "3ccd947630e2877e2520ac7be838810227f672de",
+    "previous_snapshot_sha": "3ccd947630e2877e2520ac7be838810227f672de",
+    "scope": "Owner-requested documentation and implementation readiness; consolidate performance and footprint direction, no expanded execution authority.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "28-november--owner-held-e2-assets-confirmed-and-r06-evidence-unavailable",
-      "blob_sha": "0313875ed7c2be5dcab2dbfc5a62a6279cc9fb5f",
-      "start_line": 1125,
-      "end_line": 1127
+      "anchor": "28-november--product-first-v2-performance-and-footprint-directive-consolidated",
+      "blob_sha": "b8cda837b014dea9477ebf0c6ab48cc30ad0719e",
+      "start_line": 1129,
+      "end_line": 1131
     }
   },
   "product": {
@@ -134,31 +134,53 @@
     }
   },
   "task": {
-    "id": "P4-E2-CANDIDATE-PREP-DECISION-20261128",
-    "status": "BLOCKED",
-    "scope": "Owner decision on finite disarmed candidate-specific source preparation; no execution or owner data access.",
-    "blocker": "Owner-held assets reported available but exact identity/independent runtime inventory and rights not verified; existing production verifier refuses, alternate CLI misses fifth quality case and positive settlement. R06 historical incident-time evidence unavailable.",
-    "next_action": "Request explicit narrow approval for finite disarmed candidate contract preparation using existing verifier/evaluator/owned supervision seams, independently reviewed expected identities and notices, all five quality cases and positive settlement. Stop with no-go if unsupported; no bypass, acquisition, installation, native/model run or local access. Retain R06 historical strict failure/writer unknown and open disposition, prospective G2 hold.",
-    "next_action_kind": "OWNER_DECISION",
+    "id": "P4-PERF-O1-BASELINE-HOTPATH-AUDIT-20261128",
+    "status": "READY",
+    "scope": "Finite read-only source/evidence audit of existing P4 performance and footprint seams; one actionable defect or no-go, no implementation or execution inferred.",
+    "blocker": null,
+    "next_action": "Perform O1 at live verified HEAD: reuse recorded physical/worker/installer baseline, inspect exact dataset materialisation/import/previews, workspace/cache, ML parallelism, coordinator/supervisor and historical packaging seams. Rank by evidence; return one smallest independently actionable scoped P4 correction with exact paths/tests/triggers and rollback contract, or finite no-go. No new tests/CI, acquisition, install, native/model run, local access, dependency/threshold change, or new framework during audit. Do not repeat completed historical diagnostics.",
+    "next_action_kind": "PREPARE",
     "after": [
-      "If explicitly approved, review independently sourced existing provenance and supervision seams; prepare only minimal detached candidate-specific source/assertions if supported, without production gate change. Separate exact owner-file verification and execution approvals remain mandatory.",
-      "R06.1 no further speculative attribution; explicit owner disposition preserving historical failure/unknown writer; R06.2 full independent interval proof remains G2 and exact owner-device approval dependent.",
-      "Retain C5 rows 5–8, D1/D2, G2, R02.5/R02.6, E2 and R06 requirements; no phase advance or installer until qualifying evidence and signoff."
+      "If actual independently actionable P4 source defect is established, proceed only under existing scoped authority after exact trigger review and write-ahead as applicable; separately scope candidate-specific E2 preparation where required, with independent runtime inventory/rights, five quality cases and positive settlement. No bypass of production verifier or automatic model run.",
+      "Retain early E2 R03.3/R03.4 mandatory physical gates, historical R06.1 strict failure/unknown writer and R06.2 prospective G2 hold; no silent model/threshold/acceptance adoption, no P5 or installer.",
+      "Sequence O4–O10 only when supported by actual measurements and applicable phase/authority; C5 rows 5–8, D1/D2, R02.5/R02.6 and Gate C before qualifying closure/use."
     ],
     "read": [
       {
         "path": "docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md",
-        "anchor": "28-november--owner-held-asset-availability-and-exact-e2-readiness-boundary",
-        "blob_sha": "d0d8384ecfd2b2d68aef0119808bc4442e96e980",
-        "start_line": 222,
-        "end_line": 245
+        "anchor": "28-november--product-first-v2-performance-resource-efficiency-and-footprint-directive",
+        "blob_sha": "b135f1d8f09300f6ef492f1ba27b7a07d7326872",
+        "start_line": 247,
+        "end_line": 304
       },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "anchor": "28-november--owner-held-e2-assets-confirmed-and-r06-evidence-unavailable",
-        "blob_sha": "0313875ed7c2be5dcab2dbfc5a62a6279cc9fb5f",
-        "start_line": 1125,
-        "end_line": 1127
+        "anchor": "28-november--product-first-v2-performance-and-footprint-directive-consolidated",
+        "blob_sha": "b8cda837b014dea9477ebf0c6ab48cc30ad0719e",
+        "start_line": 1129,
+        "end_line": 1131
+      },
+      {
+        "path": "docs/RESOURCE_AWARE_MODE_DESIGN.md",
+        "anchor": "physical-everyday-ram-retest-result",
+        "blob_sha": "893f592b2dfeabdb68185d9bb85ac70a21bf309e",
+        "start_line": 63,
+        "end_line": 79
+      },
+      {
+        "path": "backend/resource_admission.py"
+      },
+      {
+        "path": "frontend/src/UnifiedShell.tsx"
+      },
+      {
+        "path": "backend/quality.py"
+      },
+      {
+        "path": "backend/import_preflight.py"
+      },
+      {
+        "path": "desktop/Build_Python_Sidecar.ps1"
       },
       {
         "path": "docs/P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md",
@@ -218,17 +240,17 @@
     ]
   },
   "operation": {
-    "id": "P4-E2-R06-AVAILABILITY-20261128",
+    "id": "PERF-V2-20261128",
     "state": "RECONCILED",
-    "starting_sha": "04db95d6731dc12def7c4f418138cd7f0ba26176",
-    "outcome": "Owner confirms prior QA builds, 1.7B/runtime and 0.6B available, no incident-time evidence. E2-A intake complete; E2-B source review finds production refusal and independent inventory/rights/quality/settlement holds. R06 writer unknown; no further speculative intake. No acceptance delta.",
+    "starting_sha": "3ccd947630e2877e2520ac7be838810227f672de",
+    "outcome": "Performance architecture and O1–O10 backlog consolidated against owner blueprint, existing V2 and verified historical measurements; O1 finite read-only audit READY. No product change or acceptance delta.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "28-november--owner-held-e2-assets-confirmed-and-r06-evidence-unavailable",
-      "blob_sha": "0313875ed7c2be5dcab2dbfc5a62a6279cc9fb5f",
-      "start_line": 1125,
-      "end_line": 1127
+      "anchor": "28-november--product-first-v2-performance-and-footprint-directive-consolidated",
+      "blob_sha": "b8cda837b014dea9477ebf0c6ab48cc30ad0719e",
+      "start_line": 1129,
+      "end_line": 1131
     }
   },
   "authority": {
@@ -751,6 +773,20 @@
       }
     ],
     "evidence": [
+      {
+        "path": "docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md",
+        "anchor": "28-november--product-first-v2-performance-resource-efficiency-and-footprint-directive",
+        "blob_sha": "b135f1d8f09300f6ef492f1ba27b7a07d7326872",
+        "start_line": 247,
+        "end_line": 304
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "28-november--product-first-v2-performance-and-footprint-directive-consolidated",
+        "blob_sha": "b8cda837b014dea9477ebf0c6ab48cc30ad0719e",
+        "start_line": 1129,
+        "end_line": 1131
+      },
       {
         "path": "docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md",
         "anchor": "28-november--owner-held-asset-availability-and-exact-e2-readiness-boundary",
