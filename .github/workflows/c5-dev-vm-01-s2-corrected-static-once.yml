@@ -1,67 +1,12 @@
-# One-use approved static evidence only; no package consumption.
-name: C5 DEV-VM-01 S2 corrected two-wheel static inspection once
+# Consumed corrected S2 static inspection; intentionally non-executable.
+name: C5 DEV-VM-01 S2 corrected static inspection (consumed)
 on:
-  push:
-    branches: [feature/live-dev-workspace-20261023]
-    paths:
-      - 'qa/c5_managed_dev/APPROVAL_DEV_VM_01_S2_CORRECTED_STATIC_20261128.json'
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
-  static-inspection-once:
-    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/feature/live-dev-workspace-20261023' && github.run_attempt == 1 }}
+  consumed:
+    if: ${{ false }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
     steps:
-      - name: Checkout exact activation for marker only
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-        with:
-          ref: ${{ github.sha }}
-          path: activation
-          persist-credentials: false
-          fetch-depth: 2
-      - name: Verify exact one-use activation
-        shell: bash
-        run: |
-          set -euo pipefail
-          test "$GITHUB_RUN_ATTEMPT" = 1
-          test "$GITHUB_EVENT_NAME" = push
-          test "$(git -C activation rev-parse HEAD)" = "$GITHUB_SHA"
-          test "$(git -C activation hash-object 'qa/c5_managed_dev/APPROVAL_DEV_VM_01_S2_CORRECTED_STATIC_20261128.json')" = '9e5d30a1b20598228da4a5ae2ffa39e7ff5e73e5'
-          expected="$(printf '%s\n' '.github/workflows/c5-dev-vm-01-s2-corrected-static-once.yml' 'qa/c5_managed_dev/APPROVAL_DEV_VM_01_S2_CORRECTED_STATIC_20261128.json' | sort)"
-          actual="$(git -C activation diff-tree --no-commit-id --name-only -r HEAD | sort)"
-          test "$actual" = "$expected"
-      - name: Checkout exact detached inspection source
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-        with:
-          ref: '4b280869aa38c29bd7f6d3fe0c58737a5190a7a1'
-          path: source
-          persist-credentials: false
-          fetch-depth: 1
-      - name: Verify immutable source and input pins
-        shell: bash
-        run: |
-          set -euo pipefail
-          test "$(git -C source rev-parse HEAD)" = '4b280869aa38c29bd7f6d3fe0c58737a5190a7a1'
-          test "$(git -C source rev-parse 'HEAD^{tree}')" = 'd4f88cd50d78361a36129ec361ab71f3453bfbed'
-          test "$(git -C source hash-object 'qa/c5_managed_dev/dev_vm_01_s2_static.py')" = 'e8846c53179bfbadddb3b605cdbdd9e24384fc87'
-          test "$(git -C source hash-object 'qa/c5_managed_dev/test_dev_vm_01_s2_static.py')" = 'd0f3ec49487b651e28436925f985c94dca1088ba'
-          test "$(git -C source hash-object 'qa/c5_managed_dev/dev_vm_01_static.py')" = '1c9869ce330e4c8ecd4d6b50310472c63b41b9b3'
-          test "$(git -C source hash-object 'qa/c5_managed_dev/inspection_adapter.py')" = '27d33b4848ca5a1b5225ad6968102bacf32cb561'
-          test "$(git -C source hash-object 'qa/c5_managed_dev/inspection_core.py')" = '768cbb6b57974c78f01539087cbad7ed995f749c'
-          test "$(git -C source hash-object 'qa/c5_managed_dev/inspection_driver.py')" = '76aa2ad54c7006a7236eecb266ddbd26e691db49'
-          test "$(git -C source hash-object 'qa/c5_managed_dev/dev_vm_01_functional_inputs.PROPOSED.json')" = 'ff1ffdf48817bf86fb6cb0cf4c64b35f6a026e08'
-          test "$(git -C source hash-object 'qa/c5_managed_dev/font_name_diagnostics.py')" = '42bc9d3f4de6934decd935dca4331b732dbfd039'
-          test "$(git -C source hash-object 'qa/c5_managed_dev/test_font_name_diagnostics.py')" = '6b84c1e82be63606d2a41e8cd9bf8ccd191800a0'
-      - name: Generated source contracts before any transfer
-        working-directory: source
-        shell: bash
-        run: |
-          set -euo pipefail
-          /usr/bin/python3.12 -B -m unittest -v qa.c5_managed_dev.test_dev_vm_01_s2_static qa.c5_managed_dev.test_font_name_diagnostics
-      - name: Targeted static inspection only
-        working-directory: source
-        shell: bash
-        run: |
-          set -euo pipefail
-          /usr/bin/python3.12 -B -m qa.c5_managed_dev.dev_vm_01_s2_static "$GITHUB_WORKSPACE/activation/qa/c5_managed_dev/APPROVAL_DEV_VM_01_S2_CORRECTED_STATIC_20261128.json" '4b280869aa38c29bd7f6d3fe0c58737a5190a7a1'
+      - run: exit 1
