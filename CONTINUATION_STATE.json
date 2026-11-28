@@ -6,16 +6,16 @@
   },
   "checkpoint": {
     "operation_id": "C5-DEV-VM-01-S1-STATIC-ONCE-20261128",
-    "parent_sha": "05ca374fc3b0b611b1bc689e2bbfb935f2628efb",
-    "previous_snapshot_sha": "05ca374fc3b0b611b1bc689e2bbfb935f2628efb",
-    "scope": "One S1 static-only disposable Ubuntu24.04 job, 30min, 24 direct GETs, 104436509 accepted body bytes, eight generated tests, no redirects/retries/installs or use; exact source/tree/workflow/marker in receipt.",
-    "state": "PREPARED",
+    "parent_sha": "e14b89236197976a7e666684a3ec554f7671b11c",
+    "previous_snapshot_sha": "02768780eb64106f9b07f8d649516abefbfa5e6e",
+    "scope": "Terminal S1 static facts pass; exact receipt preserved and one-use disarm",
+    "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "blob_sha": "52e55aed7573faa93b6a1a6a4b35b09638f0976c",
-      "anchor": "28-november--dev-vm-01-s1-owner-approved-write-ahead",
-      "start_line": 1279,
-      "end_line": 1281
+      "blob_sha": "65f8eaadd83abc5ec3fdcc9cf8a15e75061a8604",
+      "anchor": "28-november--dev-vm-01-s1-static-inspection-pass-and-disarm",
+      "start_line": 1283,
+      "end_line": 1287
     }
   },
   "product": {
@@ -132,31 +132,32 @@
     }
   },
   "task": {
-    "id": "C5-DEV-VM-01-S1-STATIC-ONCE-20261128",
-    "status": "PREPARED",
-    "scope": "First static-only stage of 0f454aa consolidated C5 batch targeting bb46e49. Exact inert binding 7ffef75c9c6025d41c7e62e9a054414cff70c3ed, source 57c9f8dfc0057901f23a5b264123077bd8dad3d9.",
-    "blocker": "",
-    "next_action_kind": "EXECUTION",
-    "next_action": "Verify write-ahead checkpoint and expected HEAD; publish exactly two bound activation paths, reconcile exact run and disarm, no automatic downstream use.",
+    "id": "C5-DEV-VM-01-S2-PREUSE-AND-OVERLAY-20261128",
+    "status": "READY",
+    "scope": "S2 review of actual S1 facts at exact receipt blob 02ce4c6d821bae913691d0a5501fe516df2fd908 and conditional dependency overlays targeting bb46e49; complete exact applicable pre-use and consolidated Windows/Linux regression preparation.",
+    "blocker": "No installation or functional execution authority; rights/security/component/linkage, exact compatible overlay/locks, PDFium equivalence, mounted ODIN test and final functional workflow remain unverified.",
+    "next_action_kind": "PREPARATION",
+    "next_action": "Use actual 24-row S1 receipt and historical pinned evidence to disposition applicable rights/security/compatibility and prepare exact dependency overlay; no repeat identical inspection. Prepare actual mounted local ODIN stale/version/continuation tests and final source-pinned Windows/Linux functional scope. Stop on genuine unresolved use hold, request only exact bounded functional execution authority when viable.",
     "after": [
-      "Review actual S1 facts; reconcile ReportLab/PDFium/Playwright overlay and complete use-specific rights/security/compatibility, mounted ODIN browser test and exact final Windows/Linux functional scope, no automatic package consumption.",
-      "Execute consolidated functional stages only on reviewed exact authority; preserve all original C5 eight-row conditions and six P4 checks.",
-      "Preserve early physical E2, R06 historical FAIL/UNKNOWN, G2 and Gate C; DLA parked, P5/installer/release unauthorised."
+      "Verify consolidated functional Windows/Linux synthetic stages only when applicable pre-use and exact authority satisfied; no auto-use or live merge.",
+      "Close C5 and award only qualifying original evidence; all six P4 and native D/G2/E2/8GB/Gate C requirements preserved.",
+      "DLA parked; P5/installer/release remain unauthorised."
     ],
     "read": [
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "blob_sha": "52e55aed7573faa93b6a1a6a4b35b09638f0976c",
-        "anchor": "28-november--dev-vm-01-s1-owner-approved-write-ahead",
-        "start_line": 1279,
-        "end_line": 1281
+        "blob_sha": "65f8eaadd83abc5ec3fdcc9cf8a15e75061a8604",
+        "anchor": "28-november--dev-vm-01-s1-static-inspection-pass-and-disarm",
+        "start_line": 1283,
+        "end_line": 1287
       },
       {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "blob_sha": "4f698f7f6a13984734bda211b7b035db1c2e4e9f",
-        "anchor": "28-november--dev-vm-01-s1-exact-static-inspection-binding",
-        "start_line": 1271,
-        "end_line": 1277
+        "path": "docs/C5_DEV_VM_01_S1_RECEIPT_46174130791.json",
+        "blob_sha": "02ce4c6d821bae913691d0a5501fe516df2fd908"
+      },
+      {
+        "path": "docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md",
+        "anchor": "28-november-2026--owner-approved-product-first-v3-directive-01-and-dev-vm-01"
       },
       {
         "path": "docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md",
@@ -188,54 +189,23 @@
   },
   "operation": {
     "id": "C5-DEV-VM-01-S1-STATIC-ONCE-20261128",
-    "state": "PREPARED",
+    "state": "RECONCILED",
     "starting_sha": "05ca374fc3b0b611b1bc689e2bbfb935f2628efb",
-    "scope": "One S1 static-only disposable Ubuntu24.04 job, 30min, 24 direct GETs, 104436509 accepted body bytes, eight generated tests, no redirects/retries/installs or use; exact source/tree/workflow/marker in receipt.",
-    "intended_paths": [
-      ".github/workflows/c5-dev-vm-01-s1-once.yml",
-      "qa/c5_managed_dev/APPROVAL_DEV_VM_01_S1_20261128.json"
-    ],
-    "authority_ref": {
-      "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "blob_sha": "52e55aed7573faa93b6a1a6a4b35b09638f0976c",
-      "anchor": "28-november--dev-vm-01-s1-owner-approved-write-ahead",
-      "start_line": 1279,
-      "end_line": 1281
-    },
-    "expected_evidence": "Exact push run attempt1 and single job; generated test counts, host preflight, bounded static fact receipt or refusal and known disarm.",
-    "recovery": "Inspect actual branch/diff, all-event runs by activation SHA, job/attempt/receipt; no replay. If unknown, retain restricted grant unavailable until reconciled.",
-    "reconcile_before_retry": true,
+    "outcome": "Run 46174130791 attempt 1 job 141068883296 terminal SUCCESS; eight generated tests, 24/24 accepted static fact records, 103251254 accepted body bytes; receipt length/SHA256 and identity verified. No dependency consumption or acceptance credit. One-use disarm.",
+    "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "blob_sha": "52e55aed7573faa93b6a1a6a4b35b09638f0976c",
-      "anchor": "28-november--dev-vm-01-s1-owner-approved-write-ahead",
-      "start_line": 1279,
-      "end_line": 1281
+      "blob_sha": "65f8eaadd83abc5ec3fdcc9cf8a15e75061a8604",
+      "anchor": "28-november--dev-vm-01-s1-static-inspection-pass-and-disarm",
+      "start_line": 1283,
+      "end_line": 1287
     }
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next. Owner-approved GitHub-only development installation and bounded technical autonomy amendment applies within exact approved batches; no broader authority.",
     "preparation_only": "Owner approved consolidated shared-bundle disarmed acquisition-before-signature source and exact limited existing host bootstrap; owner approved proposed limited local Docker control-plane and host-derived rootfs trust/no-pull isolation method for preparation only. Authentication before extraction/use; no Docker invocation, acquisition, verification execution, installation or live cutover authorised. Owner approved bounded first-collision encoded public member-path diagnostic preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-bounded-first-collision-diagnostic-preparation-only. No restricted execution authority. Owner approved finite exact Linux data-only terminfo inventory policy and bounded receipt projection as proposed in 8cc1a696, preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-finite-exact-linux-terminfo-inventory-policy-and-bounded-receipt-preparation-only. Strict Windows/gh and other safeguards unchanged; no acquisition, extraction or restricted execution. Owner explicitly approved preparation and static/synthetic verification only of Approach C observation-only candidate (11 fixed roles, five minutes); no restricted execution, acquisition, Docker invocation or active policy change. Exact reference in C5 spec owner-approved-bounded-approach-c-observation-candidate-preparation-only. Owner approved Approach C metadata-only preparation/static/synthetic verification under 13 GET/10-minute proposed limits; no actual acquisition, package downloads, installation, Docker invocation, restricted execution or active trust policy change. Exact spec anchor owner-approved-bounded-approach-c-metadata-only-preparation-and-synthetic-core. Owner approved narrow metadata bootstrap preparation on existing two reviewed images including GnuPG/necessary existing dependencies, no acquisition/restricted execution/integrated verification/active policy change, original 13 GET/10 min bounds. Exact spec anchor owner-approved-narrow-metadata-bootstrap-preparation-and-finite-key-evidence-contract. Owner approved two-stage key/metadata sequence preparation including bounded public signing-key private repository retention proposal, combined 13 GET/600s/256 MiB; no actual acquisition, restricted execution or active policy change. Exact spec anchor owner-approved-two-stage-preparation-and-consolidated-custody-core. Owner approved exact C-D09 managed-development CI evidence rationalisation at proposal 2cbed51, recorded in C5 implementation spec; limited bootstrap trust and residual risk accepted, prepare concrete bounded validation candidate only, no acquisition, installation, restricted execution, migration, new expenditure or phase advancement. Owner approved one-time C5 proportionate publisher-first inspection method (okay lets try that), recorded at docs/C5_PROPORTIONATE_INSPECTION_DECISION_2026-11-27.md; no new restricted authority or acceptance waiver. Owner explicitly approved standalone Windows Stage A preparation preserving all security and acceptance requirements; see docs/C5_STANDALONE_WINDOWS_A_PREPARATION_2026-11-27.md. No restricted execution grant. Owner explicitly approved exact Astral CPython 3.11.18 Windows x64 candidate for standalone Stage A preparation only; docs/C5_WINDOWS_A_ASTRAL_PREPARATION_2026-11-27.md. No new restricted grant. Owner explicitly approved simplified C5 applicability-based development policy and preparation of consolidated Stage A transaction; see ENGINEERING_DECISIONS_CURRENT.md section 27-november--owner-approved-c5-applicability-policy-and-consolidated-stage-a-transaction. No restricted authority or acceptance waiver. Owner explicitly approved bounded G2 equivalent evidence feasibility assessment and design only; see ENGINEERING_DECISIONS_CURRENT.md section 27-november--g2-equivalent-evidence-feasibility-and-design-disposition. Assessment complete, no implementation, live method adoption or restricted execution authority. Owner adopted aggressive product-first framework (okay lets follow you new frame work); PRODUCT-FIRST-20261127 in phase policy. Independent concrete scoped P4 source work and narrowly rationalised standard C5 control metadata preparation, no new restricted execution grant. Owner approved preparation of bounded browser-only GitHub verification (okay do ti); detached 26ab490, no activation/acquisition/execution grant; exact receipt in engineering decisions. Owner approved proceeding with corrected Chrome .88 and Playwright 1.65.1 alternative (do it), exact candidate 920df39 prepared; no exact bounded activation grant yet; preserve original locks. Owner explicitly approved isolated ReportLab 5.1.2 evaluation and coordinated dependency-range and lock preparation, preserving all security, acceptance and execution boundaries; exact owner decision in ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-isolated-reportlab-512-projections-and-metadata-holds. Detached 4dd5525 data-only proposal; no acquisition, installation, execution or live adoption authority. Owner explicitly approved reduced 24-artifact static inspection scope and exact execution-binding preparation, 24 direct GETs/104436509 bytes/30 minutes/one attempt/no redirects or retries, preserving all boundaries; ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-reduced-static-receipt-and-custody-binding-preparation. Preparation only; no actual GET, dispatch or installation authority. Owner explicitly approved preparation of bounded read-only hosted cgroup v2 feasibility observation, five minutes, one attempt, zero package downloads, no privilege or security changes; ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-read-only-cgroup-feasibility-preparation. No actual observation/dispatch or acquisition authority. Owner approved isolated method evaluation/preparation, prioritising existing provider isolation or constrained cgroup subtree; no execution/privileged operations/security modification/package acquisition without distinct authority; ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-isolated-method-evaluation-and-system-manager-projection. Owner explicitly approved preparation of proportionate Managed Hosted Tool Assurance as narrow C-D09 extension: standard Ubuntu package checks, observed executable identities and same-job rechecks; no independent reconstructed managed executable manifests; preserve containment/settlement/trusted privileged startup/dependency integrity/rights/original data/acceptance. No privilege/acquisition/installation or active workflows until exact separate approval. See ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-managed-hosted-tool-assurance-and-disarmed-consolidated-candidate. Owner approved narrow systemd service quiet/diagnostic source correction and generated regression only (okay lets do that); exact detached 88cdf6d, no privileged run or evidence method change. Owner approved finite upstream-supported /run diagnostic/restructuring preparation (lets do it), detached 8bbfc5a; no exact restricted grant, no security weakening or live method adoption. Owner explicitly approved narrow exact named failed-unit reset correction preparation and generated regression only; fresh clean A may serve as prospective B gate, historical failure unchanged, separate exact execution/B authority mandatory; detached 9840f65/c6ed4df. Owner explicitly accepts limited host-runtime isolation objective rather than literal /run inaccessibility and approves narrow detached B observer/wrapper and targeted generated regression preparation only; a2fd5f54fea557c8f0794fecb63211e14e277160, receipt 28-november--owner-approved-detached-b-private-runtime-preparation-and-targeted-regression. No execution, activation, acquisition, installation or automatic B. Owner approved narrow strict cgroup topology verification correction and generated regression (okay lets do that); detached 35ae3127c3d10f8ea74d3f30df1df3571cc1a38c and inert binding a734fefb9f147d0095190d816e11df95eaecf604; no execution, activation, acquisition, installation, retries or automatic downstream work. Owner approved PRODUCT-FIRST V2 architecture direction and documentation cleanup (i approve also do a document, audit , clean uppdate, optimize (without losing key information)); finite C5/G2 and test coverage assessment only, no implementation or changed method/authority. See policy 28-november-2026--owner-approved-product-first-v2-architecture-direction. Owner explicitly approved proposed E2 and R06 engineering preparation, preserving all original requirements and approval boundaries; P4-E2-R06-PREP-20261128, see ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-e2-and-r06-preparation-and-readiness-holds. No native/model/acquisition/owner-device access, execution, workflow or method adoption authority. Owner explicitly approved focused dependency-free Explore regression preparation using existing P4 infrastructure and isolated development ref; binding 0264f7d77cc3f9c1b11e00a255e5742b10ea6e9f, PERF-EXPLORE-SOURCE-BINDING-20261128. No branch creation, workflow activation, dependency installation or restricted execution authority. Owner explicitly approved finite isolated Qwen3 0.6B source preparation using existing infrastructure, no acquisition/native execution/owner-device access; finite assessment reconciled NO-GO without implementation or tests, see docs/ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-qwen3-06b-finite-preparation-no-go. No restricted grant. Owner requested new Universal Local AI direction and documentation audit, DLA-DIRECTIVE-AUDIT-20261128. Prior narrow Qwen provenance/settlement preparation approval is recorded but parked, not transferable. Current Granite/Liquid direction and finite read-only readiness proposal only; exact adoption, evidence-method changes, execution, acquisition, native/model/owner access, integration and release require separate authority. Owner explicitly approved DLA Stage 1 isolated source preparation and proposed independent runtime-member expectation method at 6fcfa10; no artifact acquisition, native execution, owner-device access or production integration. Partial disarmed candidate a35e92936c95cebf33e4062863944c3fd92b6b4f retained; no new restricted grant, no transfer. Owner expressly approved DEV-VM-01 under PRODUCT-FIRST V3 (28 Nov), managed disposable ordinary synthetic CI risk and scope as policy section; prepare one consolidated bounded C5 batch targeting bb46e49. Development-only evidence-method change, no restricted execution authority; plan 0f454aa disarmed. Preserve all native product acceptance, dependency integrity, security and rights.",
-    "restricted_active": [
-      {
-        "id": "C5-DEV-VM-01-S1-STATIC-ONCE-20261128",
-        "state": "APPROVED",
-        "source_sha": "57c9f8dfc0057901f23a5b264123077bd8dad3d9",
-        "scope": "One S1 static-only disposable Ubuntu24.04 job, 30min, 24 direct GETs, 104436509 accepted body bytes, eight generated tests, no redirects/retries/installs or use; exact source/tree/workflow/marker in receipt.",
-        "owner_authority_ref": {
-          "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-          "blob_sha": "52e55aed7573faa93b6a1a6a4b35b09638f0976c",
-          "anchor": "28-november--dev-vm-01-s1-owner-approved-write-ahead",
-          "start_line": 1279,
-          "end_line": 1281
-        },
-        "reconcile_before_retry": true,
-        "binding_sha": "7ffef75c9c6025d41c7e62e9a054414cff70c3ed",
-        "workflow_blob": "9af3a6807479ea046bb1ba1f32bff93a92c4f9b2",
-        "marker_blob": "48ab72399190d5bb52cf00d7eb183b2d75fdd559"
-      }
-    ],
-    "consumed_disarmed_count": 67,
+    "restricted_active": [],
+    "consumed_disarmed_count": 68,
     "consumed_history": {
       "commit": "b9864b70fb9bb5a72d0f79c37f15b94100722192",
       "path": "docs/TAB_MIGRATION_HANDOFF_CURRENT.md",
@@ -759,7 +729,8 @@
     "Detached Local ODIN version-binding candidate 60d8c0d: actual API/browser/build regression and applicable C5 pre-use pending; legacy non-owned model prelaunch before HTTP and post-check freshness limits remain; not native or acceptance proof.",
     "Combined candidate bb46e49 is source-only; all three functional regression families, mounted ODIN race, C5 use-specific pre-use and settlement, exact execution authority and trigger audit remain pending. V3 not adopted.",
     "DEV-VM-01 accepted limited disposable CI residual risk, not native settlement or zero egress. 0f454aa is data-only; actual pre-use security/rights, ReportLab/@playwright/test facts, conditional PDFium equivalence, compatible tool/browser, final overlay/workflow and exact activation approval still pending. Earlier independent hosted containment holds superseded only for reviewed synthetic DEV-VM-01; preserve all native/physical proof.",
-    "DEV-VM-01 S1 exact inert binding 7ffef75: source tests and actual host/archives unexecuted; full trigger audit incomplete (15/130 read); strict parser/patch drift and receipt output may refuse, rights/security/linkage still held; S2-S4 not yet executable."
+    "DEV-VM-01 S1 exact inert binding 7ffef75: source tests and actual host/archives unexecuted; full trigger audit incomplete (15/130 read); strict parser/patch drift and receipt output may refuse, rights/security/linkage still held; S2-S4 not yet executable.",
+    "S1 24/24 static facts PASS, not use clearance; ReportLab exact metadata and @playwright/test identity measured, applicable licence/security/native component review, exact overlays and functional tests remain. No independent wire/host settlement claim, no retained wheelhouse."
   ],
   "context": {
     "protocol": {
@@ -834,6 +805,17 @@
       }
     ],
     "evidence": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "65f8eaadd83abc5ec3fdcc9cf8a15e75061a8604",
+        "anchor": "28-november--dev-vm-01-s1-static-inspection-pass-and-disarm",
+        "start_line": 1283,
+        "end_line": 1287
+      },
+      {
+        "path": "docs/C5_DEV_VM_01_S1_RECEIPT_46174130791.json",
+        "blob_sha": "02ce4c6d821bae913691d0a5501fe516df2fd908"
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "blob_sha": "52e55aed7573faa93b6a1a6a4b35b09638f0976c",

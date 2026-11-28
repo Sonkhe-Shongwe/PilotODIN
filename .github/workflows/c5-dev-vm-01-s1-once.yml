@@ -1,67 +1,11 @@
-# Proposed activation content only; never copy into .github/workflows without exact owner grant.
-name: C5 DEV-VM-01 S1 static inspection once
+name: C5 DEV-VM-01 S1 static inspection once (consumed)
 on:
-  push:
-    branches: [feature/live-dev-workspace-20261023]
-    paths:
-      - 'qa/c5_managed_dev/APPROVAL_DEV_VM_01_S1_20261128.json'
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
-  static-inspection-once:
-    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/feature/live-dev-workspace-20261023' && github.run_attempt == 1 }}
+  disarmed:
+    if: ${{ false }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
     steps:
-      - name: Checkout exact activation for marker only
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-        with:
-          ref: ${{ github.sha }}
-          path: activation
-          persist-credentials: false
-          fetch-depth: 2
-      - name: Verify exact one-use activation
-        shell: bash
-        run: |
-          set -euo pipefail
-          test "$GITHUB_RUN_ATTEMPT" = 1
-          test "$GITHUB_EVENT_NAME" = push
-          test "$(git -C activation rev-parse HEAD)" = "$GITHUB_SHA"
-          test "$(git -C activation hash-object 'qa/c5_managed_dev/APPROVAL_DEV_VM_01_S1_20261128.json')" = '48ab72399190d5bb52cf00d7eb183b2d75fdd559'
-          expected="$(printf '%s\n' '.github/workflows/c5-dev-vm-01-s1-once.yml' 'qa/c5_managed_dev/APPROVAL_DEV_VM_01_S1_20261128.json' | sort)"
-          actual="$(git -C activation diff-tree --no-commit-id --name-only -r HEAD | sort)"
-          test "$actual" = "$expected"
-      - name: Checkout exact detached inspection source
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-        with:
-          ref: '57c9f8dfc0057901f23a5b264123077bd8dad3d9'
-          path: source
-          persist-credentials: false
-          fetch-depth: 1
-      - name: Verify source, plan and immutable input pins
-        shell: bash
-        run: |
-          set -euo pipefail
-          test "$(git -C source rev-parse HEAD)" = '57c9f8dfc0057901f23a5b264123077bd8dad3d9'
-          test "$(git -C source rev-parse 'HEAD^{tree}')" = 'b714e96c43353839931366e61095ec1d8e8e8684'
-          test "$(git -C source hash-object 'qa/c5_managed_dev/dev_vm_01_static.py')" = '1c9869ce330e4c8ecd4d6b50310472c63b41b9b3'
-          test "$(git -C source hash-object 'qa/c5_managed_dev/test_dev_vm_01_static.py')" = '83dc24f3bccf7c41b25d1dea68780f7b94e40ddf'
-          test "$(git -C source hash-object 'qa/c5_managed_dev/inspection_driver.py')" = '76aa2ad54c7006a7236eecb266ddbd26e691db49'
-          test "$(git -C source hash-object 'qa/c5_managed_dev/inspection_adapter.py')" = '27d33b4848ca5a1b5225ad6968102bacf32cb561'
-          test "$(git -C source hash-object 'qa/c5_managed_dev/inspection_core.py')" = '768cbb6b57974c78f01539087cbad7ed995f749c'
-          test "$(git -C source hash-object 'qa/c5_managed_dev/test_reduced_inspection.py')" = '7be7af2e80614962347d752494f42e7a4af9ab69'
-          test "$(git -C source hash-object 'qa/c5_managed_dev/c5_staged_facts_reduced_20261128.PROPOSED.json')" = '07eadce32ee787c71a34829009d4a9f8b6711348'
-          test "$(git -C source hash-object 'qa/c5_managed_dev/linux_consolidated_20261127.PROPOSED.json')" = '237a0e0fbad3cfc4b90d98d13012af60f3f05b01'
-          test "$(git -C source hash-object 'qa/c5_managed_dev/dev_vm_01_consolidated_batch_20261128.PROPOSED.json')" = 'b6494e0055c118019bd053a93ff9baebdae13c45'
-      - name: Generated source contracts
-        working-directory: source
-        shell: bash
-        run: |
-          set -euo pipefail
-          /usr/bin/python3.12 -B -m unittest -v qa.c5_managed_dev.test_reduced_inspection qa.c5_managed_dev.test_dev_vm_01_static
-      - name: Static inspection only, no dependency execution
-        working-directory: source
-        shell: bash
-        run: |
-          set -euo pipefail
-          /usr/bin/python3.12 -B -m qa.c5_managed_dev.dev_vm_01_static "$GITHUB_WORKSPACE/activation/qa/c5_managed_dev/APPROVAL_DEV_VM_01_S1_20261128.json" '57c9f8dfc0057901f23a5b264123077bd8dad3d9'
+      - run: exit 1
