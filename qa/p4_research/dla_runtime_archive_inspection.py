@@ -25,7 +25,7 @@ from qa.p4_research.dla_stage1_contract import (
 )
 from tools.build_input_preflight import Blocked, require
 
-ARMED = False
+ARMED = True
 URL = "https://github.com/ggml-org/llama.cpp/releases/download/b10344/llama-b10344-bin-win-cpu-x64.zip"
 BRANCH = "refs/heads/feature/dla-stage1-archive-20261128"
 REDIRECT_HOST = "release-assets.githubusercontent.com"
