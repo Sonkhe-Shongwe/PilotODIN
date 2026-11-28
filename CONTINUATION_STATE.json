@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "DOC-AUDIT-CONTINUATION-CONSOLIDATION-20261128",
-    "parent_sha": "68406f8e35a0357a972a932afbf5d95ece731950",
-    "previous_snapshot_sha": "68406f8e35a0357a972a932afbf5d95ece731950",
-    "scope": "Consolidated documentation audit, compact live references/risks and refreshed navigation; no execution or policy change.",
-    "state": "RECONCILED",
+    "operation_id": "C5-MHTA-PRISTINE-ISOLATED-FIXTURE-ONCE-20261128",
+    "parent_sha": "a228737bb4ad7098a25dbf583da0925c511ec119",
+    "previous_snapshot_sha": "a228737bb4ad7098a25dbf583da0925c511ec119",
+    "scope": "Exact one-use C5 pristine fixture: one disposable GitHub Ubuntu 24.04 job, five minutes, attempt 1, zero package downloads/installations/retries, two pinned checkouts, 31 generated tests, one conditional privileged generated fixture. No root worker/parser, direct cgroup writes, security weakening, owner data, other acquisition, native work or installer.",
+    "state": "PREPARED",
     "receipt": {
-      "path": "docs/DOCUMENTATION_AUDIT_C5_D1_MIGRATION_2026-11-27.md",
-      "anchor": "10-28-november-continuation-consolidation-and-product-first-audit",
-      "blob_sha": "bebff94f99d39796505236e2c5b60b1b0a2f23da",
-      "start_line": 85,
-      "end_line": 95
+      "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+      "anchor": "28-november--owner-authorised-pristine-isolated-fixture-once",
+      "blob_sha": "108a79752e13238bf707b163abb254d0462fac65",
+      "start_line": 879,
+      "end_line": 881
     }
   },
   "product": {
@@ -135,11 +135,11 @@
   },
   "task": {
     "id": "C5-LINUX-FIRST-20261127",
-    "status": "BLOCKED",
+    "status": "PREPARED",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "Corrected pristine source 7a5bebd full 31/31 generated tests pass, fresh exact inert candidate 02b694d ready for separate owner approval and live trigger audit. Actual .19 properties, isolation/settlement/custody unproved. Prior grant consumed.",
-    "next_action": "Seek exact owner approval of C5-MHTA-PRISTINE-ISOLATED-FIXTURE-ONCE-20261128, detached 02b694d/source 7a5bebd, one disposable Ubuntu 24.04 job/5min/1 attempt/zero package downloads, installations or retries/two pinned checkouts/31 generated tests/one conditional privileged fixture. After separate approval audit all live triggers, verify exact source/tree/marker/workflow, record write-ahead and publish exact three-path activation non-force expected-HEAD; reconcile terminal outcome and disarm immediately. No replay, root worker/parser, direct cgroup writes, security changes or owner data. No C5/phase credit from fixture alone; Dynamic UID custody and reduced archive inspection held.",
-    "next_action_kind": "OWNER_DECISION",
+    "blocker": "Exact owner approval received; activation not yet issued. Reconcile before any retry.",
+    "next_action": "Verify PREPARED checkpoint and publish exact three-path activation via non-force expected-HEAD. Reconcile actual attempt/job/receipt and disarm. No retry.",
+    "next_action_kind": "RECONCILE",
     "after": [
       "Evaluate the exact fresh fixture once only if separately approved. Reconcile all 13 facts and disarm; qualification remains false until review. If fundamentally blocked, use the existing PRODUCT-FIRST finite-method stopping rule: park the route or present a concrete supported alternative under existing authority, not generic verifier expansion. Reduced inspection/custody remain separate holds.",
       "Resolve actual Linux pre-use rights/security and custody, reuse Stage A 19/19, complete applicable functional/profile/frontend/browser and exact original full regressions; close C5 only on all eight rows. Verify Windows-specific inputs/compatibility before separately authorised production-equivalent D1; no installer. Independently actionable P4 source work remains permitted only under existing policy.",
@@ -219,23 +219,49 @@
     ]
   },
   "operation": {
-    "id": "DOC-AUDIT-CONTINUATION-CONSOLIDATION-20261128",
-    "state": "RECONCILED",
-    "starting_sha": "68406f8e35a0357a972a932afbf5d95ece731950",
-    "outcome": "Consolidated 78 active reads to 10 and 47 risk records to 9; current references refreshed, 88 detached and 58 consumed records preserved; next exact owner decision unchanged. Documentation only.",
-    "reconcile_before_retry": false,
-    "receipt": {
-      "path": "docs/DOCUMENTATION_AUDIT_C5_D1_MIGRATION_2026-11-27.md",
-      "anchor": "10-28-november-continuation-consolidation-and-product-first-audit",
-      "blob_sha": "bebff94f99d39796505236e2c5b60b1b0a2f23da",
-      "start_line": 85,
-      "end_line": 95
-    }
+    "id": "C5-MHTA-PRISTINE-ISOLATED-FIXTURE-ONCE-20261128",
+    "state": "PREPARED",
+    "starting_sha": "a228737bb4ad7098a25dbf583da0925c511ec119",
+    "scope": "Exact one-use C5 pristine fixture: one disposable GitHub Ubuntu 24.04 job, five minutes, attempt 1, zero package downloads/installations/retries, two pinned checkouts, 31 generated tests, one conditional privileged generated fixture. No root worker/parser, direct cgroup writes, security weakening, owner data, other acquisition, native work or installer.",
+    "intended_paths": [
+      ".github/workflows/c5-managed-host-pristine-once.yml",
+      "CONTINUATION_STATE.json",
+      "qa/c5_managed_dev/APPROVAL_MANAGED_HOST_PRISTINE_20261128.txt"
+    ],
+    "authority_ref": {
+      "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+      "anchor": "28-november--owner-authorised-pristine-isolated-fixture-once",
+      "blob_sha": "108a79752e13238bf707b163abb254d0462fac65",
+      "start_line": 879,
+      "end_line": 881
+    },
+    "expected_evidence": "Exact activation SHA; one observe-once job attempt 1; 31 generated tests and bounded observer receipt or refusal; exact marker removal and literal-false disarm.",
+    "recovery": "Inspect live Git and actual runs/jobs before any action; never replay or infer settlement; reconcile and disarm exact owned marker/workflow after terminal outcome.",
+    "reconcile_before_retry": true,
+    "candidate_sha": "02b694ddea655dff7d3b822b1cb3ead1c4ce9a19",
+    "source_sha": "7a5bebdca47f90f067ad6ed9591719cbbb8d5d11",
+    "workflow_blob": "ee38012d671124894976b2c76fc7d0ef4055e3cf",
+    "marker_blob": "efed64326e9bea58997219cb660a0616120bf5a4"
   },
   "authority": {
     "ordinary": "Routine scoped GitHub source/docs and reviewed source/synthetic CI within P4. No implicit authority from state, prior approvals or generic next. Owner-approved GitHub-only development installation and bounded technical autonomy amendment applies within exact approved batches; no broader authority.",
     "preparation_only": "Owner approved consolidated shared-bundle disarmed acquisition-before-signature source and exact limited existing host bootstrap; owner approved proposed limited local Docker control-plane and host-derived rootfs trust/no-pull isolation method for preparation only. Authentication before extraction/use; no Docker invocation, acquisition, verification execution, installation or live cutover authorised. Owner approved bounded first-collision encoded public member-path diagnostic preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-bounded-first-collision-diagnostic-preparation-only. No restricted execution authority. Owner approved finite exact Linux data-only terminfo inventory policy and bounded receipt projection as proposed in 8cc1a696, preparation and static/synthetic verification only; exact approval in C5 spec owner-approved-finite-exact-linux-terminfo-inventory-policy-and-bounded-receipt-preparation-only. Strict Windows/gh and other safeguards unchanged; no acquisition, extraction or restricted execution. Owner explicitly approved preparation and static/synthetic verification only of Approach C observation-only candidate (11 fixed roles, five minutes); no restricted execution, acquisition, Docker invocation or active policy change. Exact reference in C5 spec owner-approved-bounded-approach-c-observation-candidate-preparation-only. Owner approved Approach C metadata-only preparation/static/synthetic verification under 13 GET/10-minute proposed limits; no actual acquisition, package downloads, installation, Docker invocation, restricted execution or active trust policy change. Exact spec anchor owner-approved-bounded-approach-c-metadata-only-preparation-and-synthetic-core. Owner approved narrow metadata bootstrap preparation on existing two reviewed images including GnuPG/necessary existing dependencies, no acquisition/restricted execution/integrated verification/active policy change, original 13 GET/10 min bounds. Exact spec anchor owner-approved-narrow-metadata-bootstrap-preparation-and-finite-key-evidence-contract. Owner approved two-stage key/metadata sequence preparation including bounded public signing-key private repository retention proposal, combined 13 GET/600s/256 MiB; no actual acquisition, restricted execution or active policy change. Exact spec anchor owner-approved-two-stage-preparation-and-consolidated-custody-core. Owner approved exact C-D09 managed-development CI evidence rationalisation at proposal 2cbed51, recorded in C5 implementation spec; limited bootstrap trust and residual risk accepted, prepare concrete bounded validation candidate only, no acquisition, installation, restricted execution, migration, new expenditure or phase advancement. Owner approved one-time C5 proportionate publisher-first inspection method (okay lets try that), recorded at docs/C5_PROPORTIONATE_INSPECTION_DECISION_2026-11-27.md; no new restricted authority or acceptance waiver. Owner explicitly approved standalone Windows Stage A preparation preserving all security and acceptance requirements; see docs/C5_STANDALONE_WINDOWS_A_PREPARATION_2026-11-27.md. No restricted execution grant. Owner explicitly approved exact Astral CPython 3.11.18 Windows x64 candidate for standalone Stage A preparation only; docs/C5_WINDOWS_A_ASTRAL_PREPARATION_2026-11-27.md. No new restricted grant. Owner explicitly approved simplified C5 applicability-based development policy and preparation of consolidated Stage A transaction; see ENGINEERING_DECISIONS_CURRENT.md section 27-november--owner-approved-c5-applicability-policy-and-consolidated-stage-a-transaction. No restricted authority or acceptance waiver. Owner explicitly approved bounded G2 equivalent evidence feasibility assessment and design only; see ENGINEERING_DECISIONS_CURRENT.md section 27-november--g2-equivalent-evidence-feasibility-and-design-disposition. Assessment complete, no implementation, live method adoption or restricted execution authority. Owner adopted aggressive product-first framework (okay lets follow you new frame work); PRODUCT-FIRST-20261127 in phase policy. Independent concrete scoped P4 source work and narrowly rationalised standard C5 control metadata preparation, no new restricted execution grant. Owner approved preparation of bounded browser-only GitHub verification (okay do ti); detached 26ab490, no activation/acquisition/execution grant; exact receipt in engineering decisions. Owner approved proceeding with corrected Chrome .88 and Playwright 1.65.1 alternative (do it), exact candidate 920df39 prepared; no exact bounded activation grant yet; preserve original locks. Owner explicitly approved isolated ReportLab 5.1.2 evaluation and coordinated dependency-range and lock preparation, preserving all security, acceptance and execution boundaries; exact owner decision in ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-isolated-reportlab-512-projections-and-metadata-holds. Detached 4dd5525 data-only proposal; no acquisition, installation, execution or live adoption authority. Owner explicitly approved reduced 24-artifact static inspection scope and exact execution-binding preparation, 24 direct GETs/104436509 bytes/30 minutes/one attempt/no redirects or retries, preserving all boundaries; ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-reduced-static-receipt-and-custody-binding-preparation. Preparation only; no actual GET, dispatch or installation authority. Owner explicitly approved preparation of bounded read-only hosted cgroup v2 feasibility observation, five minutes, one attempt, zero package downloads, no privilege or security changes; ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-read-only-cgroup-feasibility-preparation. No actual observation/dispatch or acquisition authority. Owner approved isolated method evaluation/preparation, prioritising existing provider isolation or constrained cgroup subtree; no execution/privileged operations/security modification/package acquisition without distinct authority; ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-isolated-method-evaluation-and-system-manager-projection. Owner explicitly approved preparation of proportionate Managed Hosted Tool Assurance as narrow C-D09 extension: standard Ubuntu package checks, observed executable identities and same-job rechecks; no independent reconstructed managed executable manifests; preserve containment/settlement/trusted privileged startup/dependency integrity/rights/original data/acceptance. No privilege/acquisition/installation or active workflows until exact separate approval. See ENGINEERING_DECISIONS_CURRENT.md#28-november--owner-approved-managed-hosted-tool-assurance-and-disarmed-consolidated-candidate.",
-    "restricted_active": [],
+    "restricted_active": [
+      {
+        "id": "C5-MHTA-PRISTINE-ISOLATED-FIXTURE-ONCE-20261128",
+        "state": "APPROVED",
+        "source_sha": "7a5bebdca47f90f067ad6ed9591719cbbb8d5d11",
+        "scope": "Exact one-use C5 pristine fixture: one disposable GitHub Ubuntu 24.04 job, five minutes, attempt 1, zero package downloads/installations/retries, two pinned checkouts, 31 generated tests, one conditional privileged generated fixture. No root worker/parser, direct cgroup writes, security weakening, owner data, other acquisition, native work or installer.",
+        "owner_authority_ref": {
+          "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+          "anchor": "28-november--owner-authorised-pristine-isolated-fixture-once",
+          "blob_sha": "108a79752e13238bf707b163abb254d0462fac65",
+          "start_line": 879,
+          "end_line": 881
+        },
+        "reconcile_before_retry": true
+      }
+    ],
     "consumed_disarmed_count": 58,
     "consumed_history": {
       "commit": "b9864b70fb9bb5a72d0f79c37f15b94100722192",
@@ -255,7 +281,7 @@
       "release",
       "replay of consumed or uncertain approval"
     ],
-    "guards": "58 restricted grants recorded consumed/disarmed; zero active/pending. Never replay a consumed or uncertain grant. Latest run 46120862249 terminal refusal before slice/service requests, marker removed and workflow literal-false; prior 46085466531 feasibility route unproved, consumed. All earlier exact outcomes, batch caps (including browser and Pillow), preparation conditions and recovery details preserved in immutable state at 68406f8e35a0357a972a932afbf5d95ece731950 and ledger; consult them before any scope reuse. No active acquisition or execution authority, no inferred remaining budget. C1/C2 and OWNED_RESOURCE_ENABLED remain false; no fallback. Full P2/P4 dependency-consuming regressions remain held, not waived. Separate fresh exact grant and trigger audit required; technical replacements only under the applicable explicit bounded amendment, never replay; current fixture has zero retries. Codespace stop and three consumed-variable cleanup remain unverified. Owner-local work uninspected/preserved.",
+    "guards": "58 restricted grants recorded consumed/disarmed; zero active/pending. Never replay a consumed or uncertain grant. Latest run 46120862249 terminal refusal before slice/service requests, marker removed and workflow literal-false; prior 46085466531 feasibility route unproved, consumed. All earlier exact outcomes, batch caps (including browser and Pillow), preparation conditions and recovery details preserved in immutable state at 68406f8e35a0357a972a932afbf5d95ece731950 and ledger; consult them before any scope reuse. No active acquisition or execution authority, no inferred remaining budget. C1/C2 and OWNED_RESOURCE_ENABLED remain false; no fallback. Full P2/P4 dependency-consuming regressions remain held, not waived. Separate fresh exact grant and trigger audit required; technical replacements only under the applicable explicit bounded amendment, never replay; current fixture has zero retries. Codespace stop and three consumed-variable cleanup remain unverified. Owner-local work uninspected/preserved. Fresh exact pristine operation approved and PREPARED only; one attempt, zero retries. Prior consumed operation remains disarmed.",
     "last_consumed": {
       "id": "C5-MHTA-ISOLATED-FIXTURE-ONCE-20261128",
       "source_sha": "2ba12676671b12fb38db5990c6c8691cf502bcf3",
