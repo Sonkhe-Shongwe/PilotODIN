@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "DLA-STAGE1-ARCHIVE-ONCE-20261128",
-    "parent_sha": "e8a8e720321441e9ec5ff434fb68514b0540fcdd",
-    "previous_snapshot_sha": "e8a8e720321441e9ec5ff434fb68514b0540fcdd",
-    "scope": "Reconcile failed one-use independent DLA runtime archive inspection and verified forward disarm",
+    "operation_id": "DLA-PRODUCT-FIRST-COURSE-CORRECTION-20261128",
+    "parent_sha": "e45568a70fbe781b4717b4204c8ed65cea220910",
+    "previous_snapshot_sha": "e45568a70fbe781b4717b4204c8ed65cea220910",
+    "scope": "Finite refusal diagnosis, concrete upstream Windows runtime rights concern and product-first consolidated alternative route; documentation only",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "blob_sha": "a53134c2c6873099bee0842e2378ffb9b85c7e31",
-      "anchor": "28-november--dla-independent-archive-inspection-refused-and-disarmed",
-      "start_line": 1217,
-      "end_line": 1221
+      "blob_sha": "0f7ba7c0cddc1db92301393cebb1a885b89b9a2e",
+      "anchor": "28-november--product-first-dla-course-correction-and-pinned-windows-runtime-rights-concern",
+      "start_line": 1223,
+      "end_line": 1231
     }
   },
   "product": {
@@ -132,10 +132,10 @@
     }
   },
   "task": {
-    "id": "P4-DLA-STAGE1-ARCHIVE-REFUSAL-DIAGNOSIS-20261128",
+    "id": "P4-DLA-CONSOLIDATED-BUILD-EVALUATE-READINESS-20261128",
     "status": "READY",
-    "scope": "One finite read-only archive refusal diagnosis and concrete alternative disposition; no acquisition or retry.",
-    "next_action": "Review existing source/logs and independent publisher metadata only, identify whether a supported exact alternative exists without weakening archive safety/rights. Do not infer exact refusal stage or bytes. If no concrete supported alternative, park DLA archive route and present consolidated blocker/independent authorised P4 closure task; no generic preparation loop. Any later new method needs separate exact approval, bounded allowlisted stage/reason and count evidence, not a replay. No native/model/owner access or production integration.",
+    "scope": "One finite existing-input review for a concrete standard pinned upstream CPU-only build-and-model-evaluation scope; no new collector, acquisition, native execution or method adoption.",
+    "next_action": "Use existing C5 input evidence to determine whether one supported exact pinned upstream CPU-only llama-server build (OpenMP/dynamic backends/UI off) and Granite-first evaluation can be proposed with verified inputs/rights, exact model identity and actual safe settlement, original cases and limits. No repeat archive inspection, metadata polling, speculative tooling or unchanged tests. If unavailable, park DLA and choose independent concrete authorised P4 closure work; no execution until one exact consolidated approval and any necessary explicit method decision.",
     "next_action_kind": "PREPARATION",
     "after": [
       "Explore source-only verification passed; preserve 541cbeb and isolated disarmed ref. Functional numerical parity, React/browser stale recovery and physical memory comparison still gated by C5 pre-use and exact execution scope; no live merge or unchanged source rerun.",
@@ -145,10 +145,16 @@
     "read": [
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "blob_sha": "a53134c2c6873099bee0842e2378ffb9b85c7e31",
-        "anchor": "28-november--dla-independent-archive-inspection-refused-and-disarmed",
-        "start_line": 1217,
-        "end_line": 1221
+        "blob_sha": "0f7ba7c0cddc1db92301393cebb1a885b89b9a2e",
+        "anchor": "28-november--product-first-dla-course-correction-and-pinned-windows-runtime-rights-concern",
+        "start_line": 1223,
+        "end_line": 1231
+      },
+      {
+        "path": "docs/C5_CONSOLIDATED_COMPLETION_PLAN_2026-11-27.md"
+      },
+      {
+        "path": "docs/PILOTODIN_PACKAGE_C_RESOURCE_TRUST_SPEC_2026-11-24.md"
       },
       {
         "path": "docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md",
@@ -210,27 +216,21 @@
       {
         "path": "frontend/src-tauri/src/resource_shell.rs",
         "blob_sha": "e95dabec912f979b025110b30b7e8f2ba67a91aa"
-      },
-      {
-        "path": "docs/C5_CONSOLIDATED_COMPLETION_PLAN_2026-11-27.md"
-      },
-      {
-        "path": "docs/PILOTODIN_PACKAGE_C_RESOURCE_TRUST_SPEC_2026-11-24.md"
       }
     ]
   },
   "operation": {
-    "id": "DLA-STAGE1-ARCHIVE-ONCE-20261128",
+    "id": "DLA-PRODUCT-FIRST-COURSE-CORRECTION-20261128",
     "state": "RECONCILED",
-    "starting_sha": "752d71f43d39cf0a11ec9ac3f5da8d3833406d40",
-    "outcome": "TERMINAL FAILURE: 3/3 transport tests passed, actual inspection refused, no inventory receipt; failure stage and transfer count unknown; both guards disarmed, no retry.",
+    "starting_sha": "e45568a70fbe781b4717b4204c8ed65cea220910",
+    "outcome": "Old archive route parked, exact upstream debug_nonredist OpenMP rights concern identified; standard pinned CPU-only source-build option proposed, not adopted or executed. No acquisition or acceptance change.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "blob_sha": "a53134c2c6873099bee0842e2378ffb9b85c7e31",
-      "anchor": "28-november--dla-independent-archive-inspection-refused-and-disarmed",
-      "start_line": 1217,
-      "end_line": 1221
+      "blob_sha": "0f7ba7c0cddc1db92301393cebb1a885b89b9a2e",
+      "anchor": "28-november--product-first-dla-course-correction-and-pinned-windows-runtime-rights-concern",
+      "start_line": 1223,
+      "end_line": 1231
     }
   },
   "authority": {
@@ -731,7 +731,8 @@
     "DLA private listener source now prepared but uncompiled; opt-in Cargo feature and FFI/ABI require separate Windows validation. Seven Python generated tests awaiting exact isolated source-only execution. Runtime archive independent member/rights review and Granite immutable pointer/size still unresolved.",
     "DLA Stage 1 generated Python tests passed 7/7 and syntax 6/6 at run 46167223621; no native compile/settlement, actual member/notice inventory, rights disposition, Granite immutable exact byte count or model qualification. Source run consumed/disarmed.",
     "Archive inspection exact disarmed binding 618128b prepared, actual service redirect/layout/member/notice receipt and rights review outstanding; 3 transport tests not run. Separate Windows MSVC/locked Cargo native validation inputs remain unresolved; Granite exact bytes/pointer held.",
-    "DLA archive run 46169089369 terminal refused after 3/3 transport tests; zero inventory receipt, failure stage and actual GET/body counts unknown due generic exception handling. Both guards disarmed; grant consumed. No retry or rights/member acceptance. Granite size/pointer and native validation unresolved."
+    "DLA archive run 46169089369 terminal refused after 3/3 transport tests; zero inventory receipt, failure stage and actual GET/body counts unknown due generic exception handling. Both guards disarmed; grant consumed. No retry or rights/member acceptance. Granite size/pointer and native validation unresolved.",
+    "Pinned b10344 Windows CPU upstream recipe copies libomp from debug_nonredist; applicable rights and actual archive contents unresolved. Old inspection parked; alternative pinned upstream standard CPU-only source build proposed not adopted, exact build/model input and settlement readiness absent. No automatic retries or pre-use waiver."
   ],
   "context": {
     "protocol": {
@@ -806,6 +807,13 @@
       }
     ],
     "evidence": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "0f7ba7c0cddc1db92301393cebb1a885b89b9a2e",
+        "anchor": "28-november--product-first-dla-course-correction-and-pinned-windows-runtime-rights-concern",
+        "start_line": 1223,
+        "end_line": 1231
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "blob_sha": "a53134c2c6873099bee0842e2378ffb9b85c7e31",
