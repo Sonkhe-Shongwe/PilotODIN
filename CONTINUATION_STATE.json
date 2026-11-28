@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "DLA-DIRECTIVE-AUDIT-20261128",
-    "parent_sha": "5488d491f2dd69d45502fd64865c5f8903d4a37f",
-    "previous_snapshot_sha": "5488d491f2dd69d45502fd64865c5f8903d4a37f",
-    "scope": "Owner-directed Universal Local AI architecture, full root/docs inventory and targeted current-authority contradiction audit; documentation/state only.",
+    "operation_id": "DLA-A-READINESS-20261128",
+    "parent_sha": "3d585e783494d04f17ea9f4b97a85931dee0e55c",
+    "previous_snapshot_sha": "3d585e783494d04f17ea9f4b97a85931dee0e55c",
+    "scope": "DLA-A official publisher metadata and bounded evaluation proposal; documentation-only",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "blob_sha": "c714f32dc63eee339f8c45334eaf2feb742109e6",
-      "anchor": "28-november--universal-local-ai-direction-and-audit-decision",
-      "start_line": 1163,
-      "end_line": 1165
+      "blob_sha": "745c0225020795ea5f17aabbff02adc98bed6b2a",
+      "anchor": "28-november--dla-a-metadata-review-and-evaluation-hold",
+      "start_line": 1167,
+      "end_line": 1169
     }
   },
   "product": {
@@ -132,11 +132,11 @@
     }
   },
   "task": {
-    "id": "P4-DLA-A-READINESS-20261128",
-    "status": "READY",
-    "scope": "One finite read-only readiness and exact bounded isolated evaluation proposal for Granite 4.0-H-350M first and optional LFM2.5-350M second, using existing infrastructure.",
-    "next_action": "Reconcile exact official GGUF revisions, sizes/hash identities, licence/notice obligations and b10344 runtime/template compatibility; establish existing independent pre-use inventory and supported owned process/listener settlement route. Prepare one finite exact candidate execution proposal with original five cases and additional separately scored tool/schema/refusal checks. Stop on unsupported prerequisites; no acquisition, native/model run, owner-device access, source integration or approval transfer. No repeated Qwen benchmark.",
-    "next_action_kind": "PREPARATION",
+    "id": "P4-DLA-STAGE1-DECISION-20261128",
+    "status": "BLOCKED",
+    "scope": "Finite Stage 1 isolated source preparation and independent runtime-member expectation method decision; no acquisition/execution yet.",
+    "next_action": "Seek one consolidated owner decision for the finite Stage 1 disarmed source preparation and proposed independent archive-member expectation method in DLA-A proposal. Any actual archive acquisition/inspection transaction and later Granite model run need distinct exact authority and prerequisites. Otherwise park route and prioritise independent authorised P4 source work. No automatic candidate/fallback, floor reduction or production bypass.",
+    "next_action_kind": "OWNER_DECISION",
     "after": [
       "Explore source-only verification passed; preserve 541cbeb and isolated disarmed ref. Functional numerical parity, React/browser stale recovery and physical memory comparison still gated by C5 pre-use and exact execution scope; no live merge or unchanged source rerun.",
       "Retain critical early E2 physical R03.3/R03.4, original E-02/W07, R06 historical strict FAIL/UNKNOWN and prospective G2 hold. No automatic execution/fallback or owner-local access.",
@@ -145,20 +145,27 @@
     "read": [
       {
         "path": "docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md",
-        "blob_sha": "4c9137b59fd83f5dae40492321fa82da144aa725",
+        "blob_sha": "f4e16dd309adb7ec21a55faa24e628ad257dfe11",
+        "anchor": "28-november--dla-a-exact-candidate-metadata-and-bounded-evaluation-proposal",
+        "start_line": 428,
+        "end_line": 450
+      },
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "745c0225020795ea5f17aabbff02adc98bed6b2a",
+        "anchor": "28-november--dla-a-metadata-review-and-evaluation-hold",
+        "start_line": 1167,
+        "end_line": 1169
+      },
+      {
+        "path": "docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md",
+        "blob_sha": "f4e16dd309adb7ec21a55faa24e628ad257dfe11",
         "anchor": "28-november--universal-local-ai-directive"
       },
       {
         "path": "docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md",
         "blob_sha": "581b9a6e040b698cd5d048804f8a67cc093132a9",
         "anchor": "28-november-2026--owner-directed-universal-local-ai-architecture"
-      },
-      {
-        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-        "blob_sha": "c714f32dc63eee339f8c45334eaf2feb742109e6",
-        "anchor": "28-november--universal-local-ai-direction-and-audit-decision",
-        "start_line": 1163,
-        "end_line": 1165
       },
       {
         "path": "docs/DOCUMENTATION_AUDIT_C5_D1_MIGRATION_2026-11-27.md",
@@ -210,20 +217,21 @@
       {
         "path": "docs/PILOTODIN_PACKAGE_C_RESOURCE_TRUST_SPEC_2026-11-24.md"
       }
-    ]
+    ],
+    "blocker": "Granite exact immutable pointer/size, independently reviewed runtime/notice inventory and rights, and supported candidate owned listener/worker binding not established. DLA-A research complete; no speculative repeat."
   },
   "operation": {
-    "id": "DLA-DIRECTIVE-AUDIT-20261128",
+    "id": "DLA-A-READINESS-20261128",
     "state": "RECONCILED",
-    "starting_sha": "5488d491f2dd69d45502fd64865c5f8903d4a37f",
-    "outcome": "Canonical dual-model directive and current navigation reconciled; prior Qwen route parked, historical evidence retained. No model/source adoption, execution or acceptance credit.",
+    "starting_sha": "3d585e783494d04f17ea9f4b97a85931dee0e55c",
+    "outcome": "DLA-A finite read-only review complete, DLA-B HOLD. Both publisher checksums identified; Granite exact byte count/pinned pointer and independent runtime member/notice expectations, rights and evaluator settlement unresolved.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "blob_sha": "c714f32dc63eee339f8c45334eaf2feb742109e6",
-      "anchor": "28-november--universal-local-ai-direction-and-audit-decision",
-      "start_line": 1163,
-      "end_line": 1165
+      "blob_sha": "745c0225020795ea5f17aabbff02adc98bed6b2a",
+      "anchor": "28-november--dla-a-metadata-review-and-evaluation-hold",
+      "start_line": 1167,
+      "end_line": 1169
     }
   },
   "authority": {
@@ -690,7 +698,8 @@
     "Original early E2 physical 8 GB offline bundled Qwen startup and coexistence with analytics/UI remain blocking acceptance obligations; ordinary available headroom previously prevented startup. Gate C unverified before real prediction use; if target feasibility cannot be demonstrated, seek explicit owner product decision, not silent deferral. R03.3/R03.4 outstanding, no P5 before P4 closure/signoff.",
     "R06 historical 74 original app-data differences, unknown writer; incident disposition and prospective owner-device interval/endpoint preservation remain open. R02.5/R02.6 unresolved; no owner data access or preservation claim. Owner-local work untouched/uninspected; Codespace stop and consumed-variable cleanup unverified.",
     "All prior 100 detached candidate records and exact authority history preserved; owner recovery archive delivered for 1d033ce only, not current HEAD/full Git history/detached backup or build proof. Root LICENSE, NOTICE and SECURITY.md absent; explicit owner decision required. Installer frozen, P5 unauthorized, release not certified.",
-    "Universal Local AI proposed, not adopted: Granite/Liquid exact publisher GGUF identities, rights, runtime compatibility, independent member inventory and positive owned process/listener settlement not established. Qwen 0.6B prior hosted 2/4, no physical qualification; old Qwen prep parked. Original R03.3 wording requires explicit successor acceptance mapping before credit, R03.4 and 8 GB offline coexistence unchanged."
+    "Universal Local AI proposed, not adopted: Granite/Liquid exact publisher GGUF identities, rights, runtime compatibility, independent member inventory and positive owned process/listener settlement not established. Qwen 0.6B prior hosted 2/4, no physical qualification; old Qwen prep parked. Original R03.3 wording requires explicit successor acceptance mapping before credit, R03.4 and 8 GB offline coexistence unchanged.",
+    "DLA-A official publisher checksums identified; Liquid exact pointer confirmed; Granite exact bytes and pinned pointer unavailable. Existing runtime member/notice inventory and candidate evaluator/listener binding remain holds. Proposed independent pinned archive review and disarmed adapter not adopted; no acquisition or execution authority."
   ],
   "context": {
     "protocol": {
@@ -765,6 +774,13 @@
       }
     ],
     "evidence": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "blob_sha": "745c0225020795ea5f17aabbff02adc98bed6b2a",
+        "anchor": "28-november--dla-a-metadata-review-and-evaluation-hold",
+        "start_line": 1167,
+        "end_line": 1169
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "blob_sha": "c714f32dc63eee339f8c45334eaf2feb742109e6",
