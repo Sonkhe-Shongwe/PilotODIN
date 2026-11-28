@@ -5,17 +5,17 @@
     "branch": "feature/live-dev-workspace-20261023"
   },
   "checkpoint": {
-    "operation_id": "C5-MHTA-ISOLATED-FIXTURE-ONCE-20261128",
-    "parent_sha": "2ba12676671b12fb38db5990c6c8691cf502bcf3",
-    "previous_snapshot_sha": "2ba12676671b12fb38db5990c6c8691cf502bcf3",
-    "scope": "Terminal MHTA same-job identity/startup and 27/27 generated tests PASS; actual observer REFUSED PREEXISTING before unit requests; consumed/disarm.",
+    "operation_id": "C5-MHTA-PRISTINE-SLICE-CORRECTION-PREPARATION-20261128",
+    "parent_sha": "991fad661dbae51d127e19d55217565f867c512a",
+    "previous_snapshot_sha": "991fad661dbae51d127e19d55217565f867c512a",
+    "scope": "Upstream v255.4 source-backed pristine slice correction, detached source and four focused generated tests; no execution.",
     "state": "RECONCILED",
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "28-november--managed-hosted-assurance-terminal-refusal-and-one-use-disarm",
-      "blob_sha": "ed25e45e0903fc55389ee87a7f26a8c9ac60e4e2",
-      "start_line": 845,
-      "end_line": 861
+      "anchor": "28-november--upstream-backed-pristine-slice-admission-correction",
+      "blob_sha": "883a757886adf71464e0a18b4b59bf7c9a7cfeea",
+      "start_line": 863,
+      "end_line": 871
     }
   },
   "product": {
@@ -137,8 +137,8 @@
     "id": "C5-LINUX-FIRST-20261127",
     "status": "BLOCKED",
     "scope": "Close C5 using approved managed Linux source-test readiness first; all Windows verification mandatory before D1; full Linux applicable evidence and eight rows retained.",
-    "blocker": "MHTA actual managed tool identity, startup and 27/27 hosted tests passed, same_job_match=true. Observer PREEXISTING combined guard refused before unit requests; actual containment/settlement and custody unproved. One-use grant consumed/disarmed; reduced inspection held.",
-    "next_action": "Review exact observer Manager.absent/show contract and combined PREEXISTING predicate against upstream systemd v255.4 and distro source where available; identify concrete cause or ambiguity, prepare minimal fail-closed source correction or bounded diagnostic and generated regression only within existing preparation authority. Preserve ownership and absence requirements; no retry, hosted job, privilege, package GET/installation or acceptance credit without fresh exact decision. No independent reconstructed OS tool manifests or generic identity probes. Dynamic UID custody, later reduced inspection and C5 regression remain held.",
+    "blocker": "Upstream source confirms fileless slice may report loaded rather than not-found; actual prior failing predicate unknown. 7a5bebd disarmed correction and 4/4 focused generated tests pass; full revised module/31-method suite and exact fresh activation preparation pending. Actual containment/settlement/custody unproved; grant consumed.",
+    "next_action": "Complete exact full revised generated suite (31 projected methods) for 7a5bebd, including lifecycle distinct refusal cases and updated startup/source pins; review actual .19 serialization limitations and preserve all ownership/settlement predicates. Prepare fresh inert one-use activation and marker only, no reuse of consumed 46120862249 grant. Seek separate exact owner approval after source and trigger binding. No generic identity investigation, hosted run, privilege, package GET/install, acceptance or phase change during preparation; Dynamic UID custody and reduced archive inspection held.",
     "next_action_kind": "MISSING_EVIDENCE",
     "after": [
       "Resolve actual Linux input rights/security and use, all 19 Stage A tests and full relevant Linux profile/frontend/browser regressions; award 15/17 only after all eight rows.",
@@ -146,6 +146,13 @@
       "D2, G2 and remaining physical E2/P4 acceptance; no phase advance without evidence and owner signoff."
     ],
     "read": [
+      {
+        "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
+        "anchor": "28-november--upstream-backed-pristine-slice-admission-correction",
+        "blob_sha": "883a757886adf71464e0a18b4b59bf7c9a7cfeea",
+        "start_line": 863,
+        "end_line": 871
+      },
       {
         "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
         "anchor": "28-november--managed-hosted-assurance-terminal-refusal-and-one-use-disarm",
@@ -681,17 +688,17 @@
     ]
   },
   "operation": {
-    "id": "C5-MHTA-ISOLATED-FIXTURE-ONCE-20261128",
+    "id": "C5-MHTA-PRISTINE-SLICE-CORRECTION-PREPARATION-20261128",
     "state": "RECONCILED",
-    "starting_sha": "f7a248d1f88905cc54e0a56e3658eca67786926c",
-    "outcome": "Run 46120862249 attempt 1 job 140904840378 FAILURE exit 2; both checkouts, all 27 tests, exact package/7-tool preflight and same_job_match true. PREEXISTING combined guard refused before slice/service requests, all 13 observer facts false. No retry, fixture or acceptance credit; consume and disarm.",
+    "starting_sha": "991fad661dbae51d127e19d55217565f867c512a",
+    "outcome": "Concrete fileless slice load-state mismatch demonstrated; detached 7a5bebd strict predicate, distinct diagnostics and source pins. Four focused exact excerpt tests PASS. Full revised suite and fresh inert binding pending; no hosted/privilege/acquisition or acceptance.",
     "reconcile_before_retry": false,
     "receipt": {
       "path": "docs/ENGINEERING_DECISIONS_CURRENT.md",
-      "anchor": "28-november--managed-hosted-assurance-terminal-refusal-and-one-use-disarm",
-      "blob_sha": "ed25e45e0903fc55389ee87a7f26a8c9ac60e4e2",
-      "start_line": 845,
-      "end_line": 861
+      "anchor": "28-november--upstream-backed-pristine-slice-admission-correction",
+      "blob_sha": "883a757886adf71464e0a18b4b59bf7c9a7cfeea",
+      "start_line": 863,
+      "end_line": 871
     }
   },
   "authority": {
@@ -1081,6 +1088,10 @@
       {
         "sha": "4cb3271b96b98eaba467d31a3b038270be27f536",
         "scope": "Inert exact one-use workflow text and JSON/marker binding; no active workflow or execution. Preserve detached 122-workflow history separately."
+      },
+      {
+        "sha": "7a5bebdca47f90f067ad6ed9591719cbbb8d5d11",
+        "scope": "Upstream-backed disarmed pristine slice correction, six QA paths, 4/4 focused exact excerpt tests pass; full revised suite and fresh activation not prepared. No hosted execution."
       }
     ]
   },
@@ -1129,7 +1140,8 @@
     "af44431: retained image and published package versions narrowed; independently reviewed exact executable/package facts still unavailable. Generated observer body passes mocked lifecycle only; root startup is inert data, not executable binding. One bounded identity-only decision required; no privileged activation, acquisition, product or acceptance change.",
     "0d5afc9 managed hosted assurance preparation: no independently reconstructed managed executable manifests required; exact reviewed eligible versions and applicability/rights remain; systemd .19 retained/provider and proposed publisher record but official listing .18, actual publication/patch review incomplete. Same-job identity, trusted root startup and full real containment/custody unproved; no execution or acceptance credit.",
     "4cb3271: .19 conditional managed fixture eligibility based on source changelog, secondary updates and retained provider image; primary archive publication unavailable and actual hosted versions, root startup, containment, process settlement and dynamic UID custody unproved. Full trigger audit and separate exact bounded execution approval required. No C5 credit.",
-    "Run 46120862249: actual hosted 27/27 generated tests, exact package/7-tool checks and same-job trusted startup passed; PREEXISTING combined absence/path predicate refused before unit requests, exact false subpredicate unknown. Actual isolation/settlement/custody unproved. Approval consumed/disarmed, no replay."
+    "Run 46120862249: actual hosted 27/27 generated tests, exact package/7-tool checks and same-job trusted startup passed; PREEXISTING combined absence/path predicate refused before unit requests, exact false subpredicate unknown. Actual isolation/settlement/custody unproved. Approval consumed/disarmed, no replay.",
+    "7a5bebd: exact upstream fileless loaded slice defect corrected and focused tests pass; prior actual refusal subpredicate unknown, full revised suite and fresh exact activation outstanding; added strict property/GC behavior may refuse, actual containment/custody unproved. No replay or credit."
   ],
   "context": {
     "protocol": {
