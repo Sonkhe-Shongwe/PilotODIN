@@ -420,7 +420,7 @@ jobs:
 
   p4-dependency-free-source:
     name: Explore source contracts only (DISARMED; full regression deferred)
-    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/feature/perf-explore-source-20261128' && github.event.before == '0264f7d77cc3f9c1b11e00a255e5742b10ea6e9f' && github.run_attempt == 1 }} # Exact one-use isolated source regression.
+    if: ${{ false }} # Owner-approved one-use run 46154331859 consumed; permanently disarmed.
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     env:
