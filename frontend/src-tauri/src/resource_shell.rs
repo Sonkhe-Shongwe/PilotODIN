@@ -558,8 +558,8 @@ impl InferenceGroup {
 }
 
 // DLA Stage 1 QA-only composition seam. Not registered or callable from
-// production/IPC. A real listener provider is deliberately absent until
-// independent Windows process-lifetime and job-membership review.
+// production/IPC. Uses the opt-in private Windows owned-job listener provider;
+// uncompiled and disarmed pending exact Windows validation.
 #[cfg(all(windows, test))]
 #[allow(dead_code)]
 mod dla_stage1 {
@@ -579,7 +579,7 @@ mod dla_stage1 {
     trait ListenerProbe {
         fn verify_owned(&mut self, expected: Generation,
                         job: &OwnedJob) -> Result<bool, &'static str>;
-        fn verify_absent(&mut self, expected: Generation)
+        fn verify_absent(&mut self, expected: Generation, job: &OwnedJob)
             -> Result<bool, &'static str>;
     }
 
@@ -587,8 +587,34 @@ mod dla_stage1 {
     impl ListenerProbe for UnavailableProbe {
         fn verify_owned(&mut self, _: Generation, _: &OwnedJob)
             -> Result<bool, &'static str> { Err(JOB_FAULT) }
-        fn verify_absent(&mut self, _: Generation)
+        fn verify_absent(&mut self, _: Generation, _: &OwnedJob)
             -> Result<bool, &'static str> { Err(JOB_FAULT) }
+    }
+
+    struct OwnedListenerProbe;
+    impl ListenerProbe for OwnedListenerProbe {
+        fn verify_owned(&mut self, expected: Generation, job: &OwnedJob)
+            -> Result<bool, &'static str> {
+            job.qa_listener_owned(expected.pid, expected.creation_time, expected.port)
+                .map_err(|_| JOB_FAULT)
+        }
+        fn verify_absent(&mut self, expected: Generation, job: &OwnedJob)
+            -> Result<bool, &'static str> {
+            job.qa_listener_absent(expected.pid, expected.creation_time, expected.port)
+                .map_err(|_| JOB_FAULT)
+        }
+    }
+
+    impl CandidateOwner<OwnedListenerProbe> {
+        fn from_owned_group(group: InferenceGroup, port: u16) -> Result<Self, InferenceGroup> {
+            let identity = group.cleanup.job.as_ref().and_then(|job| job.qa_listener_identity().ok());
+            let Some((pid, creation_time)) = identity else { return Err(group); };
+            if pid == 0 || creation_time == 0 || port < 1024 ||
+                group.child.as_ref().map(|child| child.pid()) != Some(pid) {
+                return Err(group);
+            }
+            Ok(Self::new(group, Generation { pid, creation_time, port }, OwnedListenerProbe))
+        }
     }
 
     // Retain the actual InferenceGroup throughout cleanup or uncertainty.
@@ -655,7 +681,10 @@ mod dla_stage1 {
             if self.faulted || !self.listener_verified || Instant::now() >= deadline {
                 return self.fault();
             }
-            let absent = self.listener.verify_absent(self.expected);
+            let absent = match self.group.cleanup.job.as_ref() {
+                Some(job) => self.listener.verify_absent(self.expected, job),
+                None => Err(JOB_FAULT),
+            };
             if absent != Ok(true) || Instant::now() >= deadline {
                 return self.fault();
             }
@@ -664,12 +693,8 @@ mod dla_stage1 {
         }
     }
 
-    #[test]
-    fn no_unbound_listener_absence_witness() {
-        let mut probe = UnavailableProbe;
-        let expected = Generation { pid: 1, creation_time: 1, port: 1024 };
-        assert!(probe.verify_absent(expected).is_err());
-    }
+    // No test creates a process or queries native tables under Stage 1 authority.
+    // Provider-specific pure table classifier checks live in the vendored module.
 }
 
 #[cfg(test)]

@@ -107,6 +107,24 @@ impl OwnedJob {
     pub fn active_processes(&self) -> crate::Result<u32> {
         Ok(self.job.active_processes()?)
     }
+
+    /// QA-only opaque witness, always bound to the original owned handle.
+    #[cfg(feature = "dla-qa-listener")]
+    pub fn qa_listener_identity(&self) -> crate::Result<(u32, u64)> {
+        Ok(self.job.qa_identity()?)
+    }
+
+    #[cfg(feature = "dla-qa-listener")]
+    pub fn qa_listener_owned(&self, pid: u32, created: u64, port: u16)
+        -> crate::Result<bool> {
+        Ok(self.job.qa_listener_owned(pid, created, port)?)
+    }
+
+    #[cfg(feature = "dla-qa-listener")]
+    pub fn qa_listener_absent(&self, pid: u32, created: u64, port: u16)
+        -> crate::Result<bool> {
+        Ok(self.job.qa_listener_absent(pid, created, port)?)
+    }
 }
 
 impl CommandChild {

@@ -26,6 +26,10 @@ macos = { level = "full", notes = "" }
 android = { level = "partial", notes = "Only allows to open URLs via `open`" }
 ios = { level = "partial", notes = "Only allows to open URLs via `open`" }
 
+[features]
+# Disarmed DLA QA-only owned process/listener witness; never enable in production.
+dla-qa-listener = []
+
 [build-dependencies]
 tauri-plugin = { version = "2.7.1", features = ["build"] }
 schemars = "0.8"
